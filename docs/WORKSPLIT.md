@@ -51,27 +51,40 @@ namespace RavenIron.ValkyriesCargo.Core
     }
     public sealed class DealResult {
         public long Nonce; public string DeliveryId;
-        public bool Ok; public string Reason;                    // "sold_out" "over_max" "purse_empty" "coins_short"
-                                                                 // "inventory_full" "visit_over" "unknown_item"
-                                                                 // "bad_count" "stale_visit" "duplicate" "price_changed"
+        public bool Ok; public string Reason;                    // DealReason tokens, in the server's checking order:
+                                                                 // empty_deal, stale_visit, duplicate, unknown_item,
+                                                                 // bad_count, sold_out, price_changed, over_max,
+                                                                 // coins_short, purse_empty; plus visit_over (real
+                                                                 // server only), not_connected and malformed (client
+                                                                 // side). inventory_full is the TERMINAL's own
+                                                                 // pre-check: the server cannot see an inventory.
         public int CoinsDelta;                                   // + to the player, - from the player
         public List<DealLine> ItemsToAdd, ItemsToRemove;         // applied by the client only when Ok
-        public string NewMarketState;                            // set on price_changed, else null
+        public string NewMarketState;                            // whole MarketState on price_changed, else ""
     }
+    public sealed class DealInbox { ... }                        // applied DeliveryIds, bounded 500; CargoRpc owns one
+    public sealed class DemoMarket { ... }                       // in-process settlement with the server's refusal order
 }
 
 namespace RavenIron.ValkyriesCargo.Net
 {
+    public interface ICargoTransport { bool Ready {get;} void Open(int); void Close(int); void Dismiss(int); void Send(Deal, Action<DealResult>); }
+
     public static class CargoRpc                                 // client-side surface the terminal calls
     {
-        public static bool Ready { get; }                        // registered on this session's server socket
+        public static bool Ready { get; }                        // a transport is installed and live
+        public static bool IsDemo { get; }
+        public static MarketSnapshot Market { get; }             // last published, parsed
+        public static VisitSnapshot  Visit  { get; }
         public static void Open(int visitId);                    // vc_open
         public static void Close(int visitId);                   // vc_close
         public static void Dismiss(int visitId);                 // vc_dismiss
-        public static void Send(Deal deal, Action<DealResult> onAnswer);   // vc_deal -> vc_dealt
-        public static event Action<MarketSnapshot> MarketChanged;          // MarketState.ValueChanged, parsed
+        public static void Send(Deal deal, Action<DealResult> onAnswer);   // vc_deal -> vc_dealt; a redelivered Ok is answered duplicate
+        public static event Action<MarketSnapshot> MarketChanged;          // fired by PublishMarket
         public static event Action<VisitSnapshot>  VisitChanged;
-        public static void UseDemo(bool on);                     // no server: Send echoes an Ok result from the demo market
+        public static void UseDemo(bool on);                     // no server: settle against DemoMarket.Default(), publish its snapshots
+        public static DemoTransport Demo { get; }                // the demo transport while on (PlayerCoins, Market.Tick for price_changed)
+        // game side only: UseTransport(ICargoTransport), PublishMarket(string), PublishVisit(string), LoadInbox(DealInbox), EndSession()
     }
 }
 

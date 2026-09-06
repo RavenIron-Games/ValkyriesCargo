@@ -23,6 +23,12 @@
       about the logic that ships, and drifts apart from it silently.
     -->
     <Compile Include="..\..\ValkyriesCargo\Core\Catalogue.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\Wire.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\MarketSnapshot.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\VisitSnapshot.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\Deal.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\DemoMarket.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Net\CargoRpc.cs" />
   </ItemGroup>
 
 </Project>

@@ -82,7 +82,7 @@ namespace RavenIron.ValkyriesCargo.Core
             if (string.IsNullOrEmpty(s)) { Wire.Report(problems, "deal: empty"); return null; }
             string[] f = Wire.Fields(s, 6);
             if (f.Length != 6) { Wire.Report(problems, "deal: expected 6 fields, found " + f.Length); return null; }
-            if (f[0] != "v" + Wire.Int(FormatVersion)) { Wire.Report(problems, "deal: format " + f[0] + " is not v" + FormatVersion); return null; }
+            if (f[0] != "v" + Wire.Int(FormatVersion)) { Wire.Report(problems, "deal: format " + f[0] + " is not v" + FormatVersion + "; update the side that is behind"); return null; }
             var d = new Deal();
             if (!Wire.TryInt(f[1], out d.VisitId)) { Wire.Report(problems, "deal: visitId did not parse"); return null; }
             if (!Wire.TryLong(f[2], out d.Nonce)) { Wire.Report(problems, "deal: nonce did not parse"); return null; }
@@ -162,7 +162,7 @@ namespace RavenIron.ValkyriesCargo.Core
             if (string.IsNullOrEmpty(s)) { Wire.Report(problems, "deal result: empty"); return null; }
             string[] f = Wire.Fields(s, 9);
             if (f.Length != 9) { Wire.Report(problems, "deal result: expected 9 fields, found " + f.Length); return null; }
-            if (f[0] != "v" + Wire.Int(FormatVersion)) { Wire.Report(problems, "deal result: format " + f[0] + " is not v" + FormatVersion); return null; }
+            if (f[0] != "v" + Wire.Int(FormatVersion)) { Wire.Report(problems, "deal result: format " + f[0] + " is not v" + FormatVersion + "; update the side that is behind"); return null; }
             var r = new DealResult();
             if (!Wire.TryLong(f[1], out r.Nonce)) { Wire.Report(problems, "deal result: nonce did not parse"); return null; }
             r.DeliveryId = Wire.IsToken(f[2]) || f[2].Length == 0 ? f[2] : "";
