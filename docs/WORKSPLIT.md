@@ -1,8 +1,28 @@
 # Work split — Valkyrie's Cargo, from 2026-09-06
 
-Two tracks, one contract between them, frozen here so both can build without waiting on each other.
+> **Status: PROPOSAL, not agreed.** Don and Wu'barrk have not divided the duties yet. Section 0 is the
+> neutral list of work packages to divide; sections 1 and 3 are one possible way to cut them, written
+> by Don's side as a starting point. Section 2, the contract, is code now (PR #1) and holds whichever
+> way the packages are dealt: it is the seam, not an assignment.
 
-## The tracks
+## 0. The work packages, with what each needs
+
+| # | Package | Size | Needs first | Natural pull |
+|---|---|---|---|---|
+| P1 | Contract files + demo (`Core/`, `Net/CargoRpc`) | done, PR #1 | — | — |
+| P2 | Market core: pricing, drift, purse, scheduler, visit clock, packet encoders; tests | 1–2 days | P1 | anyone; pure C#, no game |
+| P3 | Comfort report + event registration + `cargo visit`; headless proof | 1 day | P2 | needs a dedicated server (Don has CairnTest) |
+| P4 | Authored flight: server creates the bird, pilot flies it; two-client proof | 1–2 days | P3 | needs two clients on one machine (Don has two accounts) |
+| P5 | Merchant: carry pin, `InIntro`, follow, callout, immortal, dismissal, Odin vanish, restart sweep | 2 days | P4 | as P4 |
+| P6 | Deal wire server side: direct ZRpc, owed ledger, persistence (Cairn pattern) | 1–2 days | P1, P2 | anyone |
+| P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | 2–3 days | P1, SharedUI files | Wu'barrk: it is his theme and his focus helper |
+| P8 | Body: retopo, rig, clips, animator contract, bundle on Unity 6000.0.61f1, loader | open-ended, after 0.1 | model | Wu'barrk: his model, his Editor version |
+| P9 | Release: README truth pass, package, Hexium name check, store upload | half a day | all | Don: the RavenIronStudios store account |
+
+P2, P6 and P7 can start today in parallel; P3–P5 are a chain; P8 is off the 0.1 path. Divide as you like;
+the only hard constraints are the tools each package needs (a server, two clients, the Unity version).
+
+## 1. One possible split (proposal)
 
 | | **Track A — the world side** (Don, Windows, CairnTest) | **Track B — the terminal and the body** (Wu'barrk, Linux, Unity 6000.0.61f1) |
 |---|---|---|
