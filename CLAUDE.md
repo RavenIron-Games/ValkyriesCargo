@@ -21,10 +21,21 @@ and the model: `docs/REVIEW-v5-2026-09-06.md`.
 
 ## Status
 
-**Phase 0 scaffold, 2026-09-06. Builds clean (0 warnings), 27/27 off-game tests. Nothing verified
-in-game yet.** What exists: the plugin entry, ServerSync vendored and armed, the whole config surface
-bound and locked, the `cargo` console, the catalogue parser with 72 data-checked defaults. Nothing
-rolls a visit, flies, walks, trades or persists. See "What to verify in-game".
+**Phase 0 scaffold, 2026-09-06. Builds clean (0 warnings), 27/27 off-game tests, packages
+(`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right layout).** What exists: the plugin entry,
+ServerSync vendored and armed, the whole config surface bound and locked, the `cargo` console, the
+catalogue parser with 72 data-checked defaults. Nothing rolls a visit, flies, walks, trades or persists.
+
+**HEADLESS VERIFIED 2026-09-06 15:23 on CairnTest (dedicated, port 2466, world CairnTest, alongside
+Cairn.dll and RavenEye.dll):** within 20 s of launch the BepInEx log showed, in order,
+`Loading [Valkyrie's Cargo 0.1.0]`, then
+`Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches=10, catalogue=72 entries, ServerSync version gate armed; role is decided when a world loads.`
+(10 = ServerSync's own patches plus our terminal postfix), then
+`Registered 'com.raveniron.valkyriescargo ConfigSync' RPC - waiting for incoming connections`, then
+`Load world: CairnTest`, `role: dedicated server`, `Game server connected`. Stopped by `Stop-Process`
+(a test world; nothing to save). The `ArgumentNullException: Value cannot be null` Unity line at boot
+predates us: it is in the 10:32 VantageTest run with only Cairn and RavenEye loaded. Not yet seen: a
+client boot, the version wall, the config lock, the prefab dumps. See "What to verify in-game".
 
 ---
 
@@ -159,11 +170,11 @@ owner overwrites next frame).
 
 ---
 
-## What to verify in-game (Phase 0; none done yet)
+## What to verify in-game (Phase 0)
 
-1. **Boot line, dedicated server:** copy the DLL into CairnTest's `BepInEx\plugins\`, start it, and the
-   log shows `Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches=1, catalogue=72 entries`, then
-   `role: dedicated server` once the world is up.
+1. ~~**Boot line, dedicated server**~~ **DONE 2026-09-06** (see Status): the DLL sits in CairnTest's
+   `BepInEx\plugins\`; a headless boot shows the loaded line with `patches=10, catalogue=72 entries`,
+   ServerSync's RPC registration, and `role: dedicated server`.
 2. **Boot line, client:** same line with `renderer=True`; `cargo status` answers in the console.
 3. **Version wall:** a client on another version (bump the csproj, rebuild, install on one side only) is
    refused with ServerSync's message naming the mod and both versions.

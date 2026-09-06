@@ -1,0 +1,5 @@
+# Normalise line endings in the repo; check out as the platform prefers.
+* text=auto
+*.png binary
+*.dll binary
+*.zip binary
