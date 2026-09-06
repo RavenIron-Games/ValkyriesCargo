@@ -86,7 +86,14 @@ namespace RavenIron.ValkyriesCargo.Patches
                       (ModConfig.CatalogueProblems.Count > 0 ? " - first: " + ModConfig.CatalogueProblems[0] : ""));
 
             Say(args, "  channels: VisitState=" + Describe(ModConfig.VisitState.Value) +
-                      ", MarketState=" + Describe(ModConfig.MarketState.Value));
+                      ", MarketState=" + Describe(ModConfig.MarketState.Value) +
+                      " -> parsed: visit " + Net.CargoRpc.Visit.Phase + " #" + Net.CargoRpc.Visit.VisitId +
+                      ", market " + Net.CargoRpc.Market.Count + " rows, purse " + Net.CargoRpc.Market.Purse +
+                      (Net.CargoRpc.LastMarketProblems.Count + Net.CargoRpc.LastVisitProblems.Count > 0
+                          ? ", " + (Net.CargoRpc.LastMarketProblems.Count + Net.CargoRpc.LastVisitProblems.Count) + " parse problem(s)" : ""));
+            Say(args, "  transport: " + (Net.CargoRpc.IsDemo ? "DEMO (in-process)" : Net.CargoRpc.Ready ? "server socket" : "none until a world is joined (Phase 6)") +
+                      ", inbox " + Net.CargoRpc.Inbox.Count + " applied deliver" + (Net.CargoRpc.Inbox.Count == 1 ? "y" : "ies") +
+                      ", terminal " + (Client.Terminal.CargoTerminalHost.Instance != null ? "registered" : "not built yet (Track B)"));
 
             if (ZNet.instance == null) { Say(args, "  no world loaded."); return; }
 

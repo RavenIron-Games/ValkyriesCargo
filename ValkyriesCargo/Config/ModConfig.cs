@@ -170,6 +170,11 @@ namespace RavenIron.ValkyriesCargo.Config
             VisitState  = new CustomSyncedValue<string>(Sync, "visit", "");
             MarketState = new CustomSyncedValue<string>(Sync, "market", "");
 
+            // The channels feed the client-side surface the terminal reads (design WORKSPLIT §2).
+            // ServerSync raises ValueChanged on every server write and on the initial sync at login.
+            VisitState.ValueChanged  += () => Net.CargoRpc.PublishVisit(VisitState.Value);
+            MarketState.ValueChanged += () => Net.CargoRpc.PublishMarket(MarketState.Value);
+
             ReparseCatalogue();
             CatalogueLine.SettingChanged += (_, __) => ReparseCatalogue();
         }
