@@ -1,0 +1,9 @@
+{
+    "name": "ValkyriesCargo",
+    "version_number": "0.1.0",
+    "website_url": "https://github.com/RavenIron/ValkyriesCargo",
+    "description": "A Valkyrie drops a wandering merchant at your base when you are rested. Ingvar buys and sells from a live stock at supply-and-demand prices, for five minutes, then vanishes like Odin. Server-authoritative, ServerSync-locked.",
+    "dependencies": [
+        "denikson-BepInExPack_Valheim-5.4.2333"
+    ]
+}

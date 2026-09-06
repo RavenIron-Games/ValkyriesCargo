@@ -1,0 +1,127 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net472</TargetFramework>
+    <AssemblyName>ValkyriesCargo</AssemblyName>
+    <RootNamespace>RavenIron.ValkyriesCargo</RootNamespace>
+    <Version>0.1.0</Version>
+    <LangVersion>latest</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>false</AllowUnsafeBlocks>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <Company>Raven Iron</Company>
+    <Product>Valkyrie's Cargo</Product>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+    <!-- Libs\ServerSync.cs is blaxxun's file with nullable annotations; it compiles clean under
+         these warnings turned down. Our own files carry no nullable syntax. -->
+    <NoWarn>$(NoWarn);CS8632;CS0618</NoWarn>
+  </PropertyGroup>
+
+  <!--
+    Shared libs folder at the repo root, populated by tools\fetch-libs.ps1.
+    Deliberately NOT a hardcoded Steam path: a second checkout lives somewhere else,
+    and a Steam library move would break every clone. libs\ is gitignored.
+  -->
+  <PropertyGroup>
+    <LibsDir>$(MSBuildThisFileDirectory)..\libs</LibsDir>
+  </PropertyGroup>
+
+  <Target Name="CheckLibs" BeforeTargets="BeforeBuild">
+    <Error Condition="!Exists('$(LibsDir)\assembly_valheim_publicized.dll')"
+           Text="libs\ is missing or empty. Run tools\fetch-libs.ps1 to populate it from your Valheim install." />
+  </Target>
+
+  <!--
+    ONE source of truth for the version: the Version property above. BepInPlugin needs a
+    compile-time constant, so the number has to exist in C# as well - and two copies of a
+    number drift. Generating the constant means the two can never disagree. (Cairn's
+    mechanism, carried through RavenEye.)
+  -->
+  <Target Name="GenerateVersionConst" BeforeTargets="BeforeCompile">
+    <PropertyGroup>
+      <VersionConstFile>$(IntermediateOutputPath)BuildVersion.g.cs</VersionConstFile>
+    </PropertyGroup>
+    <WriteLinesToFile
+        File="$(VersionConstFile)"
+        Lines="// Generated from the csproj Version property. Do not edit.%0Anamespace RavenIron.ValkyriesCargo%0A{%0A    internal static class BuildVersion%0A    {%0A        public const string Value = &quot;$(Version)&quot;%3B%0A    }%0A}"
+        Overwrite="true"
+        WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <Compile Include="$(VersionConstFile)" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <!--
+      Include names are the assemblies' real identities: the publicized files still
+      identify as assembly_valheim / assembly_utils.
+
+      PUBLICIZED ASSEMBLIES ARE COMPILE-TIME ONLY (house style rule 5). At runtime the game
+      loads the real assembly with original accessibility. Our own code names no private
+      member; Libs\ServerSync.cs reaches its few by reflection, which is its business.
+    -->
+    <Reference Include="assembly_valheim">
+      <HintPath>$(LibsDir)\assembly_valheim_publicized.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- assembly_utils: SyncedList and string.GetStableHashCode, both used by ServerSync. -->
+    <Reference Include="assembly_utils">
+      <HintPath>$(LibsDir)\assembly_utils_publicized.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <Reference Include="UnityEngine">
+      <HintPath>$(LibsDir)\UnityEngine.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(LibsDir)\UnityEngine.CoreModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- The terminal is IMGUI (design section 3.4); ServerSync's admin UI paths touch TMP and UI. -->
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(LibsDir)\UnityEngine.IMGUIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.TextRenderingModule">
+      <HintPath>$(LibsDir)\UnityEngine.TextRenderingModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.InputLegacyModule">
+      <HintPath>$(LibsDir)\UnityEngine.InputLegacyModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UIModule">
+      <HintPath>$(LibsDir)\UnityEngine.UIModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(LibsDir)\UnityEngine.UI.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>$(LibsDir)\Unity.TextMeshPro.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="UnityEngine.PhysicsModule">
+      <HintPath>$(LibsDir)\UnityEngine.PhysicsModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- Animator lives here (forwarded out of CoreModule); the prefab dump reads its parameters. -->
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(LibsDir)\UnityEngine.AnimationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+
+    <Reference Include="BepInEx">
+      <HintPath>$(LibsDir)\BepInEx.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(LibsDir)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

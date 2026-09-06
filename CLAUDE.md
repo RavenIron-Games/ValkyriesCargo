@@ -1,0 +1,186 @@
+# Valkyrie's Cargo
+
+A Valheim mod by **Raven Iron**. A Valkyrie drops a merchant, Ingvar the Far-Travelled, beside your
+base at a random moment when you are rested and comfortable. He walks up, calls out, buys and sells
+from a live, persistent stock at supply-and-demand prices for five minutes, and vanishes the way Odin
+does. Every player sees the same visit; only the server owns the market.
+
+**Not** on command (the earned summon horn is a later feature), **not** a custom body in 0.1 (the
+Dverger stands in until Thorium's model is rigged), **not** a patch on the vanilla store. The one UI
+it draws is its own trade terminal, opened from our own interact handler.
+
+Sibling of Cairn, Undertow, FireFront, Ragnarok's Wrath and RavenEye, bound by the same house style.
+Three firsts for the family, each a recorded decision: ServerSync, a trade terminal of our own, and
+(later) an asset bundle.
+
+Design of record: `docs/DESIGN.md` (v3). One screen: `docs/TLDR.md`. Catalogue with every number's
+reason: `docs/CATALOGUE.md`. Plan and sibling-code map: `PLAN.md`. Review of the partner's v5 draft
+and the model: `docs/REVIEW-v5-2026-09-06.md`.
+
+---
+
+## Status
+
+**Phase 0 scaffold, 2026-09-06. Builds clean (0 warnings), 27/27 off-game tests. Nothing verified
+in-game yet.** What exists: the plugin entry, ServerSync vendored and armed, the whole config surface
+bound and locked, the `cargo` console, the catalogue parser with 72 data-checked defaults. Nothing
+rolls a visit, flies, walks, trades or persists. See "What to verify in-game".
+
+---
+
+## Commands
+
+```powershell
+.\tools\fetch-libs.ps1     # once per machine: copies game/BepInEx DLLs into libs\
+.\tools\run-tests.ps1      # off-game logic tests (net10) — run before every commit
+.\tools\package.ps1        # Release build + store zip in dist\ (writes manifest version from the csproj)
+dotnet build ValkyriesCargo\ValkyriesCargo.csproj
+```
+
+To inspect a game member — signature, accessibility, or the actual body — decompile it:
+
+```powershell
+$m = "C:\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed"
+ilspycmd -r $m $m\assembly_valheim.dll -t Valkyrie        # the REAL assembly: true accessibility
+```
+
+Read the body; do not infer it from the shape. Do not `head`-truncate a member grep.
+
+To test in-game: copy `ValkyriesCargo\bin\Debug\ValkyriesCargo.dll` into `<install>\BepInEx\plugins\`.
+The owner's client runs through Gale (`%APPDATA%\com.kesomannen.gale\valheim\profiles\<profile>\BepInEx\plugins\`);
+dedicated test servers live under `C:\Users\donfr\ValheimServers\` (CairnTest on port 2466 is the
+minimal one; the runbook is `RagnaroksWrath\docs\HANDOFF.md`). Valheim locks the DLL while running.
+
+Console today: `cargo status | version | prefab <name>`. Planned, admin-gated through the public
+`ZNet.IsAdmin` (RavenEye's `AdminGate` shape): `cargo visit | dismiss | stock | reset`.
+
+---
+
+## Layout
+
+Built:
+
+```
+ValkyriesCargo/
+  ValkyriesCargo.cs          plugin entry: config (creates the ConfigSync), Harmony, tick, boot line
+  Config/ModConfig.cs        Server.* synced+locked, Client.* local, VisitState/MarketState channels
+  Core/CargoTick.cs          the ONLY Update in the mod; role decided at runtime
+  Core/Catalogue.cs          PURE: the catalogue line parser and the 72 defaults
+  Patches/Patch_Terminal.cs  the `cargo` console: status, version, prefab dump
+  Libs/ServerSync.cs         NOT OURS: blaxxun ConfigSync.cs, compiled in as shared source
+tests/CoreTests/             net10 harness; compiles the REAL Core sources against stubs
+tools/                       fetch-libs, run-tests, package
+libs/                        gitignored; populated by fetch-libs.ps1
+docs/                        DESIGN, TLDR, CATALOGUE, REVIEW-v5, data/items table, the partner's drafts
+```
+
+Planned (design section 3; names are final, files do not exist yet):
+
+```
+  Core/Market.cs Core/Scheduler.cs Core/Deal.cs Core/VisitClock.cs Net/CargoPackets.cs   (pure, tested)
+  Server/VisitDirector.cs Server/Spawner.cs Server/MarketStore.cs Net/CargoRpc.cs
+  Client/ComfortReporter.cs Client/CargoFlight.cs Client/CargoMerchant.cs Client/Terminal/*.cs
+  Patches/Patch_RandEventSystem_Awake.cs Patch_Valkyrie_Awake.cs Patch_Humanoid_Awake.cs
+  Patches/Patch_Character_InIntro.cs Patch_Character_Damage.cs
+  Libs/SharedUI/GiltFrameTheme.cs Libs/SharedUI/UIFocus.cs   (Wu'barrk's VikingOS, MIT, not yet received)
+```
+
+---
+
+## House style — inherited (each rule came from a measured failure in a sibling; not re-derived here)
+
+1. **Harmony: prefixes for behaviour at `Priority.Low`, honouring `__runOriginal`; result-decorating
+   postfixes at default priority where appending is the whole point. Never a max- or high-priority
+   replace.** The planned `Patch_Valkyrie_Awake` skips vanilla for our own object only, the narrow
+   named exception RavenEye recorded for `UpdateNoMap`.
+2. **No long-lived coroutines.** `CargoTick` is the one `Update`. Nothing else owns a timer.
+3. **Cosmetics off the gameplay path.** Every patch body is its own try/catch, logging at most three
+   times.
+4. **Never patch `EnvMan`. Never touch materials, textures or shaders.** Reading `EnvMan.IsDay()` is
+   fine; the material work for the custom body happens at build time in the bundle, not at runtime.
+5. **Publicized assemblies are COMPILE-TIME ONLY.** Our files name no private member. Private fields
+   reach patches only by `___injection`; private methods are patched, never called. `Libs/ServerSync.cs`
+   reflects into a few; that is its file.
+
+Three the siblings added later and this mod inherits: **field injection over reflection in patches**
+(`___m_nview`: a renamed field fails at patch time, not silently at call time); **reflection resolution
+in its own method, never in the method that does the work** (Mono resolves field access when the
+CALLER is JIT-compiled, so a try/catch in the same method never runs); **never move what you do not
+own** (only the owner's ZDO writes replicate; setting a ZDO position from elsewhere is a suggestion the
+owner overwrites next frame).
+
+**Debugging discipline.** A silent success and a silent no-op look the same from outside the game.
+`cargo status` names its sources; spend the first round-trip on it, not on a guess.
+
+---
+
+## "Not ours"
+
+- **`Libs/ServerSync.cs`** = blaxxun's `ConfigSync.cs`, master, fetched 2026-09-06 (1415 lines),
+  MIT-0. Compiled into this assembly as shared source, the way every ServerSync mod does it. It patches
+  `ZNet.RPC_PeerInfo` (a buffering socket around the handshake) and reads `ZRoutedRpc.m_peers` and
+  `ZNet.m_adminList` by reflection. Its business; update from upstream, never edit.
+- **`Libs/SharedUI/GiltFrameTheme.cs`, `Libs/SharedUI/UIFocus.cs`** (not yet vendored) = Wu'barrk's
+  VikingOS 0.9.8 shared source, MIT. `UIFocus` carries two Harmony patches (`GameCamera.UpdateMouseCapture`,
+  `Chat.HasFocus`); design section 4 lists them as shared-source patches.
+
+---
+
+## Locked decisions — do not revisit without asking (the full table is `docs/DESIGN.md` section 8)
+
+| Decision | Answer |
+|---|---|
+| Every client runs the mod | ServerSync `ModRequired`, minimum version = current; a mismatch is refused at handshake |
+| Trade UI | A terminal of our own, IMGUI on VikingOS's theme, opened from our `Interactable`; `StoreGui` never patched |
+| Market state | ServerSync custom values + sidecar world save; **never on the merchant's ZDO** (owner writes only replicate) |
+| Deals | Direct peer `ZRpc`, server-validated, nonce ring, the prices the player saw; inventory touched only after the answer |
+| Departure | The Odin vanish (`Odin.m_despawn`), once per screen; 300 s event clock or Shift+E twice |
+| Price-change policy | Reconfirm (provisional; `Teardown` behind config) |
+| 0.1 body | `Dverger`, tamed, following, immortal |
+| Console prefix / GUID / namespace | `cargo` / `com.raveniron.valkyriescargo` / `RavenIron.ValkyriesCargo` |
+
+---
+
+## Engine facts the code relies on today (bodies read 2026-09-06; the full list is `docs/DESIGN.md` section 0 and 3)
+
+- The installed Valheim runs on **Unity 6000.0.61f1** (`UnityPlayer.dll`); bundles must be built with that Editor.
+- **ServerSync broadcasts on change only.** No heartbeat. Client writes are rejected while locked unless
+  the client is on `adminlist.txt`. Payloads under 10 000 bytes go uncompressed.
+- **Comfort never leaves the client** (`SE_Rested.CalculateComfortLevel` is local); the client will
+  write `vc_rested` / `vc_comfort` on its own character ZDO, which replicates because the client owns it.
+- **Objects are instantiated on a client only inside its active zone block**
+  (`ZNetScene.InActiveArea`: `|zone − centre| ≤ m_activeArea − 1`, 64 m zones); outside it
+  `RemoveObjects` destroys the instance and a non-persistent owned ZDO with it. The Valkyrie starts
+  ~90 m out, never 500.
+- **`ZRoutedRpc.instance` is null for the whole of plugin `Awake`** and is re-created on every world
+  join; register routed handlers per session, direct `ZRpc` handlers on peer connect.
+- `EnvMan.IsDay()` is static. `Character.m_collider` is a `CapsuleCollider`. `Odin.m_despawn` and
+  `Odin.m_ttl` (300 s) are public.
+
+---
+
+## What to verify in-game (Phase 0; none done yet)
+
+1. **Boot line, dedicated server:** copy the DLL into CairnTest's `BepInEx\plugins\`, start it, and the
+   log shows `Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches=1, catalogue=72 entries`, then
+   `role: dedicated server` once the world is up.
+2. **Boot line, client:** same line with `renderer=True`; `cargo status` answers in the console.
+3. **Version wall:** a client on another version (bump the csproj, rebuild, install on one side only) is
+   refused with ServerSync's message naming the mod and both versions.
+4. **Locked config:** a client edits `MinComfortLevel` locally while connected; `cargo status` still shows
+   the server's value and `following the server`.
+5. **`cargo prefab Valkyrie`, `cargo prefab Dverger`, `cargo prefab odin`, `cargo prefab Haldor`:** paste
+   the dumps below this list. They decide the effect rule branches, the Valkyrie registration question,
+   the Dverger's `NpcTalk`/`Tameable`/animator parameters, and whether `m_attachPoint` exists.
+6. **`cargo status` numbers:** the runtime `ZoneSystem.m_activeArea` (the clamp depends on it) and whether
+   `valkyries_cargo` is registered (it is not until Phase 3).
+
+---
+
+## Working agreement
+
+- **Run `.\tools\run-tests.ps1` before every commit.**
+- **Prove a new test fails without its fix.**
+- **A clean build proves nothing about member access.** Anything reaching a game member needs one
+  in-game run before it is called done.
+- **Ask before changing anything in the locked-decisions table.**
