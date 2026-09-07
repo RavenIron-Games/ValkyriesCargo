@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using HarmonyLib;
+using RavenIron.ValkyriesCargo.Client;
 using RavenIron.ValkyriesCargo.Config;
 using RavenIron.ValkyriesCargo.Core;
+using RavenIron.ValkyriesCargo.Net;
+using RavenIron.ValkyriesCargo.Server;
 using UnityEngine;
 
 namespace RavenIron.ValkyriesCargo.Patches
@@ -16,7 +19,10 @@ namespace RavenIron.ValkyriesCargo.Patches
     ///
     /// The instrument this build cannot do without. "Measure before you push": `status`
     /// states in words what the mod knows, `prefab` dumps what the game holds, and both exist
-    /// before a single coin moves.
+    /// before a single coin moves. The admin verbs (`visit`, `dismiss`) run where the world runs:
+    /// on a server or listen host directly, from a client through AdminRpc, where the SERVER's
+    /// admin list decides (design 3.1). Console commands are not config: LockConfiguration does
+    /// not touch them.
     /// </summary>
     [HarmonyPatch(typeof(Terminal), "InitTerminal")]
     public static class Patch_Terminal_Cargo
@@ -26,7 +32,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             try
             {
                 new Terminal.ConsoleCommand("cargo",
-                    "Valkyrie's Cargo: status | version | prefab <name>", Run);
+                    "Valkyrie's Cargo: status | version | prefab <name> | visit [player] | dismiss", Run);
             }
             catch (Exception ex)
             {
@@ -44,6 +50,8 @@ namespace RavenIron.ValkyriesCargo.Patches
                     case "status":  Status(args); return;
                     case "version": Version(args); return;
                     case "prefab":  Prefab(args); return;
+                    case "visit":   Admin(args, "visit", args.Args.Length > 2 ? args.Args[2] : ""); return;
+                    case "dismiss": Admin(args, "dismiss", ""); return;
                     default:        Help(args); return;
                 }
             }
@@ -56,15 +64,33 @@ namespace RavenIron.ValkyriesCargo.Patches
 
         private static void Help(Terminal.ConsoleEventArgs args)
         {
-            Say(args, "cargo status         - role, config authority, catalogue, the engine numbers the design depends on");
-            Say(args, "cargo version        - this build and the ServerSync gate");
-            Say(args, "cargo prefab <name>  - components, children and effect lists of a game prefab (Valkyrie, Dverger, odin, Haldor)");
+            Say(args, "cargo status          - role, config authority, catalogue, the director, the engine numbers the design depends on");
+            Say(args, "cargo version         - this build and the ServerSync gate");
+            Say(args, "cargo prefab <name>   - components, children and effect lists of a game prefab (Valkyrie, Dverger, odin, Haldor)");
+            Say(args, "cargo visit [player]  - ADMIN: force a visit for yourself (or the named player), cooldowns ignored, the other gates kept");
+            Say(args, "cargo dismiss         - ADMIN: end the running visit now");
         }
 
         private static void Version(Terminal.ConsoleEventArgs args)
         {
             Say(args, ValkyriesCargo.PluginName + " v" + ValkyriesCargo.PluginVersion +
                       " - every client must run exactly this version (ServerSync ModRequired, minimum = current).");
+        }
+
+        /// <summary>An admin verb: run it here if the world runs here, else ask the server and let its answer print when it comes.</summary>
+        private static void Admin(Terminal.ConsoleEventArgs args, string verb, string arg)
+        {
+            ZNet znet = ZNet.instance;
+            if (znet == null) { Say(args, "cargo: no world loaded."); return; }
+            if (znet.IsServer())
+            {
+                Player local = Player.m_localPlayer;
+                long uid = local != null ? ZNet.GetUID() : 0;
+                string name = local != null ? local.GetPlayerName() : "";
+                Say(args, CargoTick.Admin(verb, arg, uid, name));
+                return;
+            }
+            Say(args, AdminRpc.Send(verb, arg));
         }
 
         private static void Status(Terminal.ConsoleEventArgs args)
@@ -78,7 +104,8 @@ namespace RavenIron.ValkyriesCargo.Patches
                       ", Enabled=" + ModConfig.Enabled.Value +
                       ", roll every " + F(ModConfig.EventCheckIntervalMinutes.Value, "0.#") + " min at " +
                       F(ModConfig.EventChancePercent.Value, "0.#") + "%, rested=" + ModConfig.RequireRested.Value +
-                      ", comfort>=" + ModConfig.MinComfortLevel.Value + ", baseValue>=" + ModConfig.MinBaseValue.Value);
+                      ", comfort>=" + ModConfig.MinComfortLevel.Value + ", baseValue>=" + ModConfig.MinBaseValue.Value +
+                      ", daytimeOnly=" + ModConfig.DaytimeOnly.Value + ", lifespan " + F(ModConfig.MerchantLifespanSeconds.Value, "0") + " s");
 
             Catalogue cat = ModConfig.CatalogueParsed;
             Say(args, "  catalogue: " + cat.Count + " entries (" + cat.CountOf(EntryKind.Ware) + " wares, " +
@@ -87,13 +114,14 @@ namespace RavenIron.ValkyriesCargo.Patches
 
             Say(args, "  channels: VisitState=" + Describe(ModConfig.VisitState.Value) +
                       ", MarketState=" + Describe(ModConfig.MarketState.Value) +
-                      " -> parsed: visit " + Net.CargoRpc.Visit.Phase + " #" + Net.CargoRpc.Visit.VisitId +
-                      ", market " + Net.CargoRpc.Market.Count + " rows, purse " + Net.CargoRpc.Market.Purse +
-                      (Net.CargoRpc.LastMarketProblems.Count + Net.CargoRpc.LastVisitProblems.Count > 0
-                          ? ", " + (Net.CargoRpc.LastMarketProblems.Count + Net.CargoRpc.LastVisitProblems.Count) + " parse problem(s)" : ""));
-            Say(args, "  transport: " + (Net.CargoRpc.IsDemo ? "DEMO (in-process)" : Net.CargoRpc.Ready ? "server socket" : "none until a world is joined (Phase 6)") +
-                      ", inbox " + Net.CargoRpc.Inbox.Count + " applied deliver" + (Net.CargoRpc.Inbox.Count == 1 ? "y" : "ies") +
-                      ", terminal " + (Client.Terminal.CargoTerminalHost.Instance != null ? "registered" : "not built yet (Track B)"));
+                      " -> parsed: visit " + CargoRpc.Visit.Phase + " #" + CargoRpc.Visit.VisitId +
+                      ", market " + CargoRpc.Market.Count + " rows, purse " + CargoRpc.Market.Purse +
+                      (CargoRpc.LastMarketProblems.Count + CargoRpc.LastVisitProblems.Count > 0
+                          ? ", " + (CargoRpc.LastMarketProblems.Count + CargoRpc.LastVisitProblems.Count) + " parse problem(s)" : ""));
+            Say(args, "  transport: " + (CargoRpc.IsDemo ? "DEMO (in-process)" : CargoRpc.Ready ? "server socket" : "none until the deal wire (P6)") +
+                      ", inbox " + CargoRpc.Inbox.Count + " applied deliver" + (CargoRpc.Inbox.Count == 1 ? "y" : "ies") +
+                      ", terminal " + (Client.Terminal.CargoTerminalHost.Instance != null ? "registered" : "not built yet (Track B)") +
+                      ", routed RPCs " + (AdminRpc.Registered ? "registered" : "not registered"));
 
             if (ZNet.instance == null) { Say(args, "  no world loaded."); return; }
 
@@ -110,9 +138,9 @@ namespace RavenIron.ValkyriesCargo.Patches
             if (res != null)
             {
                 RandomEvent ev = res.GetCurrentRandomEvent();
-                Say(args, "  random event: " + (ev != null ? ev.m_name + " (" + F(ev.m_time, "0") + " s in)" : "none") +
+                Say(args, "  random event: " + (ev != null ? ev.m_name + " (" + F(ev.m_time, "0") + " of " + F(ev.m_duration, "0") + " s)" : "none") +
                           "; " + res.m_events.Count + " events registered, ours=" +
-                          (res.HaveEvent("valkyries_cargo") ? "yes" : "not yet (Phase 3)"));
+                          (CargoEvent.IsRegistered(res) ? "yes ('" + CargoEvent.Name + "')" : "NO"));
             }
 
             Say(args, "  time: world " + F((float)ZNet.instance.GetTimeSeconds(), "0") + " s, " +
@@ -120,6 +148,40 @@ namespace RavenIron.ValkyriesCargo.Patches
                           ? (EnvMan.IsDay() ? "day" : "night") + ", day length " + EnvMan.instance.m_dayLengthSec +
                             " s (EnvMan.m_dayLengthSec, public; the drift half-life counts these; compiled default 1200, scene expected 1800)"
                           : "no EnvMan"));
+
+            // Where a player is drawn: what this client reports about itself.
+            ComfortReporter rep = CargoTick.Reporter;
+            if (ValkyriesCargo.HasRenderer && rep != null)
+            {
+                Say(args, "  my report: " + (rep.Reported
+                    ? "rested=" + (rep.LastRested ? "yes" : "no") + ", comfort=" + rep.LastComfort + ", written " + F(rep.SecondsSinceWrite, "0.#") +
+                      " s ago (" + rep.Writes + " writes to my character ZDO as vc_rested/vc_comfort)"
+                    : "nothing written yet (no local player, or not its owner)"));
+            }
+
+            // Where the world runs: the director.
+            VisitDirector d = CargoTick.Director;
+            if (d != null)
+            {
+                double now = Time.time;
+                double world = ZNet.instance.GetTimeSeconds();
+                Say(args, "  director: salt " + d.Market.Salt + ", day " + F((float)d.Market.Rules.SecondsPerGameDay, "0") + " s (" +
+                          (d.DayLengthFromEngine ? "engine" : "ASSUMED") + "), next roll in " + F((float)Math.Max(0, d.Scheduler.NextRollAt - now), "0") +
+                          " s; last roll: " + d.Scheduler.LastDecision + (d.Problems.Length > 0 ? "; problems: " + d.Problems : ""));
+                VisitSession s = d.Session;
+                Say(args, "  visit: " + (s.Active
+                    ? "#" + s.VisitId + " " + s.Phase + ", pilot " + s.PilotName + " (uid " + Wire.Long(s.PilotUid) + "), " + s.Clock.FormatRemaining(world) +
+                      " left" + (s.Clock.Warned ? ", one-minute warning given" : "") + ", " + s.Republishes + " clock republish(es)"
+                    : "none" + (s.LastVisitId > 0 ? "; last #" + s.LastVisitId + " ended: " + s.LastEndReason + ", takings " + d.LastTakings + " coins" : "")) +
+                    "; purse " + d.Market.Purse + ", visit ids next " + d.Market.NextVisitId + " (not persisted until P6)");
+                IReadOnlyList<Candidate> cs = d.Candidates;
+                Say(args, "  candidates (" + cs.Count + "): " + (cs.Count == 0 ? "nobody online" : ""));
+                for (int i = 0; i < cs.Count && i < 12; i++) Say(args, "    " + d.Describe(cs[i], now));
+            }
+            else if (ZNet.instance.IsServer())
+            {
+                Say(args, "  director: not created yet (waiting for the event system and the scene)");
+            }
         }
 
         /// <summary>

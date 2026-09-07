@@ -49,6 +49,29 @@ against DESIGN and CATALOGUE by an Opus reviewer; its blockers are fixed and the
 calls any of it yet. `cargo status` now prints `EnvMan.m_dayLengthSec`, the day the drift counts: its
 compiled default is 1200, the scene is expected to say 1800, and that is UNVERIFIED until a client boots.
 
+**P3 eligibility and event, 2026-09-06 (branch `a/p3-eligibility-event`).** `Client/ComfortReporter.cs` writes
+`vc_rested`/`vc_comfort` on the local player's own ZDO every 2 s; `Server/CargoEvent.cs` + the
+`RandEventSystem.Awake` prefix register the vanilla event `valkyries_cargo` on every machine;
+`Server/VisitDirector.cs` (one tick a second where the world runs) reads every character ZDO into the pure
+`Scheduler`, starts the event for the pilot it picks, publishes `VisitState`/`MarketState`, mirrors the
+event's clock through `Core/VisitSession.cs` (retarget rule, design 3.7) and ends the visit when the engine
+ends the event; `Net/AdminRpc.cs` carries `cargo visit [player]` and `cargo dismiss` from a client to the
+server, where `Server/AdminGate.cs` (vanilla's `ZNet.IsAdmin`, fail closed) decides. 769 off-game checks.
+
+**HEADLESS VERIFIED 2026-09-06 18:55 on StormTest (dedicated, port 2476, the full Ravenrest modpack clone,
+117 plugins)**, in order in `BepInEx\LogOutput.log`:
+`Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches=13, catalogue=72 entries, ServerSync version gate armed; role is decided when a world loads.`
+(13 = ServerSync's 10, UIFocus's 2, our RandEventSystem.Awake prefix), then
+`event 'valkyries_cargo' registered (20 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.`,
+then `role: dedicated server`, `routed RPCs registered for this session: vc_admin, vc_reply`, then
+`director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 800, roll every 60 s at 25%, first roll one interval from now; market state is NOT persisted yet (P6)`
+(**the scene's day length IS 1800 s**: read from the live EnvMan, so the drift half-life is right), then one
+interval later `roll: held: a random event is active (a raid, a storm, or a visit)` (Ragnarok's Wrath had a storm
+running: the hold works against a real foreign event). No exception from us in the log. The roll reasons print
+only on change, so a quiet log after that line is the loop holding, not the loop dead. Not yet seen: a player's
+report in `cargo status`, a forced visit, the banner, the timer ending a visit; all need a client (see "What to
+verify in-game"). CairnTest was in use by the owner for another mod at the time and was not touched.
+
 ---
 
 ## Commands
@@ -74,8 +97,10 @@ The owner's client runs through Gale (`%APPDATA%\com.kesomannen.gale\valheim\pro
 dedicated test servers live under `C:\Users\donfr\ValheimServers\` (CairnTest on port 2466 is the
 minimal one; the runbook is `RagnaroksWrath\docs\HANDOFF.md`). Valheim locks the DLL while running.
 
-Console today: `cargo status | version | prefab <name>`. Planned, admin-gated through the public
-`ZNet.IsAdmin` (RavenEye's `AdminGate` shape): `cargo visit | dismiss | stock | reset`.
+Console today: `cargo status | version | prefab <name> | visit [player] | dismiss`. `visit` and `dismiss` are
+admin verbs: on a server or listen host they run in place; from a client they ride `vc_admin` to the server,
+where the public `ZNet.IsAdmin` (RavenEye's `AdminGate` shape, fail closed) decides and `vc_reply` prints the
+answer in the caller's console. Planned: `cargo stock | reset`.
 
 ---
 
@@ -94,6 +119,14 @@ ValkyriesCargo/
   Core/Scheduler.cs          PURE: eligibility, the roll, tickets, cooldowns and their rows
   Core/VisitClock.cs         PURE: the countdown mirror (world seconds; the server retargets it)
   Core/DemoMarket.cs         PURE: the real Market behind `cargo terminal demo`, plus Tick and Advance
+  Core/VisitSession.cs       PURE: the server's visit record; the clock-mirror retarget rule (design 3.7)
+  Core/Lines.cs              PURE: Ingvar's words (design 7); indexes cross the wire, never text
+  Server/VisitDirector.cs    where the world runs: gather ZDOs -> Scheduler -> event -> VisitState/MarketState
+  Server/CargoEvent.cs       the vanilla RandomEvent `valkyries_cargo`: definition, registration, start, remaining
+  Server/AdminGate.cs        vanilla's ZNet.IsAdmin(hostName), fail closed (RavenEye's shape)
+  Client/ComfortReporter.cs  vc_rested / vc_comfort on the local player's own ZDO, every 2 s
+  Net/AdminRpc.cs            vc_admin (client -> server) and vc_reply (server -> client) on the routed RPC
+  Patches/Patch_RandEventSystem_Awake.cs   prefix, Priority.Low, return true: registers the event
   Net/CargoRpc.cs            the client-side surface the terminal calls; the demo transport (PR #1)
   Client/Terminal/ICargoTerminal.cs   what the merchant calls; Track B implements it (PR #1)
   Patches/Patch_Terminal.cs  the `cargo` console: status, version, prefab dump
@@ -107,9 +140,9 @@ docs/                        DESIGN, TLDR, CATALOGUE, REVIEW-v5, data/items tabl
 Planned (design section 3; names are final, files do not exist yet):
 
 ```
-  Server/VisitDirector.cs Server/Spawner.cs Server/MarketStore.cs Net/CargoTransport.cs (the real ICargoTransport)
-  Client/ComfortReporter.cs Client/CargoFlight.cs Client/CargoMerchant.cs Client/Terminal/*.cs
-  Patches/Patch_RandEventSystem_Awake.cs Patch_Valkyrie_Awake.cs Patch_Humanoid_Awake.cs
+  Server/Spawner.cs Server/MarketStore.cs Net/CargoTransport.cs (the real ICargoTransport)
+  Client/CargoFlight.cs Client/CargoMerchant.cs Client/Terminal/*.cs
+  Patches/Patch_Valkyrie_Awake.cs Patch_Humanoid_Awake.cs
   Patches/Patch_Character_InIntro.cs Patch_Character_Damage.cs
   Libs/SharedUI/GiltFrameTheme.cs Libs/SharedUI/UIFocus.cs   (Wu'barrk's VikingOS, MIT, not yet received)
 ```
@@ -185,6 +218,20 @@ owner overwrites next frame).
   join; register routed handlers per session, direct `ZRpc` handlers on peer connect.
 - `EnvMan.IsDay()` is static. `Character.m_collider` is a `CapsuleCollider`. `Odin.m_despawn` and
   `Odin.m_ttl` (300 s) are public.
+- **The game day is 1800 s** (`EnvMan.instance.m_dayLengthSec`, public, read live on StormTest 2026-09-06;
+  the COMPILED default is 1200, the scene overrides it). The market's drift counts this number, never a constant.
+- **The vanilla random event**: `RandEventSystem.SetRandomEvent` is private; `SetRandomEventByName`,
+  `ResetRandomEvent`, `GetCurrentRandomEvent`, `HaveEvent` and `m_events` are public. The server's
+  `FixedUpdate` advances `m_time` only while a player is within `m_eventRange` (96 m) of `m_pos` and
+  ends the event when `m_time > m_duration`; every 2 s it broadcasts name, time and position, and a client
+  resolves the name from ITS OWN `m_events`, which is why the event is registered on every machine. A
+  client inside the range makes it the active event and shows `m_startMessage` once. `m_random = false`
+  keeps it out of the random pool. `m_cameraShakeCurve` must be EMPTY: with keys, `Update` calls
+  `GameCamera.instance.AddShake`, null on a dedicated server.
+- `Player.m_comfortLevel` is private and computed locally every 2 s (`SE_Rested.CalculateComfortLevel`);
+  `Player.GetComfortLevel()` is public. `Player.GetPlayerName()`, `Character.GetSEMan()`,
+  `SEMan.HaveStatusEffect(int)`, `SEMan.s_statusEffectRested` are public. A character ZDO carries
+  `playerName`, `baseValue` and `dead` (`ZDOVars`); its owner is the peer's uid.
 
 ---
 
@@ -201,8 +248,23 @@ owner overwrites next frame).
 5. **`cargo prefab Valkyrie`, `cargo prefab Dverger`, `cargo prefab odin`, `cargo prefab Haldor`:** paste
    the dumps below this list. They decide the effect rule branches, the Valkyrie registration question,
    the Dverger's `NpcTalk`/`Tameable`/animator parameters, and whether `m_attachPoint` exists.
-6. **`cargo status` numbers:** the runtime `ZoneSystem.m_activeArea` (the clamp depends on it) and whether
-   `valkyries_cargo` is registered (it is not until Phase 3).
+6. **`cargo status` numbers:** the runtime `ZoneSystem.m_activeArea` (the clamp depends on it); `valkyries_cargo`
+   is registered (StormTest log: 20 events) but a client-side `cargo status` has not yet said so.
+
+P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormTest):
+7. **The report:** `cargo status` on the client shows `my report: rested=..., comfort=..., written N s ago`; the
+   SAME numbers appear in the server's `candidates:` line (a listen host shows both at once).
+8. **`cargo visit`** from the client: the console prints `asked the server`, then the server's answer
+   (`cargo visit <name>: forced visit: <name> at (x, z); ...`); the server log shows `visit #1 begins`; the pilot
+   sees "Wings beat in the upper skies..." and, once inside 96 m of where they stood, the centre banner
+   "Valkyrie's Cargo has landed"; `cargo status` shows `visit: #1 Flying, pilot <name>, 04:5x left`.
+9. **The clock:** walk more than 96 m away for a minute, come back: the countdown resumed where it paused and
+   the server log counted a clock republish; sleep through a night mid-visit: the countdown did not jump.
+10. **The end:** after 300 s the server log shows `visit #1 ended: timer; takings 0 coins`, the banner
+    "Ingvar has gone back to the mist" shows, `cargo status` shows `visit: none; last #1 ended: timer`.
+11. **`cargo dismiss`** ends it early with `ended: admin <name>`; a non-admin's `cargo visit` is answered
+    `not an admin` and the server log says `refused vc_admin visit from <name>`.
+12. **The gates:** a client that is not rested is refused `forced: <name> not eligible: not rested; online: ...`.
 
 ---
 

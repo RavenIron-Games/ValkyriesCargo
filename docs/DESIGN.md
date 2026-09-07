@@ -358,6 +358,8 @@ audio; it is not the summon horn.
 | `vc_say` | server → all in range | routed, object-targeted | line index | cosmetic |
 | `vc_vanish` | server → all in range | routed, object-targeted | none | cosmetic + owner effect |
 | `SetEvent` | server → all | vanilla routed | name, time, pos | vanilla |
+| `vc_admin` | client → server | routed | verb, arg (`visit <name>`, `dismiss`) | the SERVER checks `ZNet.IsAdmin(hostName)`, fail closed; the request is never trusted |
+| `vc_reply` | server → client | routed | answer text | cosmetic (printed in the caller's console) |
 | config | server → all | ServerSync | entries | locked; admins exempt |
 
 Every payload starts with a format version; RPC names stay stable (a mismatch is a log line naming the side to update).
@@ -505,11 +507,11 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Deal pricing | The whole quantity at the price on screen when confirmed; stock moves after. A bulk deal beats a drip-feed, bounded by his purse and his stock | proposed (review 2026-09-06) |
 | Visit and delivery ids | Visit ids monotonic and persisted; `deliveryId = salt-visit-seq`, the world's salt (`demo` for the demo), seq persisted | proposed (review 2026-09-06) |
 | Cooldown persistence | Saved as remaining seconds, rebased at load | proposed (review 2026-09-06) |
-| Day length | `EnvMan.instance.m_dayLengthSec` read at boot and printed by `cargo status`; 1800 assumed only without an EnvMan | proposed (review 2026-09-06) |
+| Day length | `EnvMan.instance.m_dayLengthSec` read when the director starts and printed by `cargo status`; 1800 assumed only without an EnvMan | **verified 1800 s on StormTest 2026-09-06** |
 | Forced visits | `cargo visit` ignores cooldowns, keeps every other gate | proposed (review 2026-09-06) |
 | Build | net472, `libs\` via fetch-libs, `ILRepack.targets`, `AllowUnsafeBlocks` false; Unity project as a sibling directory; Editor 6000.0.61f1 for bundles | proposed |
 | Where bundles get built | open: install 6000.0.61f1 here, or Wu'barrk's Linux box | open |
-| Console prefix | `cargo` — `status`, `prefab <name>`; admin: `visit`, `dismiss`, `stock`, `reset` | proposed |
+| Console prefix | `cargo` — `status`, `version`, `prefab <name>`; admin: `visit [player]`, `dismiss` (built, P3), `stock`, `reset` (planned). From a client the admin verbs ride `vc_admin`; a dedicated console names the player | built (P3) |
 | Dependencies | BepInExPack only | locked |
 
 ---

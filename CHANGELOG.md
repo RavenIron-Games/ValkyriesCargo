@@ -27,6 +27,14 @@
   `Core\VisitClock` (a retargetable countdown mirror); `DemoMarket` is the real Market with a
   price-driven `Tick`. 714 off-game checks, mutation-proven. `cargo status` prints the EnvMan day
   length. Docs corrected from the review: CATALOGUE section 5, DESIGN sections 3.1/3.4/3.5/3.7/8.
+- P3, eligibility and the event: the client writes `vc_rested`/`vc_comfort` on its own character ZDO every
+  2 s; the vanilla event `valkyries_cargo` is registered on every machine (`RandEventSystem.Awake` prefix);
+  the server's director reads every character ZDO into the pure Scheduler once a second, starts the event
+  for the pilot it picks, publishes VisitState and MarketState, mirrors the event's clock (design 3.7) and
+  ends the visit when the engine ends the event; `cargo visit [player]` and `cargo dismiss`, admin-gated on
+  the server by vanilla's own list, ride a routed RPC from a client. `cargo status` shows the report, the
+  director, the visit and every candidate. Headless-verified on StormTest: 13 patches, the event registered,
+  the day length read from the engine (1800 s), the first roll held by a live storm. 769 off-game checks.
 
-Not yet built: the flight, the merchant, the terminal, the persistence layer, the deal wire, the
-admin commands; nothing on the game side calls the market core yet. See `docs\DESIGN.md` section 9 for the order.
+Not yet built: the flight, the merchant, the terminal, the persistence layer (a restart forgets stock,
+purse, cooldowns and visit numbers), the deal wire, `cargo stock | reset`. Nothing has been seen from a client yet. See `docs\DESIGN.md` section 9 for the order.

@@ -47,6 +47,7 @@ namespace ValkyriesCargo.Tests
             DemoMarketTests();
             DemoMarketKnobTests();
             MarketReviewFixTests();
+            VisitSessionTests();
             CargoRpcTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
@@ -1975,6 +1976,97 @@ namespace ValkyriesCargo.Tests
             Equal(1.0, Market.MultiplierFor(20, 20, MarketRules.Default), "at target the multiplier is exactly 1");
             Equal(3.0, Market.MultiplierFor(600, 0, MarketRules.Default), "an empty high-target shelf hits the 3x ceiling");
             Equal(0.4, Market.MultiplierFor(2, 600, MarketRules.Default), "a flooded low-target shelf hits the 0.4 floor");
+        }
+
+        private static void VisitSessionTests()
+        {
+            Section("VisitSession (the server's visit record and the clock mirror)");
+
+            VisitSession s = new VisitSession();
+            Check(!s.Active, "a new session is not active");
+            Equal("", s.Encode(), "and encodes as the empty channel, which parses as no visit");
+            Check(s.Sync(100, 300) == null, "Sync on an inactive session does nothing");
+            Check(s.SetPhase(VisitPhase.Trading) == null, "and so does SetPhase");
+            Equal("", s.End("nothing"), "End on an inactive session stays empty");
+            Equal("", s.LastEndReason, "and records no reason, because nothing ended");
+
+            // Begin publishes a Flying visit with the pilot, the drop point, the clock and the seed.
+            string state = s.Begin(7, 4242L, "Don", 10f, 30f, -20f, 1000.0, 300f, 800, 99);
+            Check(s.Active && s.Phase == VisitPhase.Flying, "Begin makes the session active, in the Flying phase");
+            var problems = new List<string>();
+            VisitSnapshot v = VisitSnapshot.Parse(state, problems);
+            Equal(0, problems.Count, "what Begin returns parses cleanly as a VisitSnapshot");
+            Equal(7, v.VisitId, "with the visit id");
+            Equal(VisitPhase.Flying, v.Phase, "the phase");
+            Equal(4242L, v.PilotUid, "the pilot");
+            Check(v.DropX == 10f && v.DropY == 30f && v.DropZ == -20f, "where the pilot stood, as the drop point until the flight refines it");
+            Equal(1300.0, v.EndWorldTime, "the deadline one lifespan after the start");
+            Equal(800, v.Purse, "the purse he arrives with");
+            Equal(99, v.Seed, "and the seed every client derives his lines from");
+            Equal("Don", s.PilotName, "the pilot's name is kept for the log, not sent");
+            Equal(1300.0, s.PublishedEnd, "the published deadline is the clock's");
+            Equal(7, s.LastVisitId, "LastVisitId follows Begin");
+
+            // Sync: the event runs in real seconds; while world time keeps pace nothing is republished.
+            Check(s.Sync(1001.0, 299.0) == null, "one second in, 299 s left: the deadline matches, nothing to send");
+            Check(s.Sync(1010.0, 290.4) == null, "a drift of 0.4 s is within the threshold");
+            Check(s.Sync(1010.0, 291.0) == null, "so is exactly 1 s");
+            Equal(0, s.Republishes, "no republish yet");
+
+            // The event paused with nobody near: world time runs, the event's remainder does not.
+            string re = s.Sync(1020.0, 290.0);
+            Check(re != null, "a drift of 10 s republishes");
+            Equal(1, s.Republishes, "counted");
+            Equal(1310.0, VisitSnapshot.Parse(re, null).EndWorldTime, "the new deadline is now + remaining");
+            Equal(1310.0, s.Clock.EndWorldTime, "and the clock was retargeted to it");
+            Equal(1310.0, s.PublishedEnd, "and remembered as published");
+            Check(s.Sync(1021.0, 289.0) == null, "back in step: nothing more to send");
+
+            // A sleep skip: world time jumps hours ahead; the event's remainder is unchanged.
+            string skip = s.Sync(9000.0, 289.0);
+            Check(skip != null, "a world-clock jump republishes");
+            Equal(9289.0, s.Clock.EndWorldTime, "with the deadline rebased onto the new world time");
+            Equal(289.0, s.Clock.Remaining(9000.0), "so the countdown still reads the event's remaining seconds");
+
+            // The warning is not re-armed by retargeting.
+            Check(s.Clock.OneMinuteWarningDue(9229.0), "warned at 60 s left");
+            Check(s.Sync(9229.0, 70.0) != null, "an extension republishes");
+            Check(!s.Clock.OneMinuteWarningDue(9240.0), "but the warning stays given");
+
+            // Bad remainders are ignored, never NaN into the channel.
+            Check(s.Sync(9230.0, double.NaN) == null, "a NaN remainder is ignored");
+            Check(s.Sync(9230.0, double.PositiveInfinity) == null, "and so is an infinite one");
+            string neg = s.Sync(9230.0, -50.0);
+            Check(neg != null && VisitSnapshot.Parse(neg, null).EndWorldTime == 9230.0, "a negative remainder means the deadline is now");
+
+            // Phases and the drop point.
+            Check(s.SetPhase(VisitPhase.Flying) == null, "the same phase again is not a change");
+            Check(s.SetPhase(VisitPhase.None) == null, "None is not a phase to set; End does that");
+            string dropped = s.SetPhase(VisitPhase.Dropped);
+            Equal(VisitPhase.Dropped, VisitSnapshot.Parse(dropped, null).Phase, "a new phase is published");
+            string drop = s.SetDrop(1f, 2f, 3f);
+            VisitSnapshot vd = VisitSnapshot.Parse(drop, null);
+            Check(vd.DropX == 1f && vd.DropY == 2f && vd.DropZ == 3f, "the refined drop point is published");
+            Equal(VisitPhase.Dropped, vd.Phase, "with the phase unchanged");
+
+            // End.
+            Equal("", s.End("timer"), "End publishes the empty channel");
+            Check(!s.Active, "and the session is inactive");
+            Equal("timer", s.LastEndReason, "with the reason kept for cargo status");
+            Equal(7, s.LastVisitId, "and the id of the visit that ended");
+            Check(s.Sync(9300.0, 10.0) == null && s.SetDrop(0f, 0f, 0f) == null, "nothing publishes after the end");
+            s.Begin(8, 1L, "", 0f, 0f, 0f, 0.0, 300f, -5, 0);
+            Equal(0, s.Purse, "a nonsense negative purse is floored at 0");
+            Equal("", s.PilotName, "a null or empty name stays empty");
+            Equal(0, s.Republishes, "the republish count restarts with the visit");
+            Equal("", s.LastEndReason, "and the old end reason is cleared");
+            s.End(null);
+            Equal("ended", s.LastEndReason, "a missing reason reads 'ended'");
+
+            // Lines: every seed picks an arrival line, the same on every client.
+            Check(Lines.ArrivalFor(0) == Lines.Arrival[0] && Lines.ArrivalFor(5) == Lines.Arrival[1], "the seed indexes the arrival lines");
+            Check(Lines.ArrivalFor(-3) == Lines.Arrival[1], "a negative seed still lands inside the table");
+            Check(Lines.ArrivalFor(int.MinValue).Length > 0, "even int.MinValue");
         }
 
         private static void CargoRpcTests()

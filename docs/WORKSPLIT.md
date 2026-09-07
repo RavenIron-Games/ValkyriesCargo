@@ -10,8 +10,8 @@
 | # | Package | Size | Needs first | Natural pull |
 |---|---|---|---|---|
 | P1 | Contract files + demo (`Core/`, `Net/CargoRpc`) | done, PR #1 | — | — |
-| P2 | Market core: pricing, drift, purse, scheduler, visit clock, packet encoders; tests | 1–2 days | P1 | anyone; pure C#, no game |
-| P3 | Comfort report + event registration + `cargo visit`; headless proof | 1 day | P2 | needs a dedicated server (Don has CairnTest) |
+| P2 | Market core: pricing, drift, purse, scheduler, visit clock, packet encoders; tests | done, PR #3 | P1 | — |
+| P3 | Comfort report + event registration + `cargo visit`; headless proof | code done, headless-proven; client proof pending | P2 | a client on an admin-listed account |
 | P4 | Authored flight: server creates the bird, pilot flies it; two-client proof | 1–2 days | P3 | needs two clients on one machine (Don has two accounts) |
 | P5 | Merchant: carry pin, `InIntro`, follow, callout, immortal, dismissal, Odin vanish, restart sweep | 2 days | P4 | as P4 |
 | P6 | Deal wire server side: direct ZRpc, owed ledger, persistence (Cairn pattern) | 1–2 days | P1, P2 | anyone |
