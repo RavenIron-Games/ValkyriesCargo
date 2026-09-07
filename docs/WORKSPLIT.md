@@ -1,9 +1,8 @@
 # Work split — Valkyrie's Cargo, from 2026-09-06
 
-> **Status: PROPOSAL, not agreed.** Don and Wu'barrk have not divided the duties yet. Section 0 is the
-> neutral list of work packages to divide; sections 1 and 3 are one possible way to cut them, written
-> by Don's side as a starting point. Section 2, the contract, is code now (PR #1) and holds whichever
-> way the packages are dealt: it is the seam, not an assignment.
+> **Status: DECIDED by the owners, the night of 2026-09-06.** Wu'barrk takes the creature pipeline
+> (P4 flight, P5 merchant, the bake half of P8); Don takes the terminal (P7), the loader half of P8 and
+> the release (P9). P1, P2, P3 and P6 are merged. Section 2, the contract, is code and is the seam.
 
 ## 0. The work packages, with what each needs
 
@@ -13,22 +12,23 @@
 | P2 | Market core: pricing, drift, purse, scheduler, visit clock, packet encoders; tests | done, PR #3 | P1 | — |
 | P3 | Comfort report + event registration + `cargo visit`; headless proof | code done, headless-proven; client proof pending | P2 | a client on an admin-listed account |
 | P4 | Authored flight: server creates the bird, pilot flies it; two-client proof | **Wu'barrk** (owner, 2026-09-06 night) | P3 (merged) | design 3.2; reconcile the event start: P3 starts it at dispatch, 3.2 says at the drop (`vc_placed`); the clock follows whichever is chosen |
-| P5 | Merchant: carry pin, `InIntro`, follow, callout, immortal, dismissal, Odin vanish, restart sweep | 2 days | P4 | as P4 |
+| P5 | Merchant: carry pin, `InIntro`, follow, callout, immortal, dismissal, Odin vanish, restart sweep | **Wu'barrk** (with P4: the carry straddles both) | P4 | design 3.3, 3.6, 3.7; the Animator is his own (DESIGN §8) |
 | P6 | Deal wire server side: direct ZRpc, owed ledger, persistence (Cairn pattern) | code done, headless-proven (sidecar round trip); client proof pending | P1, P2 | — |
-| P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | 2–3 days | P1, SharedUI files | Wu'barrk: it is his theme and his focus helper |
-| P8 | Body: retopo, rig, clips, animator contract, bundle on Unity 6000.0.61f1, loader | open-ended, after 0.1 | model | Wu'barrk: his model, his Editor version |
-| P9 | Release: README truth pass, package, Hexium name check, store upload | half a day | all | Don: the RavenIronStudios store account |
+| P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | **Don** | P1, P6 (merged), SharedUI (vendored, PR #2) | design 3.4; §2 below is the whole contract |
+| P8 | Body: rig, clips, bundle on Unity 6000.0.61f1 (**Wu'barrk**, PR #4 merged); `Client/BodyLoader.cs` + the Animator driver (**Don**, with P7) | split | model (in) | design §11; `models/SETUP-FOR-CLAUDE.md` for the bake |
+| P9 | Release: README truth pass, package, Hexium name check, store upload | **Don** | all | the RavenIronStudios store account |
 
-P2, P6 and P7 can start today in parallel; P3–P5 are a chain; P8 is off the 0.1 path. Divide as you like;
-the only hard constraints are the tools each package needs (a server, two clients, the Unity version).
+P4 → P5 is a chain on Wu'barrk's side; P7 and the loader run in parallel on Don's; the bake is independent.
+The client-side proofs of what is merged (CLAUDE.md "What to verify in-game", items 2–16) belong to whoever
+boots a client first, and go into CLAUDE.md Status with the exact lines.
 
-## 1. One possible split (proposal)
+## 1. The split (decided 2026-09-06)
 
-| | **Track A — the world side** (Don, Windows, CairnTest) | **Track B — the terminal and the body** (Wu'barrk, Linux, Unity 6000.0.61f1) |
+| | **Track A — Don** | **Track B — Wu'barrk** |
 |---|---|---|
-| Owns | scheduler, event, flight, merchant AI, market, persistence, deal wire, ServerSync channels, all Harmony patches, release packaging, dedicated-server verification | the Cargo Terminal (IMGUI on VikingOS's theme), the client-side deal builder and staging tray, the body pipeline (retopo, rig, clips, bundle, loader) |
-| Folders | `Core/` `Server/` `Net/` `Patches/` `Client/ComfortReporter.cs` `Client/CargoFlight.cs` `Client/CargoMerchant.cs` `tests/` `tools/` | `Client/Terminal/**` `Client/BodyLoader.cs` `Libs/SharedUI/**` the Unity project (a sibling folder, never inside the repo) |
-| Shared, change only by PR that both read | `Core/Deal.cs` `Core/MarketSnapshot.cs` `Core/VisitSnapshot.cs` `Net/CargoRpc.cs` (the contract, §2) | same |
+| Owns | the Cargo Terminal (P7: IMGUI on the gilt theme, panes, tray, the deal builder on `CargoRpc`), the body loader and its Animator driver (P8, mod side), the market, persistence, the deal wire, the scheduler and the event (merged), release packaging (P9), the store account | the creature pipeline: the authored flight (P4), the merchant (P5: carry pin, `InIntro`, follow, callout, immortal, dismissal, the Odin vanish, the restart sweep), the body's rig, clips and bundle (P8, Unity side), the two-client proof of all three |
+| Folders | `Client/Terminal/**` `Client/BodyLoader.cs` `Client/DealApplier.cs` `Core/` `Server/VisitDirector.cs` `Server/MarketStore.cs` `Net/` `tests/` `tools/*.ps1` | `Client/CargoFlight.cs` `Client/CargoMerchant.cs` `Server/Spawner.cs` `Patches/Patch_Valkyrie_Awake.cs` `Patch_Humanoid_Awake.cs` `Patch_Character_InIntro.cs` `Patch_Character_Damage.cs` `models/` `tools/unity/**` `tools/*_ingvar.py` the Unity project (a sibling folder) |
+| Shared, change only by a PR the other side commented on | the contract (§2): `Core/Deal.cs` `Core/MarketSnapshot.cs` `Core/VisitSnapshot.cs` `Net/CargoRpc.cs` `Client/Terminal/ICargoTerminal.cs`; and the seams P4/P5 touch in A's files: `Core/VisitSession.cs` (phases, the drop point), `Server/VisitDirector.cs` (where the event starts) | same |
 | Docs | `CLAUDE.md` status lines for what each verified; `docs/DESIGN.md` by PR | same |
 
 Nobody edits the other's folders. A need in the other track is an issue or a PR, not a silent edit.
@@ -149,24 +149,28 @@ What the market-core review (2026-09-06) says the terminal must know:
 
 ## 3. Order of work
 
-**Track A**
-1. Contract files above, with tests and the demo constants. *(first PR, unblocks B)*
-2. `Market`, `Scheduler`, `VisitClock`, packet encoders; tests, mutation-proven.
-3. Comfort report, the event registration, `cargo visit`; headless proof.
-4. Authored flight; two-client proof.
-5. Carried merchant, callout, immortality, dismissal, Odin vanish, restart sweep.
-6. Deal wire server side, persistence, owed ledger; the simultaneous last-unit test.
-7. Release 0.1.0 packaging; Hexium name check first.
+**Track A (Don)**
+1. ~~Contract~~, ~~market core~~, ~~eligibility and event~~, ~~deal wire and persistence~~: merged (PRs #1, #3, #5, #6).
+2. P7: vendor check of `Libs/SharedUI`, then `cargo terminal demo` opens and closes on the demo snapshot; cursor
+   release on close and on logout.
+3. P7: panes, rows, stock and trend glyphs, staging tray, payment mode, countdown, dismiss; all against the demo.
+4. P7: the deal builder: stage → `Deal` → `CargoRpc.Send` → `DealApplier.Apply` on `Ok`; `price_changed` turns
+   the line amber. Proof: the same deal `cargo deal` already makes, now from the window, on a real server.
+5. P8 (mod side): `Client/BodyLoader.cs` loads the embedded bundle, swaps the body under the same prefab clone,
+   drives the Animator from velocity and phase; gated by `Server.BodyPrefab`.
+6. P9: README truth pass, CHANGELOG, package, Hexium name check, store upload. Adversarial review before.
 
-**Track B**
-1. Vendor `Libs/SharedUI/GiltFrameTheme.cs` + `UIFocus.cs` with origin headers; build once.
-2. `cargo terminal demo`: the window opens and closes on the demo snapshot; cursor release on close and on logout.
-3. Panes, rows, stock and trend glyphs, staging tray, payment mode, countdown, dismiss; all against the demo.
-4. The deal builder: stage → `Deal` → `CargoRpc.Send` → apply on `Ok`; `price_changed` turns the line amber.
-5. Body pipeline in parallel: retopo, rig, clips, animator contract, bundle on 6000.0.61f1; `BodyLoader`.
-6. Theme option (`Client.Theme = BlackGold`).
+**Track B (Wu'barrk)**
+1. P4: decide where the clock starts (dispatch, as P3 does, or the drop, as design 3.2 says), then the server
+   authors the bird and the merchant with owner = pilot, `Patch_Valkyrie_Awake`, `CargoFlight`; two-client proof.
+2. P5: carry pin and `InIntro`, the drop handoff, follow and callout, immortal, dismissal (Shift+E twice,
+   `vc_dismiss` is already on the wire), the Odin vanish by the effect rule, the restart sweep
+   (`GetAllZDOsWithPrefabIterative`; the director already resumes the session row).
+3. P8 (Unity side): bake the bundle with `IngvarBundleBuilder`, size gate, hand it over for embedding.
+4. The client proofs of everything merged, as they come naturally with a client in hand.
 
-Where they meet: A6 + B4 = the first real deal on CairnTest. Plan for it as a shared session.
+Where they meet: A4 + B2 = the first real deal from the window with the merchant standing there. Plan for it as
+a shared session on a server both can reach.
 
 ## 4. Process
 
@@ -189,13 +193,14 @@ Where they meet: A6 + B4 = the first real deal on CairnTest. Plan for it as a sh
 
 | Track B needs from A | when |
 |---|---|
-| the contract files + demo constants | A1, first |
-| `CargoRpc` real transport | A6 |
-| a merchant to open the terminal on | A5 |
+| the contract, the wire, `VisitSession` phases and `SetDrop`, `vc_dismiss`: all merged | now |
+| a decision on where the clock starts, if B wants it moved to the drop (a §2-style PR on `VisitDirector`) | at P4 start |
+| `ICargoTerminal` implementation to open on the merchant | before B2's interaction step |
+| `BodyLoader` to put the bundle on | at P8 embed |
 
 | Track A needs from B | when |
 |---|---|
-| the two SharedUI files (or a submodule) | before B1 |
-| `ICargoTerminal` implementation | before A5's interaction step |
-| the rigged body + bundle | after 0.1 |
+| the merchant to open the terminal on (P5) | for A4's real-server proof; the demo covers everything before it |
+| the baked bundle and its size | at A5 |
+| the drop point and phases written through `VisitSession` (already in the contract) | with P4 |
 | tear-down vs reconfirm opinion | anytime |
