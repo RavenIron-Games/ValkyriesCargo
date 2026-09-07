@@ -56,6 +56,10 @@ namespace RavenIron.ValkyriesCargo.Core
         private void OnDestroy()
         {
             if (_director != null) _director.Flush("shutdown", force: true);
+            // Nothing ticks after this, so a terminal left open would hold UIFocus's cursor and
+            // input tokens with no way to put them down: the cursor stays free and Chat.HasFocus
+            // keeps answering true, which is the player unable to move with nothing on screen.
+            if (CargoTerminal.Instance != null) CargoTerminal.Instance.Reset();
             if (Instance == this) Instance = null;
         }
 
