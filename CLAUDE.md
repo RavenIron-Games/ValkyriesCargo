@@ -715,13 +715,18 @@ sells, buys and barter; the price curve, the Fair Market Act, both drift knobs a
 matched the design to the coin; a relog mid-visit handed the persistent merchant to the new client in his trading
 state; the export gained the trader's row and the visit's row on the next cycle; the catalogue verbs ran live.
 
-**Defects found (docs/proofs/…, "Defects"):** **D1** the first approach after the drop never starts cleanly (6/6):
-`gave up walking after 20 s … budget scaled from 0 m at entry` — the ZDO-driven state change in
-`CargoMerchant.ResolveCarrier` skips `Decide`'s entry reset, and the drop's ZDO write lands at the drop, late, or
-never, so the bird's handoff is part of it; **D2** the per-player cooldown is keyed on the session uid (three `cool`
-rows for one player after two relogs), so a relog clears it; **D3** the deferred reclaim at visit end is not
-reclaiming — `restart sweep: 1 stranded merchant(s) destroyed` 6 s after every end means the sweep did the work.
-Fixes on the owner's word; D1 and D3 are in Wu'barrk's files.
+**Defects found, audited the same evening (`docs/AUDIT-STORMTEST-2026-09-07.md`, with the proposed diffs):**
+**D1** the first approach after the drop never starts cleanly (6/6): `gave up walking after 20 s … budget scaled
+from 0 m at entry` — the ZDO-driven state change in `CargoMerchant.ResolveCarrier` skips `Decide`'s entry reset,
+so the first walk-up runs on the flight's clock (visits 1–3); on visits 4–6 the give-up came never / +55 s / +105 s
+with the merchant 148 m and 43 m from the pilot, a second regime the code alone does not explain — the fix adds
+the one log line that settles it; **D2** the per-player cooldown is keyed on the per-world-join session uid (three
+`cool` rows for one player after two relogs); the base cooldown at the dispatch point masked it today; **D3** the
+reclaim at visit end WORKS — `ZDOMan.DestroyZDO` only queues, and the sweep in the same call sees the ZDO still in
+the table, hence `restart sweep: 1 stranded merchant(s) destroyed` ~2 s after every end; reporting only. Also: of
+the eleven merged audit fixes, two are confirmed on a machine (F7, N1), two contradicted (F5 → D1, F4's sweep half
+→ D3), six never exercised (F1, F2, F6, F8, F9, F11; one-line recipes in the audit §5). Fixes on the owner's word;
+D1 and D3 are in Wu'barrk's files.
 
 ## What to verify in-game
 
@@ -902,8 +907,8 @@ P4, the flight (Wu'barrk's two-client proof; a visit on a server, the pilot's cl
     (that line HAS been seen, in the integrated run above); **log half DONE 2026-09-07 (six flights on Don's
     client)**: `cargo flight #1: flying from (8.9, 198.0, -9.0) via (-8.1, 161.2, 9.5) to (-41.9, 78.0, 46.4),
     75.186 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)` then `cargo flight #1: dropped at (-41.89201,
-    80.3773346, 46.3858681) after 16.60019 s`, the six drops at 16.60 / 16.96 / 16.02 / 16.02 / 16.72 s against a
-    simulated ~16.8; visits 4 and 5 took the shrink path (`straight in 78 m out`, `49.5 m short`), never seen
+    80.3773346, 46.3858681) after 16.60019 s`, the five surviving flight times 16.60 / 16.96 / 16.02 / 16.02 /
+    16.72 s (visit 3's was in the overwritten first boot) against a simulated ~16.8; visits 4 and 5 took the shrink path (`straight in 78 m out`, `49.5 m short`), never seen
     before; the bird's departure logs `ground unknown at (…) (the zone has likely not finished generating); the
     altitude is left alone` (F7's path, live). The glide ON SCREEN and the second client are still unreported;
     the pilot's log shows `cargo flight #N: flying from ... via ... to

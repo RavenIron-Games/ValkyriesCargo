@@ -179,6 +179,16 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       after two relogs); **D3** the deferred reclaim at visit end is not reclaiming (the sweep is). Fixes on the
       owner's word; D1/D3 are Track B's files. Still to run: 3, 5, 14, 22, 25; the client-console halves need a
       screenshot or the server window.
+- [x] **The session audit for Track B** (owner: "run it on opus agents", 2026-09-07 evening):
+      `docs/AUDIT-STORMTEST-2026-09-07.md` — three Opus auditors, one refuter per finding (11 agents). D1 upheld in
+      its code half (the ZDO-driven entry skips the reset; F5's scaled budget has never run on a machine) and
+      corrected in its story (visits 4–6 are a second regime the code alone does not explain; the fix adds the log
+      line that settles it); D3 flipped (the reclaim works, `DestroyZDO` only queues, the same-call sweep
+      double-counts — defer it one tick); D2 upheld and narrowed (the base cooldown masked it; key on `s_playerID`
+      with two probe rows); D4a/b wording; the eleven merged fixes tabled against the logs (2 confirmed, 2
+      contradicted, 6 never exercised); Steam's new `default_pre1_0` branch for P10a. Proposed diffs only, his
+      files untouched; fixes on the owner's word. **Corrections applied to the proofs record**: the sweep trails the
+      end by ~2 s not 6, five flight times not six, `moved 597.9 m in 20 s` is not a speed.
 - [x] **The two owner decisions of 2026-09-07, built here (PR #40 merged):** the JSON
       dependency swapped for `Core/Json.cs` (writer only; compact and indented output shaped like
       Newtonsoft's so the rollover's part boundaries and BarrkBOT's files do not move; the `<Reference>`,
