@@ -27,3 +27,7 @@ dist/
 
 # Corrupt files (test outputs, etc)
 *.corrupt
+
+# Source art and Meshy exports. WORKSPLIT §4: no binaries in the repo - the bundle ships
+# beside the DLL in the package, the GLB/FBX live outside it. models\ is 343 MB locally.
+models/
