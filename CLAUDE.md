@@ -293,10 +293,11 @@ broke in production. **This mod did not consult it until 2026-09-07 and paid for
 shape another mod has already found the hard way.
 
 > **It is in this repository at `docs/knowledge-base/`** (decided by the owner 2026-09-07): a snapshot of
-> Wu'barrk's `~/WubarrkCODING/libs-Tools/` as of that day, 52 Markdown files, no binaries. His copy is the
-> source and updates arrive as PRs; the `VALHEIM-API-REFERENCE\` folder named below is NOT in the snapshot
-> yet. Anything this mod actually depends on is still copied into CLAUDE.md or DESIGN as a quoted fact with
-> its source named — as the two corrections below are — so the code never rests on an unread document.
+> Wu'barrk's `~/WubarrkCODING/libs-Tools/` as of that day, 66 Markdown files, no binaries — the
+> `VALHEIM-API-REFERENCE\` folder completed the snapshot on 2026-09-07. His copy is the source and updates
+> arrive as PRs. Anything this mod actually depends on is still copied into CLAUDE.md or DESIGN as a quoted
+> fact with its source named — as the two corrections below are — so the code never rests on an unread
+> document, and so a fact survives the snapshot going stale.
 
 | Where (under `docs/knowledge-base/`) | What is in it |
 |---|---|
@@ -304,7 +305,7 @@ shape another mod has already found the hard way.
 | `IMPLEMENTATIONS\DvergrAllies.md` | **P5's ground truth.** A shipped mod that clones Dverger prefabs, tames them, makes them follow and overrides their `MonsterAI`. The exact de-hostility field list, `Character.Faction.Players`, the staggered re-apply, the `Tameable` retrofit. |
 | `IMPLEMENTATIONS\WingsoftheValkyrie.md` | Flight movement and a multiplayer VFX state sync over custom ZDO fields — the same shape as `vc_state`. |
 | `IMPLEMENTATIONS\AwayFromHome.md`, `MistsofAvalor.md` | The bundle pipeline and the grave-relocation disaster. Already cited by `models\README.md`. |
-| `VALHEIM-API-REFERENCE\` | 13 files of decompiled API facts with line numbers. `09-DAMAGE-ZDO-MULTIPLAYER.md` is the ZDO and damage authority: who runs what, and a GOTCHAS list that is worth reading whole. |
+| `VALHEIM-API-REFERENCE\` | 13 files of decompiled API facts with line numbers into the 0.221.12 decompile, plus a README. **`09-DAMAGE-ZDO-MULTIPLAYER.md` is the ZDO and damage authority** — who runs what on which machine, and a GOTCHAS list worth reading whole; both corrections below came out of it. `03-ZNETSCENE-AND-PREFABS.md` is the one behind `Spawner`'s authoring. |
 | `*-FACTS.md` | Per-topic findings: dedicated server, headless/empty server, ZDO wire limits, console routing, player identity, player attach. |
 
 ### Two corrections it forces on this repo
