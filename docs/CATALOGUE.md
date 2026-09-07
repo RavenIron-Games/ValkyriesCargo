@@ -70,8 +70,8 @@ plus half of last visit's takings.
 | Prefab | Display | Stack | Weight | Base | Target | Max | Recipes |
 |---|---|---|---|---|---|---|---|
 | Wood | Wood | 50 | 2 | 1 | 200 | 600 | 55 |
-| RoundLog | Core wood | 50 | 2 | 2 | 100 | 300 | 15 |
-| FineWood | Fine wood | 50 | 2 | 2 | 100 | 300 | 31 |
+| RoundLog | Core wood | 50 | 2 | 3 | 100 | 300 | 15 |
+| FineWood | Fine wood | 50 | 2 | 3 | 100 | 300 | 31 |
 | ElderBark | Ancient bark | 50 | 2 | 3 | 60 | 180 | 12 |
 | Blackwood | Blackwood | 50 | 2 | 4 | 60 | 180 | 11 |
 | YggdrasilWood | Yggdrasil wood | 50 | 2 | 5 | 60 | 180 | 9 |
@@ -79,13 +79,13 @@ plus half of last visit's takings.
 | Coal | Coal | 50 | 2 | 1 | 100 | 300 | |
 | Stone | Stone | 50 | 2 | 1 | 200 | 600 | 6 |
 | Flint | Flint | 30 | 2 | 1 | 60 | 180 | 4 |
-| Feathers | Feathers | 50 | 0.1 | 2 | 60 | 180 | 21 |
+| Feathers | Feathers | 50 | 0.1 | 3 | 60 | 180 | 21 |
 
 **Hides and leather**
 
 | Prefab | Display | Stack | Weight | Base | Target | Max | Recipes |
 |---|---|---|---|---|---|---|---|
-| LeatherScraps | Leather scraps | 50 | 0.5 | 2 | 60 | 180 | 32 |
+| LeatherScraps | Leather scraps | 50 | 0.5 | 3 | 60 | 180 | 32 |
 | DeerHide | Deer hide | 50 | 1 | 3 | 60 | 180 | 53 |
 | TrollHide | Troll hide | 20 | 2 | 6 | 20 | 60 | 6 |
 | WolfPelt | Wolf pelt | 50 | 1 | 6 | 40 | 120 | 7 |
@@ -159,10 +159,10 @@ Catalogue = Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Silver:40:12:36:Ware, Blac
   Ruby:29:15:45:Ware, SilverNecklace:43:8:24:Ware, ArrowIron:2:100:300:Ware, ArrowFrost:3:100:300:Ware,
   BoltIron:3:100:300:Ware, MeadHealthMinor:12:10:30:Ware, MeadStaminaMinor:12:10:30:Ware, MeadTasty:10:10:30:Ware,
   Honey:2:50:150:Ware,
-  Wood:1:200:600:Want, RoundLog:2:100:300:Want, FineWood:2:100:300:Want, ElderBark:3:60:180:Want,
+  Wood:1:200:600:Want, RoundLog:3:100:300:Want, FineWood:3:100:300:Want, ElderBark:3:60:180:Want,
   Blackwood:4:60:180:Want, YggdrasilWood:5:60:180:Want, Resin:1:100:300:Want, Coal:1:100:300:Want,
-  Stone:1:200:600:Want, Flint:1:60:180:Want, Feathers:2:60:180:Want,
-  LeatherScraps:2:60:180:Want, DeerHide:3:60:180:Want, TrollHide:6:20:60:Want, WolfPelt:6:40:120:Want,
+  Stone:1:200:600:Want, Flint:1:60:180:Want, Feathers:3:60:180:Want,
+  LeatherScraps:3:60:180:Want, DeerHide:3:60:180:Want, TrollHide:6:20:60:Want, WolfPelt:6:40:120:Want,
   LoxPelt:8:40:120:Want, ScaleHide:6:40:120:Want, AskHide:10:40:120:Want, BjornHide:10:40:120:Want,
   Flax:3:100:300:Want, LinenThread:10:50:150:Want, Barley:3:100:300:Want, JuteRed:6:40:120:Want,
   JuteBlue:8:40:120:Want, WolfHairBundle:4:40:120:Want,

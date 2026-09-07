@@ -31,9 +31,14 @@ namespace RavenIron.ValkyriesCargo.Server
     ///   is why `FlightPlan` refuses to put a waypoint outside the pilot's block.
     /// - a DEDICATED SERVER PINS its reference position to (1000000, 0, 1000000) every fixed frame -
     ///   `Game.FixedUpdate` in the server build ends with exactly that line, and the client build has no
-    ///   such line at all. It is the one real behavioural difference between the two builds in anything
-    ///   this mod touches. So the server's `ZNetScene` active area never covers a real world position and
-    ///   the server instantiates NOTHING of ours, anywhere - not the bird, not the merchant. Two
+    ///   such line at all. Confirmed word for word against both real builds, 2026-09-07
+    ///   (`docs/engine-sweeps/2026-09-07-baseline-client-vs-server.md`). It is the difference that
+    ///   MATTERS, not the only one: six surface members differ between the two assemblies -
+    ///   `Game.FixedUpdate` (this pin), `ZNet.IsDedicated`, `Terminal.AddString`,
+    ///   `GameCamera.UpdateMouseCapture`, `ZNet.Awake` and `ZNet.RPC_PeerInfo` - and the sweep report
+    ///   names why the other five change nothing here. So the server's `ZNetScene` active area never
+    ///   covers a real world position and the server instantiates NOTHING of ours, anywhere - not the
+    ///   bird, not the merchant. Two
     ///   consequences: the "destroy a ZDO whose prefab will not resolve" branch in `CreateObjectsSorted`
     ///   can never reach us (it only walks the server's own sector list, out at a million), and every
     ///   line of `CargoFlight` and `CargoMerchant` runs on a player's machine. `HasPrefab` is still
