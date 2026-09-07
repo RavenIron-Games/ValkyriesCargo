@@ -223,6 +223,49 @@ owner overwrites next frame).
 
 ---
 
+## The workspace knowledge base — read it BEFORE deriving anything
+
+`..\libs-Tools\` is the family's accumulated engine knowledge, written up from mods that shipped and
+broke in production. **This mod did not consult it until 2026-09-07 and paid for that once already**
+(see the two corrections below). Consult it before decompiling, and before designing any system whose
+shape another mod has already found the hard way.
+
+| Where | What is in it |
+|---|---|
+| `libs-Tools\IMPLEMENTATIONS\MASTER_IMPLEMENTATIONS.md` | The index: every reusable system in every project, one line each, pointing at a per-project detail file. Its **READ FIRST** section is the moving-an-object rules and the traps that cost real player data. |
+| `libs-Tools\IMPLEMENTATIONS\DvergrAllies.md` | **P5's ground truth.** A shipped mod that clones Dverger prefabs, tames them, makes them follow and overrides their `MonsterAI`. The exact de-hostility field list, `Character.Faction.Players`, the staggered re-apply, the `Tameable` retrofit. |
+| `libs-Tools\IMPLEMENTATIONS\WingsoftheValkyrie.md` | Flight movement and a multiplayer VFX state sync over custom ZDO fields — the same shape as `vc_state`. |
+| `libs-Tools\IMPLEMENTATIONS\AwayFromHome.md`, `MistsofAvalor.md` | The bundle pipeline and the grave-relocation disaster. Already cited by `models\README.md`. |
+| `libs-Tools\VALHEIM-API-REFERENCE\` | 13 files of decompiled API facts with line numbers. `09-DAMAGE-ZDO-MULTIPLAYER.md` is the ZDO and damage authority: who runs what, and a GOTCHAS list that is worth reading whole. |
+| `libs-Tools\*-FACTS.md` | Per-topic findings: dedicated server, headless/empty server, ZDO wire limits, console routing, player identity, player attach. |
+
+### Two corrections it forces on this repo
+
+1. **A `ZDOID` is a session handle, not an identity — never persist anything against one.** `ZDO.Load`
+   opens with `m_uid.SetID(++ZDOID.m_loadID)`: every ZDO is renumbered every time the world is read
+   off disk. The id is stable while the world stays loaded and meaningless the moment it does not,
+   so the feature works all session and every key in it is orphaned by the next login. It cost
+   TortalPortal its favourites feature. **`Spawner.CarrierKey` (`vc_carrier`) writes the bird's
+   `ZDOID` onto the merchant's PERSISTENT ZDO and is exposed to exactly this.** P5 owns the fix:
+   the carry link is session-only, so the restart sweep must clear `vc_carrier` (`ZDO.RemoveZDOID`
+   exists) and treat `vc_state` as the authority, never a surviving id.
+
+2. **`Character.Damage` is a thin RPC sender, not where damage happens.** It runs on the ATTACKER's
+   client, calls `FindWeakSpotIndex` and `InvokeRPC("RPC_Damage", hit)`, and nothing else — reading
+   or modifying health there does nothing. The work is in the private `Character.RPC_Damage`, whose
+   first lines run on EVERY client that has the victim instanced; the `if (!m_nview.IsOwner()) return;`
+   gate is partway down. So the planned `Patch_Character_Damage` for the merchant's immortality is
+   named for the wrong method: cancelling belongs at `RPC_Damage`, and anything that mutates state in
+   a postfix there must re-gate on `IsOwner()` or it applies once per peer.
+
+Also load-bearing for what this mod already does, and confirmed rather than corrected: `ZDO.Set` has
+**no** ownership check on any overload (the `okForNotOwner` parameter is ignored in the body), so a
+non-owner write is a silent desync that the owner overwrites on its next sync — which is the house
+rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has no default argument.
+`string.GetStableHashCode()` lives in `assembly_utils.dll`, not `assembly_valheim`.
+
+---
+
 ## "Not ours"
 
 - **`Libs/ServerSync.cs`** = blaxxun's `ConfigSync.cs`, master, fetched 2026-09-06 (1415 lines),
