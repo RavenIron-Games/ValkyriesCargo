@@ -69,6 +69,8 @@ namespace RavenIron.ValkyriesCargo
             ProbeVelocityCache();
             ProbeValkyrie();
             ProbeCharacter();
+            ProbeMerchantAwake();
+            ProbeMerchant();
             ProbeInventory();
             ProbeComfort();
             ProbeDayLength();
@@ -346,6 +348,98 @@ namespace RavenIron.ValkyriesCargo
             return 6;
         }
 
+        private static void ProbeMerchantAwake()
+        {
+            var bad = new List<string>();
+            int looked;
+            // The JIT compiles CheckMerchantAwake's body when THIS call reaches it - inside this try, never before it.
+            try { looked = CheckMerchantAwake(bad); }
+            catch (Exception ex) { Threw(EngineProbes.MerchantAwake, ex); return; }
+            Record(EngineProbes.MerchantAwake, looked, bad);
+        }
+
+        /// <summary>
+        /// What P5's merchant is BUILT by, as opposed to what he does once he is standing.
+        ///
+        /// `Patch_Humanoid_Awake` names `Humanoid.Awake` in a string, so a rename is a Harmony failure
+        /// at PatchAll rather than a compile error - the same class of silence as `RPC_Damage`. The rest
+        /// of this probe is the cast of the ordering bug PR #22 fixed: `BaseAI.Awake` is what assigns
+        /// `m_character`, `MonsterAI.MakeTame` dereferences it on its first line, and a `Humanoid.Awake`
+        /// POSTFIX runs before either of MonsterAI's own Awake and Start have. `CargoMerchant` therefore
+        /// skips `MakeTame` on the call from Awake and lets the 0.5 s stagger do it. The ORDER itself is
+        /// a method body and no reflection can see it - that fact is registered separately as
+        /// `awake_order`, not probeable, for P10a's sweep.
+        ///
+        /// `BaseAI.m_character` is `protected` in the real assembly, so it is named here (a string, to
+        /// reflection, never called) under the same exception as `ZSyncTransform.m_velocityCached`, and
+        /// asked for WITHOUT `mustBePublic`.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static int CheckMerchantAwake(List<string> bad)
+        {
+            Type h = typeof(Humanoid);
+            NeedMethod(h, "Awake", Type.EmptyTypes, bad);                   // Patch_Humanoid_Awake's target (protected)
+            NeedMethod(h, "Start", Type.EmptyTypes, bad);                   // where GiveDefaultItems is actually called from
+            NeedMethod(h, "GiveDefaultItems", Type.EmptyTypes, bad);        // the crossbow UnequipAllItems takes back off
+            Type ai = typeof(BaseAI);
+            NeedMethod(ai, "Awake", Type.EmptyTypes, bad);
+            NeedField(ai, "m_character", typeof(Character), false, bad);
+            NeedMethod(typeof(MonsterAI), "Awake", Type.EmptyTypes, bad);
+            NeedMethod(typeof(Character), "SetTamed", new[] { typeof(bool) }, bad);
+            NeedMethod(typeof(ZNetView), "IsValid", Type.EmptyTypes, bad);  // the guard CargoMerchant puts in front of SetTamed
+            return 8;
+        }
+
+        private static void ProbeMerchant()
+        {
+            var bad = new List<string>();
+            int looked;
+            // The JIT compiles CheckMerchant's body when THIS call reaches it - inside this try, never before it.
+            try { looked = CheckMerchant(bad); }
+            catch (Exception ex) { Threw(EngineProbes.Merchant, ex); return; }
+            Record(EngineProbes.Merchant, looked, bad);
+        }
+
+        /// <summary>
+        /// Everything else `Client/CargoMerchant.cs` reaches for: the setup it re-asserts every five
+        /// seconds, the carry pin, the words, and the Odin vanish. All public in the real assembly.
+        /// `Character.Faction.Players` is asked for by NAME rather than by value - the enum is ordered
+        /// and a member inserted ahead of it would silently renumber every following one, so the name is
+        /// the thing worth checking and the number never is.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static int CheckMerchant(List<string> bad)
+        {
+            Type c = typeof(Character);
+            NeedField(c, "m_name", typeof(string), true, bad);
+            NeedField(c, "m_faction", typeof(Character.Faction), true, bad);
+            NeedEnumValue(typeof(Character.Faction), "Players", bad);
+            NeedMethod(c, "IsOnGround", Type.EmptyTypes, bad);
+            NeedMethod(typeof(Humanoid), "UnequipAllItems", Type.EmptyTypes, bad);
+
+            Type ai = typeof(BaseAI);
+            NeedMethod(typeof(MonsterAI), "SetFollowTarget", new[] { typeof(GameObject) }, bad);
+            NeedMethod(ai, "SetPatrolPoint", Type.EmptyTypes, bad);
+            NeedField(ai, "m_aggravatable", typeof(bool), true, bad);
+            NeedField(ai, "m_passiveAggresive", typeof(bool), true, bad);   // vanilla's spelling, kept
+            NeedField(typeof(MonsterAI), "m_alertRange", typeof(float), true, bad);
+            NeedField(ai, "m_randomMoveRange", typeof(float), true, bad);
+
+            NeedMethod(typeof(Player), "GetClosestPlayer", new[] { typeof(Vector3), typeof(float) }, bad);
+            NeedMethod(typeof(ZNetScene), "FindInstance", new[] { typeof(ZDOID) }, bad);
+            NeedMethod(typeof(ZNetScene), "GetPrefab", new[] { typeof(string) }, bad);
+            NeedMethod(typeof(ZDO), "GetZDOID", new[] { typeof(KeyValuePair<int, int>) }, bad);
+
+            // The words and the leaving. `Chat.SetNpcText` is unguarded client UI; `EffectList.Create`'s
+            // three optional parameters are part of the signature OUR call site compiled against.
+            NeedMethod(typeof(Chat), "SetNpcText",
+                       new[] { typeof(GameObject), typeof(Vector3), typeof(float), typeof(float), typeof(string), typeof(string), typeof(bool) }, bad);
+            NeedField(typeof(Odin), "m_despawn", typeof(EffectList), true, bad);
+            NeedMethod(typeof(EffectList), "Create",
+                       new[] { typeof(Vector3), typeof(Quaternion), typeof(Transform), typeof(float), typeof(int) }, bad);
+            return 18;
+        }
+
         private static void ProbeInventory()
         {
             var bad = new List<string>();
@@ -513,7 +607,25 @@ namespace RavenIron.ValkyriesCargo
             NeedMethod(typeof(AnimationClipPlayable), "Create", new[] { typeof(UnityEngine.Playables.PlayableGraph), typeof(AnimationClip) }, bad);
             NeedMethod(typeof(AnimationPlayableOutput), "Create", new[] { typeof(UnityEngine.Playables.PlayableGraph), typeof(string), typeof(Animator) }, bad);
 
-            return 8;
+            // The donor material (BodyLoader.IngvarMaterial). A bundle baked in the Editor carries
+            // Unity's `Standard`, which Valheim lights only from direct light, so Ingvar is dressed in a
+            // COPY of the stand-in's own material with our albedo in it. These are the calls that copy
+            // makes. The other half of that path - that a prefab named by `Server.BodyPrefab` is in the
+            // scene AND carries a `Custom/Creature` material to copy - is a RUNTIME fact about the
+            // loaded world, not an assembly fact: no reflection at plugin Awake can see it, ZNetScene
+            // does not exist yet at that moment, and there is no runtime tier in this registry. It is
+            // not probed, deliberately; `IngvarMaterial` answers null on every leg of it (no scene, no
+            // prefab, no renderer, no material, or a throw) and `Dress` then binds the albedo onto the
+            // bundle's own material instead. See docs/ENGINE-PROBES.md, "the donor material".
+            NeedConstructor(typeof(Material), new[] { typeof(Material) }, bad);
+            NeedMethod(typeof(Material), "HasProperty", new[] { typeof(string) }, bad);
+            NeedMethod(typeof(Material), "SetTexture", new[] { typeof(string), typeof(Texture) }, bad);
+            NeedMethod(typeof(Material), "SetColor", new[] { typeof(string), typeof(Color) }, bad);
+            NeedMethod(typeof(Material), "DisableKeyword", new[] { typeof(string) }, bad);
+            NeedSettableProperty(typeof(Material), "globalIlluminationFlags", typeof(MaterialGlobalIlluminationFlags), bad);
+            NeedSettableProperty(typeof(Renderer), "sharedMaterials", typeof(Material[]), bad);
+            NeedProperty(typeof(Renderer), "sharedMaterial", typeof(Material), bad);
+            return 16;
         }
 
         // ---- recording -------------------------------------------------------------------------------
@@ -611,6 +723,28 @@ namespace RavenIron.ValkyriesCargo
                 return;
             }
             bad.Add(t.Name + "." + name + "<" + Wire.Int(genericArgs) + ">(" + Wire.Int(paramCount) + " args) is gone");
+        }
+
+        /// <summary>A constructor by argument types. `new Material(donor)` is a call like any other and can go the same way.</summary>
+        private static void NeedConstructor(Type t, Type[] args, List<string> bad)
+        {
+            ConstructorInfo c = null;
+            try { c = t.GetConstructor(Anywhere, null, args ?? Type.EmptyTypes, null); }
+            catch (AmbiguousMatchException) { return; }             // more than one match is still a match
+            if (c == null) bad.Add("new " + t.Name + "(" + Names(args) + ") is gone");
+        }
+
+        /// <summary>
+        /// An enum MEMBER by name. The value is deliberately not checked: vanilla's enums are ordered
+        /// and inserting a member renumbers everything after it, so the name is the durable half and the
+        /// number never was.
+        /// </summary>
+        private static void NeedEnumValue(Type t, string name, List<string> bad)
+        {
+            bool there;
+            try { there = t.IsEnum && Enum.IsDefined(t, name); }
+            catch { there = false; }
+            if (!there) bad.Add(t.Name + "." + name + " is gone");
         }
 
         private static void NeedProperty(Type t, string name, Type expected, List<string> bad)

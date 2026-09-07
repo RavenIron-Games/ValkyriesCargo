@@ -3691,7 +3691,7 @@ namespace ValkyriesCargo.Tests
             var p = new EngineProbes();
 
             // ---- the shape of the registry ----
-            Equal(16, p.All.Count, "sixteen engine facts are registered");
+            Equal(19, p.All.Count, "nineteen engine facts are registered");
             var names = new HashSet<string>();
             bool unique = true, ordered = true;
             int last = 0;
@@ -3712,6 +3712,9 @@ namespace ValkyriesCargo.Tests
             Equal(4, p.Find(EngineProbes.VelocityCache).Rank, "rank 4 is the ZSyncTransform velocity cache");
             Equal(5, p.Find(EngineProbes.ValkyrieFields).Rank, "rank 5 is the Valkyrie fields");
             Equal(6, p.Find(EngineProbes.CharacterAi).Rank, "rank 6 is Character/MonsterAI, P5's surface");
+            Equal(6, p.Find(EngineProbes.MerchantAwake).Rank, "rank 6 too: what Patch_Humanoid_Awake patches");
+            Equal(6, p.Find(EngineProbes.AwakeOrder).Rank, "and the ordering inside those Awakes");
+            Equal(6, p.Find(EngineProbes.Merchant).Rank, "and the rest of the merchant's surface");
             Check(p.Find("no such probe") == null, "an unregistered name simply is not there");
 
             // The probe gap (docs/P10B-PROBE-GAP.md): the immortality patches the PRIVATE
@@ -3722,15 +3725,17 @@ namespace ValkyriesCargo.Tests
             Check(!ai.Contains("/ Damage"), "and NOT for Character.Damage, a sender on the attacker's machine that nothing here depends on");
             Check(p.Find(EngineProbes.CharacterAi).Degrades.Contains("mortal"),
                   "and it says what P5 loses when it fails, rather than the old 'nothing today'");
+            Check(p.Find(EngineProbes.AwakeOrder).State == ProbeState.NotProbeable,
+                  "the Awake ORDER is a method body: registered, never probed, never implied to have passed");
 
             // ---- nothing has run: everything is permitted ----
             Equal(0, p.Run, "nothing has run");
-            Equal(3, p.NotProbeable, "three facts are method BODIES and cannot be probed cheaply");
+            Equal(4, p.NotProbeable, "four facts are method BODIES and cannot be probed cheaply");
             Check(p.Ok(EngineProbes.RandEvent), "a probe that has not run says YES");
             Check(p.Ok(EngineProbes.EventClock), "a not-probeable fact says YES");
             Check(p.Ok("no such probe"), "and so does a name nobody registered: a missing probe must NEVER disable a feature");
             Equal("", p.Reason(EngineProbes.RandEvent), "a probe that has not failed has no reason to give");
-            Equal("probes not run, 3 not probeable", p.Encode(), "and the status line says exactly that");
+            Equal("probes not run, 4 not probeable", p.Encode(), "and the status line says exactly that");
             Equal(EngineProbes.SweepNote, p.Find(EngineProbes.ServerRefPin).Message,
                   "each not-probeable fact carries the sweep note verbatim, so cargo status never implies a pass");
 
@@ -3764,12 +3769,12 @@ namespace ValkyriesCargo.Tests
             Equal(4, p.Problems.Count, "each of the four refusals is on the record");
 
             // ---- the words ----
-            Equal("probes 1/2 ok, 3 not probeable, FAILED: body", p.Encode(), "the status line names the failures");
+            Equal("probes 1/2 ok, 4 not probeable, FAILED: body", p.Encode(), "the status line names the failures");
             Check(p.Record(EngineProbes.ZdoAuthoring, false, "ZDO.Persistent has no setter"), "a second, worse failure");
-            Equal("probes 1/3 ok, 3 not probeable, FAILED: zdo_authoring, body", p.Encode(),
+            Equal("probes 1/3 ok, 4 not probeable, FAILED: zdo_authoring, body", p.Encode(),
                   "and the failures are listed worst rank FIRST, whatever order they were recorded in");
             Equal("zdo_authoring", p.Failed[0].Name, "the Failed list is in rank order too");
-            Equal(16, p.Report().Count, "cargo engine prints one line per registered fact");
+            Equal(19, p.Report().Count, "cargo engine prints one line per registered fact");
             Check(p.Report()[0].StartsWith("[1] randevent: PASSED"), "worst first, with the rank, the name and the state");
             Check(p.Report()[0].Contains("; checks ") && p.Report()[0].Contains("; on failure "),
                   "and each line says what it looked at and what turns itself off");

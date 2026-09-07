@@ -75,6 +75,12 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string ValkyrieFields = "valkyrie";
         /// <summary>Rank 6. Character and MonsterAI: the two members read every second, and the three P5 patches.</summary>
         public const string CharacterAi = "character";
+        /// <summary>Rank 6. What `Patch_Humanoid_Awake` patches and what `CargoMerchant.Reassert` sequences around.</summary>
+        public const string MerchantAwake = "merchant_awake";
+        /// <summary>Rank 6, not probeable. The ORDER inside those Awakes, which is a method body and cost a shipped visit once.</summary>
+        public const string AwakeOrder = "awake_order";
+        /// <summary>Rank 6. Everything else `CargoMerchant` reaches to set Ingvar up, pin him, speak through him and send him away.</summary>
+        public const string Merchant = "merchant";
         /// <summary>Rank 7. The three inventory calls a delivery is applied with.</summary>
         public const string InventoryOps = "inventory";
         /// <summary>Rank 8. Comfort and rested, which decide who gets a visit at all.</summary>
@@ -128,6 +134,12 @@ namespace RavenIron.ValkyriesCargo.Core
             // thing it stood for could be broken - `docs/P10B-PROBE-GAP.md`, fixed here.
             Declare(CharacterAi, 6, "Character.GetAllCharacters / GetSEMan / InIntro / RPC_Damage, MonsterAI.MakeTame, BaseAI.IsEnemy",
                                     "Ingvar is mortal (RPC_Damage), the carry does not hold him still (InIntro) and he is never tamed (MakeTame)");
+            Declare(MerchantAwake, 6, "Humanoid.Awake / Start / GiveDefaultItems, BaseAI.Awake, BaseAI.m_character, MonsterAI.Awake, Character.SetTamed, ZNetView.IsValid",
+                                      "Patch_Humanoid_Awake finds no target and no merchant is ever built (P5)");
+            Declare(AwakeOrder, 6, "BaseAI.Awake is what assigns m_character, MonsterAI.MakeTame dereferences it on its FIRST line, and Humanoid.Start - not Awake - is what calls GiveDefaultItems",
+                                   "the merchant dies inside his own Awake; a body change here is silent", ProbeState.NotProbeable);
+            Declare(Merchant, 6, "Character.m_name / m_faction / Faction.Players / IsOnGround, Humanoid.UnequipAllItems, MonsterAI.SetFollowTarget / m_alertRange, BaseAI.SetPatrolPoint / m_aggravatable / m_passiveAggresive / m_randomMoveRange, Player.GetClosestPlayer, ZNetScene.FindInstance / GetPrefab, ZDO.GetZDOID(hashPair), Chat.SetNpcText, Odin.m_despawn, EffectList.Create",
+                                 "the merchant cannot be set up, pinned, spoken through or sent away (CargoMerchant)");
             Declare(InventoryOps, 7, "Inventory.RemoveItem(string,int,int,bool) / AddItem(GameObject,int) / CanAddItem(GameObject,int) / CountItems, ObjectDB.GetItemPrefab",
                                      "a delivery cannot be applied (DealApplier)");
             Declare(Comfort, 8, "Player.GetComfortLevel, SEMan.s_statusEffectRested / HaveStatusEffect, ZDOVars.s_baseValue / s_dead / s_playerName",
@@ -140,7 +152,7 @@ namespace RavenIron.ValkyriesCargo.Core
                              "the deal wire and the admin wire (DealWire, AdminRpc)");
             Declare(Localisation, 12, "Localization.instance and Localize(string)",
                                       "the terminal shows raw $item_ tokens instead of names");
-            Declare(Body, 13, "AssetBundle.LoadFromStream / LoadAsset<T> / LoadAllAssets<T>, and the three PlayableGraph Create calls",
+            Declare(Body, 13, "AssetBundle.LoadFromStream / LoadAsset<T> / LoadAllAssets<T>, the three PlayableGraph Create calls, and the Material/Renderer calls the donor material is copied with",
                               "Ingvar's body is not loaded; the stand-in is kept (BodyLoader)");
         }
 
@@ -243,7 +255,7 @@ namespace RavenIron.ValkyriesCargo.Core
         // ---- words ----------------------------------------------------------------------------------
 
         /// <summary>
-        /// The `cargo status` half: `probes 13/13 ok, 3 not probeable[, FAILED: a, b]`. One line, in the
+        /// The `cargo status` half: `probes 15/15 ok, 4 not probeable[, FAILED: a, b]`. One line, in the
         /// existing one-line-per-source style, and stable enough for the harness to pin.
         /// </summary>
         public string Encode()
