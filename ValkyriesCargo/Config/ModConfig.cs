@@ -76,6 +76,14 @@ namespace RavenIron.ValkyriesCargo.Config
         /// <summary>Every entry the parser refused, in words, for `cargo status`.</summary>
         public static List<string> CatalogueProblems { get; private set; } = new List<string>();
 
+        /// <summary>
+        /// Counts up on every re-parse of the synced line (2026-09-07): the director compares it against
+        /// the version its market was built from, once a second, and rebuilds the shelf between visits
+        /// when they differ. One integer, so a change that arrived by any route - `cargo catalogue`, an
+        /// admin's Configuration Manager, a listen host's own file - is noticed the same way.
+        /// </summary>
+        public static int CatalogueVersion { get; private set; }
+
         public static void Bind(ConfigFile cfg, string pluginId, string displayName, string version)
         {
             Sync = new ConfigSync(pluginId)
@@ -144,7 +152,7 @@ namespace RavenIron.ValkyriesCargo.Config
                 "Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the CLIENT that owns the bird, synced from the server; the server never reads it.",
                 new AcceptableValueRange<float>(5f, 360f));
             CatalogueLine = S(cfg, "Server", "Catalogue", Catalogue.DefaultLine,
-                "What Ingvar sells and buys: Prefab:BasePrice:TargetStock:MaxStock:Kind entries separated by commas; Kind is Ware (sells and buys back) or Want (buys only). Every number's reason is in docs/CATALOGUE.md. Unknown prefabs are dropped with one log line. Read on the SERVER.");
+                "What Ingvar sells and buys: Prefab:BasePrice:TargetStock:MaxStock:Kind entries separated by commas; Kind is Ware (sells and buys back) or Want (buys only). Every number's reason is in docs/CATALOGUE.md. A prefab this game has no item for is dropped with one log line when the shelf is built (at boot, and on every live edit). Editable on a running server: `cargo catalogue add|remove|reset` (admin), or Configuration Manager as an admin; a change applies as soon as no visit is running. Read on the SERVER.");
             PriceElasticity = S(cfg, "Server", "PriceElasticity", 0.35f,
                 "Exponent of (target / stock) in the price; higher = steeper. Read on the SERVER.",
                 new AcceptableValueRange<float>(0.05f, 1.5f));
@@ -261,6 +269,7 @@ namespace RavenIron.ValkyriesCargo.Config
             var problems = new List<string>();
             CatalogueParsed = Catalogue.Parse(CatalogueLine.Value, problems);
             CatalogueProblems = problems;
+            CatalogueVersion++;
         }
 
         // Synced: goes to every client and is locked by LockConfiguration.

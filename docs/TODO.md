@@ -26,6 +26,11 @@ every bake reaches Don as a release asset (section 2, first item).
 - [x] **The tracked DLL.** DECIDED 2026-09-07: stop tracking. `HexiumDist/plugins/` is gitignored, the
       tracked copy deleted, payloads are GitHub release assets beside the bundle; the two blobs already
       in history stay. Built on Track A (section 3).
+- [x] **Catalogue edits by an admin.** DECIDED 2026-09-07: build the `cargo catalogue list|add|remove|reset`
+      verbs and a hot swap of the live market between visits; **no sell-only kind**. Built on Track A
+      (section 3). Still open from the same discussion, undecided: `cargo stock set` / a drop-in stock file
+      for admins with server access, and `StockHalfLifeGameDays` allowing 0 (never drift) with a longer
+      default — a number for the economy sim first.
 - [ ] **Client-asserted comfort numbers.** The client writes `VCargo_rested` / `VCargo_comfort` on its own
       ZDO and the server believes them (`docs/HANDOFF-CLAUDE.md` "Decisions still for the two owners").
       P11 proposes "accept; worst case an undeserved visit". Yes, or ask for a server-side check.
@@ -181,3 +186,9 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       deliberately failing patch in a scratch build printing its name rather than killing the mod.
 - [x] ~~Owner's decision: widen the load-bearing set or leave it.~~ **Delegated to Wu'barrk 2026-09-07**
       (owner: "more his alley"); moved to section 2.
+- [ ] **The catalogue verbs and the hot swap** (owner, 2026-09-07; PR open on the word): `Catalogue.Compose /
+      Upsert / Remove / Without` and `Market.WithCatalogue`, pure, 55 checks (1605 → 1660), three mutations
+      caught; `ModConfig.CatalogueVersion`; the director rebuilds the shelf as soon as no visit is running and
+      drops prefabs the game has no item for, at boot and on every edit; `cargo catalogue list|add|remove|reset`,
+      the admin half through `VCargo_admin`; `cargo status` says when a change waits. **Not yet seen on a
+      machine**: CLAUDE.md verify item 26 (StormTest, from an admin client).

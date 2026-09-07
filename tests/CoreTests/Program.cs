@@ -31,6 +31,7 @@ namespace ValkyriesCargo.Tests
             CatalogueDefaultTests();
             CatalogueValidationTests();
             CatalogueEdgeCaseTests();
+            CatalogueEditTests();
             WireTests();
             MarketSnapshotTests();
             VisitSnapshotTests();
@@ -43,6 +44,7 @@ namespace ValkyriesCargo.Tests
             RelaxTests();
             MarketSettleTests();
             MarketStateTests();
+            MarketCatalogueSwapTests();
             NonceRingTests();
             SchedulerTests();
             VisitClockTests();
@@ -361,6 +363,74 @@ namespace ValkyriesCargo.Tests
             Check(!Catalogue.IsPrefabName("Bad Name"), "IsPrefabName rejects 'Bad Name'");
             Check(!Catalogue.IsPrefabName("a:b"), "IsPrefabName rejects 'a:b'");
             Check(!Catalogue.IsPrefabName(""), "IsPrefabName rejects empty string");
+        }
+
+        /// <summary>
+        /// The console verbs' pure half (2026-09-07): the line composed back in one spelling, an entry
+        /// added or replaced in place, an entry removed, and the game side's drop of unknown prefabs.
+        /// </summary>
+        private static void CatalogueEditTests()
+        {
+            Section("Catalogue: Compose / Upsert / Remove / Without (cargo catalogue, 2026-09-07)");
+
+            // Compose is the exact inverse of Parse on the shipped line: what the verbs write back has
+            // the same shape the file shipped with, byte for byte.
+            Catalogue shipped = Catalogue.Parse(Catalogue.DefaultLine, null);
+            Equal(Catalogue.DefaultLine, shipped.ToLine(), "Compose(Parse(DefaultLine)) is DefaultLine byte for byte");
+            Equal("", Catalogue.Compose(null), "Compose of nothing is the empty line");
+            Equal(0, Catalogue.Parse(Catalogue.Compose(new List<CatalogueEntry>()), null).Count, "and the empty line parses to an empty catalogue");
+
+            string report;
+            string line = Catalogue.Upsert(Catalogue.DefaultLine, "YmirRemains:100:5:15:Ware", out report);
+            Check(line != null, "a new, well-formed entry is accepted");
+            Catalogue cat = Catalogue.Parse(line, null);
+            Equal(73, cat.Count, "the catalogue grows by one");
+            Check(cat.Entries[72].Prefab == "YmirRemains" && cat.Entries[72].BasePrice == 100 && cat.Entries[72].Kind == EntryKind.Ware, "the new entry is last, as given");
+            Check(report.StartsWith("added YmirRemains"), "and the report says added: " + report);
+
+            line = Catalogue.Upsert(Catalogue.DefaultLine, "Iron:30:25:75:Ware", out report);
+            cat = Catalogue.Parse(line, null);
+            Equal(72, cat.Count, "re-adding a prefab already there does not grow the catalogue");
+            Equal(1, IndexOfPrefab(cat, "Iron"), "the edited entry keeps its position (Iron is still second)");
+            CatalogueEntry iron = cat.Find("Iron");
+            Check(iron.BasePrice == 30 && iron.TargetStock == 25 && iron.MaxStock == 75, "and carries the new numbers");
+            Check(report.StartsWith("updated Iron") && report.Contains("was base 25"), "the report says updated and what it was: " + report);
+
+            line = Catalogue.Upsert(Catalogue.DefaultLine, "iron:31:20:60:want", out report);
+            cat = Catalogue.Parse(line, null);
+            Equal(72, cat.Count, "prefab names match ignoring case on an edit");
+            Check(cat.Find("iron") != null && cat.Find("iron").Kind == EntryKind.Want && cat.Find("Iron") == null,
+                  "the new spelling and kind win (the game's own check on the name comes first, on the server)");
+
+            Check(Catalogue.Upsert(Catalogue.DefaultLine, "Iron:30:25:Ware", out report) == null, "four fields are refused");
+            Check(report.Contains("expected Prefab:Base:Target:Max:Kind"), "with the parser's own reason: " + report);
+            Check(Catalogue.Upsert(Catalogue.DefaultLine, "Iron:30:25:75:Ware, Wood:1:1:1:Want", out report) == null, "two entries at once are refused");
+            Check(report.Contains("exactly one"), "and say so: " + report);
+            Check(Catalogue.Upsert(Catalogue.DefaultLine, "", out report) == null, "an empty entry is refused");
+            Check(Catalogue.Upsert(Catalogue.DefaultLine, "Bad Name:1:1:1:Ware", out report) == null, "a name with a space is refused");
+            Check(Catalogue.Upsert(Catalogue.DefaultLine, "Iron:30:80:75:Ware", out report) == null, "max below target is refused");
+
+            line = Catalogue.Remove(Catalogue.DefaultLine, "Iron", out report);
+            cat = Catalogue.Parse(line, null);
+            Equal(71, cat.Count, "remove takes one entry away");
+            Check(cat.Find("Iron") == null && cat.Find("Bronze") != null && cat.Find("Silver") != null, "the named one, and only it");
+            Check(report.StartsWith("removed Iron"), "the report says removed: " + report);
+            line = Catalogue.Remove(Catalogue.DefaultLine, "IRON", out report);
+            Check(line != null && Catalogue.Parse(line, null).Find("Iron") == null, "remove matches ignoring case");
+            Check(Catalogue.Remove(Catalogue.DefaultLine, "Mithril", out report) == null && report.Contains("not in the catalogue"), "a prefab not there is refused, in words");
+            Check(Catalogue.Remove(Catalogue.DefaultLine, "  ", out report) == null, "no name is refused");
+
+            Catalogue without = shipped.Without(new List<string> { "Iron", "NotThere" });
+            Equal(71, without.Count, "Without drops the named entries and ignores names it does not have");
+            Check(without.Find("Iron") == null && without.Find("Wood") != null, "the right one went");
+            Equal(72, shipped.Count, "and the original is untouched");
+            Equal(72, shipped.Without(null).Count, "Without(null) is a copy");
+        }
+
+        private static int IndexOfPrefab(Catalogue cat, string prefab)
+        {
+            for (int i = 0; i < cat.Count; i++) if (cat.Entries[i].Prefab == prefab) return i;
+            return -1;
         }
 
         private static void WireTests()
@@ -1421,6 +1491,68 @@ namespace ValkyriesCargo.Tests
             Equal(0, problems.Count, "carriage returns and a trailing newline are tolerated");
             Equal(9, c.Find("Iron").Stock, "the stock row applied");
             Equal(111, c.Purse, "and the purse row with it");
+        }
+
+        /// <summary>
+        /// The hot swap's pure half (2026-09-07): a market carried onto a new catalogue keeps what the
+        /// sidecar keeps, drops what the catalogue dropped, starts new rows at target, clamps to a lowered
+        /// max, reprices on a changed base, and is the same market twice on an unchanged catalogue.
+        /// </summary>
+        private static void MarketCatalogueSwapTests()
+        {
+            Section("Market.WithCatalogue (the catalogue hot swap, 2026-09-07)");
+
+            Market a = NewMarket(100);
+            a.StartVisit(3, 100, 0);
+            Check(a.Settle(new Deal { VisitId = 3, Nonce = 11, Wanted = new DealLine { Prefab = "Iron", Count = 2, UnitPriceSeen = 25 } }, 1000, 100).Ok,
+                  "a buy in visit #3 (the purse and the delivery sequence move)");
+            a.Find("Wood").Stock = 555; a.Find("Wood").UpdatedWorldTime = 77.5;
+            a.Find("Silver").Stock = 3;
+
+            // Iron out, Ymir in, Wood's max lowered, Silver's base raised.
+            string line = Catalogue.Remove(Catalogue.DefaultLine, "Iron", out _);
+            line = Catalogue.Upsert(line, "YmirRemains:100:5:15:Ware", out _);
+            line = Catalogue.Upsert(line, "Wood:1:50:100:Want", out _);
+            line = Catalogue.Upsert(line, "Silver:80:12:36:Ware", out _);
+            Catalogue next = Catalogue.Parse(line, null);
+
+            string summary;
+            Market b = a.WithCatalogue(next, 200, out summary);
+            Equal(72, b.Count, "the new shelf has the new catalogue's rows");
+            Check(b.Find("Iron") == null, "the dropped prefab is gone");
+            Equal(5, b.Find("YmirRemains").Stock, "a new row starts at its target stock");
+            Equal(200.0, b.Find("YmirRemains").UpdatedWorldTime, "stamped now, so its drift starts from the swap");
+            Equal(100, b.Find("Wood").Stock, "a kept row above a lowered max is clamped to it");
+            Equal(77.5, b.Find("Wood").UpdatedWorldTime, "and keeps its own drift stamp");
+            Equal(3, b.Find("Silver").Stock, "a kept row keeps its stock");
+            Equal(a.Purse, b.Purse, "the purse carries");
+            Equal(3, b.VisitId, "the visit number carries");
+            Equal(4, b.NextVisitId, "so the next id is still the next");
+            Equal(a.Takings, b.Takings, "this visit's takings carry (purseStart and purse both moved)");
+            Equal(a.Coined, b.Coined, "and the coins taken in");
+            Check(b.EncodeState().Contains("seq\t1"), "the delivery sequence carries, so a resumed numbering never repeats an id");
+            Check(ReferenceEquals(a.Rules, b.Rules), "the rules object is the same one (the director's once-a-second refill still reaches it)");
+            Equal(a.Salt, b.Salt, "and so is the salt");
+            Equal(Market.PriceFor(80, 12, 3, b.Rules), b.Charge(b.Find("Silver")), "a changed base reprices at once");
+            Check(summary.Contains("1 added (YmirRemains at 5)") && summary.Contains("1 dropped (Iron with 18 in stock)") && summary.Contains("Wood 555 to 100"),
+                  "the summary names what moved: " + summary);
+            Check(summary.Contains("71 kept"), "and counts what did not");
+
+            // A row that changed kind keeps its stock, and a buy against it is refused the way any non-ware is.
+            line = Catalogue.Upsert(Catalogue.DefaultLine, "Iron:25:20:60:Want", out _);
+            Market c = a.WithCatalogue(Catalogue.Parse(line, null), 200, out summary);
+            Equal(18, c.Find("Iron").Stock, "a kind change keeps the stock");
+            Equal(DealReason.UnknownItem, c.Settle(new Deal { VisitId = 3, Nonce = 12, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 25 } }, 1000, 200).Reason,
+                  "and buying a row that became a Want is refused like any non-ware");
+
+            // The same catalogue twice is the same market twice.
+            Market d = a.WithCatalogue(Catalogue.Parse(Catalogue.DefaultLine, null), 200, out summary);
+            Equal(a.EncodeState(), d.EncodeState(), "an unchanged catalogue carries the whole state byte for byte");
+            Check(summary.Contains("72 kept, 0 added, 0 dropped"), "and says nothing moved: " + summary);
+            Check(!summary.Contains("clamped"), "nothing clamped either");
+
+            // The nonce ring does NOT carry: the director only swaps between visits for exactly this reason.
+            Check(!d.Nonces.Contains(11), "the settled nonce is not in the new market (why the swap waits for an idle market)");
         }
 
         private static void NonceRingTests()

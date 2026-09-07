@@ -373,6 +373,57 @@ namespace RavenIron.ValkyriesCargo.Core
             return DealResult.Refuse(d.Nonce, reason, market);
         }
 
+        // ---- the catalogue swap ------------------------------------------------------------------
+
+        /// <summary>
+        /// This market carried onto a new catalogue (2026-09-07: `cargo catalogue add|remove|reset`, an
+        /// admin's Configuration Manager, any live edit of `Server.Catalogue`). Every row still in the
+        /// catalogue keeps its stock and its drift stamp (clamped to a lowered max); a new row starts at
+        /// target; a dropped row goes with whatever it held. The purse, this visit's baseline, the coins
+        /// taken, the visit number and the delivery sequence all carry, through the same rows the sidecar
+        /// stores, so a swap and a restart are the same operation. The rules object and the salt are the
+        /// same ones, so the director's once-a-second refill keeps reaching them. NOT carried: the nonce
+        /// ring, which is why the director only swaps between visits: a deal settled in a visit must stay
+        /// settled for that visit. `summary` is one line for the log. PURE, never throws.
+        /// </summary>
+        public Market WithCatalogue(Catalogue catalogue, double worldTime, out string summary)
+        {
+            var next = new Market(catalogue, Rules, worldTime, _salt);
+            var problems = new List<string>();
+            next.ApplyState(EncodeState(), problems);   // a row for a dropped prefab is the one expected "problem": counted below, not reported
+
+            var added = new List<string>();
+            var dropped = new List<string>();
+            var clamped = new List<string>();
+            int kept = 0;
+            foreach (MarketItem it in next._items)
+            {
+                MarketItem old = Find(it.Prefab);
+                if (old == null) added.Add(it.Prefab + " at " + Wire.Int(it.Stock));
+                else
+                {
+                    kept++;
+                    if (it.Stock < old.Stock) clamped.Add(it.Prefab + " " + Wire.Int(old.Stock) + " to " + Wire.Int(it.Stock));
+                }
+            }
+            foreach (MarketItem old in _items)
+                if (next.Find(old.Prefab) == null) dropped.Add(old.Prefab + (old.Stock > 0 ? " with " + Wire.Int(old.Stock) + " in stock" : ""));
+
+            int unexpected = 0;
+            string first = null;
+            foreach (string p in problems)
+                if (p.IndexOf("unknown prefab", StringComparison.Ordinal) < 0) { unexpected++; if (first == null) first = p; }
+
+            summary = "catalogue applied: " + Wire.Int(next.Count) + " entries; " + Wire.Int(kept) + " kept, " +
+                      Wire.Int(added.Count) + " added" + Named(added) + ", " + Wire.Int(dropped.Count) + " dropped" + Named(dropped) +
+                      (clamped.Count > 0 ? ", clamped to a lower max" + Named(clamped) : "") +
+                      "; purse " + Wire.Int(next.Purse) + ", next visit #" + Wire.Int(next.NextVisitId) +
+                      (unexpected > 0 ? "; " + Wire.Int(unexpected) + " row(s) did not carry, first: " + first : "");
+            return next;
+        }
+
+        private static string Named(List<string> names) => names.Count == 0 ? "" : " (" + string.Join(", ", names.ToArray()) + ")";
+
         // ---- persistence rows ----------------------------------------------------------------
 
         /// <summary>

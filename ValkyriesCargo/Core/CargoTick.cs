@@ -226,9 +226,55 @@ namespace RavenIron.ValkyriesCargo.Core
                     return "cargo: " + d.ResetCooldowns();
                 case "save":
                     return "cargo: sidecar " + (d.Flush("admin", force: true) ? "written" : "NOT written (see the log)");
+                case "catalogue":
+                    return "cargo: " + CatalogueVerb(d, arg, znet);
                 default:
                     return "cargo: unknown admin verb '" + verb + "'";
             }
+        }
+
+        /// <summary>
+        /// `cargo catalogue add|remove|reset` (2026-09-07), where the world runs: edit the synced
+        /// `Server.Catalogue` line through its own config entry, so ServerSync carries it to every client,
+        /// the lock still applies, BepInEx rewrites the cfg file, and `ModConfig` re-parses it; then ask
+        /// the director to apply it, which it does at once if no visit is running and otherwise as soon
+        /// as one is not. `add` is also an edit: the same prefab replaces its entry in place. The game is
+        /// asked whether the prefab exists and is an item BEFORE the line changes, so a typo is refused
+        /// in words instead of being dropped at the next boot. `list` never reaches here: it is local.
+        /// </summary>
+        private static string CatalogueVerb(VisitDirector d, string arg, ZNet znet)
+        {
+            string a = (arg ?? "").Trim();
+            int space = a.IndexOf(' ');
+            string sub = (space < 0 ? a : a.Substring(0, space)).ToLowerInvariant();
+            string rest = space < 0 ? "" : a.Substring(space + 1).Trim();
+            string line, report;
+            switch (sub)
+            {
+                case "add":
+                {
+                    if (rest.Length == 0) return "catalogue add needs Prefab:Base:Target:Max:Kind (Kind is Ware or Want)";
+                    string prefab = rest.Split(':')[0].Trim();
+                    string why;
+                    if (!VisitDirector.IsItemPrefab(prefab, out why)) return "catalogue add refused: " + why;
+                    line = Catalogue.Upsert(ModConfig.CatalogueLine.Value, rest, out report);
+                    break;
+                }
+                case "remove":
+                    if (rest.Length == 0) return "catalogue remove needs a prefab name";
+                    line = Catalogue.Remove(ModConfig.CatalogueLine.Value, rest, out report);
+                    break;
+                case "reset":
+                    line = Catalogue.DefaultLine;
+                    report = "reset to the shipped catalogue (docs/CATALOGUE.md)";
+                    break;
+                default:
+                    return "catalogue: add <Prefab:Base:Target:Max:Kind> | remove <Prefab> | reset (list needs no admin)";
+            }
+            if (line == null) return "catalogue " + sub + " refused: " + report;
+            if (line == ModConfig.CatalogueLine.Value) return "catalogue " + report + "; the line is already exactly that, nothing changed";
+            ModConfig.CatalogueLine.Value = line;   // SettingChanged: re-parsed, sent to every client, the cfg file rewritten
+            return "catalogue " + report + "; " + d.SwapCatalogue(znet.GetTimeSeconds());
         }
     }
 }

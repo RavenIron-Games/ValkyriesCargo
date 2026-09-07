@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 
 namespace RavenIron.ValkyriesCargo.Core
 {
@@ -152,6 +153,112 @@ namespace RavenIron.ValkyriesCargo.Core
                 cat._byPrefab.Add(prefab, e);
             }
             return cat;
+        }
+
+        // ---- the console verbs (2026-09-07): the line, edited, in one canonical spelling ----------------
+
+        /// <summary>
+        /// The line form of a set of entries: `Prefab:Base:Target:Max:Kind` joined by ", ", which is exactly
+        /// how <see cref="DefaultLine"/> is written, so `Compose(Parse(DefaultLine).Entries)` is DefaultLine
+        /// byte for byte (the harness checks it). What `cargo catalogue add|remove` write back into the
+        /// config entry: one spelling, so an edit never drifts the line's shape.
+        /// </summary>
+        public static string Compose(IEnumerable<CatalogueEntry> entries)
+        {
+            var sb = new StringBuilder();
+            if (entries != null)
+                foreach (CatalogueEntry e in entries)
+                {
+                    if (e == null) continue;
+                    if (sb.Length > 0) sb.Append(", ");
+                    sb.Append(e.ToString());
+                }
+            return sb.ToString();
+        }
+
+        /// <summary>This catalogue as the config line.</summary>
+        public string ToLine() => Compose(_entries);
+
+        /// <summary>One entry in words, for the console: "base 25, target 20, max 60, Ware".</summary>
+        public static string Describe(CatalogueEntry e) =>
+            e == null ? "" : "base " + e.BasePrice.ToString(CultureInfo.InvariantCulture) +
+                             ", target " + e.TargetStock.ToString(CultureInfo.InvariantCulture) +
+                             ", max " + e.MaxStock.ToString(CultureInfo.InvariantCulture) + ", " + e.Kind;
+
+        /// <summary>
+        /// `cargo catalogue add`: `line` with `entryText` (one `Prefab:Base:Target:Max:Kind`) added at the
+        /// end, or replacing the entry of the same prefab IN PLACE (an edit keeps its position, so the
+        /// shelf does not reorder under a player). Null, with the reason in `report`, when the entry does
+        /// not parse or is not exactly one entry. Prefab names match ignoring case and the new spelling
+        /// wins; whether the game knows the prefab at all is the server's check, before this is called.
+        /// PURE, never throws.
+        /// </summary>
+        public static string Upsert(string line, string entryText, out string report)
+        {
+            var problems = new List<string>();
+            Catalogue one = Parse(entryText, problems);
+            if (problems.Count > 0) { report = problems[0]; return null; }
+            if (one.Count != 1)
+            {
+                report = "expected exactly one Prefab:Base:Target:Max:Kind entry, got " + one.Count.ToString(CultureInfo.InvariantCulture);
+                return null;
+            }
+            CatalogueEntry e = one._entries[0];
+            var entries = new List<CatalogueEntry>(Parse(line, null)._entries);
+            int at = IndexOf(entries, e.Prefab);
+            if (at >= 0)
+            {
+                CatalogueEntry old = entries[at];
+                entries[at] = e;
+                report = "updated " + e.Prefab + ": " + Describe(e) + " (was " + Describe(old) + ")";
+            }
+            else
+            {
+                entries.Add(e);
+                report = "added " + e.Prefab + ": " + Describe(e);
+            }
+            return Compose(entries);
+        }
+
+        /// <summary>
+        /// `cargo catalogue remove`: `line` without the named prefab (matched ignoring case). Null, with
+        /// the reason in `report`, when it is not there. PURE, never throws.
+        /// </summary>
+        public static string Remove(string line, string prefab, out string report)
+        {
+            string name = (prefab ?? "").Trim();
+            if (name.Length == 0) { report = "name the prefab to remove"; return null; }
+            var entries = new List<CatalogueEntry>(Parse(line, null)._entries);
+            int at = IndexOf(entries, name);
+            if (at < 0) { report = name + " is not in the catalogue"; return null; }
+            CatalogueEntry old = entries[at];
+            entries.RemoveAt(at);
+            report = "removed " + old.Prefab + " (" + Describe(old) + ")";
+            return Compose(entries);
+        }
+
+        /// <summary>
+        /// This catalogue without the named prefabs: what the server drops when ZNetScene has no item
+        /// prefab of that name (a misspelling, or an item a later game removed), so a row nobody could
+        /// ever be delivered never reaches the shelf. Exact names. Never throws.
+        /// </summary>
+        public Catalogue Without(ICollection<string> prefabs)
+        {
+            var cat = new Catalogue();
+            foreach (CatalogueEntry e in _entries)
+            {
+                if (prefabs != null && prefabs.Contains(e.Prefab)) continue;
+                cat._entries.Add(e);
+                cat._byPrefab.Add(e.Prefab, e);
+            }
+            return cat;
+        }
+
+        private static int IndexOf(List<CatalogueEntry> entries, string prefab)
+        {
+            for (int i = 0; i < entries.Count; i++)
+                if (string.Equals(entries[i].Prefab, prefab, StringComparison.OrdinalIgnoreCase)) return i;
+            return -1;
         }
 
         /// <summary>Letters, digits and underscores, at least one character. What ZNetScene names look like.</summary>

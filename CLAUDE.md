@@ -103,7 +103,8 @@ by the item's shared name); `Client/InboxStore.cs` keeps the applied delivery id
 discipline (.tmp, .bak, .corrupt). The director loads the sidecar when it is built, writes it on a 30 s cadence
 while dirty and at visit start, visit end, session end and shutdown, and ADOPTS a saved visit whose event the
 engine restored (vanilla saves the running random event with the world). Console: `cargo stock [prefab]`,
-`cargo deal buy|sell <prefab> [count]`, `cargo claim`; admin `cargo reset`, `cargo save`. 852 off-game checks.
+`cargo deal buy|sell <prefab> [count]`, `cargo claim`, `cargo catalogue list`; admin `cargo reset`, `cargo save`,
+`cargo catalogue add|remove|reset` (2026-09-07: the shelf changes without a restart, between visits). 852 off-game checks.
 
 **HEADLESS VERIFIED 2026-09-06 19:25 on StormTest (plugins cleared to this DLL alone, 1 plugin to load)**:
 first boot `director up: ... next visit #1, ...; sidecar valkyriescargo_4690126.dat (fresh world)` and the file
@@ -874,6 +875,16 @@ Ghost mode (F11; the owner's decision 2026-09-07), a visit running, any client:
     no enemy health bar appears over him, and he never swings at anything; the player is fought exactly as
     before. `cargo status` lists `Patch_BaseAI_IsEnemy` among the applied patches. With no visit running,
     hostiles behave exactly as vanilla (the prefix is one int compare there).
+26. **The shelf changes without a restart** (2026-09-07): on StormTest with no visit running, `cargo catalogue
+    add Ruby:40:15:45:Ware` from an admin client answers `cargo: catalogue updated Ruby: base 40, target 15,
+    max 45, Ware (was base 29, target 15, max 45, Ware); catalogue applied: 72 entries; 72 kept, 0 added,
+    0 dropped; purse …, next visit #…`, the server log carries the same `catalogue applied:` line, `cargo stock
+    Ruby` on a client shows the new price within a second, and `com.raveniron.valkyriescargo.cfg` on the
+    server carries the edited line. With a visit running the answer is `catalogue change waits: visit #N is
+    running; …`, `cargo status` shows `catalogue: a change waits`, and the change applies when the visit ends
+    (the `catalogue applied:` line follows the visit's end line). `cargo catalogue add Nonsense:1:1:1:Ware` is
+    refused with `this game has no prefab named 'Nonsense'`; `cargo catalogue add Boar:1:1:1:Ware` with `not an
+    item`. `cargo catalogue list` on a client shows the edit; `cargo catalogue reset` puts the 72 back.
 
 ---
 
