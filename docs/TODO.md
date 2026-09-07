@@ -85,10 +85,8 @@ step 4).
 
 ## 2. Wu'barrk — flight, merchant, body, sweeps, export
 
-- [ ] **F11, decided by the owner 2026-09-07: ghost mode.** Ingvar is to hostiles what a player in vanilla's
-      `ghost` mode is — not a target, not a threat, nothing parks on him (the audit's F11 has the
-      `BaseAI.IsEnemy` lines; `Character.InGhostMode()` is virtual, decompile 10143, if that is the road).
-      Owner's words: "ghost mode him, Wu'barrk knows how." Goes with the F2–F10 branches.
+- [x] ~~F11, decided by the owner 2026-09-07: ghost mode.~~ **Taken by Track A** (owner, the same evening:
+      Wu'barrk is loaded with F2–F10) — PR #37; see section 3. Nothing of Track B's is touched.
 
 - [ ] **The P4/P5 audit's findings (`docs/AUDIT-P4P5-2026-09-07.md`, issue #29).** **F1 DONE** — PR #30
       merged 2026-09-07: `Core/Immortality.RunOriginal`, pure, seven checks, the exact rc1 line restored as
@@ -165,6 +163,11 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       DONE 2026-09-07 (owner's word): 3,845,930 bytes; a build here is 4,181,504 bytes with Ingvar in it.
 - [ ] **The audit's probe rows into P10b's registry** (`docs/AUDIT-P4P5-2026-09-07.md` §2), now that
       PR #28 is in; and item 24 run on a real machine.
+- [ ] **F11 ghost mode — PR #37 (open, on the owner's word).** The owner's decision, built here because
+      Track B is loaded: a `Priority.Low` prefix on the static `BaseAI.IsEnemy(a, b)`, any pair with the
+      merchant in it answers "not enemies" while a visit runs; `Core/Ghost.Decide` pure, 11 checks, three
+      mutations caught; the `character_ai` probe resolves the static overload; DESIGN §8 row; CLAUDE.md
+      verify item 25 is the screen proof (a raid walks past him; no enemy bar; he never swings).
 - [ ] **After the proofs, if the screen shows it** (`docs/CLIENT-AUDIT.md` report-only findings): the game
       menu opening behind the terminal (finding 7, `Patch_Menu_Update`), the negative icon cache
       (finding 9), the full-pack deal check (finding 10, `CanApply`), `HasRenderer` as a cached field
