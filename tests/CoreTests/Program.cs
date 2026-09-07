@@ -60,6 +60,7 @@ namespace ValkyriesCargo.Tests
             CargoRpcTests();
             FlightPlanTests();
             MerchantPlanTests();
+            LinesTests();
             KeysTests();
             TraderLedgerTests();
             VisitHistoryTests();
@@ -2284,11 +2285,7 @@ namespace ValkyriesCargo.Tests
             Equal("", s.LastEndReason, "and the old end reason is cleared");
             s.End(null);
             Equal("ended", s.LastEndReason, "a missing reason reads 'ended'");
-
-            // Lines: every seed picks an arrival line, the same on every client.
-            Check(Lines.ArrivalFor(0) == Lines.Arrival[0] && Lines.ArrivalFor(5) == Lines.Arrival[1], "the seed indexes the arrival lines");
-            Check(Lines.ArrivalFor(-3) == Lines.Arrival[1], "a negative seed still lands inside the table");
-            Check(Lines.ArrivalFor(int.MinValue).Length > 0, "even int.MinValue");
+            // Lines' own checks moved to LinesTests(), 2026-09-07 (F3) - see next to MerchantPlanTests.
         }
 
         private static void SidecarTests()
@@ -3492,6 +3489,56 @@ namespace ValkyriesCargo.Tests
             Check(s.State == 2 && s.Changed && !s.TimedOut,
                   "and arriving on the very tick the timeout would have fired still counts as arriving");
 
+            // F5 (audit 2026-09-07): the budget scales with how far he started, instead of the flat
+            // 20 s that could never be met from where the live log caught him (51 m, looping forever).
+            Equal(20f, MerchantPlan.ApproachBudget(5f), "5 m at entry: the floor, unchanged from the old flat budget");
+            Equal(20f, MerchantPlan.ApproachBudget(30f), "30 m at entry: exactly the floor boundary (30 / 1.5 == 20)");
+            Equal(34f, MerchantPlan.ApproachBudget(51f), "51 m at entry: the live-log distance scales to 34 s");
+            Equal(90f, MerchantPlan.ApproachBudget(200f), "200 m at entry: clamped at the ceiling");
+
+            // The scaled budget actually drives Next's TimedOut fallback, not just ApproachBudget in
+            // isolation - the 51 m case from the live log now gets 34 s of patience, not 20.
+            s = MerchantPlan.Next(1, false, true, distance: 51f, timeInState: 33.9f, farSeconds: 0f, approachDistance: 3.5f, distanceAtEntry: 51f);
+            Check(s.State == 1 && !s.Changed, "51 m in: still walking at 33.9 s (the old flat budget would already have given up at 20 s)");
+            s = MerchantPlan.Next(1, false, true, distance: 51f, timeInState: 34f, farSeconds: 0f, approachDistance: 3.5f, distanceAtEntry: 51f);
+            Check(s.State == 2 && s.TimedOut, "and gives up right on its OWN scaled budget, 34 s, not before");
+
+            // Stuck vs TimedOut (F5 part 2): two different failures, two different flags, so the log
+            // can tell "no path" from "ran out of patience" apart.
+            s = MerchantPlan.Next(1, false, true, distance: 51f, timeInState: 5f, farSeconds: 0f, approachDistance: 3.5f,
+                                   distanceAtEntry: 51f, stuckSeconds: 3f);
+            Check(s.State == 2 && s.Changed && s.CallOut && s.Stuck && !s.TimedOut,
+                  "3 s of no progress gives up long before the 34 s budget, flagged Stuck and not TimedOut");
+            s = MerchantPlan.Next(1, false, true, distance: 51f, timeInState: 34f, farSeconds: 0f, approachDistance: 3.5f,
+                                   distanceAtEntry: 51f, stuckSeconds: 0f);
+            Check(s.State == 2 && s.Changed && s.CallOut && s.TimedOut && !s.Stuck,
+                  "a full budget with no stuck time at all gives up flagged TimedOut and not Stuck");
+            s = MerchantPlan.Next(1, false, true, distance: 51f, timeInState: 5f, farSeconds: 0f, approachDistance: 3.5f,
+                                   distanceAtEntry: 51f, stuckSeconds: 2.9f);
+            Check(s.State == 1 && !s.Changed, "2.9 s of no progress is not stuck yet");
+
+            // Arrival still wins on the very tick either fallback would also have fired.
+            s = MerchantPlan.Next(1, false, true, distance: 3f, timeInState: 999f, farSeconds: 0f, approachDistance: 3.5f,
+                                   distanceAtEntry: 51f, stuckSeconds: 999f);
+            Check(s.State == 2 && s.Changed && !s.Stuck && !s.TimedOut,
+                  "reaching the player beats a simultaneous stuck AND timed-out reading");
+
+            // AccumulateProgress: the window judges NET movement, not any one tick's - jitter under a
+            // second washes out, and a real second of near-zero net movement counts toward Stuck.
+            var prog = default(MerchantPlan.ApproachProgress);
+            prog = MerchantPlan.AccumulateProgress(prog, 0.05f, 0.5f);
+            Check(prog.StuckSeconds == 0f, "half a window in: no verdict yet, StuckSeconds untouched");
+            prog = MerchantPlan.AccumulateProgress(prog, 0.05f, 0.5f);
+            Check(prog.StuckSeconds > 0f, "the window closed under 1 s net (0.1 m) and StuckSeconds now counts it");
+            prog = MerchantPlan.AccumulateProgress(prog, 2f, 1f);
+            Check(prog.StuckSeconds == 0f, "a window that closes with real movement resets to zero, whatever came before");
+
+            prog = default;
+            for (int i = 0; i < 3; i++)
+                prog = MerchantPlan.AccumulateProgress(prog, 0.01f, 1f);
+            Check(prog.StuckSeconds >= MerchantPlan.StuckThresholdSeconds,
+                  $"three consecutive near-zero 1 s windows reach the {MerchantPlan.StuckThresholdSeconds} s threshold (got {prog.StuckSeconds})");
+
             // The callout is once per visit: state 2 never re-enters itself.
             int callouts = 0;
             int st = 1; float t = 0f;
@@ -3523,6 +3570,13 @@ namespace ValkyriesCargo.Tests
             Check(Math.Abs(far - 2f) < 0.001f, "the far timer accumulates while he is outside the leash");
             far = MerchantPlan.AccumulateFar(far, 5f, 1f);
             Check(far == 0f, "and resets to zero the moment the player is back inside it");
+
+            // F5 part 3: the leash fires at MOST once a visit - the audit's "loop forever" case (13 m,
+            // wait 5 s, walk, give up, repeat) is now structurally impossible.
+            s = MerchantPlan.Next(2, false, true, distance: 13f, timeInState: 30f, farSeconds: 5f, approachDistance: 3.5f, leashSpent: true);
+            Check(s.State == 2 && !s.Changed, "already spent: the SAME 13 m/5 s that fired it before now does nothing");
+            s = MerchantPlan.Next(2, false, true, distance: 13f, timeInState: 30f, farSeconds: 5f, approachDistance: 3.5f, leashSpent: false);
+            Check(s.State == 1 && s.Changed && s.Follow && s.LeashFired, "not yet spent: it still fires, flagged so the caller knows to spend it");
 
             Section("MerchantPlan: leaving is terminal, and the restart rule");
 
@@ -3570,6 +3624,65 @@ namespace ValkyriesCargo.Tests
                   "and a NEGATIVE id is 0 too (the id-0 case above passes with or without the guard, so it proves nothing alone)");
             Check(VisitSession.VisitIdOf(savedRow + "\r") == 41, "a row with a trailing CR still parses (Windows sidecar)");
 
+        }
+
+        /// <summary>
+        /// F3 (audit 2026-09-07): one wire index space for the seeded arrival line, the reactions, the
+        /// farewell and the dismiss-first line, so a single `RPC_Say(index)` can carry all of them on
+        /// every screen. Farewell/DismissFirst were already indices 3/4 in `Says`; the only real change
+        /// is appending the four `Arrival` lines at `Say.ArrivalBase` and up.
+        /// </summary>
+        private static void LinesTests()
+        {
+            Section("Lines: one wire index space for the seeded arrival line, the reactions, the farewell and the dismiss-first line (F3)");
+
+            // Moved here from VisitSessionTests, 2026-09-07 (F3): Lines has its own section now, so its
+            // own checks belong here rather than tacked onto the visit session's tail.
+            Check(Lines.ArrivalFor(0) == Lines.Arrival[0] && Lines.ArrivalFor(5) == Lines.Arrival[1], "the seed indexes the arrival lines");
+            Check(Lines.ArrivalFor(-3) == Lines.Arrival[1], "a negative seed still lands inside the table");
+            Check(Lines.ArrivalFor(int.MinValue).Length > 0, "even int.MinValue");
+
+            // The stable named indices (design 3.6 / F3): unchanged by appending the arrival lines.
+            Equal(0, Lines.Say.Open, "Open stays 0");
+            Equal(1, Lines.Say.PriceChanged, "PriceChanged stays 1");
+            Equal(2, Lines.Say.OneMinute, "OneMinute stays 2");
+            Equal(3, Lines.Say.DismissFirst, "DismissFirst stays 3");
+            Equal(4, Lines.Say.Farewell, "Farewell stays 4");
+            Equal(5, Lines.Say.RefuseFull, "RefuseFull stays 5");
+            Equal(6, Lines.Say.RefusePurse, "RefusePurse stays 6");
+            Equal(7, Lines.Say.RefuseUnknown, "RefuseUnknown stays 7");
+            Equal(8, Lines.Say.ArrivalBase, "the arrival lines start right after the reactions, not before");
+
+            // Round trip: every named constant resolves back through Reaction() to its own text.
+            Equal(Lines.Open, Lines.Reaction(Lines.Say.Open), "Open round-trips");
+            Equal(Lines.PriceChanged, Lines.Reaction(Lines.Say.PriceChanged), "PriceChanged round-trips");
+            Equal(Lines.OneMinute, Lines.Reaction(Lines.Say.OneMinute), "OneMinute round-trips");
+            Equal(Lines.DismissFirst, Lines.Reaction(Lines.Say.DismissFirst), "DismissFirst round-trips");
+            Equal(Lines.Farewell, Lines.Reaction(Lines.Say.Farewell), "Farewell round-trips");
+            Equal(Lines.RefuseFull, Lines.Reaction(Lines.Say.RefuseFull), "RefuseFull round-trips");
+            Equal(Lines.RefusePurse, Lines.Reaction(Lines.Say.RefusePurse), "RefusePurse round-trips");
+            Equal(Lines.RefuseUnknown, Lines.Reaction(Lines.Say.RefuseUnknown), "RefuseUnknown round-trips");
+
+            // The arrival lines land at the promised offset, in order, and the new index-based route
+            // agrees with the old direct seed-to-text route exactly - not a second, diverging table.
+            for (int i = 0; i < Lines.Arrival.Length; i++)
+                Check(Lines.Reaction(Lines.Say.ArrivalBase + i) == Lines.Arrival[i], "arrival line " + i + " lands at ArrivalBase + " + i);
+            for (int seed = -5; seed <= 5; seed++)
+                Check(Lines.Reaction(Lines.ArrivalIndexFor(seed)) == Lines.ArrivalFor(seed),
+                      "ArrivalIndexFor(" + seed + ") resolves through Reaction() to the same text ArrivalFor returns directly");
+
+            // IsArrival: true for exactly the arrival span, false everywhere else this build knows,
+            // including one past the end of the whole table and any negative index.
+            for (int i = 0; i < Lines.Says.Length; i++)
+                Check(Lines.IsArrival(i) == (i >= Lines.Say.ArrivalBase), "IsArrival(" + i + ") matches the arrival span");
+            Check(!Lines.IsArrival(-1), "IsArrival is false below zero");
+            Check(!Lines.IsArrival(Lines.Says.Length), "IsArrival is false one past the table");
+
+            // Reaction: in range across the WHOLE unified table (not just the old 8), empty outside it.
+            Equal(8 + Lines.Arrival.Length, Lines.Says.Length, "the table is exactly the reactions plus the arrival lines");
+            Check(Lines.Reaction(Lines.Says.Length - 1).Length > 0, "the last index in the table resolves");
+            Check(Lines.Reaction(Lines.Says.Length) == "", "one past the end is empty, not an exception");
+            Check(Lines.Reaction(-1) == "", "a negative index is empty, not an exception");
         }
 
         /// <summary>
