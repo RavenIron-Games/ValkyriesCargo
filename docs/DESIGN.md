@@ -550,7 +550,7 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Build | net472, `libs\` via fetch-libs, `ILRepack.targets`, `AllowUnsafeBlocks` false; Unity project as a sibling directory; Editor 6000.0.61f1 for bundles | proposed |
 | Where bundles get built | Wu'barrk bakes it: he is the Unity side and holds 6000.0.61f1. The bake is reproducible from the repo's source art on any machine with that Editor (`tools/setup-ingvar-unity.ps1`, then the Editor menu or the `unity` CLI, then `-Embed`), so nothing depends on one box | locked (owner, 2026-09-06: "wubarrk is also the unity guy") |
 | Console prefix | `cargo` — `status`, `version`, `prefab <name>`; admin: `visit [player]`, `dismiss` (built, P3), `stock`, `reset` (planned). From a client the admin verbs ride `VCargo_admin`; a dedicated console names the player | built (P3) |
-| Dependencies | BepInExPack only | locked |
+| Dependencies | BepInExPack only. Re-affirmed by the owner 2026-09-07: P12's `ValheimModding-JsonDotNET` dependency (two serializer calls) was replaced the same day by the pure `Core/Json.cs`, a writer and never a reader | locked |
 
 ---
 

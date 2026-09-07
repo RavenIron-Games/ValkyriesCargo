@@ -155,9 +155,8 @@ On a Gale-managed client the plugin folder is
 `%APPDATA%\com.kesomannen.gale\valheim\profiles\<profile>\BepInEx\plugins\`, not the Steam folder.
 
 Requires [BepInExPack Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/)
-and, since the BarrkBOT export, `ValheimModding-JsonDotNET-13.0.4` (Newtonsoft.Json, compiled against
-at build time for `Server/BarrkBotExport.cs`; both are in `manifest.json`'s dependency list, so a
-package manager resolves it the same way it resolves BepInEx). No Jotunn.
+and nothing else: no Jotunn, no JSON library (the BarrkBOT export writes its files through the mod's
+own `Core/Json.cs`). `manifest.json`'s dependency list is that one entry.
 
 Built against the assemblies of the Valheim install of 2026-09-06 (0.221.x); that install's
 `UnityPlayer.dll` reports **Unity 6000.0.61f1**, which is the Editor version any asset bundle for

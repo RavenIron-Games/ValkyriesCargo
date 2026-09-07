@@ -83,17 +83,16 @@ the Thunderstore package format, which is what `package.ps1` builds.
   mods found", and searches for `cargo`, `valkyrie` and `ingvar` turned up nothing by this name. The
   name is free. Re-check before uploading; it costs one search.
 - Upload the zip from `dist\`. Nothing is edited by hand on the store side: the description, the
-  dependency string and the icon all come out of the package. As of the BarrkBOT export
-  (`BARRKBOT_CONTRACT.md`) that string is two entries, both written from `manifest.json`:
-  `denikson-BepInExPack_Valheim-5.4.2333` and `ValheimModding-JsonDotNET-13.0.4` (the version
-  confirmed live against Fatty's own shipped manifest, not guessed). The second exists because
-  `Server/BarrkBotExport.cs` compiles against `Newtonsoft.Json.dll` at build time only
-  (`<Private>false</Private>` in the csproj) and needs a runtime copy on the server; we do not ship
-  one ourselves (`docs/DECISIONS-WUBARRK.md` #3 — two Newtonsoft builds in one `BepInEx/plugins`
-  tree is a known way to break a server). `tools/fetch-libs.ps1` copies the build-time DLL itself
-  from the workspace's `libs-Tools\`, which is a fresh-clone build requirement, not a player-facing
-  one: a server owner installing this mod through a manager that resolves Thunderstore dependencies
-  gets JsonDotNET automatically from the manifest entry above.
+  dependency string and the icon all come out of the package. That string is ONE entry, written from
+  `manifest.json`: `denikson-BepInExPack_Valheim-5.4.2333`. The BarrkBOT export (`BARRKBOT_CONTRACT.md`)
+  briefly added `ValheimModding-JsonDotNET` on 2026-09-07 for two serializer calls; the owner had it
+  removed the same day in favour of the pure `Core/Json.cs`, so there is no third-party DLL at build
+  time or at run time, and `tools/fetch-libs.ps1` copies nothing from outside the game install.
+- **The built DLL is not tracked in git** (owner, 2026-09-07; WORKSPLIT §4). `HexiumDist/plugins/` is
+  gitignored; the packager writes it there for the upload and it goes nowhere else. What a tester or a
+  store gets is a **release asset**: the zip from `dist\` attached to the GitHub release, beside the baked
+  bundle (`Assets/valkyriescargo_kit`) that a build on another machine needs. The two DLL blobs already
+  in history (PR #22 and its rebuild) stay; nothing is rewritten.
 - **The release note must say that every client has to update.** The ServerSync gate refuses any
   client on a different version, so a server that updates and a player who does not is a player who
   cannot connect, with a message they will read as a crash. Say it in the first line of the note,
