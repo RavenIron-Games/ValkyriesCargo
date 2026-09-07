@@ -503,6 +503,8 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Speech | State + seed for scripted lines; server `vc_say(index)` for reactions | proposed |
 | 0.1 body | `Dverger`, tamed, following, immortal; custom body later behind the contract | locked for 0.1 |
 | Runtime material edits | Not in 0.1 (no custom body). When the body comes: bake the finished material into the bundle; no runtime `SetTexture` on a creature material | proposed |
+| **Body animation** | **Ingvar has his OWN Animator**: the bundle's controller and clips (Walk, Idle, Talk, Hello, Shrug, Nod), driven by `CargoMerchant` from the agent's velocity and the visit phase. No mapping onto the Dverger or any vanilla rig; vanilla's animator parameters (section 11.4) are not his contract | **locked (owner, 2026-09-06: "give Ingvar his own animator")** |
+| Source art in the repo | `models/ingvar.fbx` + `models/ingvar_albedo.png` (11 MB) are the one named exception to "no binaries" (WORKSPLIT §4, PR #4); the bundle still ships in the package, Meshy's raw output stays out | locked (Wu'barrk decided, Don agreed 2026-09-06) |
 | Lifespan / dismissal | 300 s event clock; Shift+E twice; any visitor | locked / proposed |
 | Restart mid-visit | Resume: vanilla saves the running event with the world; the director adopts it from the sidecar's `session` row within 15 s of boot, else the visit is over | built (P6) |
 | Deal pricing | The whole quantity at the price on screen when confirmed; stock moves after. A bulk deal beats a drip-feed, bounded by his purse and his stock | proposed (review 2026-09-06) |
@@ -571,11 +573,14 @@ Source of truth: the **resized** GLB from the v5 zip (1.37 m tall). Measured: on
 2. **Rig**: Humanoid skeleton with skin weights (Mixamo auto-rig fast, Rigify controlled); an `AttachPoint` empty between
    the shoulder blades (v5's `(0, 1.25, −0.35)` as the start).
 3. **Clips**: idle, walk, talk gesture, hang. Export FBX or glTF **with** skin and clips.
-4. **The animator contract.** Vanilla `Character`, `Humanoid` and `MonsterAI` drive: floats `forward_speed`,
-   `sideway_speed`, `turn_speed`, `tilt`, `statef`; bools `onGround`, `falling`, `inWater`, `encumbered`, `flying`,
-   `sleeping`, `sitting`, `freeze`, `blocking`; int `statei`; triggers `attack`, `stagger`, `alert`, `interact`,
-   `consume`, `eat`, `jump`, `equip_hip`, `fly_takeoff`, `fly_land`. `ZSyncAnimation` replicates what the prefab lists in
-   `m_syncBools/m_syncFloats/m_syncInts`. The controller must declare at least the locomotion set or he slides.
+4. **The animator contract (decided 2026-09-06: his own).** Ingvar's bundle carries its own `AnimatorController`
+   with the six Meshy clips (Walk 4.21 s, Idle 10.00 s, Talk 5.17 s, Hello 3.79 s, Shrug 2.00 s, Nod 1.25 s; all
+   in place). `CargoMerchant` drives it, not vanilla: a float `speed` from the agent's planar velocity picks
+   Idle/Walk, and the visit phase and the server's `vc_say` index fire `hello`, `talk`, `shrug`, `nod` as triggers.
+   Vanilla's parameter set (`forward_speed`, `onGround`, the triggers `Character` and `MonsterAI` write) is NOT
+   his contract; nothing maps him onto the Dverger skeleton. Replication: `ZSyncAnimation` on the prefab lists
+   `speed` in `m_syncFloats` and the four triggers, so every client plays the same clip; the owner sets them.
+   The `Armature` node carries scale 0.01 (cm to m): correct at 1.370 m, never "fixed".
 5. **Unity 6000.0.61f1**, then the section 5 build lessons; the bundle carries a finished material (cloned from a creature
    donor at build time, neutralised as v5 §6.6 describes), a `SkinnedMeshRenderer`, a `CapsuleCollider`, and the animator.
    Target bundle 5–10 MB embedded as a resource; the 76 MB source never ships and never enters the mod repo.
