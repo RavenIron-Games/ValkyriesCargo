@@ -142,6 +142,39 @@ node tools\diff-engine.js --surface docs\ENGINE-SURFACE.md `
 including the two installed ones, so re-running it with `-WhatIf` is the cheapest way to answer
 "has my install moved off the baseline?".
 
+**On Linux**, `tools/fetch-builds.sh` and `tools/decompile-builds.sh` are the same two steps, tested
+end to end on Wu'barrk's box (2026-09-07 — see below):
+
+```bash
+./tools/fetch-builds.sh                         # server, both branches; prints build ids and versions
+./tools/decompile-builds.sh --baseline --all    # ilspycmd -p over all three assemblies, idempotent
+node tools/diff-engine.js --surface docs/ENGINE-SURFACE.md \
+     --from ~/valheim-shadows/src/baseline-server \
+     --to   ~/valheim-shadows/src/server-live \
+     --out  docs/engine-sweeps/<date>-<what>.md --all-types
+```
+
+## Confirmed independently from Linux, 2026-09-07
+
+**The installed client and server are the same build on both platforms**, checked directly rather
+than assumed: this box's Steam client build id (`21981559`) and dedicated server build id
+(`21981590`) match Don's Windows numbers exactly, `Version.CurrentVersion` / `m_networkVersion` /
+`m_playerVersion` / `m_worldVersion` read the same 0.221.12 / 36 / 43 / 37 off both assemblies, and
+running `tools/diff-engine.js` against a fresh Linux decompile of both installs reproduces the same
+six body-changed members Don's Windows sweep found, word for word
+(`docs/engine-sweeps/2026-09-07-linux-baseline-client-vs-server.md`). One thing this box's client
+build carries that the Windows one does not — `Version.GetPlatform()` here resolves
+`Platforms.SteamLinux`, and the client's `assembly_valheim` decompiles to one MORE type file
+(603 against Don's 602) because `<PrivateImplementationDetails>`, a compiler scratch type named
+nowhere in this mod, happens to land in the Linux client build and not the Windows one. Cosmetic;
+see that sweep report for the full accounting.
+
+**The `public-test` branch still does not exist**, confirmed a second way: an anonymous
+`steamcmd +app_info_print 896660` from this box lists the same six branches Don's Windows run found
+(`public`, `default_old`, `default_preal`, `default_prebw`, `default_precta`, `default_preml`), no
+`public-test` among them. Not a fetch that quietly failed on one platform — the branch is not there
+today, checked twice, on two different operating systems.
+
 ## The sweeps taken against this baseline
 
 - `docs/engine-sweeps/2026-09-07-baseline-client-vs-server.md` — the complete list of differences
@@ -149,3 +182,7 @@ including the two installed ones, so re-running it with `-WhatIf` is the cheapes
   assertion.
 - `docs/engine-sweeps/2026-09-07-server-live-vs-baseline.md` — the live server against the installed
   one. Zero differences; the tool's own null test.
+- `docs/engine-sweeps/2026-09-07-linux-baseline-client-vs-server.md` — the same client-vs-server
+  sweep, run through the `.sh` tools on Linux instead of the `.ps1` ones on Windows, against the
+  manifest as it stood after P10a picked up P5's rows. Same six differences; zero manifest problems
+  on all 257 rows.
