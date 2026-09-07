@@ -2355,6 +2355,19 @@ namespace ValkyriesCargo.Tests
         private static void PatchLedgerTests()
         {
             Section("PatchLedger (issue #31: patches applied one class at a time; a failure is counted and named, never fatal, unless load-bearing)");
+            // The middle tier (decision 9): a feature gates ITSELF on the one patch its safety rests on.
+            {
+                var tier = new PatchLedger();
+                tier.Record("Patch_Valkyrie_Awake", "RavenIron.ValkyriesCargo.Patches.Patch_Valkyrie_Awake", true, 1, null);
+                tier.Record("Patch_Character_InIntro", "RavenIron.ValkyriesCargo.Patches.Patch_Character_InIntro", false, 0, "boom");
+                Check(tier.IsApplied("Patch_Valkyrie_Awake"), "IsApplied: a patch that applied answers true, so the flight may author a bird");
+                Check(!tier.IsApplied("Patch_Character_InIntro"), "IsApplied: a patch that failed answers false");
+                Check(!tier.IsApplied("Patch_Never_Existed"), "IsApplied: a patch the ledger never saw answers FALSE — a feature must not assume a patch it cannot find");
+                Check(!tier.IsApplied("Patch_Valkyrie"), "IsApplied: the match is exact; a prefix does not vouch for the whole name");
+                Check(!tier.IsApplied("patch_valkyrie_awake"), "IsApplied: and it is case-sensitive, like the type name it comes from");
+                Check(!tier.IsApplied(null) && !tier.IsApplied(""), "IsApplied: null and empty answer false, not throw");
+                Check(!tier.Refused, "and none of that is load-bearing: two of ours failing never refuses the mod");
+            }
 
             PatchLedger l = new PatchLedger();
             Equal(0, l.Expected, "an empty ledger expects nothing");

@@ -23,7 +23,8 @@ namespace RavenIron.ValkyriesCargo.Core
     /// gate and the config lock. Without them a client on another build joins, and a locked config is not
     /// locked, and every other feature runs on a lie. So a load-bearing failure REFUSES the mod — nothing
     /// ticks, nothing registers, the console still answers <c>cargo status</c> with the reason. That set is
-    /// deliberately the smallest one that is true; widening it is the owner's decision (issue #31).
+    /// deliberately the smallest one that is true. Widening it was delegated to Track B and DECLINED
+    /// (`docs/DECISIONS-WUBARRK.md` §9): the middle tier is <see cref="IsApplied"/>, a feature gating itself.
     /// </summary>
     public sealed class PatchLedger
     {
@@ -59,6 +60,26 @@ namespace RavenIron.ValkyriesCargo.Core
         /// </summary>
         public static bool IsLoadBearing(string fullTypeName) =>
             fullTypeName != null && fullTypeName.StartsWith("ServerSync.", StringComparison.Ordinal);
+
+        /// <summary>
+        /// Did the patch class with this SHORT name (`Patch_Valkyrie_Awake`) apply? This is the middle
+        /// tier issue #31 left open, decided by Track B 2026-09-07 (`docs/DECISIONS-WUBARRK.md` §9):
+        /// between "refuse the mod" and "run degraded" there is "a FEATURE switches itself off", and it
+        /// is the honest granularity for a patch whose failure is not a missing feature but a hazard.
+        /// The flight is the case: without `Patch_Valkyrie_Awake`, vanilla `Valkyrie.Awake` runs on our
+        /// bird and teleports the local player into the sky, so `Spawner` asks this and authors no bird.
+        ///
+        /// An unknown name answers FALSE, and the match is exact. A feature asking about a patch that
+        /// was never found must not assume it is there, and `Patch_Valkyrie` must not vouch for
+        /// `Patch_Valkyrie_Awake`.
+        /// </summary>
+        public bool IsApplied(string shortName)
+        {
+            if (string.IsNullOrEmpty(shortName)) return false;
+            for (int i = 0; i < _rows.Count; i++)
+                if (_rows[i].Applied && string.Equals(_rows[i].Name, shortName, StringComparison.Ordinal)) return true;
+            return false;
+        }
 
         public Row Record(string name, string fullTypeName, bool applied, int methods, string error)
         {

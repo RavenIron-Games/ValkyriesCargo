@@ -374,7 +374,11 @@ the four that were listed here (`Client/CargoMerchant.cs`, `Patch_Humanoid_Awake
    (`patches N/M applied`) and by `cargo status`, and the mod runs degraded and says so. The one
    exception is the vendored ServerSync's patch classes (the version gate and the config lock), whose
    failure REFUSES the mod outright: nothing ticks, nothing registers, the console still answers.
-   The decision is pure (`Core/PatchLedger.cs`); widening the load-bearing set is the owner's call.
+   The decision is pure (`Core/PatchLedger.cs`). Widening the load-bearing set was delegated to Track B and
+   DECLINED (`docs/DECISIONS-WUBARRK.md` §9): between refuse and degrade there is a third answer — a FEATURE
+   switching itself off on `PatchLedger.IsApplied(name)`. The flight is the one case: without
+   `Patch_Valkyrie_Awake`, vanilla `Valkyrie.Awake` runs on our bird and teleports the local player into
+   the sky, so `Spawner` authors no bird and puts Ingvar on the ground, and says so.
 4. **Never patch `EnvMan`. Never touch materials, textures or shaders** — with one exception, written
    down 2026-09-07 the way rule 2's was. Reading `EnvMan.IsDay()` is fine. `Client/BodyLoader.cs` builds
    ONE material at runtime: a COPY of the stand-in's own, with our albedo in it. It has to be at runtime
