@@ -26,6 +26,14 @@ namespace RavenIron.ValkyriesCargo.Core
         public bool FairMarketAct = true;
         public double HalfLifeGameDays = 1.0;   // stock drifts back to target with this half-life
         public double SecondsPerGameDay = DefaultSecondsPerGameDay;   // EnvMan.instance.m_dayLengthSec, read once at boot
+        /// <summary>
+        /// The pure core's own baseline, and NOT what ships: `ModConfig.FillMarketRules` overwrites this
+        /// from `Server.PurseCoins` (1500) before any market the game builds ever sees it. Deliberately
+        /// left at a round 800 so the harness's mechanics tests -- the carry arithmetic, the purse_empty
+        /// refusals -- read against a fixed number instead of being rewritten every time the balance moves.
+        /// A test that says "60 scrap iron at 15 is 900 and the purse holds 800" is about the refusal, not
+        /// about the shipped purse.
+        /// </summary>
         public int PurseCoins = 800;
         public int PurseCarryPercent = 50;
         public int PurseCapMultiple = 3;
@@ -123,6 +131,7 @@ namespace RavenIron.ValkyriesCargo.Core
         private readonly string _salt;
         private int _deliverySeq;
         private int _purseAtVisitStart;
+        private int _coinedThisVisit;
 
         public MarketRules Rules { get; }
         public int VisitId { get; private set; }
@@ -227,12 +236,26 @@ namespace RavenIron.ValkyriesCargo.Core
             long cap = (long)Rules.PurseCoins * Rules.PurseCapMultiple;
             Purse = (int)Math.Min(cap, Rules.PurseCoins + carry);
             _purseAtVisitStart = Purse;
+            _coinedThisVisit = 0;
             _nonces.Clear();
             _deliverySeq = 0;
         }
 
-        /// <summary>Coins the purse gained this visit (what players bought minus what he paid), never negative.</summary>
+        /// <summary>Coins the purse gained this visit (what players bought minus what he paid), never negative. This is what the visit log quotes.</summary>
         public int Takings => Math.Max(0, Purse - _purseAtVisitStart);
+
+        /// <summary>
+        /// Coins that came IN this visit, gross -- every deal where the player paid him, with nothing
+        /// subtracted for the deals where he paid out. This, not `Takings`, is what the purse carry is
+        /// measured on.
+        ///
+        /// Why: `Takings` is the NET, so a visit where players sell him as much as they buy carries
+        /// nothing forward, and that is exactly the visit the catalogue was written for. Measured over
+        /// twenty simulated visits the carry cap engaged 19 times for a shopping server and **0 times**
+        /// for a supplying one, which saw a flat 800 for ever (`docs/ECONOMY-SIM.md`, "what looks off" 4).
+        /// A busy visit should refill him whichever direction the goods went.
+        /// </summary>
+        public int Coined => _coinedThisVisit;
 
         /// <summary>
         /// He trades elsewhere between visits: each item's stock moves toward target by
@@ -330,6 +353,7 @@ namespace RavenIron.ValkyriesCargo.Core
             if (want != null) { want.Stock -= d.Wanted.Count; want.UpdatedWorldTime = worldTime; }
             for (int i = 0; i < offered.Count; i++) { offered[i].Stock += d.Offered[i].Count; offered[i].UpdatedWorldTime = worldTime; }
             Purse += (int)net;
+            if (net > 0) _coinedThisVisit += (int)net;   // GROSS in; see Coined
 
             var r = new DealResult
             {
@@ -365,6 +389,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 lines.Add("stock\t" + it.Prefab + "\t" + Wire.Int(it.Stock) + "\t" + Wire.Double(it.UpdatedWorldTime));
             lines.Add("purse\t" + Wire.Int(Purse));
             lines.Add("purseStart\t" + Wire.Int(_purseAtVisitStart));
+            lines.Add("coined\t" + Wire.Int(_coinedThisVisit));
             lines.Add("visit\t" + Wire.Int(VisitId));
             lines.Add("seq\t" + Wire.Int(_deliverySeq));
             return string.Join("\n", lines.ToArray());
@@ -382,12 +407,13 @@ namespace RavenIron.ValkyriesCargo.Core
                 string line = raw.TrimEnd('\r');
                 if (line.Length == 0) continue;
                 string[] f = line.Split('\t');
-                if (f.Length == 2 && (f[0] == "purse" || f[0] == "purseStart" || f[0] == "visit" || f[0] == "seq"))
+                if (f.Length == 2 && (f[0] == "purse" || f[0] == "purseStart" || f[0] == "coined" || f[0] == "visit" || f[0] == "seq"))
                 {
                     int n;
                     if (!Wire.TryInt(f[1], out n) || n < 0) { Wire.Report(problems, f[0] + " row did not parse: " + line); continue; }
                     if (f[0] == "purse") Purse = n;
                     else if (f[0] == "purseStart") _purseAtVisitStart = n;
+                    else if (f[0] == "coined") _coinedThisVisit = n;
                     else if (f[0] == "visit") VisitId = n;
                     else _deliverySeq = n;
                     continue;

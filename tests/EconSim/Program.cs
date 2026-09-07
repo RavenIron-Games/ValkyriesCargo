@@ -91,7 +91,7 @@ namespace ValkyriesCargo.EconSim
             md.Line("appetites. Every number below came out of the code, not out of a model of the code. Nothing here changes a default:");
             md.Line("the last section proposes, the owners decide.");
 
-            var rules = MarketRules.Default;
+            var rules = Sim.Shipped;   // what SHIPS, not the core's baseline -- see Sim.Shipped
             Catalogue cat = Sim.DefaultCatalogue();
             md.Blank();
             md.Table(new[] { "the numbers it ran on", "value", "where from" }, new List<string[]>
@@ -100,8 +100,9 @@ namespace ValkyriesCargo.EconSim
                 new[] { "`PriceElasticity`", Sim.F(rules.Elasticity, 2), "`ModConfig` default" },
                 new[] { "`MinPriceMultiplier` / `MaxPriceMultiplier`", Sim.F(rules.MinMultiplier, 1) + " / " + Sim.F(rules.MaxMultiplier, 1), "`ModConfig` defaults" },
                 new[] { "`SpreadBuy`", Sim.F(rules.Spread, 1), "`ModConfig` default" },
+                new[] { "`FairMarketAct`", rules.FairMarketAct ? "on" : "off", "`ModConfig` default" },
                 new[] { "`StockHalfLifeGameDays`", Sim.F(rules.HalfLifeGameDays, 1), "`ModConfig` default" },
-                new[] { "`PurseCoins` / `PurseCarryPercent` / cap", Sim.N(rules.PurseCoins) + " / " + Sim.N(rules.PurseCarryPercent) + "% / " + Sim.N(rules.PurseCapMultiple) + "x", "`ModConfig` defaults" },
+                new[] { "`PurseCoins` / `PurseCarryPercent` / cap", Sim.N(rules.PurseCoins) + " / " + Sim.N(rules.PurseCarryPercent) + "% of the GROSS / " + Sim.N(rules.PurseCapMultiple) + "x", "`ModConfig` defaults" },
                 new[] { "a game day", Sim.F(rules.SecondsPerGameDay, 0) + " s", "`EnvMan.m_dayLengthSec`, verified on StormTest 2026-09-06" },
             });
         }
@@ -181,32 +182,42 @@ namespace ValkyriesCargo.EconSim
                 md.Line("is a decision for DESIGN section 8, next to 'a bulk deal beats a drip-feed', which is where it comes from.");
             }
             md.Blank();
-            md.Line("**2. `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the 72 rows has `Max = 3 x Target`, so the");
+            md.Line("**2. ACCEPTED AS DOCUMENTED 2026-09-07 — `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the 72 rows has `Max = 3 x Target`, so the");
             md.Line("lowest multiplier any shelf can reach by trading is `(1/3)^0.35 = " + Sim.Fact("floor.min") + "`; the floor would need `Max > 13.7 x Target`.");
             md.Line("Nothing is broken — but the knob reads like a promise the catalogue cannot keep. *Change the documentation, not the");
             md.Line("number*: `MinPriceMultiplier` is a guard for an owner's edited catalogue, not a price a player will ever see. If a real");
             md.Line("flooded floor is wanted, the number to change is `MaxStock` in the catalogue (3x -> 5x on the high-volume Wants), not the");
             md.Line("multiplier.");
             md.Blank();
-            md.Line("**3. " + Sim.Fact("floor.flatcount") + " rows pay the same single coin whatever you do to them.** `PaysFor`'s `max(1, ...)` swallows the whole curve for");
-            md.Line("every row with a base of 1 or 2: " + Sim.Fact("floor.flat") + ".");
-            md.Line("Wood, stone, resin, coal and flint *should* be near-worthless — that is the joke. But **RoundLog, FineWood, Feathers and");
-            md.Line("LeatherScraps sit at base 2 and pay exactly what wood pays**, though core wood is 15 recipes, fine wood is 31 and leather");
-            md.Line("scraps 32 (CATALOGUE section 3). *Proposal: raise `RoundLog`, `FineWood`, `Feathers` and `LeatherScraps` from base 2 to 3*, which");
-            md.Line("pays 2 at target and 1 when flooded — a visible signal, a distinction from firewood, and a stack of fifty worth 100 coins");
-            md.Line("rather than 50.");
+            md.Line("The owners took exactly that: the number is unchanged and the description now says what it is for. It is a guard for");
+            md.Line("an owner's edited catalogue, not a price any player will ever see.");
             md.Blank();
-            md.Line("**4. `PurseCoins` 800 is thin for the trade the mod exists for, and `PurseCarryPercent` never fires on the servers that");
-            md.Line("need it.** Non-teleportable ore is the reason he lands at the base with the smelter (CATALOGUE section 1), and " + Sim.Fact("s3.exhaust") + ".");
-            md.Line("A dozen flametal ore is the whole purse. Then the carry: `Takings` is `Purse - purseAtVisitStart` floored at zero, so it is");
-            md.Line("the visit's NET, and any visit in which players sell him as much as they buy carries nothing forward (scenario 3: takings");
-            md.Line(Sim.Fact("s3.takingsafterselling") + " after a visit of pure selling). Over twenty visits the cap engaged " + Sim.Fact("s3.caphits") + " times for a shopping server and " + Sim.Fact("s3.capboth") + " times for a");
-            md.Line("server that also sells to him. A supplying server — the one the catalogue was written for — sees a flat 800 for ever.");
+            md.Line("**3. RESOLVED 2026-09-07 — eleven rows paid the same single coin.** `PaysFor`'s `max(1, ...)` swallows the whole");
+            md.Line("curve for every row with a base of 1 or 2. Wood, stone, resin, coal and flint *should* be near-worthless — that is the");
+            md.Line("joke. But RoundLog, FineWood, Feathers and LeatherScraps sat at base 2 and paid **exactly what firewood pays**, though");
+            md.Line("core wood is 15 recipes, fine wood is 31 and leather scraps 32 (CATALOGUE section 3).");
             md.Blank();
-            md.Line("*Proposal, two numbers: `PurseCoins` 800 -> 1500*, which is two stacks of silver ore or a good afternoon in the Ashlands and");
-            md.Line("leaves the 3x cap meaningful; *and change what the carry is measured on* — half of the coins that came IN (gross), not half");
-            md.Line("of the net, so a busy visit refills him whichever direction the goods went. That second one is a change to `Market.Takings`");
-            md.Line("and belongs in a decision line, not a config edit.");
+            md.Line("All four are now **base 3**, which pays 2 at target and 1 when flooded: a visible signal, a distinction from firewood,");
+            md.Line("and a stack of fifty worth 100 coins rather than 50. The other seven are left alone on purpose — being worth nothing");
+            md.Line("is the point of them.");
+            md.Blank();
+            md.Line("**4. RESOLVED 2026-09-07 — the purse, and what the carry is measured on.** `PurseCoins` 800 was thin for the trade");
+            md.Line("this mod exists for: non-teleportable ore is the reason he lands at the base with the smelter (CATALOGUE section 1),");
+            md.Line("and " + Sim.Fact("s3.exhaust") + ". A dozen flametal ore was the whole purse. And the carry never fired on the");
+            md.Line("servers that needed it — `Takings` is `Purse - purseAtVisitStart` floored at zero, so it is the visit's NET, and any");
+            md.Line("visit where players sold him as much as they bought carried nothing forward. Over twenty visits the cap engaged " + Sim.Fact("s3.caphits"));
+            md.Line("times for a shopping server and " + Sim.Fact("s3.capboth") + " times for one that also sells to him: a supplying server — the one the catalogue");
+            md.Line("was written for — saw a flat 800 for ever.");
+            md.Blank();
+            md.Line("Both changed. **`Server.PurseCoins` is 1500**, which is two stacks of silver ore or a good afternoon in the Ashlands");
+            md.Line("and leaves the 3x cap meaningful. And **the carry is measured on `Market.Coined` — the GROSS coins that came in —");
+            md.Line("not on `Takings`**, so a busy visit refills him whichever direction the goods went. `Takings` is unchanged and still");
+            md.Line("the net: it is what the visit log and the visit history quote, and it is a true statement about the visit.");
+            md.Blank();
+            md.Line("The gross is persisted as a `coined` row in the world sidecar, because a carry that silently resets to nothing on a");
+            md.Line("restart is the same bug wearing a different hat. This report now runs on the SHIPPED numbers (`Sim.Shipped`), not on");
+            md.Line("`MarketRules.Default` — the core's own baseline stays at 800 so the harness's mechanics tests read against a fixed");
+            md.Line("number, and reviewing a purse nobody plays with would have made this finding a review of the wrong one.");
             md.Blank();
             int coreAt2 = Market.PriceFor(300, 2, 1, m.Rules);
             int coreAt3 = Market.PriceFor(300, 3, 1, m.Rules);

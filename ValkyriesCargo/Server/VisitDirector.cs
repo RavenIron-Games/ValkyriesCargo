@@ -41,6 +41,12 @@ namespace RavenIron.ValkyriesCargo.Server
         private float _sinceSave;
         private float _sinceExport;
         private int _lastTakings;
+        /// <summary>
+        /// The GROSS coins the last visit took in, which is what the purse carry is measured on -- not
+        /// `_lastTakings`, which is the net and is what the log line and the visit history quote. A visit
+        /// where players sold him as much as they bought has a net of zero and a gross worth carrying.
+        /// </summary>
+        private int _lastCoined;
         private string _lastLogged = "";
         private string _pendingEndReason;
         private string _pendingSessionRow;
@@ -346,7 +352,7 @@ namespace RavenIron.ValkyriesCargo.Server
         private void Begin(Candidate pilot, double worldTime)
         {
             int visitId = _market.NextVisitId;
-            _market.StartVisit(visitId, worldTime, _lastTakings);
+            _market.StartVisit(visitId, worldTime, _lastCoined);
             if (!CargoEvent.Start(RandEventSystem.instance, new Vector3(pilot.X, pilot.Y, pilot.Z)))
             {
                 ValkyriesCargo.Log.LogError("visit #" + visitId + ": the event did not start; is '" + CargoEvent.Name + "' registered? (`cargo status` says)");
@@ -376,6 +382,7 @@ namespace RavenIron.ValkyriesCargo.Server
         private void End(string reason, double worldTime)
         {
             _lastTakings = _market.Takings;
+            _lastCoined = _market.Coined;
             int id = _session.VisitId;
             string pilot = _session.PilotName;
             // World seconds are real seconds here (VisitSession's own doc comment: the event's m_time is

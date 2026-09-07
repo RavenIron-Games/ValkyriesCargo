@@ -45,10 +45,10 @@ namespace RavenIron.ValkyriesCargo.Core
             "Ruby:29:15:45:Ware, SilverNecklace:43:8:24:Ware, ArrowIron:2:100:300:Ware, ArrowFrost:3:100:300:Ware, " +
             "BoltIron:3:100:300:Ware, MeadHealthMinor:12:10:30:Ware, MeadStaminaMinor:12:10:30:Ware, MeadTasty:10:10:30:Ware, " +
             "Honey:2:50:150:Ware, " +
-            "Wood:1:200:600:Want, RoundLog:2:100:300:Want, FineWood:2:100:300:Want, ElderBark:3:60:180:Want, " +
+            "Wood:1:200:600:Want, RoundLog:3:100:300:Want, FineWood:3:100:300:Want, ElderBark:3:60:180:Want, " +
             "Blackwood:4:60:180:Want, YggdrasilWood:5:60:180:Want, Resin:1:100:300:Want, Coal:1:100:300:Want, " +
-            "Stone:1:200:600:Want, Flint:1:60:180:Want, Feathers:2:60:180:Want, " +
-            "LeatherScraps:2:60:180:Want, DeerHide:3:60:180:Want, TrollHide:6:20:60:Want, WolfPelt:6:40:120:Want, " +
+            "Stone:1:200:600:Want, Flint:1:60:180:Want, Feathers:3:60:180:Want, " +
+            "LeatherScraps:3:60:180:Want, DeerHide:3:60:180:Want, TrollHide:6:20:60:Want, WolfPelt:6:40:120:Want, " +
             "LoxPelt:8:40:120:Want, ScaleHide:6:40:120:Want, AskHide:10:40:120:Want, BjornHide:10:40:120:Want, " +
             "Flax:3:100:300:Want, LinenThread:10:50:150:Want, Barley:3:100:300:Want, JuteRed:6:40:120:Want, " +
             "JuteBlue:8:40:120:Want, WolfHairBundle:4:40:120:Want, " +

@@ -6,7 +6,7 @@ namespace RavenIron.ValkyriesCargo.Core
 {
     /// <summary>
     /// The world sidecar's text (design 3.5): a `format` line, then tagged rows that belong to four
-    /// owners: the market (`stock`, `purse`, `purseStart`, `visit`, `seq`), the scheduler (`cool`,
+    /// owners: the market (`stock`, `purse`, `purseStart`, `coined`, `visit`, `seq`), the scheduler (`cool`,
     /// `coolbase`), the running visit (`session`) and the owed ledger (`owed`). This splits a file into
     /// those four bundles and composes one back; each owner parses its own rows. Tab-separated,
     /// invariant culture, no BOM. The file I/O (.tmp/.bak, quarantine) is the store's business. PURE.
@@ -50,7 +50,7 @@ namespace RavenIron.ValkyriesCargo.Core
                         if (v != FormatVersion) Wire.Report(problems, "sidecar: format " + Wire.Int(v) + " is not " + Wire.Int(FormatVersion));
                         continue;
                     }
-                    case "stock": case "purse": case "purseStart": case "visit": case "seq":
+                    case "stock": case "purse": case "purseStart": case "coined": case "visit": case "seq":
                         market.Add(line); continue;
                     case "cool": case "coolbase":
                         cool.Add(line); continue;
@@ -77,7 +77,7 @@ namespace RavenIron.ValkyriesCargo.Core
         {
             var sb = new StringBuilder(4096);
             sb.Append(FormatTag).Append('\t').Append(Wire.Int(FormatVersion)).Append('\n');
-            sb.Append("# Valkyrie's Cargo world sidecar. Tabs; invariant culture. Rows: stock purse purseStart visit seq cool coolbase session owed.\n");
+            sb.Append("# Valkyrie's Cargo world sidecar. Tabs; invariant culture. Rows: stock purse purseStart coined visit seq cool coolbase session owed.\n");
             Append(sb, marketRows);
             Append(sb, cooldownRows);
             if (!string.IsNullOrEmpty(sessionRow)) sb.Append(sessionRow).Append('\n');

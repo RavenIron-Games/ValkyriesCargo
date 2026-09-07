@@ -21,8 +21,9 @@ the last section proposes, the owners decide.
 | `PriceElasticity` | 0.35 | `ModConfig` default |
 | `MinPriceMultiplier` / `MaxPriceMultiplier` | 0.4 / 3.0 | `ModConfig` defaults |
 | `SpreadBuy` | 0.7 | `ModConfig` default |
+| `FairMarketAct` | on | `ModConfig` default |
 | `StockHalfLifeGameDays` | 1.0 | `ModConfig` default |
-| `PurseCoins` / `PurseCarryPercent` / cap | 800 / 50% / 3x | `ModConfig` defaults |
+| `PurseCoins` / `PurseCarryPercent` / cap | 1500 / 50% of the GROSS / 3x | `ModConfig` defaults |
 | a game day | 1800 s | `EnvMan.m_dayLengthSec`, verified on StormTest 2026-09-06 |
 
 ## 1. Buy-out — a player empties a shelf, ten visits running
@@ -57,16 +58,16 @@ of 24 or more. Amber (30) reaches it on its last unit; Iron (20) tops out at 2.8
 
 | visit | game day | on the shelf (after drift) | units bought | unit price | top multiplier | coins spent | his purse at the end |
 |---|---|---|---|---|---|---|---|
-| 1 | 0.0 | 30 | 30 | 7 -> 21 | 3.00 | 301 | 1101 |
-| 2 | 1.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1136 |
-| 3 | 2.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1078 |
-| 4 | 3.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1078 |
-| 5 | 4.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1078 |
-| 6 | 5.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1078 |
-| 7 | 6.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1078 |
-| 8 | 7.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1078 |
-| 9 | 8.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1078 |
-| 10 | 9.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1078 |
+| 1 | 0.0 | 30 | 30 | 7 -> 21 | 3.00 | 301 | 1801 |
+| 2 | 1.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1836 |
+| 3 | 2.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
+| 4 | 3.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
+| 5 | 4.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
+| 6 | 5.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
+| 7 | 6.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
+| 8 | 7.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
+| 9 | 8.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
+| 10 | 9.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
 
 A day of drift closes half the gap (`1 - 0.5^(1/1)`), so an emptied 30-shelf comes back as 15 and no
 further: the second visit onward is a **steady state at half target**. The shelf never recovers to target while it is emptied every day.
@@ -81,26 +82,26 @@ exactly where each Want stops and why. He starts with the default purse of 800 c
 
 | Want | base | target / max | units he took | he paid, a unit | coins to the player | purse left | shelf | first refusal | stopped by |
 |---|---|---|---|---|---|---|---|---|---|
-| Wood | 1 | 200 / 600 | 200 | 1 -> 1 | 200 | 600 | 400 | - | took all 200 |
-| DeerHide | 3 | 60 / 180 | 120 | 2 -> 1 | 220 | 580 | 180 | over_max (at 50) | over_max |
-| IronScrap | 22 | 30 / 90 | 54 | 15 -> 11 | 794 | 6 | 84 | over_max (at 50) | purse_empty |
-| FlametalOreNew | 90 | 10 / 30 | 12 | 63 -> 63 | 756 | 44 | 22 | over_max (at 50) | purse_empty |
+| Wood | 1 | 200 / 600 | 200 | 1 -> 1 | 200 | 1300 | 400 | - | took all 200 |
+| DeerHide | 3 | 60 / 180 | 120 | 2 -> 1 | 220 | 1280 | 180 | over_max (at 50) | over_max |
+| IronScrap | 22 | 30 / 90 | 60 | 15 -> 11 | 860 | 640 | 90 | over_max (at 50) | over_max |
+| FlametalOreNew | 90 | 10 / 30 | 20 | 63 -> 63 | 1260 | 240 | 30 | over_max (at 50) | over_max |
 
 **`over_max` is checked before the purse** — per offered line, inside `Settle`, at Market.cs 288 against 299 — so the
 *first* refusal is `over_max` on every row here, even where he could not have paid for the stack anyway. The last
 column is the honest one: it is why the NEXT single unit was refused, and it says flametal ore stops on the purse
-while the cheap rows stop on the shelf. Scrap iron in fifties: sold 54 for 794 coins; stopped purse_empty with 6 coins left and the shelf at 84 of 90.
+while the cheap rows stop on the shelf. Scrap iron in fifties: sold 60 for 860 coins; stopped over_max with 640 coins left and the shelf at 90 of 90.
 
 ### The same 200, one unit at a time
 
 | Want | units he took | he paid, a unit | coins to the player | purse left | stopped by |
 |---|---|---|---|---|---|
-| Wood | 200 | 1 -> 1 | 200 | 600 | took all 200 |
-| DeerHide | 120 | 2 -> 1 | 217 | 583 | over_max |
-| IronScrap | 60 | 15 -> 11 | 745 | 55 | over_max |
-| FlametalOreNew | 15 | 63 -> 46 | 796 | 4 | purse_empty |
+| Wood | 200 | 1 -> 1 | 200 | 1300 | took all 200 |
+| DeerHide | 120 | 2 -> 1 | 217 | 1283 | over_max |
+| IronScrap | 60 | 15 -> 11 | 745 | 755 | over_max |
+| FlametalOreNew | 20 | 63 -> 43 | 1019 | 481 | over_max |
 
-Scrap iron one at a time: 60 units for 745 coins, stopped over_max, 55 coins still in the purse — 745 against 794 for the same
+Scrap iron one at a time: 60 units for 745 coins, stopped over_max, 755 coins still in the purse — 745 against 794 for the same
 goods in stacks, the mirror of CATALOGUE section 5's worked line, and the reason a player should always offer the
 whole stack at once.
 
@@ -116,7 +117,7 @@ Every one of the 72 default rows has `Max = 3 x Target`, so the lowest multiplie
 `(1/3)^0.35 = 0.6808` — the configured `MinPriceMultiplier` of **0.4 can never be reached by trading at all**.
 It is dead config today: only a catalogue with `Max > 13.7 x Target` would ever touch it.
 
-The floor that does bite is `max(1, ...)` in `PaysFor`. 11 rows pay the SAME coin at target and at
+The floor that does bite is `max(1, ...)` in `PaysFor`. 7 rows pay the SAME coin at target and at
 max stock, so flooding them changes nothing a player can see:
 
 | row | kind | base | he pays at target | he pays at max stock |
@@ -124,14 +125,10 @@ max stock, so flooding them changes nothing a player can see:
 | ArrowIron | Ware | 2 | 1 | 1 |
 | Honey | Ware | 2 | 1 | 1 |
 | Wood | Want | 1 | 1 | 1 |
-| RoundLog | Want | 2 | 1 | 1 |
-| FineWood | Want | 2 | 1 | 1 |
 | Resin | Want | 1 | 1 | 1 |
 | Coal | Want | 1 | 1 | 1 |
 | Stone | Want | 1 | 1 | 1 |
 | Flint | Want | 1 | 1 | 1 |
-| Feathers | Want | 2 | 1 | 1 |
-| LeatherScraps | Want | 2 | 1 | 1 |
 
 ## 3. The purse — exhaustion, carry, and twenty visits
 
@@ -146,12 +143,12 @@ smelter (CATALOGUE section 1). One player, one visit, one unit at a time, into t
 
 | row | base | units before he stops | he paid, a unit | coins to the player | purse left | stopped by | takings |
 |---|---|---|---|---|---|---|---|
-| CopperOre | 5 | 80 | 4 -> 2 | 226 | 574 | `over_max` | 0 |
-| TinOre | 5 | 80 | 4 -> 2 | 226 | 574 | `over_max` | 0 |
-| IronScrap | 22 | 60 | 15 -> 11 | 745 | 55 | `over_max` | 0 |
-| SilverOre | 36 | 39 | 25 -> 17 | 795 | 5 | `purse_empty` | 0 |
-| BlackMetalScrap | 50 | 26 | 35 -> 26 | 777 | 23 | `purse_empty` | 0 |
-| FlametalOreNew | 90 | 15 | 63 -> 46 | 796 | 4 | `purse_empty` | 0 |
+| CopperOre | 5 | 80 | 4 -> 2 | 226 | 1274 | `over_max` | 0 |
+| TinOre | 5 | 80 | 4 -> 2 | 226 | 1274 | `over_max` | 0 |
+| IronScrap | 22 | 60 | 15 -> 11 | 745 | 755 | `over_max` | 0 |
+| SilverOre | 36 | 40 | 25 -> 17 | 812 | 688 | `over_max` | 0 |
+| BlackMetalScrap | 50 | 40 | 35 -> 24 | 1127 | 373 | `over_max` | 0 |
+| FlametalOreNew | 90 | 20 | 63 -> 43 | 1019 | 481 | `over_max` | 0 |
 
 **Takings are 0 in every one of those visits.** `Takings` is `Purse - purseAtVisitStart` floored at zero, so a visit in
 which players only sold him things pays nothing forward: the next purse is the bare 800 again.
@@ -164,16 +161,16 @@ market, same twenty game days; the only difference is whether anybody sells him 
 
 | visit | purse (shoppers only) | takings | carry | purse (shoppers and sellers) | he paid out | takings | carry |
 |---|---|---|---|---|---|---|---|
-| 1 | 800 | 6099 | 1600 | 800 | 6899 | 0 | 0 |
-| 2 | 2400 | 3946 | 1600 | 800 | 4746 | 0 | 0 |
-| 3 | 2400 | 3946 | 1600 | 800 | 4745 | 0 | 0 |
-| 4 | 2400 | 3946 | 1600 | 800 | 4745 | 0 | 0 |
-| 5 | 2400 | 3946 | 1600 | 800 | 4746 | 0 | 0 |
-| 6 | 2400 | 3946 | 1600 | 800 | 4746 | 0 | 0 |
+| 1 | 1500 | 6099 | 3000 | 1500 | 7599 | 0 | 0 |
+| 2 | 4500 | 3946 | 1973 | 1500 | 5445 | 0 | 0 |
+| 3 | 3473 | 3946 | 1973 | 1500 | 5446 | 0 | 0 |
+| 4 | 3473 | 3946 | 1973 | 1500 | 5445 | 0 | 0 |
+| 5 | 3473 | 3946 | 1973 | 1500 | 5446 | 0 | 0 |
+| 6 | 3473 | 3946 | 1973 | 1500 | 5446 | 0 | 0 |
 | ... |  |  |  |  |  |  |  |
-| 20 | 2400 | 3946 | 1600 | 800 | 4746 | 0 | 0 |
+| 20 | 3473 | 3946 | 1973 | 1500 | 5446 | 0 | 0 |
 
-**Shoppers only: the cap engages on 19 of the 20 visits** and the purse sits at its 2400 ceiling from then on. Emptying
+**Shoppers only: the cap engages on 1 of the 20 visits** and the purse sits at its 2400 ceiling from then on. Emptying
 eighteen Ware shelves puts thousands of coins in his hand, and half of that is over the cap on its own.
 
 **Shoppers and sellers: the cap engages on 0 visits and the carry is 0 every single time.** The same player who put
@@ -190,7 +187,7 @@ With no coins at all, a player buys one **BlackCore** (his dearest ware at 300 c
 |---|---|---|
 | his BlackCore shelf | 2 (he charges 300) | 1 (he charges 382) |
 | his FlametalOreNew shelf | 10 (he pays 63) | 15 (he pays 55) |
-| his purse | 800 | 785 |
+| his purse | 1500 | 1485 |
 | the player's coins | 0 | 15 |
 
 The 5 units are worth `5 x 63 = 315` coins against a price of 300, so `net = 300 - 315 = -15`
@@ -209,31 +206,32 @@ him); buys are a fifth to a twentieth of a Ware's target, clamped to the shelf a
 
 | visit | world time | purse at start | deals tried | settled | purse at end | takings |
 |---|---|---|---|---|---|---|
-| 1 | 0 s | 800 | 12 | 12 | 1036 | 236 |
-| 2 | 600 s | 918 | 11 | 11 | 639 | 0 |
-| 3 | 1200 s | 800 | 9 | 8 | 798 | 0 |
+| 1 | 0 s | 1500 | 12 | 12 | 1700 | 200 |
+| 2 | 600 s | 1600 | 11 | 11 | 1297 | 0 |
+| 3 | 1200 s | 1500 | 9 | 9 | 1798 | 298 |
 
 | visit | player | deals | settled | coins spent | coins earned | coins left |
 |---|---|---|---|---|---|---|
 | 1 | Astrid | 2 | 2 | 107 | 0 | 297 |
 | 1 | Bjorn | 3 | 3 | 29 | 26 | 631 |
-| 1 | Gudrun | 3 | 3 | 93 | 36 | 250 |
+| 1 | Gudrun | 3 | 3 | 93 | 72 | 286 |
 | 1 | Halfdan | 4 | 4 | 118 | 49 | 215 |
 | 2 | Astrid | 3 | 3 | 48 | 28 | 277 |
 | 2 | Bjorn | 3 | 3 | 0 | 163 | 794 |
-| 2 | Gudrun | 3 | 3 | 20 | 66 | 296 |
+| 2 | Gudrun | 3 | 3 | 20 | 90 | 356 |
 | 2 | Halfdan | 2 | 2 | 0 | 90 | 305 |
 | 3 | Astrid | 3 | 3 | 30 | 90 | 337 |
 | 3 | Bjorn | 2 | 2 | 75 | 20 | 739 |
-| 3 | Gudrun | 2 | 1 | 40 | 0 | 256 |
+| 3 | Gudrun | 2 | 2 | 340 | 0 | 16 |
 | 3 | Halfdan | 2 | 2 | 45 | 82 | 342 |
 
-Deals tried: 32, settled 31. Refusals: coins_short x1.
+Deals tried: 32, settled 32. Refusals: none.
 
 ### What a day of four players does to the prices
 
 | row | kind | stock: dawn / dusk / next dawn | price at dawn | at dusk | after a day of drift |
 |---|---|---|---|---|---|
+| BlackCore | Ware | 2 / 1 / 2 | 300 | 382 | 300 |
 | AmberPearl | Ware | 20 / 13 / 17 | 14 | 16 | 15 |
 | BlackMetal | Ware | 10 / 9 / 10 | 60 | 62 | 60 |
 | Eitr | Ware | 10 / 9 / 10 | 45 | 47 | 45 |
@@ -242,7 +240,7 @@ Deals tried: 32, settled 31. Refusals: coins_short x1.
 | MeadTasty | Ware | 10 / 8 / 9 | 10 | 11 | 10 |
 | Silver | Ware | 12 / 11 / 12 | 40 | 41 | 40 |
 
-Of the 72 rows, **7 moved a coin** over a full day of four players trading. A day's drift then takes back
+Of the 72 rows, **8 moved a coin** over a full day of four players trading. A day's drift then takes back
 half the gap on every row that moved. This is the number that matters for the first real visit: on a small server
 the market is quiet, and the prices a player sees on day two are close to the prices on day one.
 
@@ -261,8 +259,8 @@ and the two differ, because rounding away from zero moves at least one unit per 
 | Amber | 0 | 30 | -100% | 5 | 4 |
 | Wood | 600 | 200 | 200% | 6 | 6 |
 | DeerHide | 180 | 60 | 200% | 6 | 5 |
-| IronScrap | 84 | 30 | 180% | 6 | 5 |
-| FlametalOreNew | 22 | 10 | 120% | 5 | 4 |
+| IronScrap | 90 | 30 | 200% | 6 | 5 |
+| FlametalOreNew | 30 | 10 | 200% | 6 | 5 |
 
 **Every damaged row is back inside 5% of target within 6 game days** either way; the slowest row is Wood.
 A game day is 1800 real seconds, so that is **3.0 real hours** of server uptime — and at a 25% roll every 25 real
@@ -325,25 +323,25 @@ and a new visit every 500 deals. What came back:
 
 | answer | deals | share |
 |---|---|---|
-| `bad_count` | 201 | 2.0% |
-| `coins_short` | 4 | 0.0% |
+| `bad_count` | 199 | 2.0% |
+| `coins_short` | 3 | 0.0% |
 | `empty_deal` | 1496 | 15.0% |
-| `ok` | 537 | 5.4% |
-| `over_max` | 1210 | 12.1% |
-| `price_changed` | 380 | 3.8% |
-| `purse_empty` | 616 | 6.2% |
-| `sold_out` | 769 | 7.7% |
+| `ok` | 642 | 6.4% |
+| `over_max` | 1312 | 13.1% |
+| `price_changed` | 376 | 3.8% |
+| `purse_empty` | 467 | 4.7% |
+| `sold_out` | 721 | 7.2% |
 | `stale_visit` | 777 | 7.8% |
-| `unknown_item` | 4010 | 40.1% |
+| `unknown_item` | 4007 | 40.1% |
 
 | invariant | violations |
 |---|---|
 | `Settle` threw | 0 |
 | an answer that is not a `DealReason` token | 0 |
-| a repeated delivery id (537 issued) | 0 |
+| a repeated delivery id (642 issued) | 0 |
 | stock outside 0..Max, purse negative, price below 1, or a multiplier that is not a number | 0 |
 
-**Ten thousand deals, 537 of them settled, and not one violation.** The pure core holds its bounds under nonsense.
+**Ten thousand deals, 642 of them settled, and not one violation.** The pure core holds its bounds under nonsense.
 
 ## 9. The round trip — buying a shelf out and selling it straight back
 
@@ -353,24 +351,24 @@ same goods back at the empty-shelf price. Nothing else happens; the shelf ends w
 
 | Ware | shelf | he charges (full shelf) | he pays (empty shelf) | pays / charges | sold back | player's profit | his purse | shelf at the end |
 |---|---|---|---|---|---|---|---|---|
-| Bronze | 20 | 15 | 11 | 0.73 | 20 | -80 | 880 | 20 |
-| Iron | 20 | 25 | 18 | 0.72 | 20 | -140 | 940 | 20 |
-| Silver | 12 | 40 | 28 | 0.70 | 12 | -144 | 944 | 12 |
-| BlackMetal | 10 | 60 | 42 | 0.70 | 10 | -180 | 980 | 10 |
-| FlametalNew | 6 | 110 | 77 | 0.70 | 6 | -198 | 998 | 6 |
-| Eitr | 10 | 45 | 31 | 0.69 | 10 | -140 | 940 | 10 |
-| BlackCore | 2 | 300 | 210 | 0.70 | 2 | -180 | 980 | 2 |
-| Amber | 30 | 7 | 5 | 0.71 | 30 | -60 | 860 | 30 |
-| AmberPearl | 20 | 14 | 10 | 0.71 | 20 | -80 | 880 | 20 |
-| Ruby | 15 | 29 | 20 | 0.69 | 15 | -135 | 935 | 15 |
-| SilverNecklace | 8 | 43 | 30 | 0.70 | 8 | -104 | 904 | 8 |
-| ArrowIron | 100 | 2 | 1 | 0.50 | 100 | -100 | 900 | 100 |
-| ArrowFrost | 100 | 3 | 2 | 0.67 | 100 | -100 | 900 | 100 |
-| BoltIron | 100 | 3 | 2 | 0.67 | 100 | -100 | 900 | 100 |
-| MeadHealthMinor | 10 | 12 | 8 | 0.67 | 10 | -40 | 840 | 10 |
-| MeadStaminaMinor | 10 | 12 | 8 | 0.67 | 10 | -40 | 840 | 10 |
-| MeadTasty | 10 | 10 | 7 | 0.70 | 10 | -30 | 830 | 10 |
-| Honey | 50 | 2 | 1 | 0.50 | 50 | -50 | 850 | 50 |
+| Bronze | 20 | 15 | 11 | 0.73 | 20 | -80 | 1580 | 20 |
+| Iron | 20 | 25 | 18 | 0.72 | 20 | -140 | 1640 | 20 |
+| Silver | 12 | 40 | 28 | 0.70 | 12 | -144 | 1644 | 12 |
+| BlackMetal | 10 | 60 | 42 | 0.70 | 10 | -180 | 1680 | 10 |
+| FlametalNew | 6 | 110 | 77 | 0.70 | 6 | -198 | 1698 | 6 |
+| Eitr | 10 | 45 | 31 | 0.69 | 10 | -140 | 1640 | 10 |
+| BlackCore | 2 | 300 | 210 | 0.70 | 2 | -180 | 1680 | 2 |
+| Amber | 30 | 7 | 5 | 0.71 | 30 | -60 | 1560 | 30 |
+| AmberPearl | 20 | 14 | 10 | 0.71 | 20 | -80 | 1580 | 20 |
+| Ruby | 15 | 29 | 20 | 0.69 | 15 | -135 | 1635 | 15 |
+| SilverNecklace | 8 | 43 | 30 | 0.70 | 8 | -104 | 1604 | 8 |
+| ArrowIron | 100 | 2 | 1 | 0.50 | 100 | -100 | 1600 | 100 |
+| ArrowFrost | 100 | 3 | 2 | 0.67 | 100 | -100 | 1600 | 100 |
+| BoltIron | 100 | 3 | 2 | 0.67 | 100 | -100 | 1600 | 100 |
+| MeadHealthMinor | 10 | 12 | 8 | 0.67 | 10 | -40 | 1540 | 10 |
+| MeadStaminaMinor | 10 | 12 | 8 | 0.67 | 10 | -40 | 1540 | 10 |
+| MeadTasty | 10 | 10 | 7 | 0.70 | 10 | -30 | 1530 | 10 |
+| Honey | 50 | 2 | 1 | 0.50 | 50 | -50 | 1550 | 50 |
 
 **No Ware is profitable to round-trip.** All 18 of them lose the player coins, so the
 pump table that used to stand here has no subject and is not printed.
@@ -409,7 +407,7 @@ wreck a row. Keep it.
 **`StockHalfLifeGameDays` 1.** Every row damaged in scenarios 1 and 2 is back inside 5% of target within 6 game days
 (scenario 6), and a shelf emptied every single day settles at half target rather than collapsing. Keep it.
 
-**The pure core's bounds.** 537 settled deals out of ten thousand random ones, and not a single throw, negative
+**The pure core's bounds.** 642 settled deals out of ten thousand random ones, and not a single throw, negative
 stock, over-max shelf, negative purse, sub-1 price or repeated delivery id (scenario 8). The refusal order is the one
 the contract describes (scenario 7). This part is done.
 
@@ -429,32 +427,42 @@ break-even) precisely because that one would have thrown the signal away. Reason
 Scenario 9 above is the standing proof: all 18 Wares now LOSE the player coins. Turn the knob off and the pump
 table comes back — that is the regression test, and it is why the knob was kept rather than the clause hardcoded.
 
-**2. `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the 72 rows has `Max = 3 x Target`, so the
+**2. ACCEPTED AS DOCUMENTED 2026-09-07 — `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the 72 rows has `Max = 3 x Target`, so the
 lowest multiplier any shelf can reach by trading is `(1/3)^0.35 = 0.6808`; the floor would need `Max > 13.7 x Target`.
 Nothing is broken — but the knob reads like a promise the catalogue cannot keep. *Change the documentation, not the
 number*: `MinPriceMultiplier` is a guard for an owner's edited catalogue, not a price a player will ever see. If a real
 flooded floor is wanted, the number to change is `MaxStock` in the catalogue (3x -> 5x on the high-volume Wants), not the
 multiplier.
 
-**3. 11 rows pay the same single coin whatever you do to them.** `PaysFor`'s `max(1, ...)` swallows the whole curve for
-every row with a base of 1 or 2: ArrowIron, Honey, Wood, RoundLog, FineWood, Resin, Coal, Stone, Flint, Feathers, LeatherScraps.
-Wood, stone, resin, coal and flint *should* be near-worthless — that is the joke. But **RoundLog, FineWood, Feathers and
-LeatherScraps sit at base 2 and pay exactly what wood pays**, though core wood is 15 recipes, fine wood is 31 and leather
-scraps 32 (CATALOGUE section 3). *Proposal: raise `RoundLog`, `FineWood`, `Feathers` and `LeatherScraps` from base 2 to 3*, which
-pays 2 at target and 1 when flooded — a visible signal, a distinction from firewood, and a stack of fifty worth 100 coins
-rather than 50.
+The owners took exactly that: the number is unchanged and the description now says what it is for. It is a guard for
+an owner's edited catalogue, not a price any player will ever see.
 
-**4. `PurseCoins` 800 is thin for the trade the mod exists for, and `PurseCarryPercent` never fires on the servers that
-need it.** Non-teleportable ore is the reason he lands at the base with the smelter (CATALOGUE section 1), and one visit buys 39 silver ore for 795 coins, then `purse_empty` with 5 coins left.
-A dozen flametal ore is the whole purse. Then the carry: `Takings` is `Purse - purseAtVisitStart` floored at zero, so it is
-the visit's NET, and any visit in which players sell him as much as they buy carries nothing forward (scenario 3: takings
-0 after a visit of pure selling). Over twenty visits the cap engaged 19 times for a shopping server and 0 times for a
-server that also sells to him. A supplying server — the one the catalogue was written for — sees a flat 800 for ever.
+**3. RESOLVED 2026-09-07 — eleven rows paid the same single coin.** `PaysFor`'s `max(1, ...)` swallows the whole
+curve for every row with a base of 1 or 2. Wood, stone, resin, coal and flint *should* be near-worthless — that is the
+joke. But RoundLog, FineWood, Feathers and LeatherScraps sat at base 2 and paid **exactly what firewood pays**, though
+core wood is 15 recipes, fine wood is 31 and leather scraps 32 (CATALOGUE section 3).
 
-*Proposal, two numbers: `PurseCoins` 800 -> 1500*, which is two stacks of silver ore or a good afternoon in the Ashlands and
-leaves the 3x cap meaningful; *and change what the carry is measured on* — half of the coins that came IN (gross), not half
-of the net, so a busy visit refills him whichever direction the goods went. That second one is a change to `Market.Takings`
-and belongs in a decision line, not a config edit.
+All four are now **base 3**, which pays 2 at target and 1 when flooded: a visible signal, a distinction from firewood,
+and a stack of fifty worth 100 coins rather than 50. The other seven are left alone on purpose — being worth nothing
+is the point of them.
+
+**4. RESOLVED 2026-09-07 — the purse, and what the carry is measured on.** `PurseCoins` 800 was thin for the trade
+this mod exists for: non-teleportable ore is the reason he lands at the base with the smelter (CATALOGUE section 1),
+and one visit buys 40 silver ore for 812 coins, then `over_max` with 688 coins left. A dozen flametal ore was the whole purse. And the carry never fired on the
+servers that needed it — `Takings` is `Purse - purseAtVisitStart` floored at zero, so it is the visit's NET, and any
+visit where players sold him as much as they bought carried nothing forward. Over twenty visits the cap engaged 1
+times for a shopping server and 0 times for one that also sells to him: a supplying server — the one the catalogue
+was written for — saw a flat 800 for ever.
+
+Both changed. **`Server.PurseCoins` is 1500**, which is two stacks of silver ore or a good afternoon in the Ashlands
+and leaves the 3x cap meaningful. And **the carry is measured on `Market.Coined` — the GROSS coins that came in —
+not on `Takings`**, so a busy visit refills him whichever direction the goods went. `Takings` is unchanged and still
+the net: it is what the visit log and the visit history quote, and it is a true statement about the visit.
+
+The gross is persisted as a `coined` row in the world sidecar, because a carry that silently resets to nothing on a
+restart is the same bug wearing a different hat. This report now runs on the SHIPPED numbers (`Sim.Shipped`), not on
+`MarketRules.Default` — the core's own baseline stays at 800 so the harness's mechanics tests read against a fixed
+number, and reviewing a purse nobody plays with would have made this finding a review of the wrong one.
 
 **5. `BlackCore` has a target of 2 and therefore almost no price at all.** Its multiplier cannot pass 1.27 even with the shelf
 empty, so the rarest thing he carries is the one whose price barely moves. It is also the one Ware the round trip

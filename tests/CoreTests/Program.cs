@@ -871,6 +871,69 @@ namespace ValkyriesCargo.Tests
             Market ruleOffMarket = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), new MarketRules { FairMarketAct = false }, 0);
             Equal(ruleOnMarket.EncodeState(), ruleOffMarket.EncodeState(),
                   "EncodeState never mentions Rules, so FairMarketAct cannot leak into the sidecar");
+
+            Section("Market: the purse carry is measured on the GROSS (2026-09-07)");
+
+            // `Takings` is the NET, so a visit where players sold him as much as they bought carried
+            // NOTHING forward -- and that is exactly the supplying server the catalogue was written for.
+            // Over twenty simulated visits the carry cap engaged 19 times for a shopping server and 0
+            // times for a selling one (docs/ECONOMY-SIM.md, "what looks off" 4).
+            var carryProblems = new List<string>();
+            Market carry = new Market(Catalogue.Parse(Catalogue.DefaultLine, carryProblems), MarketRules.Default, 0);
+            carry.StartVisit(1, 0, 0);
+            Equal(0, carry.Coined, "a fresh visit has taken nothing in");
+
+            int purse0 = carry.Purse;
+            // He SELLS the player 2 Iron: coins come in.
+            MarketSnapshot cs = carry.Snapshot();
+            int ironPrice = cs.Find("Iron").Buy;
+            DealResult cbuy = carry.Settle(new Deal { VisitId = 1, Nonce = 1,
+                Wanted = new DealLine { Prefab = "Iron", Count = 2, UnitPriceSeen = ironPrice } }, 100000, 0);
+            Check(cbuy.Ok, "the player buys 2 Iron");
+            Equal(2 * ironPrice, carry.Coined, "the gross counts what he was paid");
+            Equal(2 * ironPrice, carry.Takings, "and with nothing paid out yet the net agrees");
+
+            // Now he BUYS goods back for about the same money: the net collapses, the gross does not.
+            int spentIn = carry.Coined;
+            MarketSnapshot cs2 = carry.Snapshot();
+            int woodPays = cs2.Find("Wood").Sell;
+            int woodCount = Math.Max(1, (2 * ironPrice) / Math.Max(1, woodPays));
+            DealResult csell = carry.Settle(new Deal { VisitId = 1, Nonce = 2,
+                Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = woodCount, UnitPriceSeen = woodPays } } }, 100000, 0);
+            Check(csell.Ok, "and sells him " + woodCount + " Wood back");
+            Equal(spentIn, carry.Coined, "the GROSS is unchanged by money going OUT -- that is the whole point");
+            Check(carry.Takings < spentIn, "while the net has fallen, which is what used to be carried");
+            Check(carry.Purse < purse0 + spentIn, "and the purse really did pay out");
+
+            // The row has to survive a restart or the carry silently resets to nothing.
+            var reload = new List<string>();
+            Market carried = new Market(Catalogue.Parse(Catalogue.DefaultLine, reload), MarketRules.Default, 0);
+            carried.ApplyState(carry.EncodeState(), reload);
+            Equal(0, reload.Count, "the market state with a coined row applies with no problems");
+            Equal(carry.Coined, carried.Coined, "and the gross survives the round trip through the sidecar");
+
+            carry.StartVisit(2, 0, carry.Coined);
+            Equal(0, carry.Coined, "a new visit starts the gross again at zero");
+
+            Section("Catalogue: the four rows that used to pay firewood rates (2026-09-07)");
+
+            // PaysFor's max(1, ...) swallows the whole curve below base 3, so RoundLog, FineWood,
+            // Feathers and LeatherScraps paid EXACTLY what firewood pays -- though fine wood is 31
+            // recipes and leather scraps 32 (docs/CATALOGUE.md 3).
+            var catProblems = new List<string>();
+            var entries = Catalogue.Parse(Catalogue.DefaultLine, catProblems);
+            Equal(0, catProblems.Count, "the catalogue still parses clean");
+            Market cm = new Market(entries, MarketRules.Default, 0);
+            cm.StartVisit(1, 0, 0);
+            foreach (string raised in new[] { "RoundLog", "FineWood", "Feathers", "LeatherScraps" })
+            {
+                MarketItem it = cm.Find(raised);
+                Check(it != null && it.Entry.BasePrice == 3, raised + " is base 3, not 2");
+                Check(cm.Pays(it) == 2, raised + " pays 2 at target stock, where it used to pay 1");
+            }
+            MarketItem firewood = cm.Find("Wood");
+            Equal(1, cm.Pays(firewood), "and firewood still pays 1, which is the joke");
+
         }
 
         private static void MarketConstructionTests()
