@@ -6,7 +6,7 @@ from a live, persistent stock at supply-and-demand prices for five minutes, and 
 does. Every player sees the same visit; only the server owns the market.
 
 **Not** on command (the earned summon horn is a later feature), **not** a custom body in 0.1 (the
-Dverger stands in until Thorium's model is rigged), **not** a patch on the vanilla store. The one UI
+Dverger stands in until Ingvar's bundle is baked and embedded; the model and the loader exist), **not** a patch on the vanilla store. The one UI
 it draws is its own trade terminal, opened from our own interact handler.
 
 Sibling of Cairn, Undertow, FireFront, Ragnarok's Wrath and RavenEye, bound by the same house style.
@@ -21,10 +21,12 @@ and the model: `docs/REVIEW-v5-2026-09-06.md`.
 
 ## Status
 
-**Phase 0 scaffold, 2026-09-06. Builds clean (0 warnings), 27/27 off-game tests, packages
-(`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right layout).** What exists: the plugin entry,
-ServerSync vendored and armed, the whole config surface bound and locked, the `cargo` console, the
-catalogue parser with 72 data-checked defaults. Nothing rolls a visit, flies, walks, trades or persists.
+**Main after P8 and P9, 2026-09-07. Builds clean (0 warnings), 1004/1004 off-game checks, packages
+(`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right layout).** What exists: the plugin entry, ServerSync
+vendored and armed, the config surface bound and locked, the `cargo` console, the catalogue with 72 defaults, the
+market and the scheduler, the event and the director, the deal wire, the world sidecar, the Cargo Terminal and the
+body loader. Nothing flies or walks: the flight is in review (PR #8), the merchant is not started, and no bundle is
+baked, so a visit runs with nobody standing in it. The paragraphs below are the history, each with the lines seen.
 
 **HEADLESS VERIFIED 2026-09-06 15:23 on CairnTest (dedicated, port 2466, world CairnTest, alongside
 Cairn.dll and RavenEye.dll):** within 20 s of launch the BepInEx log showed, in order,
@@ -61,7 +63,8 @@ server, where `Server/AdminGate.cs` (vanilla's `ZNet.IsAdmin`, fail closed) deci
 **HEADLESS VERIFIED 2026-09-06 18:55 on StormTest (dedicated, port 2476, the full Ravenrest modpack clone,
 117 plugins)**, in order in `BepInEx\LogOutput.log`:
 `Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches=13, catalogue=72 entries, ServerSync version gate armed; role is decided when a world loads.`
-(13 = ServerSync's 10, UIFocus's 2, our RandEventSystem.Awake prefix), then
+(13 = the 10 above, UIFocus's 2, our RandEventSystem.Awake prefix; the breakdown of the 10 was never checked
+against `Harmony.GetAllPatchedMethods()`), then
 `event 'valkyries_cargo' registered (20 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.`,
 then `role: dedicated server`, `routed RPCs registered for this session: vc_admin, vc_reply`, then
 `director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 800, roll every 60 s at 25%, first roll one interval from now; market state is NOT persisted yet (P6)`
@@ -138,7 +141,7 @@ the body itself (items 19 and 20) — there is no baked bundle on this machine a
 
 ```powershell
 .\tools\fetch-libs.ps1     # once per machine: copies game/BepInEx DLLs into libs\
-.\tools\run-tests.ps1      # off-game logic tests (net10) — run before every commit
+.\tools\run-tests.ps1      # off-game logic tests (net8.0) — run before every commit
 .\tools\package.ps1        # Release build + store zip in dist\ (writes manifest version from the csproj)
 dotnet build ValkyriesCargo\ValkyriesCargo.csproj
 ```
@@ -175,7 +178,7 @@ Built:
 ValkyriesCargo/
   ValkyriesCargo.cs          plugin entry: config (creates the ConfigSync), Harmony, tick, boot line
   Config/ModConfig.cs        Server.* synced+locked, Client.* local, VisitState/MarketState channels
-  Core/CargoTick.cs          the ONLY Update in the mod; role decided at runtime
+  Core/CargoTick.cs          the ONLY Update and the only OnGUI in the mod; role decided at runtime
   Core/Catalogue.cs          PURE: the catalogue line parser and the 72 defaults
   Core/Wire.cs Core/MarketSnapshot.cs Core/VisitSnapshot.cs Core/Deal.cs   PURE: the contract (PR #1)
   Core/Market.cs             PURE: rules, price curve, purse, drift, settlement, sidecar rows
@@ -204,12 +207,14 @@ ValkyriesCargo/
   Patches/Patch_RandEventSystem_Awake.cs   prefix, Priority.Low, return true: registers the event
   Net/CargoRpc.cs            the client-side surface the terminal calls; the demo transport (PR #1)
   Client/Terminal/ICargoTerminal.cs   what the merchant calls; Track B implements it (PR #1)
-  Patches/Patch_Terminal.cs  the `cargo` console: status, version, prefab dump
+  Patches/Patch_Terminal.cs  the `cargo` console: status, version, prefab, body, stock, deal, claim, terminal; admin visit/dismiss/reset/save
   Libs/ServerSync.cs         NOT OURS: blaxxun ConfigSync.cs, compiled in as shared source
-tests/CoreTests/             net10 harness; compiles the REAL Core sources against stubs
-tools/                       fetch-libs, run-tests, package
+  Libs/SharedUI/GiltFrameTheme.cs, UIFocus.cs   NOT OURS: Wu'barrk's VikingOS 0.9.8 shared source, MIT (PR #2)
+tests/CoreTests/             net8.0 harness; compiles the REAL Core sources against stubs
+tools/                       fetch-libs, run-tests, package; setup-ingvar-unity.ps1, build_ingvar.py, preview_ingvar.py, unity/IngvarBundleBuilder.cs (the bake, Wu'barrk's)
 libs/                        gitignored; populated by fetch-libs.ps1
-docs/                        DESIGN, TLDR, CATALOGUE, REVIEW-v5, data/items table, the partner's drafts
+docs/                        DESIGN, TLDR, CATALOGUE, WORKSPLIT, RELEASE, HANDOFF-CLAUDE, HANDOFF-WUBARRK, REVIEW-v5, data/items table, the partner's drafts
+models/                      Ingvar's source art (ingvar.fbx + ingvar_albedo.png, the one binary exception) and the bake docs (Wu'barrk's)
 ```
 
 Planned (design section 3; names are final, files do not exist yet):
@@ -219,7 +224,6 @@ Planned (design section 3; names are final, files do not exist yet):
   Client/CargoFlight.cs Client/CargoMerchant.cs
   Patches/Patch_Valkyrie_Awake.cs Patch_Humanoid_Awake.cs
   Patches/Patch_Character_InIntro.cs Patch_Character_Damage.cs
-  Libs/SharedUI/GiltFrameTheme.cs Libs/SharedUI/UIFocus.cs   (Wu'barrk's VikingOS, MIT, not yet received)
 ```
 
 ---
@@ -257,8 +261,8 @@ owner overwrites next frame).
   MIT-0. Compiled into this assembly as shared source, the way every ServerSync mod does it. It patches
   `ZNet.RPC_PeerInfo` (a buffering socket around the handshake) and reads `ZRoutedRpc.m_peers` and
   `ZNet.m_adminList` by reflection. Its business; update from upstream, never edit.
-- **`Libs/SharedUI/GiltFrameTheme.cs`, `Libs/SharedUI/UIFocus.cs`** (not yet vendored) = Wu'barrk's
-  VikingOS 0.9.8 shared source, MIT. `UIFocus` carries two Harmony patches (`GameCamera.UpdateMouseCapture`,
+- **`Libs/SharedUI/GiltFrameTheme.cs`, `Libs/SharedUI/UIFocus.cs`** = Wu'barrk's VikingOS 0.9.8 shared
+  source, MIT, vendored 2026-09-06 (PR #2); each file's header records its origin and version. `UIFocus` carries two Harmony patches (`GameCamera.UpdateMouseCapture`,
   `Chat.HasFocus`); design section 4 lists them as shared-source patches.
 
 ---
@@ -292,7 +296,8 @@ owner overwrites next frame).
 - **`ZRoutedRpc.instance` is null for the whole of plugin `Awake`** and is re-created on every world
   join; register routed handlers per session, direct `ZRpc` handlers on peer connect.
 - `EnvMan.IsDay()` is static. `Character.m_collider` is a `CapsuleCollider`. `Odin.m_despawn` and
-  `Odin.m_ttl` (300 s) are public.
+  `Odin.m_ttl` are public; 300 is the field initialiser, and the value on the `odin` prefab is UNCHECKED (PR #8
+  reports 60 from the prefab). `cargo prefab odin` decides it.
 - **The game day is 1800 s** (`EnvMan.instance.m_dayLengthSec`, public, read live on StormTest 2026-09-06;
   the COMPILED default is 1200, the scene overrides it). The market's drift counts this number, never a constant.
 - **The vanilla random event**: `RandEventSystem.SetRandomEvent` is private; `SetRandomEventByName`,
@@ -319,7 +324,9 @@ owner overwrites next frame).
 
 ---
 
-## What to verify in-game (Phase 0)
+## What to verify in-game
+
+Item 1 is done. Items 2 to 20 have never been run.
 
 1. ~~**Boot line, dedicated server**~~ **DONE 2026-09-06** (see Status): the DLL sits in CairnTest's
    `BepInEx\plugins\`; a headless boot shows the loaded line with `patches=10, catalogue=72 entries`,
@@ -367,7 +374,7 @@ P6, the wire, with a visit running (`cargo visit` first):
 
 P7, the terminal (a client, no server needed for the first item):
 17. **`cargo terminal demo`** (from the main menu or in a world): the gilt window opens centred with the cursor
-    free; 18 wares on the left with icons and prices, 72 rows on the right; clicking a ware stages it (Shift 5,
+    free; 18 wares on the left with icons and prices, 72 rows on the right (the 54 wants and the 18 wares he buys back); clicking a ware stages it (Shift 5,
     Ctrl 20, right-click takes back); "you pay" is count x price; Confirm deal answers with one of his three buy
     lines and the price on that row moves; a second Confirm on the same line comes back "The wind shifted..."
     with the line amber, and Confirm new price goes through; Escape closes it and the cursor locks again; the log
