@@ -276,7 +276,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             {
                 Say(args, "  my report: " + (rep.Reported
                     ? "rested=" + (rep.LastRested ? "yes" : "no") + ", comfort=" + rep.LastComfort + ", written " + F(rep.SecondsSinceWrite, "0.#") +
-                      " s ago (" + rep.Writes + " writes to my character ZDO as vc_rested/vc_comfort)"
+                      " s ago (" + rep.Writes + " writes to my character ZDO as " + Keys.Rested + "/" + Keys.Comfort + ")"
                     : "nothing written yet (no local player, or not its owner)"));
             }
 

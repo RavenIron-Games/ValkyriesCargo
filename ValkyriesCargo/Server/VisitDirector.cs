@@ -82,6 +82,17 @@ namespace RavenIron.ValkyriesCargo.Server
             // A fresh world gets its file at once, so the path is proven on the desk and not on the first deal.
             if (d.Store.Path != null && d._pendingSessionRow == null) d.Flush(d.Loaded > 0 ? "boot" : "first write", force: true);
 
+            // P5, design 3.7: the merchant is the persistent half of the pair, so a server that stopped
+            // mid-visit brings him back with the world. Put away anyone who is not the visit we just
+            // adopted, and clear any restored carry link -- a ZDOID does not survive a world read.
+            // The id to KEEP. A restored row is adopted later, on a tick, once the engine brings its
+            // event back - so at boot `_session` is not Active yet and its VisitId is 0. Sweeping on
+            // that 0 would destroy the merchant of the visit about to resume.
+            int keep = d._session != null && d._session.Active ? d._session.VisitId
+                                                               : VisitSession.VisitIdOf(d._pendingSessionRow);
+            string swept = Spawner.Sweep(keep);
+            if (swept != null) ValkyriesCargo.Log.LogInfo(swept);
+
             ValkyriesCargo.Log.LogInfo("director up: salt " + salt + ", day " + Wire.Double(day) + " s (" + (fromEngine ? "EnvMan.m_dayLengthSec" : "ASSUMED, no EnvMan") +
                                        "), catalogue " + d._market.Count + " entries, purse " + d._market.Purse + ", next visit #" + d._market.NextVisitId +
                                        ", roll every " + Wire.Float(sr.IntervalSeconds) + " s at " + Wire.Float(sr.ChancePercent) + "%, first roll one interval from now; sidecar " +
@@ -146,7 +157,7 @@ namespace RavenIron.ValkyriesCargo.Server
                         string republish = _session.Sync(worldTime, CargoEvent.Remaining(res));
                         if (republish != null) Publish(republish);
 
-                        // The server never flies anything: it watches the pilot's `vc_dropped` flag and
+                        // The server never flies anything: it watches the pilot's `VCargo_dropped` flag and
                         // moves the visit's phase and drop point to follow (P4).
                         string flightState;
                         string note = Spawner.Tick(_session, GatherIntervalSeconds, out flightState);
@@ -154,7 +165,7 @@ namespace RavenIron.ValkyriesCargo.Server
                         if (note != null) ValkyriesCargo.Log.LogInfo(note);
 
                         if (_session.Clock.OneMinuteWarningDue(worldTime))
-                            ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + ": one minute left");   // P5: vc_say the line
+                            ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + ": one minute left");   // P5: VCargo_say the line
                     }
                 }
                 else if (ours && _pendingSessionRow == null)
@@ -194,6 +205,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 {
                     ValkyriesCargo.Log.LogWarning("saved session row did not parse (" + string.Join("; ", problems.ToArray()) + "); ending the restored event");
                     RandEventSystem.instance.ResetRandomEvent();
+                    SweepAfterGivingUp("the saved row did not parse");
                     return;
                 }
                 Publish(state);
@@ -208,6 +220,19 @@ namespace RavenIron.ValkyriesCargo.Server
             ValkyriesCargo.Log.LogInfo("saved session row not adopted: the engine did not restore event '" + CargoEvent.Name + "' within " + AdoptWindowSeconds + " s; that visit ended with the restart");
             _pendingSessionRow = null;
             _dirty = true;
+            SweepAfterGivingUp("the engine never restored the event");
+        }
+
+        /// <summary>
+        /// The boot sweep SPARED a merchant because a saved visit was waiting to be adopted. Adoption
+        /// has now failed, so that visit is over and he is stranded - persistent, in the world save,
+        /// with nothing left to belong to. This is the second half of the boot sweep and it only runs
+        /// on the path where the first half deliberately held its hand.
+        /// </summary>
+        private void SweepAfterGivingUp(string why)
+        {
+            string swept = Spawner.Sweep(0);
+            if (swept != null) ValkyriesCargo.Log.LogInfo(swept + " (" + why + ")");
         }
 
         /// <summary>`cargo visit`: force a roll for one player, cooldowns ignored (Scheduler.Force). Returns the decision in words.</summary>
@@ -224,7 +249,7 @@ namespace RavenIron.ValkyriesCargo.Server
             return d.Reason;
         }
 
-        /// <summary>`cargo dismiss` and vc_dismiss: end the event now; the next tick ends the visit with this reason.</summary>
+        /// <summary>`cargo dismiss` and VCargo_dismiss: end the event now; the next tick ends the visit with this reason.</summary>
         public string Dismiss(string reason)
         {
             if (!_session.Active) return "no visit to dismiss";

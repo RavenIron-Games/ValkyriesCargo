@@ -13,7 +13,7 @@ namespace RavenIron.ValkyriesCargo.Server
     ///
     /// Why authored and not "the server tells the pilot to spawn one": a ZDO carries its keys BEFORE any
     /// Awake runs on the receiving machine (`ZNetScene.CreateObject` parks it in `ZNetView.m_initZDO` and
-    /// the first `ZNetView.Awake` consumes it), so `Patch_Valkyrie_Awake` can read `vc_cargo` and skip
+    /// the first `ZNetView.Awake` consumes it), so `Patch_Valkyrie_Awake` can read `VCargo_cargo` and skip
     /// vanilla on the very first frame. A spawn-then-configure race would let vanilla `Valkyrie.Awake`
     /// run first, and vanilla `Valkyrie.Awake` teleports `Player.m_localPlayer` into the sky.
     ///
@@ -42,37 +42,36 @@ namespace RavenIron.ValkyriesCargo.Server
     public static class Spawner
     {
         // The bird.
-        public static readonly int CargoHash = "vc_cargo".GetStableHashCode();      // int visitId: this is ours
-        public static readonly int TargetHash = "vc_target".GetStableHashCode();    // Vector3: where to put him down
-        public static readonly int DroppedHash = "vc_dropped".GetStableHashCode();  // bool: he is on the ground
+        public static readonly int CargoHash = Keys.Cargo.GetStableHashCode();      // int visitId: this is ours
+        public static readonly int TargetHash = Keys.Target.GetStableHashCode();    // Vector3: where to put him down
+        public static readonly int DroppedHash = Keys.Dropped.GetStableHashCode();  // bool: he is on the ground
         /// <summary>
-        /// `vc_turn`: the descent waypoint, whole, from the server's plan. It has a key of its own
+        /// `VCargo_turn`: the descent waypoint, whole, from the server's plan. It has a key of its own
         /// because the first version had the client rebuild it from the start and the drop, and the
         /// rebuild came out on the opposite side, at a different distance, with none of the plan's
         /// block clamp (PR #8's review). One author, one number, no second copy of the maths.
         /// </summary>
-        public static readonly int TurnHash = "vc_turn".GetStableHashCode();        // Vector3: the descent waypoint
+        public static readonly int TurnHash = Keys.Turn.GetStableHashCode();        // Vector3: the descent waypoint
         // The merchant.
-        public static readonly int IngvarHash = "vc_ingvar".GetStableHashCode();    // int visitId: this is Ingvar
-        public static readonly int SeedHash = "vc_seed".GetStableHashCode();        // int: his lines and his bearing
-        public static readonly int StateHash = "vc_state".GetStableHashCode();      // int: carried/approaching/trading/leaving
-        /// <summary>`vc_carrier`: the bird he hangs from, ZDOID.None once he is down. Two int keys, the way ZDO stores an id.</summary>
-        public static readonly KeyValuePair<int, int> CarrierKey = ZDO.GetHashZDOID("vc_carrier");
+        public static readonly int IngvarHash = Keys.Ingvar.GetStableHashCode();    // int visitId: this is Ingvar
+        public static readonly int SeedHash = Keys.Seed.GetStableHashCode();        // int: his lines and his bearing
+        public static readonly int StateHash = Keys.State.GetStableHashCode();      // int: carried/approaching/trading/leaving
+        /// <summary>`VCargo_carrier`: the bird he hangs from, ZDOID.None once he is down. Two int keys, the way ZDO stores an id.</summary>
+        public static readonly KeyValuePair<int, int> CarrierKey = ZDO.GetHashZDOID(Keys.Carrier);
 
         public const string BirdPrefab = "Valkyrie";
 
         /// <summary>
         /// P5 (`CargoMerchant`) is what pins the merchant to the talons, keeps him peaceful, walks him
-        /// up and puts him away again. Until it lands there is nothing to author him INTO: a bare
-        /// vanilla Dverger falls 120 m and then stands next to the pilot with a live `MonsterAI`. So
-        /// P4 ships the flight alone, and this is the single line P5 flips. Everything below it is
-        /// already written and already reviewed; it just does not run yet (PR #8's review, finding 4).
+        /// up and puts him away again. P4 shipped with this false because a bare vanilla Dverger falls
+        /// 120 m and then stands next to the pilot with a live `MonsterAI` (PR #8's review, finding 4).
+        /// P5 landed; this is the line it flips.
         /// </summary>
-        /// <remarks>`static readonly`, not `const`: a const false folds and the compiler then reports the
-        /// whole merchant block as unreachable code, which is a warning we do not ship.</remarks>
-        public static readonly bool MerchantEnabled = false;
+        /// <remarks>`static readonly`, not `const`: a const folds and the compiler reports the other
+        /// branch as unreachable code, which is a warning we do not ship.</remarks>
+        public static readonly bool MerchantEnabled = true;
 
-        /// <summary>What the server remembers about the flight it authored. Not persisted: the bird cannot survive a restart (non-persistent) and the merchant is found again by his `vc_ingvar` key (design 3.7).</summary>
+        /// <summary>What the server remembers about the flight it authored. Not persisted: the bird cannot survive a restart (non-persistent) and the merchant is found again by his `VCargo_ingvar` key (design 3.7).</summary>
         public static ZDOID Bird { get; private set; }
         public static ZDOID Merchant { get; private set; }
         public static int VisitId { get; private set; }
@@ -198,7 +197,7 @@ namespace RavenIron.ValkyriesCargo.Server
 
         /// <summary>
         /// Once a second from the director, while a visit runs. The server does not fly anything and does
-        /// not write to either ZDO; it watches the pilot's `vc_dropped` flag so the visit's phase and drop
+        /// not write to either ZDO; it watches the pilot's `VCargo_dropped` flag so the visit's phase and drop
         /// point follow the flight, and it notices a flight that quietly died with its pilot.
         /// Returns a line to log, or null.
         /// </summary>
@@ -302,6 +301,74 @@ namespace RavenIron.ValkyriesCargo.Server
         /// <summary>How long a missing bird is given before the visit gives up on being carried.</summary>
         public const float OrphanGraceSeconds = 5f;
 
+        /// <summary>
+        /// Design 3.7, the restart sweep. The merchant is the PERSISTENT half of the pair, so a server
+        /// that stopped mid-visit brings him back with the world - standing in a field, with no visit
+        /// around him and no bird to be carried by. This walks the ZDO table for `VCargo_ingvar` and puts
+        /// away anyone who is not the visit now running.
+        ///
+        /// It also clears `VCargo_carrier` on the ones it keeps, and that is not tidiness. **A `ZDOID` is
+        /// a session handle, not an identity**: `ZDO.Load` renumbers every id in the save on every
+        /// world read, so a restored `VCargo_carrier` holds a number that now belongs to some unrelated
+        /// object, and a merchant left believing it would pin himself to whatever that is. The carry
+        /// never survives a restart by design - the bird is non-persistent - so the honest value
+        /// afterwards is None. (`libs-Tools\IMPLEMENTATIONS\MASTER_IMPLEMENTATIONS.md`; it cost
+        /// TortalPortal its favourites feature. See CLAUDE.md's knowledge-base section.)
+        ///
+        /// Returns a line to log, or null when there was nothing to do.
+        /// </summary>
+        public static string Sweep(int liveVisitId)
+        {
+            try
+            {
+                ZDOMan man = ZDOMan.instance;
+                ZNetScene scene = ZNetScene.instance;
+                if (man == null || scene == null) return null;
+
+                string bodyName = ModConfig.BodyPrefab != null ? ModConfig.BodyPrefab.Value : "Dverger";
+                int bodyHash = bodyName.GetStableHashCode();
+
+                var found = new List<ZDO>();
+                int index = 0;
+                // The iterative form is the one that does not allocate the whole table: it fills the
+                // list and returns whether it finished, so it is called until it says it has.
+                while (!man.GetAllZDOsWithPrefabIterative(bodyName, found, ref index)) { }
+
+                int cleared = 0, stranded = 0;
+                foreach (ZDO zdo in found)
+                {
+                    if (zdo == null || !zdo.IsValid()) continue;
+                    int visit = zdo.GetInt(IngvarHash, 0);
+                    if (visit == 0) continue;                       // not ours: an ordinary Dverger
+
+                    if (visit != liveVisitId)
+                    {
+                        // Left over from a visit that is not running any more.
+                        zdo.SetOwner(ZDOMan.GetSessionID());
+                        man.DestroyZDO(zdo);
+                        stranded++;
+                        continue;
+                    }
+                    if (!zdo.GetZDOID(CarrierKey).IsNone())
+                    {
+                        zdo.SetOwner(ZDOMan.GetSessionID());
+                        zdo.Set(CarrierKey, ZDOID.None);
+                        zdo.Set(StateHash, MerchantState.Approaching);
+                        cleared++;
+                    }
+                }
+                if (stranded == 0 && cleared == 0) return null;
+                return "restart sweep: " + stranded + " stranded merchant(s) destroyed" +
+                       (cleared > 0 ? ", " + cleared + " carry link(s) cleared (a restored ZDOID means nothing)" : "") +
+                       "; prefab '" + bodyName + "' hash " + bodyHash;
+            }
+            catch (Exception ex)
+            {
+                if (_throws++ < 3) ValkyriesCargo.Log.LogError("spawner: the restart sweep threw: " + ex);
+                return null;
+            }
+        }
+
         /// <summary>`cargo status`: what the server authored and what it has seen since.</summary>
         public static string Describe()
         {
@@ -322,7 +389,7 @@ namespace RavenIron.ValkyriesCargo.Server
         }
     }
 
-    /// <summary>`vc_state` on the merchant's ZDO (design 3.3). The owner writes it; every client reacts.</summary>
+    /// <summary>`VCargo_state` on the merchant's ZDO (design 3.3). The owner writes it; every client reacts.</summary>
     public static class MerchantState
     {
         public const int Carried = 0;

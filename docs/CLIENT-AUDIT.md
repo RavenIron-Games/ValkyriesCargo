@@ -69,7 +69,7 @@ flow or protocol rather than a member. All 7 are fixed on this branch. 0 warning
 | `ZRoutedRpc.Register<T>` / `<T,U>` | `ZRoutedRpc.cs:215`, `:220` | ok |
 | `ZRoutedRpc.InvokeRoutedRPC(long, string, …)` | `ZRoutedRpc.cs` | ok |
 | `ZNetView.IsValid()` / `IsOwner()` / `GetZDO()` | `p4/ZNetView.cs:263`, `:232`, `:258` | ok |
-| `ZDO.Set(int, bool)` | `ZDO.cs:381` → `Set(hash, value ? 1 : 0)` | ok — both `vc_rested` and `vc_comfort` land in the ZDO **int** map |
+| `ZDO.Set(int, bool)` | `ZDO.cs:381` → `Set(hash, value ? 1 : 0)` | ok — both `VCargo_rested` and `VCargo_comfort` land in the ZDO **int** map |
 | `ZDO.Set(int, int, bool okForNotOwner = false)` | `ZDO.cs:352` | ok — we write only on our own owned ZDO |
 | `MessageHud.instance` | `MessageHud.cs:90` | ok |
 | `MessageHud.ShowMessage(MessageType, string, …)` | `MessageHud.cs:156` | ok |
@@ -191,7 +191,7 @@ inconsistent with its own sibling twenty lines away.
 inbox is the wrong witness here by construction, because `CargoRpc` marks it before the caller applies.
 
 **Residual, deliberately not fixed:** the *in-memory* inbox still carries the id for the rest of the session, so a
-redelivery inside the same session would be treated as a duplicate. Redeliveries only arrive on `vc_claim`, which
+redelivery inside the same session would be treated as a duplicate. Redeliveries only arrive on `VCargo_claim`, which
 fires once per connection, so in practice the recovery is the next login — where the persisted inbox is clean
 because we no longer wrote it. Closing the in-memory hole means touching `CargoRpc.cs`, which is the frozen
 contract; the proposed diff is below.
@@ -379,7 +379,7 @@ one, so it is written down.
 * **`InboxStore`** — never throws on a missing or corrupt file; `.tmp` then delete-then-move. The replace is not
   atomic, so a kill in that window loses the inbox — which costs one redelivery that the server's ledger already
   handles. Acceptable as designed.
-* **`AdminRpc`** — `OnRequest` refuses anything but a server, so a hostile server invoking `vc_admin` on a client
+* **`AdminRpc`** — `OnRequest` refuses anything but a server, so a hostile server invoking `VCargo_admin` on a client
   does nothing; `Send` cannot reach `ZRoutedRpc.instance` without `Registered` having proved it non-null;
   `Reset()` drops the registration so the next world re-registers.
 * **`CargoTransport.EnsureRegistered`** — keyed on `ReferenceEquals(rpc, _rpc)`, so a reconnect's new `ZRpc` is

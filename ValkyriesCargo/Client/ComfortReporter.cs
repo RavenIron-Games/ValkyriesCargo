@@ -1,9 +1,10 @@
 using System;
+using RavenIron.ValkyriesCargo.Core;
 
 namespace RavenIron.ValkyriesCargo.Client
 {
     /// <summary>
-    /// Writes `vc_rested` and `vc_comfort` on the LOCAL player's own character ZDO (design 3.1) every
+    /// Writes `VCargo_rested` and `VCargo_comfort` on the LOCAL player's own character ZDO (design 3.1) every
     /// 2 s and on change, from the mod's one tick. Comfort never leaves the client in vanilla
     /// (`SE_Rested.CalculateComfortLevel` runs locally and `Player.m_comfortLevel` is private), so the
     /// client reports it the way vanilla reports `baseValue`: on its own ZDO, which replicates because
@@ -12,8 +13,8 @@ namespace RavenIron.ValkyriesCargo.Client
     /// </summary>
     public sealed class ComfortReporter
     {
-        public static readonly int RestedHash = "vc_rested".GetStableHashCode();
-        public static readonly int ComfortHash = "vc_comfort".GetStableHashCode();
+        public static readonly int RestedHash = Keys.Rested.GetStableHashCode();
+        public static readonly int ComfortHash = Keys.Comfort.GetStableHashCode();
 
         public const float IntervalSeconds = 2f;
 

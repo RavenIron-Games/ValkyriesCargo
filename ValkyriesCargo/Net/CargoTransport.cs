@@ -9,8 +9,8 @@ namespace RavenIron.ValkyriesCargo.Net
     /// <summary>
     /// The client end of the deal wire: the real ICargoTransport behind CargoRpc when a world is joined
     /// (design 3.4). Talks on the server's own ZRpc (`ZNet.GetServerRPC()`, one per connection), answers
-    /// arrive as `vc_dealt`. A solicited answer goes back to CargoRpc's callback (which keeps the inbox);
-    /// an unsolicited one (a redelivery after `vc_claim`) is applied here through DealApplier and acked.
+    /// arrive as `VCargo_dealt`. A solicited answer goes back to CargoRpc's callback (which keeps the inbox);
+    /// an unsolicited one (a redelivery after `VCargo_claim`) is applied here through DealApplier and acked.
     /// Every accepted answer is acked once the client has it, so the server's owed ledger clears.
     /// </summary>
     public sealed class CargoTransport : ICargoTransport
@@ -41,7 +41,7 @@ namespace RavenIron.ValkyriesCargo.Net
                 _rpc = rpc;
                 _pending.Clear();
                 _claimed = false;
-                ValkyriesCargo.Log.LogInfo("deal wire: registered vc_dealt on the server socket");
+                ValkyriesCargo.Log.LogInfo("deal wire: registered " + DealWire.Dealt + " on the server socket");
             }
             catch (Exception ex)
             {
@@ -55,7 +55,7 @@ namespace RavenIron.ValkyriesCargo.Net
             if (_claimed || !Ready || Player.m_localPlayer == null) return;
             _claimed = true;
             try { _rpc.Invoke(DealWire.Claim); }
-            catch (Exception ex) { if (_throws++ < 3) ValkyriesCargo.Log.LogError("vc_claim send threw: " + ex); }
+            catch (Exception ex) { if (_throws++ < 3) ValkyriesCargo.Log.LogError(DealWire.Claim + " send threw: " + ex); }
         }
 
         /// <summary>`cargo claim`: ask again, whatever happened before.</summary>
@@ -75,7 +75,7 @@ namespace RavenIron.ValkyriesCargo.Net
             catch (Exception ex)
             {
                 _pending.Remove(deal.Nonce);
-                if (_throws++ < 3) ValkyriesCargo.Log.LogError("vc_deal send threw: " + ex);
+                if (_throws++ < 3) ValkyriesCargo.Log.LogError(DealWire.DealName + " send threw: " + ex);
                 onAnswer(DealResult.Refuse(deal.Nonce, DealReason.NotConnected));
             }
         }
@@ -93,7 +93,7 @@ namespace RavenIron.ValkyriesCargo.Net
             {
                 var problems = new List<string>();
                 DealResult r = DealResult.Parse(encoded, problems);
-                if (r == null) { ValkyriesCargo.Log.LogWarning("vc_dealt did not parse: " + string.Join("; ", problems.ToArray())); return; }
+                if (r == null) { ValkyriesCargo.Log.LogWarning(DealWire.Dealt + " did not parse: " + string.Join("; ", problems.ToArray())); return; }
                 Action<DealResult> cb;
                 if (_pending.TryGetValue(r.Nonce, out cb))
                 {
@@ -113,7 +113,7 @@ namespace RavenIron.ValkyriesCargo.Net
             }
             catch (Exception ex)
             {
-                if (_throws++ < 3) ValkyriesCargo.Log.LogError("vc_dealt handler threw: " + ex);
+                if (_throws++ < 3) ValkyriesCargo.Log.LogError(DealWire.Dealt + " handler threw: " + ex);
             }
         }
 
@@ -121,7 +121,7 @@ namespace RavenIron.ValkyriesCargo.Net
         {
             if (!Ready || string.IsNullOrEmpty(deliveryId)) return;
             try { _rpc.Invoke(DealWire.Ack, deliveryId); }
-            catch (Exception ex) { if (_throws++ < 3) ValkyriesCargo.Log.LogError("vc_ack send threw: " + ex); }
+            catch (Exception ex) { if (_throws++ < 3) ValkyriesCargo.Log.LogError(DealWire.Ack + " send threw: " + ex); }
         }
     }
 

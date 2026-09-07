@@ -71,7 +71,7 @@ then `Load world: CairnTest`, `role: dedicated server`, `Game server connected`.
 Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches=13, catalogue=72 entries, ServerSync version gate armed; role is decided when a world loads.
 event 'valkyries_cargo' registered (20 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
 role: dedicated server
-routed RPCs registered for this session: vc_admin, vc_reply
+routed RPCs registered for this session: VCargo_admin, VCargo_reply
 director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 800, roll every 60 s at 25%, first roll one interval from now; market state is NOT persisted yet (P6)
 roll: held: a random event is active (a raid, a storm, or a visit)
 ```
@@ -103,7 +103,7 @@ proves nothing about a game member.
   in-process market with no server and no merchant; nobody has run that command yet.
 - **The client boot line** (`renderer=True`), the ServerSync version wall, the config lock on a
   connected client, and the `cargo prefab` dumps.
-- **The comfort report**: `Client\ComfortReporter.cs` writing `vc_rested` / `vc_comfort` on the local
+- **The comfort report**: `Client\ComfortReporter.cs` writing `VCargo_rested` / `VCargo_comfort` on the local
   player's own ZDO, and those numbers appearing in the server's candidate list.
 - **A forced visit**: `cargo visit`, the pilot's private line, the centre banner, the countdown, the
   clock pausing when everyone walks out of range, the timer ending the visit, `cargo dismiss`, and a
@@ -228,8 +228,8 @@ Prefix `cargo`. Console commands are not config: `LockConfiguration` does not to
 | `cargo body preview` | Stand Ingvar 2.5 m in front of you, facing you, on the ground, with no merchant and no server: the way to see the body. `cargo body walk` toggles his walk on the spot, `cargo body clip <Hello\|Talk\|Shrug\|Nod>` plays a gesture, `cargo body clear` takes him away. Needs a baked bundle. |
 
 The four admin verbs run in place on a server or a listen host. From a client they ride the
-`vc_admin` routed RPC to the server, where vanilla's own `ZNet.IsAdmin` decides — fail closed — and
-the answer comes back on `vc_reply` and prints in the caller's console.
+`VCargo_admin` routed RPC to the server, where vanilla's own `ZNet.IsAdmin` decides — fail closed — and
+the answer comes back on `VCargo_reply` and prints in the caller's console.
 
 ---
 

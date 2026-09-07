@@ -1,4 +1,4 @@
-# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06 (updated the same night: Wu'barrk takes over)
+# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut at the close of 2026-09-07 night
 
 You are the second engineering session on this mod. Don's session (me) built what is here; you and
 Wu'barrk take part of what is left. This file tells you everything you need to act, in the order to
@@ -9,75 +9,70 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 
 ---
 
-## 0. State at handover, the night of 2026-09-06 — READ THIS FIRST
+## 0. State at the close of 2026-09-07 night — READ THIS FIRST
 
-Don is stepping back; Wu'barrk and you watch GitHub and carry on. Sections 1–11 were written the morning
-of the same day; where they disagree with this section, this section wins.
+Don is asleep; his Claude carries the night with the owner's merge authority (review, then merge what is
+clean, ours and yours). Sections 1–11 below are older and survive where they do not disagree with this.
 
-**Merged to `main`, all by PR, in this order:**
+**Amended later the same night, at the owner's word ("shut the agents down and take the data"):** the four agents
+were stopped. P10a had FINISHED: branch `a/p10a-sweep` is pushed and PR-ready. P10b and P11 were stopped mid-work and
+pushed as they stood: `a/p10b-probes` (6 commits, builds clean, 1193 checks) and `a/p11-shakedown` (6 code commits
+plus a WIP commit of two partial documents, builds clean, 1078 checks); neither is reviewed. The P5 review was stopped
+before it produced anything, so **PR #15 is open, unreviewed by our side, unmerged.** Nothing was merged after the
+stop, and no PR was opened. The paragraphs below describe the state as it was before the stop.
+
+**Merged to `main` since the last handover, all by PR, in this order:**
 
 | PR | What | Proof |
 |---|---|---|
-| #1 | Track A1, the contract: `Wire`, `MarketSnapshot`, `VisitSnapshot`, `Deal`/`DealResult`/`DealInbox`, `DemoMarket`, `CargoRpc` + demo transport, `ICargoTerminal` | 231 checks |
-| #2 | Track B (yours): SharedUI + ServerSync vendored, the gitignore that hid `Libs/` fixed, plugin to net48, harness to net8.0 | builds both sides |
-| #3 | P2 market core: `Market` (curve, purse, drift, settlement, sidecar rows), `Scheduler`, `VisitClock`; `DemoMarket` over the real Market | 714 checks, 28 mutations |
-| #5 | P3: comfort report, the vanilla event `valkyries_cargo`, `VisitDirector` on the pure Scheduler, `cargo visit`/`dismiss` admin-gated by vanilla's list | headless: 13 patches, event registered, day 1800 s from EnvMan, rolls |
-| #6 | P6: deal wire on each peer's own ZRpc, owed ledger, world sidecar `valkyriescargo_{uid}.dat`, restart-mid-visit resume, `cargo stock`/`deal`/`claim`/`reset`/`save` | headless: file written on first boot, 76 rows loaded on restart; 852 checks |
+| #7 | P7 the Cargo Terminal: IMGUI on the vendored gilt theme, the pure tray model, `cargo terminal demo|open|close` | 926 checks; never drawn on a screen |
+| #8 | P4 the authored flight (Wu'barrk): straight approach, `vc_turn` (renamed `VCargo_turn` on 2026-09-07), glide altitude on the waypoint, `FlightSpeed` 8 / `FlightTurnRate` 45 synced, the merchant gated behind P5; reviewed with a simulation, answered, both sides reproduced the numbers | 39 checks; never flown |
+| #9 | P8 loader (`BodyLoader`, `IngvarBody` PlayableGraph over the six clips, no controller needed in the bake, `Server.CustomBody`, `cargo body preview`) + P9 release pass (README truth, CHANGELOG, manifest, `package.ps1`, `docs/RELEASE.md`; Hexium name free); adversarial review found the LODGroup re-enable and fixed it | 1034 checks; no bundle baked |
+| #10 | `docs/PROOF-CLIENT.md`, the client proof runbook for items 2–20, with `tools/deploy-test.ps1`, `tail-log.ps1`, `set-test-config.ps1` | scripts dry-run only |
+| #11 | The client-path audit: 57 members verified, six defects fixed (the demo terminal never ticked from the main menu; Tab/M double-open; refused deals acked; a destroyed merchant; leaked focus tokens; legacy Input) plus `DealInbox.Forget` | 1039 checks |
+| #12 | The economy simulation (`tests/EconSim`, `docs/ECONOMY-SIM.md`): the buy-out-and-sell-back round trip is PROFITABLE and drains the purse; a decision for the two owners | deterministic, checked |
+| #13 | Your brief for P10 and P11, accepted by Don | — |
+| #14 | The knowledge base wired into CLAUDE.md and two corrections (a ZDOID is a session handle; immortality belongs on `RPC_Damage`); the base itself now lives at `docs/knowledge-base/` (52 files; the API reference folder is still missing) | — |
 
-**Open: PR #4, `b/ingvar-body` (yours).** It adds `models/ingvar.glb` and three PNGs and edits `.gitignore` to
-allow them. WORKSPLIT §4 says no binaries in the repo, and #2 had just ignored `models/`. Don has NOT
-decided; do not merge it as it stands without him. Two ways out: keep the GLB and previews outside the
-repo (the Unity project folder, a release asset, or Wu'barrk's drive) and merge the README, the clip
-list and the two scripts; or the two owners change the rule in WORKSPLIT §4 first.
+Main at the close: 0 warnings, **1078 checks**. Also on main: the flight's docs and verify items 21–22, the
+P10a handover (below), and `docs/HANDOFF-WUBARRK.md` section 0, your evening list.
 
-**What is proven, and only headless** (a dedicated server with this DLL alone): boot line with 13
-patches; `event 'valkyries_cargo' registered`; `director up ... day 1800 s (EnvMan.m_dayLengthSec)`;
-`roll: held: a random event is active` against a foreign event and `roll: no eligible player: nobody
-online` on an empty server; the sidecar written beside the world on first boot and read back on restart.
-**Nothing has been seen from a client yet.** CLAUDE.md "What to verify in-game" items 2–16 are the list:
-client boot, version wall, config lock, prefab dumps, the comfort report in `cargo status`, `cargo visit`
-with the banner and the pilot's line, the clock pausing, the timer ending a visit, dismiss, a non-admin
-refused, a deal through `cargo deal buy Iron 2` with the price moving on every machine, a redelivery after
-a disconnect, the sidecar after deals, a resumed visit after a restart, the refusals. **Whoever boots a
-client first does those and pastes the exact lines into CLAUDE.md "Status."** Fast-test config:
-`EventCheckIntervalMinutes = 1`, `DaytimeOnly = false`; the server's adminlist decides `cargo visit`.
+**Open when Don went to bed:**
+- **PR #15, P5 the merchant (yours).** Builds clean with main merged, 1095 checks. An Opus adversarial review
+  is running on it in the 11d shape (every game call against the real assembly, ownership on every machine,
+  the pure plan's gaps, our seams `BodyLoader.Attach` and `CargoTerminalHost.Open`, the four-line
+  `VisitDirector` seam). One thing it is told to look hard at: the boot `Spawner.Sweep` runs before the
+  sidecar's session is adopted, so `Sweep(0)` may destroy the merchant of the very visit about to resume.
+  Findings go on the PR; it merges when they are answered.
+- **Issue #16, rename `vc_` to `VCargo_`** (21 names, 5 files): Don's, done after #15 and P11 land, as one
+  pass with a `Core/Keys.cs`, a harness check for the prefix and uniqueness, and the collision mechanics in
+  the trust-boundary document. (Done 2026-09-07: the rename, found to be 21 names across more call sites
+  than the issue predicted, plus `Core/Keys.cs` and its distinctness harness check, landed on
+  `b/vcargo-prefix-rename`. The collision mechanics write-up in the trust-boundary document was not part
+  of that pass.)
+- **In flight on Don's side**, three Opus agents in worktrees, each opening a PR when done: P10a (the sweep
+  tooling: `fetch-builds`, `decompile-builds`, `diff-engine.js`, `docs/ENGINE-SURFACE.md`, `ENGINE-BASELINE.md`,
+  the client-vs-server sweep, and the dedicated-server live and public-test sweeps via steamcmd); P10b (the
+  boot-time version line, per-fact probes each in its own method, degrade-don't-throw, refuse on a newer
+  sidecar format, `cargo status`/`cargo engine`); P11's off-game half (the config shakedown with fixes in
+  `ModConfig`, `docs/TRUST-BOUNDARY.md` with server-side validation fixes, the 11d checklist).
 
-**What is left** (WORKSPLIT §0; the formal split was never written, §1 is still the proposal):
-- **P7 the terminal (yours):** the theme and the focus helper are vendored; `CargoRpc` is real now: on a
-  world join the transport installs itself, `cargo terminal demo` still works through `UseDemo(true)`.
-  `cargo deal buy|sell` is a working reference of the whole path without a terminal. What the terminal
-  must know is in WORKSPLIT §2 (the rules block and "what the market-core review says"); the short form:
-  send `row.Buy` as `UnitPriceSeen` for a wanted line and `row.Sell` for an offered one; `CoinsOffered`
-  is the coins on the table (count × unit for a buy); snapshots are values, re-read `CargoRpc.Market` after
-  every `MarketChanged`; SOLD is `Stock == 0`; only `price_changed` carries `NewMarketState`; write the
-  inventory only inside `onAnswer` when `Ok`, through `Client/DealApplier` (`CanApply` first, it is the
-  one inventory writer); `CargoRpc.EndSession` drops your subscribers at logout, re-subscribe per session;
-  `CargoRpc.Open/Close(visitId)` tell the server a terminal is open; `Lines.cs` holds the words.
-- **P8 the body (yours):** PR #4, once the binaries question is settled; DESIGN §11 is the contract.
-- **P4 the authored flight and P5 the merchant:** Track A's, but Don is away. Whoever gets to them
-  first, by PR; DESIGN 3.2 and 3.3 hold the decided mechanics (server authors both ZDOs with owner = pilot;
-  the bird starts inside the pilot's active block, ~90 m out; `Valkyrie.Awake` prefix skips vanilla for
-  our object only; carry by pin, `InIntro` postfix; immortal; Shift+E twice; the Odin vanish). One client
-  plus the server proves most of it; a second client 60 m away proves the shared visuals.
-- **P9 release:** Don, the store account.
+**Decided tonight by the owner:** P10 and P11 accepted; **P10a is yours after P5** (the tooling and first sweeps
+from Don's side are your foundation; the client fetches and every recurring sweep are yours, on your rig);
+the knowledge base lives under `docs/knowledge-base/`.
 
-**Decisions recorded as PROPOSED in DESIGN §8 that the two owners should confirm** (nothing in code
-blocks on them): flat pricing per deal (the whole quantity at the price on screen); visit and delivery
-ids `salt-visit-seq`; cooldowns persisted as remaining seconds; forced visits ignore cooldowns;
-reconfirm versus teardown on a price tick; where bundles get built.
+**Decisions still for the two owners:** the profitable round trip (`docs/ECONOMY-SIM.md` verdict 1: pay a Ware
+bought back at par at most, or the multiplier down to 1.4); the client asserting its own rested/comfort numbers
+(P11 will propose "accept, worst case an undeserved visit"); reconfirm versus teardown on a price tick.
 
-**Engine facts learned tonight that change how you build** (bodies read, CLAUDE.md "Engine facts"):
-vanilla SAVES the running random event with the world and restores it on load, so a restart mid-visit
-resumes; the game day is 1800 s from the live `EnvMan` (the compiled default is 1200); a `RandomEvent`
-needs an EMPTY camera-shake curve or a dedicated server dereferences a null `GameCamera`; vanilla's
-inventory counts and removes by the item's shared "$item_..." name, never the prefab name.
+**Proofs still pending on a screen:** CLAUDE.md items 2–22; the runbook is `docs/PROOF-CLIENT.md`. You have
+the client and took item 17 (`cargo terminal demo`) and `cargo prefab odin`; the bundle is not baked, so
+items 19–20 wait on you; items 21–22 are the flight, two clients.
 
-**Process, unchanged:** branches `b/<topic>`, PRs into `main`, `dotnet run --project
-tests/CoreTests/CoreTests.csproj` green before every PR (852 now), `main` always building and booting
-headless, verified facts into CLAUDE.md Status with the exact log line, no binaries, "not ours" files
-replaced from upstream never edited, contract files change only by a PR the other side commented on.
-
----
+**Two dates:** Valheim 1.0 lands 2026-09-09, which is why P10a's baseline sweep runs tonight against the
+public-test branch; after 1.0, re-run the sweep before trusting any engine fact in CLAUDE.md. And after #15
+merges, a merged DLL puts a Dverger on the ground (`MerchantEnabled` is true): StormTest is the test bed,
+nothing goes on a live server.
 
 ## 1. What this is, in five lines
 
@@ -113,7 +108,8 @@ were read from its source (`ConfigSync.cs`, master). The facts your work will le
   on his ZDO; it travels as two ServerSync custom values (`VisitState`, `MarketState`).
 - **Objects exist on a client only inside its active zone block** (`ZNetScene.InActiveArea`,
   `|zone − centre| ≤ m_activeArea − 1`, 64 m zones). The bird starts ~90 m out, not 500 m.
-- **Comfort never leaves the client**; the client writes `vc_rested`/`vc_comfort` on its own ZDO.
+- **Comfort never leaves the client**; the client writes `vc_rested`/`vc_comfort` (renamed
+  `VCargo_rested`/`VCargo_comfort` on 2026-09-07) on its own ZDO.
 - **`ZRoutedRpc.instance` is null for all of plugin `Awake`**; routed RPCs are forgeable (the
   packet's own sender/target); money rides the direct peer `ZRpc`.
 - **VikingOS**: every class is `internal`; it is a beta; the reuse is **shared source** (the two

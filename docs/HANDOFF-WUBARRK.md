@@ -17,7 +17,8 @@ Don merges everything; nothing below asks you to merge.
    - the turn-in point sits inside that circle, so the bird never reaches it and orbits until
      `MaxFlightSeconds`; straight in works (drop at 3.8 s), or a turn rate of our own (60 deg/s works);
    - `CargoFlight.Awake` rebuilds a different turn-in from the one `FlightPlan` planned (other distance,
-     other side, no block clamp): write `vc_turn` beside `vc_target`, or delete the swing on both sides;
+     other side, no block clamp): write `vc_turn` beside `vc_target` (renamed `VCargo_turn`/`VCargo_target`
+     on 2026-09-07), or delete the swing on both sides;
    - `DescentY = StartY`, so the drop fires about 105 m up; give the turn-in a descent altitude and/or
      the bird a speed of our own (8 m/s from 120 m reaches 14 m in 20 s, which is also the 15-20 s
      design 3.2 wanted the sky to hold);
@@ -53,7 +54,8 @@ Don merges everything; nothing below asks you to merge.
      (the same gesture already playing). Idle and Walk need nothing from you: they follow the body's
      own movement.
    - `vc_dismiss` is on the wire; `VisitSession`'s phases and `SetDrop` are the director's; `vc_state`,
-     `vc_carrier` and `vc_seed` are your `Spawner`'s keys.
+     `vc_carrier` and `vc_seed` are your `Spawner`'s keys. (All four renamed to the `VCargo_` prefix on
+     2026-09-07.)
    The rest is design 3.3: the carry pin and `InIntro`, the drop handoff, follow and callout, immortal,
    dismissal, the Odin vanish, the restart sweep.
 
@@ -76,6 +78,12 @@ Don merges everything; nothing below asks you to merge.
    2.1, and it drains his whole purse on the first visit with the shelf left where it started. The cheap fix is one
    clause in `Market.Pays`: a Ware he sells is bought back at par at most. The config fix is the multiplier down to
    1.4, which flattens the scarcity signal. Say which; it goes into DESIGN section 8 and one of us builds it.
+
+7. **Night close, 2026-09-07 (Don asleep; his Claude carries the merges):** PR #15 is under an Opus
+   adversarial review and merges when its findings are answered on the PR; issue #16's rename is Don's,
+   after #15 and P11 land; P10a is yours after P5; the knowledge base is at `docs/knowledge-base/` (add
+   `VALHEIM-API-REFERENCE`); three PRs of Don's (P10a tooling, P10b, P11) arrive overnight, read them in the
+   morning. `docs/HANDOFF-CLAUDE.md` section 0 is the full state.
 
 ## 1. Where things are
 

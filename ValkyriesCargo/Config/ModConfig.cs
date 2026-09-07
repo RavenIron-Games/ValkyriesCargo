@@ -115,7 +115,7 @@ namespace RavenIron.ValkyriesCargo.Config
                 "Metres: a base on cooldown blocks its neighbours within this radius. Read on the SERVER.",
                 new AcceptableValueRange<float>(0f, 500f));
             MerchantLifespanSeconds = S(cfg, "Server", "MerchantLifespanSeconds", 300f,
-                "How long Ingvar stays, as the vanilla random event's duration. Odin's compiled default is 300; his prefab's own value is unchecked. Read on the SERVER.",
+                "How long Ingvar stays, as the vanilla random event's duration. Ours alone: Odin's prefab says 60, not the 300 his field initialiser says, so this number was never inherited from him. Read on the SERVER.",
                 new AcceptableValueRange<float>(30f, 1800f));
             ApproachDistance = S(cfg, "Server", "ApproachDistance", 3.5f,
                 "Metres from the pilot at which he stops walking. Read on the SERVER.",

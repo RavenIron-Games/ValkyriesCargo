@@ -8,7 +8,7 @@ namespace RavenIron.ValkyriesCargo.Client
 {
     /// <summary>
     /// Our Valkyrie's flight (design 3.2), added by `Patch_Valkyrie_Awake` to a bird whose ZDO carries
-    /// `vc_cargo`, in place of the vanilla component we skipped. It lives and dies with the bird, so it
+    /// `VCargo_cargo`, in place of the vanilla component we skipped. It lives and dies with the bird, so it
     /// owns no timer that outlives its object (house rule 2 is about long-lived timers; vanilla flies its
     /// own Valkyrie from `FixedUpdate` and so does this).
     ///
@@ -23,13 +23,13 @@ namespace RavenIron.ValkyriesCargo.Client
     /// - the turn-in point was REBUILT here from the start and the drop. It came out on the opposite
     ///   side (`Cross(dir, up)` with `dir` pointing start-to-drop is the mirror of the plan's normal on
     ///   the outbound bearing), at a different distance, and with none of the plan's block clamp. It is
-    ///   now `vc_turn`, authored once by the server. There is no second copy of the geometry.
+    ///   now `VCargo_turn`, authored once by the server. There is no second copy of the geometry.
     /// - the SPEED and TURN RATE are ours, from synced config, not the prefab's. Vanilla's numbers are
     ///   tuned for a 500 m approach: at 20 m/s our 76 m run is 7 s rather than design 3.2's 15-20, and
     ///   20 deg/s is a 57 m turning circle, wider than the whole flight. `m_dropHeight` still comes off
     ///   the prefab, because that one is about the bird's model and not about the approach.
     ///
-    /// Only the OWNER flies. Everyone else is moved by `ZSyncTransform` and only watches `vc_dropped` to
+    /// Only the OWNER flies. Everyone else is moved by `ZSyncTransform` and only watches `VCargo_dropped` to
     /// swing the animator - and that matters, because the flight is the one part of the visit every
     /// player sees at once.
     ///
@@ -72,8 +72,9 @@ namespace RavenIron.ValkyriesCargo.Client
         /// <summary>Where the merchant hangs from (design 3.3). The prefab's attach point if it has one, the bird itself otherwise.</summary>
         public Transform AttachPoint => _valkyrie != null && _valkyrie.m_attachPoint != null ? _valkyrie.m_attachPoint : transform;
 
-        /// <summary>The offset the merchant hangs at, in the attach point's space. Vanilla's own value for a passenger.</summary>
-        public Vector3 AttachOffset => _valkyrie != null ? _valkyrie.m_attachOffset : new Vector3(0f, 0f, 1f);
+        /// <summary>The offset the merchant hangs at, in the attach point's space. The fallback is the SHIPPED
+        /// prefab's value, read 2026-09-07 -- the field initialiser says (0,0,1) and the prefab overrides it.</summary>
+        public Vector3 AttachOffset => _valkyrie != null ? _valkyrie.m_attachOffset : new Vector3(0f, 0.3f, 0.4f);
 
         public bool HasDropped => _dropped;
         public int VisitId => _visitId;
@@ -190,7 +191,7 @@ namespace RavenIron.ValkyriesCargo.Client
         /// <summary>
         /// The owner puts him down: mark the bird dropped, write the drop point the merchant will stand
         /// on, and cut the carry link so `CargoMerchant` stops pinning him to the talons and falls the
-        /// last few metres. The server reads `vc_dropped` on its next tick and moves the visit's phase.
+        /// last few metres. The server reads `VCargo_dropped` on its next tick and moves the visit's phase.
         /// </summary>
         private void Drop()
         {

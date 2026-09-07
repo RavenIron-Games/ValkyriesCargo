@@ -6,8 +6,8 @@ namespace RavenIron.ValkyriesCargo.Core
     /// <summary>
     /// The server's memory of accepted deals it has not yet seen acknowledged (design 3.4, the escrow rule
     /// ported from VikingOS): a deal the server committed but the client may never have applied. Keyed by
-    /// the player's platform id (stable across sessions; the peer uid is not). On `vc_ack` a row clears;
-    /// on `vc_claim` at login every row the player still owes is redelivered; the client's inbox makes a
+    /// the player's platform id (stable across sessions; the peer uid is not). On `VCargo_ack` a row clears;
+    /// on `VCargo_claim` at login every row the player still owes is redelivered; the client's inbox makes a
     /// second delivery harmless. Bounded per player and overall, oldest evicted first. Rows:
     /// "owed\tplayerKey\tdeliveryId\tresult" where result is DealResult.Encode() with NewMarketState
     /// dropped (an owed result is always an accepted one). PURE.
