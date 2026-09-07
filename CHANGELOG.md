@@ -2,8 +2,8 @@
 
 ## 0.1.0 (unreleased)
 
-**Not playable. The server side runs headless; nothing has been seen from a client; the flight, the
-merchant and the custom body are not built.** Entries are in build order.
+**Not playable. The server side runs headless; nothing has been seen from a client; the flight and the
+merchant are not built, and the custom body has its loader but no baked bundle.** Entries are in build order.
 
 ### Phase 0 — the scaffold
 
@@ -99,6 +99,22 @@ merchant and the custom body are not built.** Entries are in build order.
   answer.
 - **926 off-game checks**, with seven tray mutations caught.
 
+### P8 — the body loader, mod side (branch `a/p8-loader`)
+
+- `Client\BodyLoader.cs`: the AssetBundle `valkyriescargo_kit`, embedded in this DLL when a bake exists at
+  `Assets\valkyriescargo_kit` (a loose file beside the DLL is accepted for trying a bake, loudly labelled), is
+  loaded once and never unloaded. `Attach` hangs Ingvar's prefab on the merchant's root and switches the
+  stand-in's renderers off, never destroying one, so every vanilla system keeps its animator.
+- `Client\IngvarBody.cs`: the six clips (Walk, Idle, Talk, Hello, Shrug, Nod) played through a PlayableGraph
+  with no AnimatorController; Idle and Walk blended from the body's own displacement, the four gestures as
+  one-shots for the merchant to call. `Core\BodyMotion.cs` (pure, 78 checks) is the blend.
+- New `Server.CustomBody` (synced and locked, default true): the switch. `BodyPrefab` stays the engine prefab.
+- Console: `cargo body`, `cargo body preview | walk | clip <name> | clear`; a `body:` line in `cargo status`.
+- The bake needs nothing beyond what `tools\unity\IngvarBundleBuilder.cs` already produces.
+- **1004 off-game checks**, with five blend-model mutations caught. The embed proven off-game: a stand-in file
+  at `Assets\valkyriescargo_kit` grew the DLL by exactly its size and appeared as the resource
+  `ValkyriesCargo.valkyriescargo_kit`.
+
 ### Verification
 
 **Headless-proven on a dedicated server.** Server-side only; there was no client in any of these
@@ -121,14 +137,15 @@ runs, and `renderer=False` in every boot line.
   `purseStart 0`, `visit 0`, `seq 0`; after a restart, `sidecar valkyriescargo_4690126.dat (76 rows
   loaded)` with the first file rotated to `.bak`. Also `roll: no eligible player: nobody online`.
 
-**Not yet seen on a screen.** `CLAUDE.md` "What to verify in-game" items 2 to 18, none of them done:
+**Not yet seen on a screen.** `CLAUDE.md` "What to verify in-game" items 2 to 20, none of them done:
 the client boot line, the version wall, the config lock, the `cargo prefab` dumps, the runtime
 `m_activeArea`, the comfort report in `cargo status`, `cargo visit` with the banner and the pilot's
 line, the clock pausing and resuming, the timer ending a visit, `cargo dismiss`, a non-admin
 refused, an ineligible player refused, a deal over the wire with the price moving on every machine,
 the owed ledger and a redelivery after a disconnect, the sidecar after deals, a visit resumed after
-a mid-visit restart, the refusal reasons, `cargo terminal demo`, and the terminal on a real visit.
+a mid-visit restart, the refusal reasons, `cargo terminal demo`, the terminal on a real visit, and the body (`cargo body`, `cargo body preview`) once a
+bundle is baked.
 
-**Not in this release yet.** The authored flight (P4) and the body loader (P8) are in flight on
-other branches and have no entry here; the merchant (P5) and the baked bundle are not started. See
+**Not in this release yet.** The authored flight (P4) is in review on another branch and has no entry
+here; the merchant (P5) and the baked bundle are not started. See
 `docs/DESIGN.md` section 9 for the order and `docs/WORKSPLIT.md` for who owns what.

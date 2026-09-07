@@ -37,7 +37,7 @@ in Odin's own effect. Not built.
 
 ## What it will not do
 
-No horn item in 0.1. No custom body yet: a Dverger stands in for Ingvar until the model is loaded. No
+No horn item in 0.1. No custom body yet: the loader is built, but until the bundle is baked and embedded a Dverger stands in for Ingvar. No
 patch on the vanilla trader or store — the terminal is our own window, opened from our own interact
 handler. Nothing happens on command except an admin's `cargo visit`.
 
@@ -88,10 +88,10 @@ lines, `format 1`, 72 `stock` rows, `purse 800`, `purseStart 0`, `visit 0`, `seq
 to `.bak`. The same boot also printed `roll: no eligible player: nobody online` — the empty-server
 path, live.
 
-Off the game entirely: **926 checks** in `tests\CoreTests`, which compiles the shipping sources
-themselves — the whole of `Core\`, plus `Net\CargoRpc.cs` and the terminal's tray model — against
+Off the game entirely: **1004 checks** in `tests\CoreTests`, which compiles the shipping sources
+themselves — the whole of `Core\`, plus `Net\CargoRpc.cs`, the terminal's tray model and the body's blend model — against
 stubs, never a copy. Mutation-proven (28 mutations on the market core, seven more on the terminal's tray
-model; each fails without its fix).
+model, five on the body's blend model; each fails without its fix).
 
 ### Built, and never seen on a screen
 
@@ -111,8 +111,10 @@ proves nothing about a game member.
 - **A deal over the wire**: `cargo deal buy Iron 2` moving an inventory and a price on every machine,
   a redelivery after a disconnect, a visit resumed after a mid-visit restart, and each refusal
   reason.
+- **The body loader**: `cargo body` reporting the embedded bundle, and `cargo body preview` standing
+  Ingvar in front of the player. Needs a baked bundle, and none exists yet.
 
-The full numbered list is `CLAUDE.md`, "What to verify in-game", items 2 to 18. Whoever boots a
+The full numbered list is `CLAUDE.md`, "What to verify in-game", items 2 to 20. Whoever boots a
 client first works that list and pastes the exact lines back into `CLAUDE.md`.
 
 ### Not built
@@ -121,8 +123,9 @@ client first works that list and pastes the exact lines back into `CLAUDE.md`.
   in review as pull request #8, not merged, not run in a game.
 - **The merchant** (`Client/CargoMerchant.cs` and its patches): the carry in the talons, the landing,
   the walk, the callout, immortality, Shift+E dismissal, the Odin vanish, the restart sweep.
-- **The custom body**: the source art is in `models\`; the baked asset bundle and
-  `Client/BodyLoader.cs` are not in this build.
+- **The custom body**: the source art is in `models\` and the loader (`Client/BodyLoader.cs`, with
+  `cargo body preview` as its proof) is in this build; the baked asset bundle is not, so the Dverger
+  stands in.
 
 So today a visit starts an event and a market with nobody standing in your yard. That is why the
 status line says not yet playable.
@@ -174,6 +177,7 @@ itself is what arms the lock.
 | `MerchantLifespanSeconds` | `300` | 30-1800 | How long Ingvar stays, as the vanilla random event's duration. |
 | `ApproachDistance` | `3.5` | 1-10 | Metres from the pilot at which he stops walking. |
 | `BodyPrefab` | `Dverger` | | The creature prefab that plays Ingvar until the custom body exists. Must have a `Humanoid`, a `MonsterAI` and an `Animator`. |
+| `CustomBody` | `true` | | Put Ingvar's own body on the `BodyPrefab` clone from the AssetBundle embedded in this DLL. `false` keeps the Dverger stand-in visible, and so does a build with no bundle embedded (`cargo body` says which). This is the switch, not `BodyPrefab`. |
 | `FlightStartDistance` | `90` | 24-200 | Metres from the pilot where the Valkyrie appears; clamped at runtime into the pilot's active zone block. |
 | `FlightStartAltitude` | `120` | 30-500 | Altitude of the Valkyrie's start point, metres above the drop. |
 | `FlightDescentDistance` | `50` | 10-200 | Metres out at which the descent leg begins. |
@@ -217,6 +221,8 @@ Prefix `cargo`. Console commands are not config: `LockConfiguration` does not to
 | `cargo dismiss` | **Admin.** End the running visit now. |
 | `cargo reset` | **Admin.** Forget every cooldown. |
 | `cargo save` | **Admin.** Write the world sidecar now. |
+| `cargo body` | The body loader's state: where the bundle came from (embedded, a file beside the DLL, or none), the prefab, the six clips and their lengths, the mesh and the ground offset. Answers on a dedicated server too. |
+| `cargo body preview` | Stand Ingvar 2.5 m in front of you, facing you, on the ground, with no merchant and no server: the way to see the body. `cargo body walk` toggles his walk on the spot, `cargo body clip <Hello\|Talk\|Shrug\|Nod>` plays a gesture, `cargo body clear` takes him away. Needs a baked bundle. |
 
 The four admin verbs run in place on a server or a listen host. From a client they ride the
 `vc_admin` routed RPC to the server, where vanilla's own `ZNet.IsAdmin` decides — fail closed — and
