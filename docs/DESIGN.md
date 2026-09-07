@@ -592,20 +592,31 @@ Source of truth: the **resized** GLB from the v5 zip (1.37 m tall). Measured: on
    Vanilla's parameter set (`forward_speed`, `onGround`, the triggers `Character` and `MonsterAI` write) is NOT
    his contract; nothing maps him onto the Dverger skeleton.
    The `Armature` node carries scale 0.01 (cm to m): correct at 1.370 m, never "fixed".
-5. **Unity 6000.0.61f1**, then the section 5 build lessons; the bundle carries a finished material (cloned from a creature
-   donor at build time, neutralised as v5 §6.6 describes), a `SkinnedMeshRenderer`, a `CapsuleCollider`, and the animator.
+5. **Unity 6000.0.61f1**, then the section 5 build lessons. As BUILT (`tools/unity/IngvarBundleBuilder.cs`) the bundle
+   carries exactly two assets — the tagged FBX and its 2048² texture — and from the FBX a `SkinnedMeshRenderer`, the
+   24-bone rig, the six clips as sub-assets, and the material the importer makes (`ImportStandard`), not a creature
+   donor's. It carries **no `AnimatorController`** (item 4) and **no `CapsuleCollider`**: the merchant's collider is
+   the `BodyPrefab` clone's own, and a second one on the body would put a second collider on the character layer —
+   `Client/BodyLoader.cs` attaches the body as a child and leaves `Character`'s collider alone.
    Target bundle 5–10 MB embedded as a resource; the 76 MB source never ships and never enters the mod repo.
 6. **Loader (BUILT, P8: `Client/BodyLoader.cs`)**: swap the body under the same `Humanoid`/`MonsterAI` prefab clone,
    not a `MeshFilter`; keep `Character`'s component set intact. Verified by `cargo prefab` before and after.
    As built the swap is ADDITIVE: the prefab is instantiated as a child named `IngvarBody` on the character's ROOT
    at local `(0, groundOffset, 0)` — the offset derived from `sharedMesh.bounds` unioned over the renderers, never
-   hardcoded, expected 0 — and the stand-in is hidden by DISABLING its `Renderer`s. Nothing is destroyed and the
-   `Visual` child is never deactivated, because `Character.Awake` (Character.cs:502), `ZSyncAnimation.Awake`
-   (ZSyncAnimation.cs:45) and `NpcTalk.Start` (NpcTalk.cs:82) all take the animator with
-   `GetComponentInChildren<Animator>()`, which is depth-first in child order and skips inactive GameObjects: our
-   child is appended LAST, so the vanilla animator is found first only while its object stays active. The renderer
-   sweeps that run after Awake are scoped to `m_visual` (`Character.UpdateLodgroup`, Character.cs:3531;
-   `VisEquipment.UpdateLodgroup`, VisEquipment.cs:710), so a body hung off the root is outside all of them.
+   hardcoded, expected 0 — and the stand-in is hidden by DISABLING its `Renderer`s and its `LODGroup`. Nothing is
+   destroyed and the `Visual` child is never deactivated, because six vanilla members take the animator with a
+   ROOT-scoped `GetComponentInChildren<Animator>()`, which is depth-first in child order and skips inactive
+   GameObjects: `Character.Awake` (Character.cs:502) and `ZSyncAnimation.Awake` (ZSyncAnimation.cs:45) at Awake,
+   and — after it — `NpcTalk.Start`, `FootStep.Start` (which sits on the character root: it takes `m_character`
+   with `GetComponent<Character>()` on the same object), `RandomAnimation.Start`, and `Projectile.RPC_Attach`,
+   which searches the ZNetScene instance it stuck into and then walks that animator's hierarchy for the nearest
+   bone. Our child is appended LAST, so all six find the vanilla animator first — and only while its object stays
+   active. (Line numbers for the last four, in a full ilspycmd decompile of assembly_valheim.dll: 6625, 12377,
+   23084, 3086.) The renderer sweeps that run after Awake are scoped to `m_visual` (`Character.UpdateLodgroup`,
+   Character.cs:3531; `VisEquipment.UpdateLodgroup`, VisEquipment.cs:710), so a body hung off the root is outside
+   all of them — but they still reach the STAND-IN through its `LODGroup`, which is why that goes off too: Unity's
+   LOD system owns `Renderer.enabled` for the renderers in a LOD level, and `Character.SetVisible`
+   (Character.cs:3775) drives a LOD transition on every change of ZDO ownership.
    The switch is the new `Server.CustomBody` (synced+locked, default true), NOT `BodyPrefab`: `BodyPrefab` stays the
    engine prefab the merchant is cloned from, because `Character`, `MonsterAI` and the collider all come from it.
 
