@@ -359,9 +359,9 @@ and M2 fails as it should.
 has, inside the game: StormTest (dedicated, stock 0.221.12, PR #46's build) booted with
 `probes 18/18 ok, 7 not probeable` in the log and `patches 18/18 applied` in the loaded line, no `FAILED`
 and no `registry:` line — the Mono JIT resolved every `Check*` the way the pair below was written for.
-That is item 24's boot half; `cargo engine` on a client and the moved-version direction remain. Before
-that boot, everything in `EngineCheck.cs` had been verified three ways, all offline — and they are still
-the checks that run before a boot does:
+That is item 24's boot half; the moved-version direction has since been run offline (4, below), and
+`cargo engine` on a client remains. Before that boot, everything in `EngineCheck.cs` had been verified
+three ways, all offline — and they are still the checks that run before a boot does:
 
 1. against the decompiled real assembly, member by member, with the line numbers in §4;
 2. by a throwaway reflection tool built against the same `libs\` the mod compiles against, resolving
@@ -375,6 +375,20 @@ the checks that run before a boot does:
    with no `registry:` line — so every `Check*` has now found its members on the real assembly, and
    the version comparison has read the real `Version` type. The six mutations in §7 are the same tool
    saying `FAILED` when a probe is wrong.
+4. **The moved-version direction, offline (2026-09-07 evening).** Steam's `default_old` branch of the
+   dedicated server ("Previous stable", buildid 20460518) was fetched into `valheim-shadows\server-default_old`
+   and the same tool run against ITS `assembly_valheim.dll` (2,100,736 bytes, sha256 `3309b00e…`, against
+   the live 84a1b34f…). It answered
+   `engine: older game version (0.221.4 vs 0.221.12); network version moved (35 vs 36); player version moved (42 vs 43); world version moved (36 vs 37); probes 18/18 ok, 7 not probeable`
+   — every one of the four numbers read off a foreign assembly and reported as moved, the mod's
+   `Run()` completing, and **18/18 probes still passing**, which is a fact about that step of Valheim
+   (none of the 18 probed surfaces changed between 0.221.4 and 0.221.12) and the first real reading of
+   what the registry says on a build it was not built for. Not a boot: under Mono, in a game, with
+   ServerSync's own version gate beside it, the "mod still loads, nothing throws" half of item 24's
+   other direction is still a screen question. The steamcmd line, for the next foreign build:
+   `steamcmd +force_install_dir <dir> +login anonymous +app_update 896660 -beta <branch> validate +quit`;
+   `default_pre1_0` ("Last stable build before 1.0", the current 21981590) exists on both apps as of
+   the same day, so the 0.221.12 baseline stays fetchable after 1.0 lands.
 
 What the third one is NOT: a boot on a machine with a game under it. It runs on the .NET 8 runtime,
 not Mono, so the JIT-time resolution the `Probe*`/`Check*` pair exists for is exactly what it cannot

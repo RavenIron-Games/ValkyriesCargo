@@ -953,8 +953,13 @@ P10b, the engine probes (any boot, client or server, no visit needed):
     build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43,
     world 37); probes 18/18 ok, 7 not probeable.` and the loaded line `patches 18/18 applied, catalogue=72 entries,
     engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable`, with no `FAILED`
-    and no `registry:` line. `cargo engine`'s 25-line listing has not been read on a client, and the other direction
-    (below) has not been run. The item as written: the boot line carries `built against Valheim 0.221.12 (network 36,
+    and no `registry:` line. **The other direction, offline, 2026-09-07 evening**: the probe tool run against the
+    `default_old` server build (0.221.4, buildid 20460518, fetched into `valheim-shadows\server-default_old`)
+    answered `engine: older game version (0.221.4 vs 0.221.12); network version moved (35 vs 36); player version
+    moved (42 vs 43); world version moved (36 vs 37); probes 18/18 ok, 7 not probeable` — the four numbers read
+    off a foreign assembly and reported as moved, `Run()` completing, all 18 probes still resolving on that build
+    (`docs/ENGINE-PROBES.md` §8 item 4). Still not seen: `cargo engine`'s 25-line listing on a client, and the
+    moved-version boot ITSELF (Mono, ServerSync's gate beside it, "the mod still loads, nothing throws"). The item as written: the boot line carries `built against Valheim 0.221.12 (network 36,
     player 43, world 37; ...); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not
     probeable.` on an unmodified install, and `cargo engine` lists all 25 facts worst-rank-first with no `FAILED`
     among them and no `registry:` line. **This is the one thing about P10b a clean build cannot prove**: every probe is a reflection

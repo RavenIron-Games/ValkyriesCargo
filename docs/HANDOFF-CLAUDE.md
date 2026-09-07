@@ -1,4 +1,4 @@
-# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 after the rc1 merge
+# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 night after the first six visits
 
 You are the second engineering session on this mod. Don's session (me) built what is here; you and
 Wu'barrk take part of what is left. This file tells you everything you need to act, in the order to
@@ -9,7 +9,78 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 
 ---
 
-## 0. State on 2026-09-07, after the rc1 merge — READ THIS FIRST
+## 0. State on 2026-09-07 night, after the first six visits — READ THIS FIRST
+
+**The tracker is still `docs/TODO.md`**, three tracks, each editing only its own section; when this file and
+that one disagree, that one wins. The subsection below this one is this morning's state, kept as history.
+
+**Where main is.** `ae17eb1` at the time of writing, with one docs PR open (#49: the moved-version proof and the
+rc2 changelog draft): 0 warnings, **1701/1701 off-game checks**, `probes 18/18 ok, 7 not probeable` on the real
+assembly. **Twenty-five PRs merged today, #24 to #48**, every one listed in build order with its check count in
+`CHANGELOG.md` "Since 0.1.0-rc1" (on #49). **`v0.1.0-rc1` still carries the F1 blocker and must not reach a
+tester**; rc2 is the next cut, from main, on the owner's word.
+
+**Six visits have now flown on the owner's Windows client against the dedicated server StormTest** (10:39–11:38
+today), twenty deals over the wire, no exception from the mod on either side. The record with every line is
+`docs/proofs/2026-09-07-stormtest-session.md`; CLAUDE.md's verify list carries each item's line. Proven on a
+machine: the flight and the drop within a second of the simulation, Ingvar in his own body every time, the
+terminal opened ON the merchant, the price curve, the Fair Market Act, both drift knobs and the purse carry to the
+coin, dismissals both ways, a relog mid-visit adopting the merchant in his trading state, the export's trader and
+visit rows, the catalogue verbs live. **Never yet seen:** six of the merged audit fixes (F1, F2, F6, F8, F9, F11 —
+installed, never exercised; a one-line recipe each in `docs/AUDIT-STORMTEST-2026-09-07.md` §5), the two-client
+items, and the screen questions (the release over the drop point, the vanish, the bubble, the hover prompt).
+
+**What the session found, audited the same evening** (`docs/AUDIT-STORMTEST-2026-09-07.md`, three Opus auditors
+and one refuter per finding; read §0 first):
+- **D1, yours: the walk-up's first approach never starts cleanly (6/6).** `CargoMerchant.ResolveCarrier` copies
+  `VCargo_state` off the ZDO straight into `_state`, and that path skips every entry reset `Decide` performs — so
+  `budget scaled from 0 m at entry` on every visit and **F5's scaled budget has never run on a machine**. The
+  flight's seconds on the clock explain visits 1–3; visits 4–6 (give-up never / +55 s / +105 s, the merchant
+  148 m and 43 m from a pilot he was dropped 13 m from) are a second regime the code alone does not explain.
+  §1.4 is the diff: one `EnterState` both ways in must use, the counted seconds printed beside the budget, a
+  warning on the drop's silent miss, and one log line at the ZDO-driven transition that settles the second
+  regime next session. A retry and an airborne clock gate were both refuted; the reasons are there.
+- **D3, yours: the reclaim WORKS; the sweep double-counts it.** `ZDOMan.DestroyZDO` only queues, and
+  `FinishDeparture` sweeps in the same call, so `restart sweep: 1 stranded merchant(s) destroyed` at every clean
+  end. §2: run the sweep one director tick later, name the sweep per call site. A `LastReclaimed` skip list was
+  refuted twice (a failed reclaim would be skipped by the very sweep that exists to catch it).
+- **D2 and D4, Don's, BUILT (PR #48):** the cooldown keyed on `s_playerID` with two probe rows; the wires register
+  a peer once `IsReady()`; the client's session-end line.
+- **The eleven merged fixes against the logs (§5):** F7 and N1 confirmed on a machine, F5 and F4 contradicted (the
+  two above), the rest not exercised. Your `docs/TODO.md` §2 still says F5 fixed the walk-up cause; it did not.
+
+**D1 and D3 are in your files.** The owner is talking to Wu'barrk about who builds them; nothing on Don's side
+touches them before that is settled. The diffs are against `161743b` and still apply.
+
+**The engine work, for your 1.0 track.** The probe registry (`docs/ENGINE-PROBES.md`) holds 25 named facts, 18
+probed at boot; both halves of item 24 are done — the boot on StormTest, and, tonight, the moved-version
+direction offline: against Steam's `default_old` server build (0.221.4 / net 35 / player 42 / world 36) the
+version line reports all four numbers as moved and **all 18 probes still resolve**, so nothing we probe changed
+between 0.221.4 and 0.221.12 (§8 item 4, with the steamcmd line). **Steam has a `default_pre1_0` branch on both
+apps as of today** ("Last stable build before 1.0", pinned to 21981559 / 21981590): the 0.221.12 baseline stays
+fetchable after 1.0 lands, and a server can pin itself there. No 1.0 build is downloadable yet. **When 1.0 lands
+on 2026-09-09, Don's side will fetch it and run the probe tool against it within the hour**, no game needed, and
+say which probes moved; the comparative decompile against the 244-row surface stays yours.
+
+**Rules and facts that changed today, so you do not re-derive them:** no JSON library (`Core/Json.cs` writes the
+BarrkBOT files byte-identical to Newtonsoft's; decision 3 reversed, PR #40/#43); the built DLL and the bundle
+are release assets, not in git (the bundle IS attached to rc1 now); never a bare `PatchAll` — every patch class
+applied on its own, `patches N/M applied` in the boot line (PR #35); ghost mode is one prefix on the static
+`BaseAI.IsEnemy` (PR #37); the load-bearing set stays ServerSync only (decision 9); the catalogue verbs and the
+hot swap (PR #44); Wares never drift, Wants relax over three game days (PR #45); the cooldown key is
+`s_playerID` (PR #48); a peer is registered once `IsReady()`. Process: commit every code edit BEFORE a
+mutate-and-restore cycle (a `git checkout --` wiped an uncommitted edit today), and `gh pr merge
+--match-head-commit` wants the full sha from `git rev-parse`.
+
+**Decisions.** Decided today by the owner: the JSON swap, the DLL untracked, catalogue edits by an admin, the two
+drift knobs, ghost mode, the load-bearing set. Still open, the owner's and nobody else's (`docs/TODO.md` §1):
+the client asserting its own rested/comfort numbers, and reconfirm versus teardown on a price tick.
+
+**What Don's side wants from yours, in order:** D1 and D3 once the two owners have spoken; your `docs/TODO.md`
+§2 brought up to date (the audit item's PRs are all merged; the walk-up item's claim corrected); the animator
+parameter names and item 23 on your server, still yours; issue #23 (your rc1 note) closes when rc2 replaces rc1.
+
+### The morning of 2026-09-07, after the rc1 merge (history)
 
 **The tracker is `docs/TODO.md`**, cut from `main` at 8453b65 and split by owner: your track is its section 2,
 Don's the section 1 decisions and screen proofs, this session's the section 3 list. **Each track edits only its
