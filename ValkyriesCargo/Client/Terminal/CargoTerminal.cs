@@ -39,6 +39,10 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         private readonly Dictionary<string, string> _names = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<string, Sprite> _icons = new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private GameObject _merchant;
+        /// <summary>Opened standing by a merchant. `_merchant != null` cannot answer this: Unity's operator
+        /// reads a DESTROYED object as null, so a merchant despawned mid-trade would silently turn the 5 m
+        /// rule off instead of closing the window. `cargo terminal open` opens with no merchant on purpose.</summary>
+        private bool _hasMerchant;
         private int _visitId;
         private bool _demo;
         private float _openedAt;
@@ -72,6 +76,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         private void OpenInternal(GameObject merchant, int visitId, bool demo)
         {
             _merchant = merchant;
+            _hasMerchant = merchant != null;
             _visitId = visitId;
             _demo = demo;
             _openedAt = Time.time;
@@ -104,6 +109,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         {
             Close("session ended");
             _merchant = null;
+            _hasMerchant = false;
             _counts.Clear();
         }
 
@@ -132,7 +138,11 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
                 if (!_demo)
                 {
                     if (p == null || p.IsDead()) { Close("player gone"); return; }
-                    if (_merchant != null && Vector3.Distance(p.transform.position, _merchant.transform.position) > CloseDistance) { Close("too far"); return; }
+                    if (_hasMerchant)
+                    {
+                        if (_merchant == null) { Close("he is gone"); return; }
+                        if (Vector3.Distance(p.transform.position, _merchant.transform.position) > CloseDistance) { Close("too far"); return; }
+                    }
                     VisitSnapshot v = CargoRpc.Visit;
                     if (!v.Active || v.VisitId != _visitId) { Close("visit over"); return; }
                     if (v.Phase == VisitPhase.Leaving) { Close("he is leaving"); return; }
