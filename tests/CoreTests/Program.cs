@@ -52,6 +52,7 @@ namespace ValkyriesCargo.Tests
             SidecarTests();
             OwedLedgerTests();
             SessionRowTests();
+            BodyMotionTests();
             TrayModelTests();
             CargoRpcTests();
 
@@ -2250,6 +2251,289 @@ namespace ValkyriesCargo.Tests
             Check(d.Resume("session\t5\t1\tn\t0\t0\t0\t0\t1\t0\t0\tNone", 0, null) != null && d.Phase == VisitPhase.Flying, "a row claiming phase None resumes as Flying");
             VisitSession e = new VisitSession();
             Check(e.Resume("session\t5\t1\tn\t0\t0\t0\t500\t300\t0\t0\tFlying", 0, null) != null && e.Clock.EndWorldTime == 500.0, "an end before the start is clamped to the start");
+        }
+
+        // ---- BodyMotion helpers ---------------------------------------------------------
+
+        /// <summary>Tick a body model for `seconds` at a fixed raw speed, one 60 Hz frame at a time.</summary>
+        private static void BodyRun(BodyMotion m, float seconds, float speed)
+        {
+            const float dt = 1f / 60f;
+            int steps = (int)Math.Round(seconds / dt);
+            for (int i = 0; i < steps; i++) m.Tick(dt, speed);
+        }
+
+        private static float BodySum(BodyMotion m)
+        {
+            float s = 0f;
+            for (int i = 0; i < BodyMotion.ClipCount; i++) s += m.Weights[i];
+            return s;
+        }
+
+        private static void BodyMotionTests()
+        {
+            Section("BodyMotion (Ingvar's six clips, as weights)");
+
+            // ---- names: what the loader looks the clips up by -------------------------------------
+            BodyMotion m = new BodyMotion();
+            Equal("Walk", BodyMotion.ClipName(BodyClip.Walk), "the clip names are the bundle's");
+            Equal("Idle", BodyMotion.ClipName(BodyClip.Idle), "Idle");
+            Equal("Hello", BodyMotion.ClipName(BodyClip.Hello), "Hello");
+            Equal("", BodyMotion.ClipName(BodyClip.None), "None has no name");
+            Equal(BodyClip.Shrug, BodyMotion.ByName("shrug"), "ByName is case-insensitive (the console types it)");
+            Equal(BodyClip.None, BodyMotion.ByName("Dance"), "and None for anything he cannot do");
+            Equal(BodyClip.None, BodyMotion.ByName(""), "and for nothing at all");
+            Check(BodyMotion.IsOneShot(BodyClip.Hello) && BodyMotion.IsOneShot(BodyClip.Nod), "Hello and Nod are one-shots");
+            Check(!BodyMotion.IsOneShot(BodyClip.Idle) && !BodyMotion.IsOneShot(BodyClip.Walk), "Idle and Walk are not");
+
+            // ---- a standing start ------------------------------------------------------------------
+            Equal(1f, m.Weight(BodyClip.Idle), "a fresh body idles at full weight");
+            Equal(0f, m.Weight(BodyClip.Walk), "and does not walk");
+            Equal(BodyClip.None, m.Current, "with no one-shot");
+            Check(Math.Abs(BodySum(m) - 1f) < 1e-5f, "the six weights sum to 1 before the first tick");
+            Equal(0f, m.Weight(BodyClip.None), "Weight(None) is 0, not an index out of range");
+            Equal(0f, m.ShotNormalized, "and no one-shot progress");
+
+            // ---- clip lengths: the bundle's, with the constants as fallbacks ----------------------
+            Equal(BodyMotion.HelloLength, m.Length(BodyClip.Hello), "Hello falls back to the measured 3.79 s");
+            Equal(BodyMotion.NodLength, m.Length(BodyClip.Nod), "Nod to 1.25 s");
+            m.SetLength(BodyClip.Hello, 2.5f);
+            Equal(2.5f, m.Length(BodyClip.Hello), "a real length from the clip replaces it");
+            m.SetLength(BodyClip.Hello, float.NaN);
+            m.SetLength(BodyClip.Hello, 0f);
+            m.SetLength(BodyClip.Hello, -3f);
+            Equal(2.5f, m.Length(BodyClip.Hello), "a NaN, zero or negative length is ignored, not adopted");
+            m.SetLength(BodyClip.Hello, BodyMotion.HelloLength);
+
+            // ---- hysteresis, both ways (models/README.md section 7) -------------------------------
+            BodyMotion h = new BodyMotion();
+            BodyRun(h, 2f, 0.03f);
+            Check(!h.Walking, "at 0.03 m/s he is idling");
+            Check(Math.Abs(h.SmoothedSpeed - 0.03f) < 0.001f, "and the filter has settled on the speed");
+            BodyRun(h, 2f, 0.055f);
+            Check(!h.Walking, "0.055 m/s is inside the band: coming UP it is still idle");
+            BodyRun(h, 2f, 0.07f);
+            Check(h.Walking, "0.07 m/s is over the walk threshold");
+            BodyRun(h, 2f, 0.055f);
+            Check(h.Walking, "0.055 m/s coming DOWN is still walking: that is the hysteresis");
+            BodyRun(h, 2f, 0.04f);
+            Check(!h.Walking, "under 0.05 m/s he stops");
+            Check(Math.Abs(h.Weight(BodyClip.Idle) - 1f) < 1e-4f, "and the blend followed him back to Idle");
+
+            // ---- the crossfade takes CrossfadeSeconds ----------------------------------------------
+            BodyMotion c = new BodyMotion();
+            for (int i = 0; i < 4; i++) c.Tick(1f / 60f, 1f);
+            Check(c.WalkBlend > 0.40f && c.WalkBlend < 0.50f, "four 60 Hz frames is about a third of the crossfade");
+            for (int i = 0; i < 5; i++) c.Tick(1f / 60f, 1f);
+            Check(c.WalkBlend >= 0.999f, "nine of them (0.15 s) complete it");
+            Check(Math.Abs(c.Weight(BodyClip.Walk) - 1f) < 1e-3f, "so Walk owns the body");
+            Check(c.Weight(BodyClip.Idle) < 1e-3f, "and Idle is out");
+            BodyRun(c, 1f, 0f);
+            Equal(0f, c.WalkBlend, "and it crossfades all the way back");
+
+            // ---- the one-shot envelope ---------------------------------------------------------------
+            BodyMotion o = new BodyMotion();
+            Check(o.Fire(BodyClip.Hello), "Hello fires");
+            Equal(BodyClip.Hello, o.Current, "and is the current one-shot");
+            Equal(0f, o.ShotWeight, "at no weight yet: it blends in, never snaps");
+            o.Tick(1f / 60f, 0f);
+            Check(o.ShotWeight > 0f && o.ShotWeight < 1f, "one frame in, it is part way");
+            BodyRun(o, 0.08f, 0f);
+            Equal(1f, o.ShotWeight, "and full after OneShotBlendSeconds");
+            Equal(1f, o.Weight(BodyClip.Hello), "so Hello owns the whole body");
+            Equal(0f, o.Weight(BodyClip.Idle), "with Idle at nothing");
+            Check(Math.Abs(BodySum(o) - 1f) < 1e-5f, "the weights still sum to 1 mid-gesture");
+            BodyRun(o, 3.0f, 0f);
+            Equal(BodyClip.Hello, o.Current, "at 3.0 s of a 3.79 s clip he is still waving");
+            BodyRun(o, 0.40f, 0f);
+            Equal(BodyClip.None, o.Current, "past 85% of its length plus the blend, it has handed back");
+            Check(Math.Abs(o.Weight(BodyClip.Idle) - 1f) < 1e-4f, "to Idle, at full weight");
+
+            // The hand-back follows the clip's OWN length, not the constant.
+            BodyMotion s = new BodyMotion();
+            s.SetLength(BodyClip.Nod, 1.0f);
+            s.Fire(BodyClip.Nod);
+            BodyRun(s, 0.80f, 0f);
+            Equal(BodyClip.Nod, s.Current, "a 1.0 s nod is still going at 0.80 s");
+            BodyRun(s, 0.30f, 0f);
+            Equal(BodyClip.None, s.Current, "and is done by 1.10 s: 85% of 1.0 s plus the blend out");
+
+            // ---- replacement, and no self-interrupt --------------------------------------------------
+            BodyMotion r = new BodyMotion();
+            r.Fire(BodyClip.Hello);
+            BodyRun(r, 0.50f, 0f);
+            float timeBefore = r.ShotTime;
+            Check(!r.Fire(BodyClip.Hello), "a one-shot cannot interrupt itself");
+            Equal(timeBefore, r.ShotTime, "so the running clip keeps its place");
+            Check(r.Fire(BodyClip.Talk), "a different one-shot replaces it");
+            Equal(BodyClip.Talk, r.Current, "and becomes the current one");
+            Equal(0f, r.ShotTime, "from its start");
+            Equal(1f, r.ShotWeight, "at the weight the last one held: the swap has no gap in it");
+            Equal(1f, r.Weight(BodyClip.Talk), "so Talk owns the body at once");
+            Equal(0f, r.Weight(BodyClip.Hello), "and Hello is gone");
+            Check(!r.Fire(BodyClip.Idle), "Idle is not a one-shot and cannot be fired");
+            Check(!r.Fire(BodyClip.Walk), "nor Walk");
+            Check(!r.Fire(BodyClip.None), "nor None");
+            Check(r.ShotNormalized >= 0f && r.ShotNormalized < 0.01f, "the fresh one-shot has barely started");
+            r.CancelOneShot();
+            Equal(BodyClip.None, r.Current, "CancelOneShot drops it at once");
+            Check(Math.Abs(BodySum(r) - 1f) < 1e-5f, "and the weights still sum to 1");
+
+            // ---- guards: a hitch, a bad delta, a bad sample -------------------------------------------
+            // The crossfade is deliberately caught PART WAY, where a bad delta has somewhere to go wrong.
+            // Asserted at a resting state these checks pass whatever the guard does, which is worthless.
+            BodyMotion g = new BodyMotion();
+            g.Tick(1f / 60f, 1f);
+            g.Tick(1f / 60f, 1f);
+            float walkBefore = g.WalkBlend, speedBefore;
+            Check(walkBefore > 0.1f && walkBefore < 0.9f, "the crossfade is caught part way, mid-move");
+            g.Tick(float.NaN, 1f);
+            Equal(walkBefore, g.WalkBlend, "a NaN delta moves nothing");
+            Check(!float.IsNaN(g.SmoothedSpeed), "and leaves no NaN in the filter");
+            g.Tick(-5f, 1f);
+            Equal(walkBefore, g.WalkBlend, "nor does a negative one");
+            Check(g.SmoothedSpeed >= 0f, "and time never runs backwards through the filter");
+            g.Tick(float.PositiveInfinity, 1f);
+            Check(!float.IsNaN(g.WalkBlend) && !float.IsNaN(g.SmoothedSpeed), "an infinite one leaves no NaN behind");
+            BodyMotion g2 = new BodyMotion();
+            g2.Tick(1f / 60f, 1f);
+            float held = g2.WalkBlend;
+            g2.Tick(0f, 1f);
+            Equal(held, g2.WalkBlend, "a zero delta is a no-op");
+            g2.Tick(float.NaN, float.NaN);
+            Check(!float.IsNaN(g2.SmoothedSpeed), "a NaN speed sample never reaches the filter");
+            speedBefore = g2.SmoothedSpeed;
+            g2.Tick(0.1f, float.NaN);
+            Equal(speedBefore, g2.SmoothedSpeed, "the filter HOLDS on a NaN sample rather than snapping to zero");
+            g2.Tick(0.1f, -4f);
+            Check(g2.SmoothedSpeed < speedBefore && g2.SmoothedSpeed >= 0f, "a negative speed is read as standing still, never as motion");
+
+            // A hitch must not swallow a gesture whole: without the clamp, one frame of 600 s takes a
+            // one-shot past its hand-back point and Ingvar never waves at all.
+            BodyMotion j = new BodyMotion();
+            j.Fire(BodyClip.Hello);
+            j.Tick(600f, 0f);
+            Equal(BodyMotion.MaxStepSeconds, j.ShotTime, "a 10-minute hitch advances a one-shot by at most MaxStepSeconds");
+            Equal(BodyClip.Hello, j.Current, "so the hitch does not swallow the gesture whole");
+            Check(Math.Abs(BodySum(j) - 1f) < 1e-5f, "and leaves the weights whole");
+
+            BodyMotion z = new BodyMotion();
+            BodyRun(z, 2f, 1f);
+            z.Fire(BodyClip.Shrug);
+            z.Reset();
+            Equal(BodyClip.None, z.Current, "Reset drops the one-shot");
+            Equal(0f, z.SmoothedSpeed, "forgets the speed");
+            Equal(1f, z.Weight(BodyClip.Idle), "and stands him back at idle");
+
+            // ---- a one-shot fired MID-CROSSFADE (adversarial review) -----------------------------------
+            // The checks above catch a gesture from a standing start and from a settled walk. Neither
+            // touches the case where the crossfade is still moving underneath it, which is where the two
+            // halves of Recompute - the locomotion pair and the one-shot - can disagree.
+            BodyMotion x = new BodyMotion();
+            for (int i = 0; i < 4; i++) x.Tick(1f / 60f, 1f);
+            float blendAtFire = x.WalkBlend;
+            Check(blendAtFire > 0.1f && blendAtFire < 0.9f, "the crossfade is caught part way before the gesture starts");
+            Check(x.Fire(BodyClip.Shrug), "a one-shot fires mid-crossfade");
+            BodyRun(x, 0.10f, 1f);
+            Equal(1f, x.ShotWeight, "and takes the whole body");
+            Equal(0f, x.Weight(BodyClip.Walk), "so locomotion shows at nothing while it plays");
+            Check(Math.Abs(BodySum(x) - 1f) < 1e-5f, "the weights still sum to 1 with a gesture over a moving crossfade");
+            Check(x.WalkBlend > blendAtFire, "and the crossfade kept running UNDERNEATH it rather than freezing");
+            BodyRun(x, 3f, 1f);
+            Equal(BodyClip.None, x.Current, "the shrug hands back");
+            Check(Math.Abs(x.Weight(BodyClip.Walk) - 1f) < 1e-4f, "onto the walk it finished crossfading into, not onto the stale blend it started from");
+
+            // ---- a DIFFERENT one-shot started during the hand-back --------------------------------------
+            // The replacement check above swaps at full weight, where "picks up the weight it held" and
+            // "snaps to 1" are the same number and prove nothing.
+            BodyMotion q = new BodyMotion();
+            q.Fire(BodyClip.Nod);                                   // 1.25 s: hands back at 1.0625 s
+            BodyRun(q, 1.00f, 0f);
+            Equal(1f, q.ShotWeight, "at 1.00 s of a 1.25 s nod it still owns the body");
+            q.Tick(0.02f, 0f);
+            Equal(1f, q.ShotWeight, "and at 1.02 s, still short of 85%");
+            q.Tick(0.05f, 0f);                                      // 1.07 s: releasing, one partial step out
+            Check(q.ShotWeight > 0.1f && q.ShotWeight < 0.3f, "one step past the hand-back point it is part way out");
+            float mid = q.ShotWeight;
+            Check(q.Fire(BodyClip.Talk), "a different one-shot can start DURING the hand-back");
+            Equal(mid, q.ShotWeight, "and picks the weight up exactly where the nod dropped it");
+            Equal(0f, q.Weight(BodyClip.Nod), "the nod is out at once");
+            Equal(mid, q.Weight(BodyClip.Talk), "and Talk is in at that weight, so the swap still has no gap");
+            Check(Math.Abs(BodySum(q) - 1f) < 1e-5f, "and the weights sum to 1 across the swap");
+            q.Tick(1f / 60f, 0f);
+            Check(q.ShotWeight > mid, "then it blends UP from there: the release was cleared, not carried over");
+
+            // ---- a hitch DURING the hand-back must not leave a negative weight --------------------------
+            BodyMotion neg = new BodyMotion();
+            neg.Fire(BodyClip.Shrug);                               // 2.00 s: hands back at 1.70 s
+            BodyRun(neg, 1.68f, 0f);
+            Equal(BodyClip.Shrug, neg.Current, "the shrug is still running just short of its hand-back");
+            neg.Tick(0.05f, 0f);
+            Check(neg.ShotWeight > 0f && neg.ShotWeight < 1f, "and one step later it is part way out");
+            neg.Tick(BodyMotion.MaxStepSeconds, 0f);
+            Equal(BodyClip.None, neg.Current, "a hitch through the rest of the blend ends the gesture rather than stalling it");
+            Equal(0f, neg.ShotWeight, "and never leaves a NEGATIVE weight behind");
+            Equal(1f, neg.Weight(BodyClip.Idle), "with the body back on Idle at full weight");
+
+            // ---- a clip shorter than the blend-in still ends ---------------------------------------------
+            // 85% of 0.05 s is 0.0425 s, inside OneShotBlendSeconds: the gesture starts releasing before it
+            // has finished blending in. It must still reach zero and give the body back, not stick part way.
+            BodyMotion tiny = new BodyMotion();
+            tiny.SetLength(BodyClip.Nod, 0.05f);
+            tiny.Fire(BodyClip.Nod);
+            BodyRun(tiny, 0.50f, 0f);
+            Equal(BodyClip.None, tiny.Current, "a clip shorter than the blend-in still ends instead of sticking at partial weight");
+            Equal(1f, tiny.Weight(BodyClip.Idle), "and hands the whole body back");
+
+            // ---- a cast that is not a clip reaches every accessor without throwing -----------------------
+            // The driver indexes these with (BodyClip)i and the console with ByName; a bad value must be
+            // answered, not thrown, because both call sites are inside a cosmetic try/catch that would
+            // otherwise eat the body whole.
+            BodyMotion b = new BodyMotion();
+            Equal(0f, b.Weight((BodyClip)99), "Weight of a value that is not a clip is 0, not an exception");
+            Equal(0f, b.Length((BodyClip)(-7)), "and its length is 0 too");
+            Equal(0f, b.Length(BodyClip.None), "as is None's");
+            b.SetLength((BodyClip)99, 5f);
+            b.SetLength(BodyClip.None, 5f);
+            Equal(BodyMotion.IdleLength, b.Length(BodyClip.Idle), "and SetLength on one changes no real clip's length");
+            Check(!b.Fire((BodyClip)99), "and it cannot be fired");
+            Equal(BodyClip.None, b.Current, "so nothing is playing after any of that");
+
+            // ---- the invariant, over a long deterministic random walk ---------------------------------
+            // Weights that do not sum to 1 are a body that half-fades into its bind pose; nothing on a
+            // screen says so in words, so it is asserted here instead.
+            var rnd = new Random(20260906);
+            var clips = new[] { BodyClip.Hello, BodyClip.Talk, BodyClip.Shrug, BodyClip.Nod };
+            BodyMotion w = new BodyMotion();
+            float worstSum = 0f, walkSpeed = 0f;
+            bool anyNaN = false, anyOutOfRange = false, sawWalk = false, sawIdle = false, sawShot = false;
+            for (int i = 0; i < 40000; i++)
+            {
+                float dt = (float)(rnd.NextDouble() * 0.1 + 0.001);
+                walkSpeed += (float)(rnd.NextDouble() - 0.5) * 0.4f;
+                if (walkSpeed < -0.5f) walkSpeed = -0.5f;
+                if (walkSpeed > 3f) walkSpeed = 3f;
+                float sample = rnd.Next(200) == 0 ? float.NaN : walkSpeed;
+                if (rnd.Next(120) == 0) w.Fire(clips[rnd.Next(clips.Length)]);
+                w.Tick(dt, sample);
+
+                float sum = 0f;
+                for (int k = 0; k < BodyMotion.ClipCount; k++)
+                {
+                    float weight = w.Weights[k];
+                    if (float.IsNaN(weight) || float.IsInfinity(weight)) anyNaN = true;
+                    if (weight < -1e-6f || weight > 1f + 1e-6f) anyOutOfRange = true;
+                    sum += weight;
+                }
+                worstSum = Math.Max(worstSum, Math.Abs(sum - 1f));
+                if (w.Weight(BodyClip.Walk) > 0.9f) sawWalk = true;
+                if (w.Weight(BodyClip.Idle) > 0.9f) sawIdle = true;
+                if (w.Current != BodyClip.None) sawShot = true;
+            }
+            Check(worstSum < 1e-4f, "over 40,000 random steps the weights never stop summing to 1 (worst " + worstSum.ToString("0.0000000") + ")");
+            Check(!anyNaN, "and no weight is ever NaN or infinite");
+            Check(!anyOutOfRange, "and every weight stays inside [0, 1]");
+            Check(sawWalk && sawIdle && sawShot, "the walk covered idling, walking and gesturing, so the invariant was tested on all three");
         }
 
         private static void TrayModelTests()

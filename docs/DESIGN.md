@@ -166,7 +166,10 @@ pending flag, the v1 design. Documented, not coded, until the check says it is n
 **Body contract.** `ZNetView`, `ZSyncTransform`, `ZSyncAnimation`, `Humanoid`, `MonsterAI`, a `SkinnedMeshRenderer`
 under an `Animator` that declares the vanilla parameter set (section 11), a `CapsuleCollider` (`Character.m_collider`),
 and optionally a `Visual` child. **0.1 body: `Dverger`** (config `Server.BodyPrefab`), checked at boot by `cargo prefab
-Dverger`. Thorium's body replaces it later behind the same contract (section 11).
+Dverger`. Every part of that contract stays the `BodyPrefab` clone's for good: as BUILT (P8, section 11.6) Ingvar's body
+does **not** replace it. It is ADDED as a child of the same clone and the clone's renderers are switched off, so the
+`Animator` that declares the vanilla parameter set, the `CapsuleCollider` and the whole component set are still the
+prefab's. Ingvar's own animator declares nothing of vanilla's (section 11.4) and never has to.
 
 `Patch_Humanoid_Awake` (postfix, default priority, try/catch): if the ZDO carries `vc_ingvar`, `AddComponent<CargoMerchant>()`.
 Every machine.
@@ -436,7 +439,9 @@ PlayerCooldownMinutes        60
 CooldownRadius               60
 MerchantLifespanSeconds      300       = RandomEvent.m_duration = Odin.m_ttl
 ApproachDistance             3.5
-BodyPrefab                   Dverger
+BodyPrefab                   Dverger   the ENGINE prefab the merchant is cloned from (Character, MonsterAI, collider)
+CustomBody                   true      put Ingvar's own body on that clone, from the bundle embedded in the DLL;
+                                       false keeps the stand-in visible, and so does a build with no bundle (P8)
 FlightStartDistance          90        clamped into the pilot's active block at runtime
 FlightStartAltitude          120
 FlightDescentDistance        50
@@ -503,7 +508,7 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Speech | State + seed for scripted lines; server `vc_say(index)` for reactions | proposed |
 | 0.1 body | `Dverger`, tamed, following, immortal; custom body later behind the contract | locked for 0.1 |
 | Runtime material edits | Not in 0.1 (no custom body). When the body comes: bake the finished material into the bundle; no runtime `SetTexture` on a creature material | proposed |
-| **Body animation** | **Ingvar has his OWN Animator**: the bundle's controller and clips (Walk, Idle, Talk, Hello, Shrug, Nod), driven by `CargoMerchant` from the agent's velocity and the visit phase. No mapping onto the Dverger or any vanilla rig; vanilla's animator parameters (section 11.4) are not his contract | **locked (owner, 2026-09-06: "give Ingvar his own animator")** |
+| **Body animation** | **Ingvar has his OWN Animator**: the bundle's controller and clips (Walk, Idle, Talk, Hello, Shrug, Nod), driven by `CargoMerchant` from the agent's velocity and the visit phase. No mapping onto the Dverger or any vanilla rig; vanilla's animator parameters (section 11.4) are not his contract | **locked (owner, 2026-09-06: "give Ingvar his own animator")**; **built (P8 loader): PlayableGraph over the six clips, no controller in the bundle** |
 | Source art in the repo | `models/ingvar.fbx` + `models/ingvar_albedo.png` (11 MB) are the one named exception to "no binaries" (WORKSPLIT §4, PR #4); the bundle still ships in the package, Meshy's raw output stays out | locked (Wu'barrk decided, Don agreed 2026-09-06) |
 | Lifespan / dismissal | 300 s event clock; Shift+E twice; any visitor | locked / proposed |
 | Restart mid-visit | Resume: vanilla saves the running event with the world; the director adopts it from the sidecar's `session` row within 15 s of boot, else the visit is over | built (P6) |
@@ -573,19 +578,50 @@ Source of truth: the **resized** GLB from the v5 zip (1.37 m tall). Measured: on
 2. **Rig**: Humanoid skeleton with skin weights (Mixamo auto-rig fast, Rigify controlled); an `AttachPoint` empty between
    the shoulder blades (v5's `(0, 1.25, −0.35)` as the start).
 3. **Clips**: idle, walk, talk gesture, hang. Export FBX or glTF **with** skin and clips.
-4. **The animator contract (decided 2026-09-06: his own).** Ingvar's bundle carries its own `AnimatorController`
-   with the six Meshy clips (Walk 4.21 s, Idle 10.00 s, Talk 5.17 s, Hello 3.79 s, Shrug 2.00 s, Nod 1.25 s; all
-   in place). `CargoMerchant` drives it, not vanilla: a float `speed` from the agent's planar velocity picks
-   Idle/Walk, and the visit phase and the server's `vc_say` index fire `hello`, `talk`, `shrug`, `nod` as triggers.
+4. **The animator contract (decided 2026-09-06: his own; BUILT P8).** **The bundle needs no `AnimatorController`,
+   and no `ZSyncAnimation` entry.** It needs exactly what `tools/unity/IngvarBundleBuilder.cs` already produces:
+   the tagged FBX with its `SkinnedMeshRenderer`, its 24 bones and the six clips as sub-assets (Walk 4.21 s,
+   Idle 10.00 s, Talk 5.17 s, Hello 3.79 s, Shrug 2.00 s, Nod 1.25 s; all in place), plus the texture.
+   `Client/IngvarBody.cs` plays them through a `PlayableGraph`: one `AnimationPlayableOutput` on the prefab's own
+   `Animator`, an `AnimationMixerPlayable`, one `AnimationClipPlayable` per clip resolved BY NAME (a clip the
+   bundle does not carry is logged once and stays at weight 0). Lengths are read off the clips at runtime; the
+   numbers above are only fallbacks.
+   **Speed comes from displacement, not from the network.** The driver measures how far its own transform moved
+   this frame, smoothed over 0.15 s, so every machine derives the same Idle/Walk blend from the same replicated
+   position: no `m_syncFloats` entry, no trigger, no extra ZDO key, and nothing that can desync. The blend maths
+   is `Core/BodyMotion.cs` (pure, 78 off-game checks): idle below 0.05 m/s, walk above 0.06, 0.15 s crossfade;
+   one-shots blend in over 0.06 s, own the body, and hand back at 85% of the clip's own length. `Greet()`,
+   `Talk()`, `Shrug()` and `Nod()` are the public API P5 calls on every machine from the ZDO state and `vc_say`.
    Vanilla's parameter set (`forward_speed`, `onGround`, the triggers `Character` and `MonsterAI` write) is NOT
-   his contract; nothing maps him onto the Dverger skeleton. Replication: `ZSyncAnimation` on the prefab lists
-   `speed` in `m_syncFloats` and the four triggers, so every client plays the same clip; the owner sets them.
+   his contract; nothing maps him onto the Dverger skeleton.
    The `Armature` node carries scale 0.01 (cm to m): correct at 1.370 m, never "fixed".
-5. **Unity 6000.0.61f1**, then the section 5 build lessons; the bundle carries a finished material (cloned from a creature
-   donor at build time, neutralised as v5 §6.6 describes), a `SkinnedMeshRenderer`, a `CapsuleCollider`, and the animator.
+5. **Unity 6000.0.61f1**, then the section 5 build lessons. As BUILT (`tools/unity/IngvarBundleBuilder.cs`) the bundle
+   carries exactly two assets — the tagged FBX and its 2048² texture — and from the FBX a `SkinnedMeshRenderer`, the
+   24-bone rig, the six clips as sub-assets, and the material the importer makes (`ImportStandard`), not a creature
+   donor's. It carries **no `AnimatorController`** (item 4) and **no `CapsuleCollider`**: the merchant's collider is
+   the `BodyPrefab` clone's own, and a second one on the body would put a second collider on the character layer —
+   `Client/BodyLoader.cs` attaches the body as a child and leaves `Character`'s collider alone.
    Target bundle 5–10 MB embedded as a resource; the 76 MB source never ships and never enters the mod repo.
-6. **Loader**: swap the body under the same `Humanoid`/`MonsterAI` prefab clone, not a `MeshFilter`; keep `Character`'s
-   component set intact. Verified by `cargo prefab` before and after.
+6. **Loader (BUILT, P8: `Client/BodyLoader.cs`)**: swap the body under the same `Humanoid`/`MonsterAI` prefab clone,
+   not a `MeshFilter`; keep `Character`'s component set intact. Verified by `cargo prefab` before and after.
+   As built the swap is ADDITIVE: the prefab is instantiated as a child named `IngvarBody` on the character's ROOT
+   at local `(0, groundOffset, 0)` — the offset derived from `sharedMesh.bounds` unioned over the renderers, never
+   hardcoded, expected 0 — and the stand-in is hidden by DISABLING its `Renderer`s and its `LODGroup`. Nothing is
+   destroyed and the `Visual` child is never deactivated, because six vanilla members take the animator with a
+   ROOT-scoped `GetComponentInChildren<Animator>()`, which is depth-first in child order and skips inactive
+   GameObjects: `Character.Awake` (Character.cs:502) and `ZSyncAnimation.Awake` (ZSyncAnimation.cs:45) at Awake,
+   and — after it — `NpcTalk.Start`, `FootStep.Start` (which sits on the character root: it takes `m_character`
+   with `GetComponent<Character>()` on the same object), `RandomAnimation.Start`, and `Projectile.RPC_Attach`,
+   which searches the ZNetScene instance it stuck into and then walks that animator's hierarchy for the nearest
+   bone. Our child is appended LAST, so all six find the vanilla animator first — and only while its object stays
+   active. (Line numbers for the last four, in a full ilspycmd decompile of assembly_valheim.dll: 6625, 12377,
+   23084, 3086.) The renderer sweeps that run after Awake are scoped to `m_visual` (`Character.UpdateLodgroup`,
+   Character.cs:3531; `VisEquipment.UpdateLodgroup`, VisEquipment.cs:710), so a body hung off the root is outside
+   all of them — but they still reach the STAND-IN through its `LODGroup`, which is why that goes off too: Unity's
+   LOD system owns `Renderer.enabled` for the renderers in a LOD level, and `Character.SetVisible`
+   (Character.cs:3775) drives a LOD transition on every change of ZDO ownership.
+   The switch is the new `Server.CustomBody` (synced+locked, default true), NOT `BodyPrefab`: `BodyPrefab` stays the
+   engine prefab the merchant is cloned from, because `Character`, `MonsterAI` and the collider all come from it.
 
 ---
 

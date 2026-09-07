@@ -6,7 +6,7 @@ from a live, persistent stock at supply-and-demand prices for five minutes, and 
 does. Every player sees the same visit; only the server owns the market.
 
 **Not** on command (the earned summon horn is a later feature), **not** a custom body in 0.1 (the
-Dverger stands in until Thorium's model is rigged), **not** a patch on the vanilla store. The one UI
+Dverger stands in until Ingvar's bundle is baked and embedded; the model and the loader exist), **not** a patch on the vanilla store. The one UI
 it draws is its own trade terminal, opened from our own interact handler.
 
 Sibling of Cairn, Undertow, FireFront, Ragnarok's Wrath and RavenEye, bound by the same house style.
@@ -21,10 +21,12 @@ and the model: `docs/REVIEW-v5-2026-09-06.md`.
 
 ## Status
 
-**Phase 0 scaffold, 2026-09-06. Builds clean (0 warnings), 27/27 off-game tests, packages
-(`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right layout).** What exists: the plugin entry,
-ServerSync vendored and armed, the whole config surface bound and locked, the `cargo` console, the
-catalogue parser with 72 data-checked defaults. Nothing rolls a visit, flies, walks, trades or persists.
+**Main after P8 and P9, 2026-09-07. Builds clean (0 warnings), 1034/1034 off-game checks, packages
+(`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right layout).** What exists: the plugin entry, ServerSync
+vendored and armed, the config surface bound and locked, the `cargo` console, the catalogue with 72 defaults, the
+market and the scheduler, the event and the director, the deal wire, the world sidecar, the Cargo Terminal and the
+body loader. Nothing flies or walks: the flight is in review (PR #8), the merchant is not started, and no bundle is
+baked, so a visit runs with nobody standing in it. The paragraphs below are the history, each with the lines seen.
 
 **HEADLESS VERIFIED 2026-09-06 15:23 on CairnTest (dedicated, port 2466, world CairnTest, alongside
 Cairn.dll and RavenEye.dll):** within 20 s of launch the BepInEx log showed, in order,
@@ -61,7 +63,8 @@ server, where `Server/AdminGate.cs` (vanilla's `ZNet.IsAdmin`, fail closed) deci
 **HEADLESS VERIFIED 2026-09-06 18:55 on StormTest (dedicated, port 2476, the full Ravenrest modpack clone,
 117 plugins)**, in order in `BepInEx\LogOutput.log`:
 `Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches=13, catalogue=72 entries, ServerSync version gate armed; role is decided when a world loads.`
-(13 = ServerSync's 10, UIFocus's 2, our RandEventSystem.Awake prefix), then
+(13 = the 10 above, UIFocus's 2, our RandEventSystem.Awake prefix; the breakdown of the 10 was never checked
+against `Harmony.GetAllPatchedMethods()`), then
 `event 'valkyries_cargo' registered (20 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.`,
 then `role: dedicated server`, `routed RPCs registered for this session: vc_admin, vc_reply`, then
 `director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 800, roll every 60 s at 25%, first roll one interval from now; market state is NOT persisted yet (P6)`
@@ -108,13 +111,44 @@ market with no server; `cargo terminal open` on the running visit before P5 give
 written only through `DealApplier` inside the answer. Off-game: builds clean (net48), 926 checks, seven tray
 mutations caught. **Not yet seen on a screen**: the window itself (item 17).
 
+**P8 the body loader, mod side, 2026-09-06 (branch `a/p8-loader`).** `Client/BodyLoader.cs` opens the AssetBundle
+`valkyriescargo_kit` — the resource embedded in this DLL, resolved BY SUFFIX, or, loudly labelled, a loose file beside
+the DLL for trying a bake without a rebuild — once, and never unloads it. `Attach(Character)` hangs the prefab as a
+child named `IngvarBody` on the merchant's ROOT at local `(0, groundOffset, 0)`, derived from `sharedMesh.bounds`
+unioned over the renderers and expected to be 0, and hides the stand-in by DISABLING every other `Renderer` under the
+character AND its `LODGroup` (Unity's LOD system owns `Renderer.enabled` for the renderers it lists, and
+`Character.SetVisible` on every ownership change plus `VisEquipment.UpdateLodgroup` on every equipment change would
+switch them back on; found by the review) — never destroying one, never deactivating `Visual` — so `Character.m_animator`, `VisEquipment`,
+`CharacterAnimEvent`, `ZSyncAnimation` and the `CapsuleCollider` all keep working and every vanilla
+`GetComponentInChildren<Animator>` still finds the vanilla animator first (ours is appended last; the search is
+depth-first in child order). The whole stock assembly has six root-scoped lookups that can run after Awake:
+`Character.Awake`, `ZSyncAnimation.Awake`, `NpcTalk.Start`, `FootStep.Start`, `RandomAnimation.Start` and
+`Projectile.RPC_Attach`; the appended-last defence covers all six, and P5 attaching from the `Humanoid.Awake`
+postfix means the three Start-time ones WILL run. It re-hides every 2 s, because `VisEquipment` rebuilds a crossbow on any equipment change.
+`Client/IngvarBody.cs` plays the six clips through a `PlayableGraph` — one `AnimationPlayableOutput` on the prefab's own
+`Animator`, an `AnimationMixerPlayable`, one `AnimationClipPlayable` per clip found BY NAME, a missing clip logged once
+and left at weight 0 — with **no AnimatorController anywhere**, `applyRootMotion=false` and
+`cullingMode=CullUpdateTransforms`; speed comes from this transform's own displacement, not from the network, so every
+machine derives the same walk from the same replicated position with no `ZSyncAnimation` float and no extra ZDO key.
+`Greet/Talk/Shrug/Nod` are the public one-shots P5 calls. `Core/BodyMotion.cs` (pure, 78 checks) is the blend: the
+0.05/0.06 m/s hysteresis on a 0.15 s smoothed speed, the 0.15 s crossfade, the one-shot envelope (0.06 s in, hand back
+at 85% of the clip's OWN length, no self-interrupt, a different one replaces without a gap), and the six weights
+summing to 1 across a 40,000-step random walk. New config `Server.CustomBody` (synced+locked, default true) is the
+switch; `Server.BodyPrefab` stays the engine prefab the merchant is cloned from. Console: `cargo body`, `cargo body
+preview | walk | clip <Hello|Talk|Shrug|Nod> | clear`, and one line in `cargo status`. Off-game: builds clean (net48,
+0 warnings), 1034 checks (78 with the model, 30 more from the adversarial review: a one-shot over a moving crossfade,
+a replacement during the hand-back, a hitch through the blend-out, a clip shorter than the blend-in), nine model
+mutations caught between the two; a 131,072-byte stand-in dropped at `Assets\valkyriescargo_kit`
+embedded as `ValkyriesCargo.valkyriescargo_kit` and grew the DLL by exactly that much. **Not yet seen on a screen**:
+the body itself (items 19 and 20) — there is no baked bundle on this machine and nothing here has drawn a pixel.
+
 ---
 
 ## Commands
 
 ```powershell
 .\tools\fetch-libs.ps1     # once per machine: copies game/BepInEx DLLs into libs\
-.\tools\run-tests.ps1      # off-game logic tests (net10) — run before every commit
+.\tools\run-tests.ps1      # off-game logic tests (net8.0) — run before every commit
 .\tools\package.ps1        # Release build + store zip in dist\ (writes manifest version from the csproj)
 dotnet build ValkyriesCargo\ValkyriesCargo.csproj
 ```
@@ -133,8 +167,9 @@ The owner's client runs through Gale (`%APPDATA%\com.kesomannen.gale\valheim\pro
 dedicated test servers live under `C:\Users\donfr\ValheimServers\` (CairnTest on port 2466 is the
 minimal one; the runbook is `RagnaroksWrath\docs\HANDOFF.md`). Valheim locks the DLL while running.
 
-Console today: `cargo status | version | prefab <name> | stock [prefab] | deal buy|sell <prefab> [count] | claim |
-terminal demo|open|close | visit [player] | dismiss | reset | save`. `visit`, `dismiss`, `reset` and `save` are
+Console today: `cargo status | version | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] |
+deal buy|sell <prefab> [count] | claim | terminal demo|open|close | visit [player] | dismiss | reset | save`.
+`visit`, `dismiss`, `reset` and `save` are
 admin verbs: on a server or listen host they run in place; from a client they ride `vc_admin` to the server,
 where the public `ZNet.IsAdmin` (RavenEye's `AdminGate` shape, fail closed) decides and `vc_reply` prints the
 answer in the caller's console. `deal` is the terminal's deal without the terminal: it builds the same `Deal`,
@@ -150,7 +185,7 @@ Built:
 ValkyriesCargo/
   ValkyriesCargo.cs          plugin entry: config (creates the ConfigSync), Harmony, tick, boot line
   Config/ModConfig.cs        Server.* synced+locked, Client.* local, VisitState/MarketState channels
-  Core/CargoTick.cs          the ONLY Update in the mod; role decided at runtime
+  Core/CargoTick.cs          the ONLY Update and the only OnGUI in the mod; role decided at runtime
   Core/Catalogue.cs          PURE: the catalogue line parser and the 72 defaults
   Core/Wire.cs Core/MarketSnapshot.cs Core/VisitSnapshot.cs Core/Deal.cs   PURE: the contract (PR #1)
   Core/Market.cs             PURE: rules, price curve, purse, drift, settlement, sidecar rows
@@ -168,6 +203,9 @@ ValkyriesCargo/
   Client/InboxStore.cs       the applied delivery ids on disk (config folder)
   Client/Terminal/CargoTerminal.cs   the window: ICargoTerminal on the gilt theme, drawn from the one OnGUI
   Client/Terminal/TrayModel.cs       PURE: the staging tray, Validate/Build/AutoFill/Answer
+  Core/BodyMotion.cs         PURE: Ingvar's six clip weights: hysteresis, crossfade, the one-shot envelope
+  Client/BodyLoader.cs       the embedded bundle, once; the body swapped onto the merchant, additively
+  Client/IngvarBody.cs       the driver: a PlayableGraph over the six clips; speed from displacement
   Server/VisitDirector.cs    where the world runs: gather ZDOs -> Scheduler -> event -> VisitState/MarketState
   Server/CargoEvent.cs       the vanilla RandomEvent `valkyries_cargo`: definition, registration, start, remaining
   Server/AdminGate.cs        vanilla's ZNet.IsAdmin(hostName), fail closed (RavenEye's shape)
@@ -176,22 +214,23 @@ ValkyriesCargo/
   Patches/Patch_RandEventSystem_Awake.cs   prefix, Priority.Low, return true: registers the event
   Net/CargoRpc.cs            the client-side surface the terminal calls; the demo transport (PR #1)
   Client/Terminal/ICargoTerminal.cs   what the merchant calls; Track B implements it (PR #1)
-  Patches/Patch_Terminal.cs  the `cargo` console: status, version, prefab dump
+  Patches/Patch_Terminal.cs  the `cargo` console: status, version, prefab, body, stock, deal, claim, terminal; admin visit/dismiss/reset/save
   Libs/ServerSync.cs         NOT OURS: blaxxun ConfigSync.cs, compiled in as shared source
-tests/CoreTests/             net10 harness; compiles the REAL Core sources against stubs
-tools/                       fetch-libs, run-tests, package
+  Libs/SharedUI/GiltFrameTheme.cs, UIFocus.cs   NOT OURS: Wu'barrk's VikingOS 0.9.8 shared source, MIT (PR #2)
+tests/CoreTests/             net8.0 harness; compiles the REAL Core sources against stubs
+tools/                       fetch-libs, run-tests, package; setup-ingvar-unity.ps1, build_ingvar.py, preview_ingvar.py, unity/IngvarBundleBuilder.cs (the bake, Wu'barrk's)
 libs/                        gitignored; populated by fetch-libs.ps1
-docs/                        DESIGN, TLDR, CATALOGUE, REVIEW-v5, data/items table, the partner's drafts
+docs/                        DESIGN, TLDR, CATALOGUE, WORKSPLIT, RELEASE, HANDOFF-CLAUDE, HANDOFF-WUBARRK, REVIEW-v5, data/items table, the partner's drafts
+models/                      Ingvar's source art (ingvar.fbx + ingvar_albedo.png, the one binary exception) and the bake docs (Wu'barrk's)
 ```
 
 Planned (design section 3; names are final, files do not exist yet):
 
 ```
   Server/Spawner.cs
-  Client/CargoFlight.cs Client/CargoMerchant.cs Client/BodyLoader.cs
+  Client/CargoFlight.cs Client/CargoMerchant.cs
   Patches/Patch_Valkyrie_Awake.cs Patch_Humanoid_Awake.cs
   Patches/Patch_Character_InIntro.cs Patch_Character_Damage.cs
-  Libs/SharedUI/GiltFrameTheme.cs Libs/SharedUI/UIFocus.cs   (Wu'barrk's VikingOS, MIT, not yet received)
 ```
 
 ---
@@ -202,7 +241,9 @@ Planned (design section 3; names are final, files do not exist yet):
    postfixes at default priority where appending is the whole point. Never a max- or high-priority
    replace.** The planned `Patch_Valkyrie_Awake` skips vanilla for our own object only, the narrow
    named exception RavenEye recorded for `UpdateNoMap`.
-2. **No long-lived coroutines.** `CargoTick` is the one `Update`. Nothing else owns a timer.
+2. **No long-lived coroutines.** `CargoTick` is the one `Update`. Nothing else owns a timer. Exception, written
+   down 2026-09-07: a driver MonoBehaviour that lives and dies with its own GameObject and updates only itself
+   (`Client/IngvarBody.cs`; `Client/CargoFlight.cs` when it lands). The rule is about timers that outlive their object.
 3. **Cosmetics off the gameplay path.** Every patch body is its own try/catch, logging at most three
    times.
 4. **Never patch `EnvMan`. Never touch materials, textures or shaders.** Reading `EnvMan.IsDay()` is
@@ -229,8 +270,8 @@ owner overwrites next frame).
   MIT-0. Compiled into this assembly as shared source, the way every ServerSync mod does it. It patches
   `ZNet.RPC_PeerInfo` (a buffering socket around the handshake) and reads `ZRoutedRpc.m_peers` and
   `ZNet.m_adminList` by reflection. Its business; update from upstream, never edit.
-- **`Libs/SharedUI/GiltFrameTheme.cs`, `Libs/SharedUI/UIFocus.cs`** (not yet vendored) = Wu'barrk's
-  VikingOS 0.9.8 shared source, MIT. `UIFocus` carries two Harmony patches (`GameCamera.UpdateMouseCapture`,
+- **`Libs/SharedUI/GiltFrameTheme.cs`, `Libs/SharedUI/UIFocus.cs`** = Wu'barrk's VikingOS 0.9.8 shared
+  source, MIT, vendored 2026-09-06 (PR #2); each file's header records its origin and version. `UIFocus` carries two Harmony patches (`GameCamera.UpdateMouseCapture`,
   `Chat.HasFocus`); design section 4 lists them as shared-source patches.
 
 ---
@@ -264,7 +305,8 @@ owner overwrites next frame).
 - **`ZRoutedRpc.instance` is null for the whole of plugin `Awake`** and is re-created on every world
   join; register routed handlers per session, direct `ZRpc` handlers on peer connect.
 - `EnvMan.IsDay()` is static. `Character.m_collider` is a `CapsuleCollider`. `Odin.m_despawn` and
-  `Odin.m_ttl` (300 s) are public.
+  `Odin.m_ttl` are public; 300 is the field initialiser, and the value on the `odin` prefab is UNCHECKED (PR #8
+  reports 60 from the prefab). `cargo prefab odin` decides it.
 - **The game day is 1800 s** (`EnvMan.instance.m_dayLengthSec`, public, read live on StormTest 2026-09-06;
   the COMPILED default is 1200, the scene overrides it). The market's drift counts this number, never a constant.
 - **The vanilla random event**: `RandEventSystem.SetRandomEvent` is private; `SetRandomEventByName`,
@@ -291,7 +333,9 @@ owner overwrites next frame).
 
 ---
 
-## What to verify in-game (Phase 0)
+## What to verify in-game
+
+Item 1 is done. Items 2 to 20 have never been run.
 
 1. ~~**Boot line, dedicated server**~~ **DONE 2026-09-06** (see Status): the DLL sits in CairnTest's
    `BepInEx\plugins\`; a headless boot shows the loaded line with `patches=10, catalogue=72 entries`,
@@ -339,7 +383,7 @@ P6, the wire, with a visit running (`cargo visit` first):
 
 P7, the terminal (a client, no server needed for the first item):
 17. **`cargo terminal demo`** (from the main menu or in a world): the gilt window opens centred with the cursor
-    free; 18 wares on the left with icons and prices, 72 rows on the right; clicking a ware stages it (Shift 5,
+    free; 18 wares on the left with icons and prices, 72 rows on the right (the 54 wants and the 18 wares he buys back); clicking a ware stages it (Shift 5,
     Ctrl 20, right-click takes back); "you pay" is count x price; Confirm deal answers with one of his three buy
     lines and the price on that row moves; a second Confirm on the same line comes back "The wind shifted..."
     with the line amber, and Confirm new price goes through; Escape closes it and the cursor locks again; the log
@@ -349,6 +393,24 @@ P7, the terminal (a client, no server needed for the first item):
     every machine; a sell of goods you carry pays coins; Fill from my goods covers a ware with the dearest goods
     first; Send him off twice ends the visit (`ended: dismissed by <name>`); Tab and M close it; walking away
     closes it only once P5 gives it a merchant.
+
+P8, the body (a client with a baked bundle embedded; none exists yet):
+19. **`cargo body`** says `source embedded ('ValkyriesCargo.valkyriescargo_kit')`, `bundle open`, `prefab 'ingvar'
+    found`, six clips with the lengths from models/README.md (`Walk 4.21s, Idle 10.00s, Talk 5.17s, Hello 3.79s,
+    Shrug 2.00s, Nod 1.25s`), `SkinnedMeshRenderer=yes, bones=24, tris=31112`, and a **ground offset within a few
+    millimetres of 0** — anything else and the bake, not the loader, is what to look at (the console prints it as two
+    lines: `body: source embedded - ...` then `resource: 'ValkyriesCargo.valkyriescargo_kit' inside this DLL ...`). On a dedicated server the
+    same verb answers `source none - client only; not loaded here` and says nothing about appearance.
+20. **`cargo body preview`** stands Ingvar 2.5 m in front of the player, facing them, feet ON the ground (not
+    floating, not sunk; test OUTDOORS: the preview stands on `GetGroundHeight`, the terrain, so on a floor he sinks to
+    the ground beneath it and that is the raycast mask, not the bake), about **1.37 m** tall — a head shorter than the player — idling, with the idle actually
+    moving rather than frozen on frame 0. `cargo body walk` walks him on the spot and the crossfade takes about
+    0.15 s in each direction; `cargo body clip Hello` waves and hands back to the idle near the end of the clip,
+    and a second `cargo body clip Hello` while it plays is refused in the console; `Talk`, `Shrug` and `Nod` each
+    play (the nod is deliberately subtle — if it does not read at 3.5 m, that is `make_nod()`, not this code);
+    `cargo body clear` takes him away and `cargo status` goes back to `preview: none`. Then on a merchant (P5):
+    the Dverger and his crossbow are gone, Ingvar walks when the agent walks, `cargo prefab` shows the same
+    component set as before the swap, and nothing in the log says a vanilla system lost its animator.
 
 ---
 

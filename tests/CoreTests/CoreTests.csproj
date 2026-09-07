@@ -35,6 +35,7 @@
     <Compile Include="..\..\ValkyriesCargo\Core\Lines.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Sidecar.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\OwedLedger.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\BodyMotion.cs" />
     <Compile Include="..\..\ValkyriesCargo\Client\Terminal\TrayModel.cs" />
     <Compile Include="..\..\ValkyriesCargo\Net\CargoRpc.cs" />
   </ItemGroup>

@@ -3,7 +3,8 @@
 > **Revised 2026-09-06, later the same day.** Wu'barrk's brief changed the shape: rested + comfort as the gate, the
 > visit rides a vanilla `RandomEvent`, five minutes or dismissal, the merchant walks to you and calls out, he buys
 > AND sells from a live stock with barter, prices move in real time. **`docs/DESIGN.md` is now authoritative where
-> the two differ**; this file keeps the sibling-code map (section 9) and the phase skeleton.
+> the two differ**; this file keeps the sibling-code map (section 9) and the phase skeleton. Phase 5's release steps now live in
+> `docs/RELEASE.md`, which also records the Hexium name check section 0 asked for (done 2026-09-06: `ValkyriesCargo` is free).
 
 A Valheim mod by **Raven Iron**. A wandering trader, **Ingvar the Far-Travelled**, is dropped at a
 player's base by a Valkyrie at a random moment, buys raw materials for coins at prices that move
