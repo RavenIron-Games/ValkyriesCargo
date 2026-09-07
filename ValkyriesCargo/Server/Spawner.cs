@@ -45,6 +45,13 @@ namespace RavenIron.ValkyriesCargo.Server
         public static readonly int CargoHash = "vc_cargo".GetStableHashCode();      // int visitId: this is ours
         public static readonly int TargetHash = "vc_target".GetStableHashCode();    // Vector3: where to put him down
         public static readonly int DroppedHash = "vc_dropped".GetStableHashCode();  // bool: he is on the ground
+        /// <summary>
+        /// `vc_turn`: the descent waypoint, whole, from the server's plan. It has a key of its own
+        /// because the first version had the client rebuild it from the start and the drop, and the
+        /// rebuild came out on the opposite side, at a different distance, with none of the plan's
+        /// block clamp (PR #8's review). One author, one number, no second copy of the maths.
+        /// </summary>
+        public static readonly int TurnHash = "vc_turn".GetStableHashCode();        // Vector3: the descent waypoint
         // The merchant.
         public static readonly int IngvarHash = "vc_ingvar".GetStableHashCode();    // int visitId: this is Ingvar
         public static readonly int SeedHash = "vc_seed".GetStableHashCode();        // int: his lines and his bearing
@@ -53,6 +60,17 @@ namespace RavenIron.ValkyriesCargo.Server
         public static readonly KeyValuePair<int, int> CarrierKey = ZDO.GetHashZDOID("vc_carrier");
 
         public const string BirdPrefab = "Valkyrie";
+
+        /// <summary>
+        /// P5 (`CargoMerchant`) is what pins the merchant to the talons, keeps him peaceful, walks him
+        /// up and puts him away again. Until it lands there is nothing to author him INTO: a bare
+        /// vanilla Dverger falls 120 m and then stands next to the pilot with a live `MonsterAI`. So
+        /// P4 ships the flight alone, and this is the single line P5 flips. Everything below it is
+        /// already written and already reviewed; it just does not run yet (PR #8's review, finding 4).
+        /// </summary>
+        /// <remarks>`static readonly`, not `const`: a const false folds and the compiler then reports the
+        /// whole merchant block as unreachable code, which is a warning we do not ship.</remarks>
+        public static readonly bool MerchantEnabled = false;
 
         /// <summary>What the server remembers about the flight it authored. Not persisted: the bird cannot survive a restart (non-persistent) and the merchant is found again by his `vc_ingvar` key (design 3.7).</summary>
         public static ZDOID Bird { get; private set; }
@@ -93,7 +111,8 @@ namespace RavenIron.ValkyriesCargo.Server
                 FlightPlan.Plan plan = FlightPlan.Make(px, py, pz, seed, activeArea,
                     Clamp(ModConfig.FlightStartDistance, 90f, 24f, 400f),
                     Clamp(ModConfig.FlightStartAltitude, 120f, 20f, 400f),
-                    Clamp(ModConfig.FlightDescentDistance, 50f, 0f, 200f));
+                    Clamp(ModConfig.FlightDescentDistance, 50f, 0f, 200f),
+                    FlightPlan.DropAltitude);
 
                 if (!plan.Ok)
                 {
@@ -104,6 +123,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 }
 
                 var start = new Vector3(plan.StartX, plan.StartY, plan.StartZ);
+                var turn = new Vector3(plan.DescentX, plan.DescentY, plan.DescentZ);
                 var drop = new Vector3(plan.DropX, plan.DropY, plan.DropZ);
                 Quaternion look = LookAlong(plan.DropX - plan.StartX, plan.DropZ - plan.StartZ);
 
@@ -120,33 +140,40 @@ namespace RavenIron.ValkyriesCargo.Server
                                                             // ZNetView.Awake normalises it to the prefab's value
                     bird.Set(CargoHash, visitId);
                     bird.Set(TargetHash, drop);
+                    bird.Set(TurnHash, turn);
                     bird.Set(DroppedHash, false);
                     bird.SetOwner(pilotUid);               // LAST: after this the ZDO is the pilot's to write
                 }
 
                 // He hangs under the bird until the drop; with no flight he simply starts on the ground.
-                Vector3 npcStart = plan.Ok ? start : drop;
-                ZDO npc = man.CreateNewZDO(npcStart, bodyHash);
-                npc.SetPrefab(bodyHash);
-                npc.SetPosition(npcStart);
-                npc.SetRotation(look);
-                npc.Persistent = true;                     // survives the pilot walking off; adopted by a nearer client
-                npc.Distant = false;
-                npc.Set(IngvarHash, visitId);
-                npc.Set(SeedHash, seed);
-                npc.Set(StateHash, plan.Ok ? MerchantState.Carried : MerchantState.Approaching);
-                npc.Set(CarrierKey, bird != null ? bird.m_uid : ZDOID.None);
-                npc.SetOwner(pilotUid);
+                ZDO npc = null;
+                if (MerchantEnabled)
+                {
+                    Vector3 npcStart = plan.Ok ? start : drop;
+                    npc = man.CreateNewZDO(npcStart, bodyHash);
+                    npc.SetPrefab(bodyHash);
+                    npc.SetPosition(npcStart);
+                    npc.SetRotation(look);
+                    npc.Persistent = true;                 // survives the pilot walking off; adopted by a nearer client
+                    npc.Distant = false;
+                    npc.Set(IngvarHash, visitId);
+                    npc.Set(SeedHash, seed);
+                    npc.Set(StateHash, plan.Ok ? MerchantState.Carried : MerchantState.Approaching);
+                    npc.Set(CarrierKey, bird != null ? bird.m_uid : ZDOID.None);
+                    npc.SetOwner(pilotUid);
+                }
 
                 Bird = bird != null ? bird.m_uid : ZDOID.None;
-                Merchant = npc.m_uid;
+                Merchant = npc != null ? npc.m_uid : ZDOID.None;
                 VisitId = visitId;
                 Dropped = !plan.Ok;
                 _orphanWaited = 0f;
 
                 return (plan.Ok ? "flight authored: " + plan : "NO FLIGHT (" + LastProblem + "); the merchant starts on the ground at (" +
                         Wire.Float(plan.DropX) + ", " + Wire.Float(plan.DropZ) + ")") +
-                       "; bird " + Bird + ", " + bodyName + " " + Merchant + ", both owned by the pilot";
+                       "; bird " + Bird +
+                       (MerchantEnabled ? ", " + bodyName + " " + Merchant + ", both owned by the pilot"
+                                        : ", owned by the pilot; NO MERCHANT (P5 is not in yet, so nothing is authored to carry)");
             }
             catch (Exception ex)
             {
@@ -211,28 +238,39 @@ namespace RavenIron.ValkyriesCargo.Server
         /// </summary>
         public static void Clear()
         {
-            try
-            {
-                ZDOMan man = ZDOMan.instance;
-                if (man != null && !Bird.IsNone())
-                {
-                    ZDO bird = man.GetZDO(Bird);
-                    if (bird != null && bird.IsValid())
-                    {
-                        bird.SetOwner(ZDOMan.GetSessionID());
-                        man.DestroyZDO(bird);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                if (_throws++ < 3) ValkyriesCargo.Log.LogWarning("spawner: clearing the bird threw: " + ex.Message);
-            }
+            Reclaim(Bird, "bird");
+            // The merchant is PERSISTENT, so unlike the bird he does not sweep himself up: a visit that
+            // ends with him still standing would leave him in the world save forever. P5's departure is
+            // the Odin vanish and destroys him itself; this is the backstop under it, and the only
+            // thing standing between a crashed visit and a permanent Dverger (PR #8's review).
+            Reclaim(Merchant, "merchant");
             Bird = ZDOID.None;
             Merchant = ZDOID.None;
             VisitId = 0;
             Dropped = false;
             _orphanWaited = 0f;
+        }
+
+        /// <summary>
+        /// Take a ZDO back and destroy it. Taking ownership FIRST is the only way a server may destroy
+        /// a ZDO it does not own -- `ZDOMan.DestroyZDO` is a no-op for a non-owner -- and is Undertow's
+        /// pattern.
+        /// </summary>
+        private static void Reclaim(ZDOID id, string what)
+        {
+            try
+            {
+                ZDOMan man = ZDOMan.instance;
+                if (man == null || id.IsNone()) return;
+                ZDO zdo = man.GetZDO(id);
+                if (zdo == null || !zdo.IsValid()) return;
+                zdo.SetOwner(ZDOMan.GetSessionID());
+                man.DestroyZDO(zdo);
+            }
+            catch (Exception ex)
+            {
+                if (_throws++ < 3) ValkyriesCargo.Log.LogWarning("spawner: clearing the " + what + " threw: " + ex.Message);
+            }
         }
 
         /// <summary>How long a missing bird is given before the visit gives up on being carried.</summary>
@@ -243,7 +281,8 @@ namespace RavenIron.ValkyriesCargo.Server
         {
             if (!Active) return "flight: none authored";
             return "flight: visit #" + VisitId + ", bird " + Bird + (Dropped ? " (dropped)" : " (flying)") +
-                   ", merchant " + Merchant + (LastProblem.Length > 0 ? "; problem: " + LastProblem : "");
+                   ", merchant " + (MerchantEnabled ? Merchant.ToString() : "not authored (P5 not in yet)") +
+                   (LastProblem.Length > 0 ? "; problem: " + LastProblem : "");
         }
 
         private static float Clamp(BepInEx.Configuration.ConfigEntry<float> entry, float fallback, float lo, float hi)

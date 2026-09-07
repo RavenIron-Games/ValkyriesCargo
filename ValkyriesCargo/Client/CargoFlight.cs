@@ -1,4 +1,5 @@
 using System;
+using RavenIron.ValkyriesCargo.Config;
 using RavenIron.ValkyriesCargo.Core;
 using RavenIron.ValkyriesCargo.Server;
 using UnityEngine;
@@ -13,10 +14,20 @@ namespace RavenIron.ValkyriesCargo.Client
     ///
     /// The maths is vanilla `UpdateValkyrie`, read from the decompile and kept: three waypoints, a 25 m
     /// look-ahead clamped to the ground, a banked turn capped at 30 degrees of error mapped to 45 degrees
-    /// of roll, linear steps at `m_speed`, arrival on 0.5 m of XZ distance. What differs is only what the
-    /// design changes: the waypoints come from the server's authored `vc_target` instead of a re-rolled
-    /// 500 m approach, the floor is `max(ground, water) + m_dropHeight`, and nothing anywhere touches
-    /// `Player.m_localPlayer`.
+    /// of roll, linear steps at the flight speed, arrival on 0.5 m of XZ distance. What differs is only
+    /// what the design changes: EVERY waypoint comes from the server's plan, read off the ZDO, the floor
+    /// is `max(ground, water) + m_dropHeight`, and nothing anywhere touches `Player.m_localPlayer`.
+    ///
+    /// Two of those are corrections from PR #8's review, and both are worth naming because a clean build
+    /// and 878 green checks hid them both:
+    /// - the turn-in point was REBUILT here from the start and the drop. It came out on the opposite
+    ///   side (`Cross(dir, up)` with `dir` pointing start-to-drop is the mirror of the plan's normal on
+    ///   the outbound bearing), at a different distance, and with none of the plan's block clamp. It is
+    ///   now `vc_turn`, authored once by the server. There is no second copy of the geometry.
+    /// - the SPEED and TURN RATE are ours, from synced config, not the prefab's. Vanilla's numbers are
+    ///   tuned for a 500 m approach: at 20 m/s our 76 m run is 7 s rather than design 3.2's 15-20, and
+    ///   20 deg/s is a 57 m turning circle, wider than the whole flight. `m_dropHeight` still comes off
+    ///   the prefab, because that one is about the bird's model and not about the approach.
     ///
     /// Only the OWNER flies. Everyone else is moved by `ZSyncTransform` and only watches `vc_dropped` to
     /// swing the animator - and that matters, because the flight is the one part of the visit every
@@ -32,7 +43,7 @@ namespace RavenIron.ValkyriesCargo.Client
     public sealed class CargoFlight : MonoBehaviour
     {
         /// <summary>Fallback only; the real value is read off the prefab's own `m_dropHeight` in Awake.</summary>
-        public const float DefaultDropHeight = 10f;
+        public const float DefaultDropHeight = FlightPlan.DropAltitude;
         public const float LookAhead = 25f;
         public const float ArriveDistance = 0.5f;
         public const float MaxBankDegrees = 45f;
@@ -41,15 +52,19 @@ namespace RavenIron.ValkyriesCargo.Client
         /// <summary>A flight that has not finished by now has lost its way; the bird leaves rather than circling forever.</summary>
         public const float MaxFlightSeconds = 180f;
 
+        /// <summary>Used when the config has not bound yet (a client that has not joined). The config's own defaults.</summary>
+        public const float DefaultSpeed = 8f;
+        public const float DefaultTurnRate = 45f;
+
         private ZNetView _nview;
         private Valkyrie _valkyrie;
         private Animator _animator;
         private Vector3 _drop, _descentStart, _away;
         private bool _descent, _dropped, _animated;
-        // The COMPILED defaults, which the shipped prefab overrides: it says speed 20, turn rate 20,
-        // drop height 10. Reading them off the component is what gets the real numbers, and is why a
-        // game update that retunes the bird retunes ours with it.
-        private float _speed = 10f, _turnRate = 5f, _dropHeight = DefaultDropHeight;
+        // Speed and turn rate are the synced config's; only the drop height is the prefab's. The
+        // prefab says speed 20, turn rate 20, drop height 10, and the first two are vanilla's tuning
+        // for a 500 m approach we are not flying. See the class comment.
+        private float _speed = DefaultSpeed, _turnRate = DefaultTurnRate, _dropHeight = DefaultDropHeight;
         private float _flying;
         private int _visitId;
         private int _throws;
@@ -68,14 +83,11 @@ namespace RavenIron.ValkyriesCargo.Client
             _nview = GetComponent<ZNetView>();
             _valkyrie = GetComponent<Valkyrie>();
             _animator = GetComponentInChildren<Animator>();
-            if (_valkyrie != null)
-            {
-                // The prefab's own tuning, not constants of ours: if a game update retunes the bird, ours
-                // flies the same way it does.
-                _speed = _valkyrie.m_speed;
-                _turnRate = _valkyrie.m_turnRate;
-                _dropHeight = _valkyrie.m_dropHeight;
-            }
+            // Ours, synced and locked from the server, so every witness flies the same bird.
+            if (ModConfig.FlightSpeed != null) _speed = Mathf.Clamp(ModConfig.FlightSpeed.Value, 2f, 40f);
+            if (ModConfig.FlightTurnRate != null) _turnRate = Mathf.Clamp(ModConfig.FlightTurnRate.Value, 5f, 360f);
+            // The prefab's, because it is about how high the model's talons hang, not about the approach.
+            if (_valkyrie != null) _dropHeight = _valkyrie.m_dropHeight;
 
             ZDO zdo = _nview != null ? _nview.GetZDO() : null;
             if (zdo == null) { enabled = false; return; }
@@ -83,24 +95,26 @@ namespace RavenIron.ValkyriesCargo.Client
             _drop = zdo.GetVec3(Spawner.TargetHash, transform.position);
             _dropped = zdo.GetBool(Spawner.DroppedHash, false);
 
-            // The turn-in point, rebuilt from where we start and where we are going, so it needs no key
-            // of its own: the same geometry FlightPlan used, minus the block clamp the server applied.
+            // The descent waypoint is the SERVER'S, whole. The fallback is the straight line rather than
+            // a rebuild of the old swing: a bird that flies dead at the drop is worse-looking than one
+            // that glides, never a broken one.
             Vector3 flat = _drop - transform.position; flat.y = 0f;
             float run = flat.magnitude;
             Vector3 dir = run > 0.01f ? flat / run : transform.forward;
-            Vector3 lateral = Vector3.Cross(dir, Vector3.up);
-            float descent = Mathf.Clamp(run * 0.5f, 0f, 50f);
-            _descentStart = _drop - dir * descent + lateral * descent;
-            _descentStart.y = transform.position.y;
+            float descent = Mathf.Min(50f, run);
+            float frac = run > 0.001f ? descent / run : 0f;
+            Vector3 fallback = _drop + dir * -descent;
+            fallback.y = _drop.y + _dropHeight + (transform.position.y - _drop.y - _dropHeight) * frac;
+            _descentStart = zdo.GetVec3(Spawner.TurnHash, fallback);
             _away = _drop - dir * (run * 2f + 40f);
             _away.y = transform.position.y;
             _descent = _dropped;
 
-            // The flight time is worth printing: at the prefab's real 20 m/s a 90 m approach is about six
-            // seconds, not the fifteen to twenty design 3.2 estimated from the compiled default of 10.
             ValkyriesCargo.Log.LogInfo("cargo flight #" + _visitId + ": " + (_nview.IsOwner() ? "flying" : "watching") +
-                                       " from " + Vec(transform.position) + " to " + Vec(_drop) + ", " + Wire.Float(run) +
-                                       " m out at " + Wire.Float(_speed) + " m/s (about " + Wire.Float(_speed > 0.1f ? run / _speed : 0f) + " s)");
+                                       " from " + Vec(transform.position) + " via " + Vec(_descentStart) + " to " + Vec(_drop) +
+                                       ", " + Wire.Float(run) + " m out at " + Wire.Float(_speed) + " m/s, turning " +
+                                       Wire.Float(_turnRate) + " deg/s (radius " +
+                                       Wire.Float(FlightPlan.TurningRadius(_speed, _turnRate)) + " m)");
         }
 
         private void FixedUpdate()

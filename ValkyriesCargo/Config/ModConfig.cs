@@ -41,6 +41,8 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<float>  FlightStartDistance;
         public static ConfigEntry<float>  FlightStartAltitude;
         public static ConfigEntry<float>  FlightDescentDistance;
+        public static ConfigEntry<float>  FlightSpeed;
+        public static ConfigEntry<float>  FlightTurnRate;
         public static ConfigEntry<string> CatalogueLine;
         public static ConfigEntry<float>  PriceElasticity;
         public static ConfigEntry<float>  MinPriceMultiplier;
@@ -127,6 +129,16 @@ namespace RavenIron.ValkyriesCargo.Config
             FlightDescentDistance = S(cfg, "Server", "FlightDescentDistance", 50f,
                 "Metres out at which the descent leg begins. Read on the SERVER.",
                 new AcceptableValueRange<float>(10f, 200f));
+            // Ours, not the prefab's. Vanilla's Valkyrie is tuned for a 500 m approach: at its 20 m/s
+            // our 76 m run is over in seven seconds, where design 3.2 asks for fifteen to twenty. At 8
+            // the same flight takes 17 s. The turn rate is ours for the same reason, and because the
+            // prefab's 20 deg/s is a 57 m turning circle - wider than the whole approach (PR #8).
+            FlightSpeed = S(cfg, "Server", "FlightSpeed", 8f,
+                "Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. Read on the SERVER, synced to every client, which is where the flying happens.",
+                new AcceptableValueRange<float>(2f, 40f));
+            FlightTurnRate = S(cfg, "Server", "FlightTurnRate", 45f,
+                "Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the SERVER, synced to every client.",
+                new AcceptableValueRange<float>(5f, 360f));
             CatalogueLine = S(cfg, "Server", "Catalogue", Catalogue.DefaultLine,
                 "What Ingvar sells and buys: Prefab:BasePrice:TargetStock:MaxStock:Kind entries separated by commas; Kind is Ware (sells and buys back) or Want (buys only). Every number's reason is in docs/CATALOGUE.md. Unknown prefabs are dropped with one log line. Read on the SERVER.");
             PriceElasticity = S(cfg, "Server", "PriceElasticity", 0.35f,
