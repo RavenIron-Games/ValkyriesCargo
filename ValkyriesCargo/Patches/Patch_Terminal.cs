@@ -33,7 +33,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             try
             {
                 new Terminal.ConsoleCommand("cargo",
-                    "Valkyrie's Cargo: status | version | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] | deal buy|sell <prefab> [count] | claim | terminal demo|open|close | visit [player] | dismiss | reset | save", Run);
+                    "Valkyrie's Cargo: status | version | engine | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] | deal buy|sell <prefab> [count] | claim | terminal demo|open|close | visit [player] | dismiss | reset | save", Run);
             }
             catch (Exception ex)
             {
@@ -50,6 +50,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                 {
                     case "status":  Status(args); return;
                     case "version": Version(args); return;
+                    case "engine":  Engine(args); return;
                     case "prefab":  Prefab(args); return;
                     case "body":    Body(args); return;
                     case "visit":   Admin(args, "visit", args.Args.Length > 2 ? args.Args[2] : ""); return;
@@ -74,6 +75,7 @@ namespace RavenIron.ValkyriesCargo.Patches
         {
             Say(args, "cargo status          - role, config authority, catalogue, the director, the engine numbers the design depends on");
             Say(args, "cargo version         - this build and the ServerSync gate");
+            Say(args, "cargo engine          - the Valheim build this DLL was written on against the one running, and every engine probe with its rank");
             Say(args, "cargo prefab <name>   - components, children and effect lists of a game prefab (Valkyrie, Dverger, odin, Haldor)");
             Say(args, "cargo body            - Ingvar's body: where the bundle came from, the six clips and their lengths, the rig, the derived ground offset");
             Say(args, "cargo body preview    - stand him 2.5 m in front of you, facing you: no ZDO, nothing networked, nobody else sees him");
@@ -96,6 +98,23 @@ namespace RavenIron.ValkyriesCargo.Patches
         {
             Say(args, ValkyriesCargo.PluginName + " v" + ValkyriesCargo.PluginVersion +
                       " - every client must run exactly this version (ServerSync ModRequired, minimum = current).");
+        }
+
+        /// <summary>
+        /// P10b: what this DLL was compiled against, what is actually running, and every engine probe
+        /// with its risk rank, what it looked at and what turns itself off when it fails. Not an admin
+        /// verb and not config: it reads and prints, and it is the first thing to paste into a bug
+        /// report from a player whose Valheim moved.
+        /// </summary>
+        private static void Engine(Terminal.ConsoleEventArgs args)
+        {
+            Say(args, EngineBaseline.Describe() + ".");
+            Say(args, "running: " + EngineCheck.Verdict + (EngineCheck.Comparison != null && EngineCheck.Comparison.WireAtRisk
+                          ? "  <- the network version is the handshake and the packet layout: the deal wire is the risk" : ""));
+            EngineProbes p = EngineProbes.Current;
+            Say(args, EngineCheck.Ran ? p.Encode() : "probes: EngineCheck.Run() never ran (this is a bug, not a game change)");
+            foreach (string line in p.Report()) Say(args, "  " + line);
+            foreach (string problem in p.Problems) Say(args, "  registry: " + problem);
         }
 
         /// <summary>An admin verb: run it here if the world runs here, else ask the server and let its answer print when it comes.</summary>
@@ -213,6 +232,13 @@ namespace RavenIron.ValkyriesCargo.Patches
             Say(args, ValkyriesCargo.PluginName + " v" + ValkyriesCargo.PluginVersion +
                       " - role=" + CargoTick.Role() + ", renderer=" + (ValkyriesCargo.HasRenderer ? "yes" : "no"));
 
+            // P10b, and deliberately the SECOND line: if the game underneath moved, every number below
+            // is suspect and this is the line that says so. `cargo engine` for the whole list.
+            Say(args, "  " + EngineCheck.StatusLine() + (EngineProbes.Current.Failed.Count > 0 ? " (cargo engine)" : ""));
+            if (CargoEvent.Disabled)
+                Say(args, "  visit: DISABLED - the engine probe 'randevent' failed (" + CargoEvent.DisabledReason +
+                          "); the event is not registered and no visit can start on this build");
+
             var sync = ModConfig.Sync;
             Say(args, "  config: " + (sync.IsSourceOfTruth ? "this side is the source of truth" : "following the server") +
                       ", locked=" + sync.IsLocked + ", admin here=" + sync.IsAdmin +
@@ -305,6 +331,11 @@ namespace RavenIron.ValkyriesCargo.Patches
                     ? System.IO.Path.GetFileName(d.Store.Path) + ", " + d.Loaded + " row(s) loaded, " + d.Store.Saves + " save(s)" + (d.Store.Failures > 0 ? ", " + d.Store.Failures + " FAILED" : "") +
                       (d.Dirty ? ", changes pending (cadence " + F(VisitDirector.SaveCadenceSeconds, "0") + " s)" : ", clean")
                     : "NONE: " + (d.Store != null ? d.Store.Detail : "no store")));
+                // P10b, "refuse rather than corrupt": a newer file is held, not quarantined, and nothing
+                // this session saves. That is a loud state and it gets its own line.
+                if (d.Store != null && d.Store.Held)
+                    Say(args, "  sidecar: REFUSED AND HELD - " + d.Store.HoldReason +
+                              ". The file is untouched; nothing is being saved. Run the newer build, or move the file aside yourself.");
                 IReadOnlyList<Candidate> cs = d.Candidates;
                 Say(args, "  candidates (" + cs.Count + "): " + (cs.Count == 0 ? "nobody online" : ""));
                 for (int i = 0; i < cs.Count && i < 12; i++) Say(args, "    " + d.Describe(cs[i], now));
