@@ -68,6 +68,14 @@ namespace RavenIron.ValkyriesCargo.Client
 
         private static bool _tried;
         private static AssetBundle _bundle;
+        /// <summary>
+        /// Held for the life of the process on purpose. `AssetBundle.LoadFromStream` reads out of the
+        /// stream lazily, so the stream has to outlive the bundle - and models/README.md section 6 shows
+        /// it inside a `using`, which closes it before the first `LoadAsset` and turns every later read
+        /// into an ObjectDisposedException. Nothing is leaked: the bytes are the DLL's own resource, and
+        /// the bundle is never unloaded anyway.
+        /// </summary>
+        private static Stream _stream;
         private static GameObject _prefab;
         private static readonly List<BodyClipInfo> _clips = new List<BodyClipInfo>();
         private static GameObject _preview;
@@ -189,10 +197,8 @@ namespace RavenIron.ValkyriesCargo.Client
             if (res != null)
             {
                 ResourceName = res;
-                using (Stream s = asm.GetManifestResourceStream(res))
-                {
-                    if (s != null) _bundle = AssetBundle.LoadFromStream(s);
-                }
+                _stream = asm.GetManifestResourceStream(res);
+                if (_stream != null) _bundle = AssetBundle.LoadFromStream(_stream);
                 if (_bundle != null) { Source = BodySource.Embedded; return; }
                 Detail = "the resource '" + res + "' is embedded but AssetBundle.LoadFromStream refused it (built with a different Unity than 6000.0.61f1?)";
                 ValkyriesCargo.Log.LogError("body: " + Detail);
