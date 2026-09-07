@@ -50,7 +50,9 @@ namespace RavenIron.ValkyriesCargo.Client
     ///   `Visual` child is not.
     /// - The renderer sweeps vanilla runs after Awake are scoped to `m_visual`
     ///   (`Character.UpdateLodgroup`, Character.cs:3531; `VisEquipment.UpdateLodgroup`,
-    ///   VisEquipment.cs:710), so a body hung off the ROOT is outside all of them.
+    ///   VisEquipment.cs:710), so a body hung off the ROOT is outside all of them. They still reach the
+    ///   STAND-IN's renderers, though, through its `LODGroup` - see `HideStandIn`, which switches that
+    ///   group off for the same reason it switches the renderers off.
     ///
     /// Never `Unload`. The bundle is loaded once and kept for the process: an unload while any instance
     /// is alive takes the mesh and the material out from under it (models/README.md section 6).
@@ -347,6 +349,17 @@ namespace RavenIron.ValkyriesCargo.Client
         /// deactivated: the GameObjects have to stay active or a later `GetComponentInChildren&lt;Animator&gt;`
         /// would skip the vanilla animator and find OURS. Re-run on a cadence by the driver because
         /// `VisEquipment` instantiates a fresh crossbow whenever the merchant's equipment changes.
+        ///
+        /// The stand-in's `LODGroup` goes off with them, and it has to. Unity's LOD system OWNS
+        /// `Renderer.enabled` for every renderer listed in a LOD level: it switches them on when the level
+        /// becomes current, so a disable of ours survives only until the next LOD transition. Vanilla drives
+        /// exactly that transition on this character - `Character.SetVisible` (Character.cs:3775) throws
+        /// `m_lodGroup.localReferencePoint` out to 999999 and back on every change of ZDO ownership, and
+        /// `VisEquipment.UpdateLodgroup` (VisEquipment.cs:704) refills `LOD[0].renderers` from every renderer
+        /// under `Visual` on any equipment change. Without this the Dverger reappears on an ownership handoff
+        /// and stays visible until the 2 s re-hide. Disabling the component is safe: both of those vanilla
+        /// paths only read `GetLODs`/`SetLODs` and write `localReferencePoint`, neither of which needs it
+        /// enabled, and every renderer it managed is one we just switched off.
         /// </summary>
         public static int HideStandIn(Transform root, Transform keep)
         {
@@ -360,6 +373,15 @@ namespace RavenIron.ValkyriesCargo.Client
                 if (keep != null && r.transform.IsChildOf(keep)) continue;
                 r.enabled = false;
                 hidden++;
+            }
+
+            LODGroup[] groups = root.GetComponentsInChildren<LODGroup>(true);
+            for (int i = 0; i < groups.Length; i++)
+            {
+                LODGroup g = groups[i];
+                if (g == null || !g.enabled) continue;
+                if (keep != null && g.transform.IsChildOf(keep)) continue;
+                g.enabled = false;
             }
             return hidden;
         }
