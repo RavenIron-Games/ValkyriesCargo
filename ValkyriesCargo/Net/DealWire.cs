@@ -22,6 +22,7 @@ namespace RavenIron.ValkyriesCargo.Net
         private static readonly HashSet<long> _open = new HashSet<long>();
         private static int _throws;
         private static int _farDismissals;
+        private static int _badDeals;
 
         public static int Registered => _registered.Count;
         public static int OpenTerminals => _open.Count;
@@ -61,7 +62,7 @@ namespace RavenIron.ValkyriesCargo.Net
             if (_registered.Count > live.Count) _registered.RemoveWhere(r => !live.Contains(r));
         }
 
-        public static void Reset() { _registered.Clear(); _open.Clear(); }
+        public static void Reset() { _registered.Clear(); _open.Clear(); _lastClaim.Clear(); }
 
         // ---- handlers -------------------------------------------------------------------------------
 
@@ -87,7 +88,10 @@ namespace RavenIron.ValkyriesCargo.Net
                 Deal deal = Deal.Parse(encoded, problems);
                 if (deal == null)
                 {
-                    ValkyriesCargo.Log.LogWarning(DealName + " from " + Who(peer) + " did not parse: " + string.Join("; ", problems.ToArray()));
+                    // Client-driven: a malformed deal costs the sender one packet, so the log line is capped.
+                    if (_badDeals++ < 3)
+                        ValkyriesCargo.Log.LogWarning(DealName + " from " + Who(peer) + " did not parse: " + string.Join("; ", problems.ToArray()) +
+                                                      (_badDeals == 3 ? "; further parse failures are silent" : ""));
                     Answer(rpc, DealResult.Refuse(0, DealReason.Malformed));
                     return;
                 }
@@ -117,6 +121,16 @@ namespace RavenIron.ValkyriesCargo.Net
             }
         }
 
+        /// <summary>
+        /// A claim redelivers every owed row on the socket, so one small packet can ask the server for up
+        /// to `OwedLedger.DefaultPerPlayer` (50) packets back. That is an amplifier, and the client only
+        /// ever needs it once per connection (`CargoTransport.ClaimOnce`) or when a player types
+        /// `cargo claim`. One claim per peer per this many seconds; the rest are dropped in silence.
+        /// </summary>
+        public const float ClaimCooldownSeconds = 5f;
+
+        private static readonly Dictionary<long, float> _lastClaim = new Dictionary<long, float>();
+
         private static void OnClaim(ZRpc rpc)
         {
             try
@@ -124,6 +138,10 @@ namespace RavenIron.ValkyriesCargo.Net
                 ZNetPeer peer = PeerFor(rpc);
                 VisitDirector d = CargoTick.Director;
                 if (d == null || peer == null) return;
+                float now = UnityEngine.Time.time;
+                float last;
+                if (_lastClaim.TryGetValue(peer.m_uid, out last) && now - last < ClaimCooldownSeconds) return;
+                _lastClaim[peer.m_uid] = now;
                 List<DealResult> owed = d.Owed(KeyFor(peer));
                 foreach (DealResult r in owed) { Answer(rpc, r); Redeliveries++; }
                 if (owed.Count > 0) ValkyriesCargo.Log.LogInfo(Claim + " from " + Who(peer) + ": redelivered " + owed.Count + " owed deal(s)");

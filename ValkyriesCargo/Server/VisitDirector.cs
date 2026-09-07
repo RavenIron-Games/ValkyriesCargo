@@ -28,6 +28,8 @@ namespace RavenIron.ValkyriesCargo.Server
         /// _dirty, because generated_at must keep moving even on a quiet server, or BarrkBOT starts
         /// calling perfectly current numbers stale past its own 60-minute threshold.</summary>
         public const float ExportCadenceSeconds = 60f;
+        /// <summary>How many refused deals get a log line before the rest are only counted.</summary>
+        public const int RefusalsLogged = 3;
 
         private readonly Scheduler _scheduler;
         private readonly Market _market;
@@ -73,6 +75,8 @@ namespace RavenIron.ValkyriesCargo.Server
         public string Problems { get; private set; } = "";
         public bool Dirty => _dirty;
         public int Loaded { get; private set; }
+        /// <summary>Deals this session refused, for every reason. Only the first few are logged; see Settle.</summary>
+        public int Refusals { get; private set; }
 
         public VisitDirector(Catalogue catalogue, MarketRules marketRules, SchedulerRules schedulerRules, double worldTime, string salt)
         {
@@ -323,9 +327,15 @@ namespace RavenIron.ValkyriesCargo.Server
                 PublishMarket();
                 ValkyriesCargo.Log.LogInfo("deal " + r.DeliveryId + " with " + playerName + ": " + Describe(r) + "; purse " + _market.Purse);
             }
-            else if (r.Reason != DealReason.PriceChanged)
+            else
             {
-                ValkyriesCargo.Log.LogInfo("deal refused for " + playerName + ": " + r.Reason);
+                Refusals++;
+                // A refusal is free for the sender -- a malformed, duplicate or stale deal costs one
+                // packet and leaves the market untouched -- so this line is the one thing a client can
+                // flood. Capped like a patch body's, and the count is kept for `cargo status`.
+                if (r.Reason != DealReason.PriceChanged && Refusals <= RefusalsLogged)
+                    ValkyriesCargo.Log.LogInfo("deal refused for " + playerName + ": " + r.Reason +
+                                               (Refusals == RefusalsLogged ? "; further refusals are counted, not logged" : ""));
             }
             return r;
         }
