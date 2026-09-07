@@ -522,6 +522,106 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
   `SEMan.HaveStatusEffect(int)`, `SEMan.s_statusEffectRested` are public. A character ZDO carries
   `playerName`, `baseValue` and `dead` (`ZDOVars`); its owner is the peer's uid.
 
+### From the knowledge base, quoted with its source (added 2026-09-07)
+
+Each of these was read out of `docs/knowledge-base/` — the family's own decompile-verified findings — and is
+copied here because the code turns on it. The file named after each is where the full reasoning lives.
+
+- **"A dedicated server stops its world clock entirely while empty"**: `ZNet.UpdateNetTime` advances `m_netTime`
+  only while `GetNrOfPlayers() > 0`, so `ZNet.GetTimeSeconds()` freezes the moment the last player logs out while
+  every real-frame-time system keeps running — the disguise is that the server "looks alive and accomplishes
+  nothing" (`IMPLEMENTATIONS/WorldClock.md`; `HEADLESS-AND-EMPTY-SERVER-FACTS.md` §3;
+  `IMPLEMENTATIONS/MASTER_IMPLEMENTATIONS.md` lesson 14). **This mod is on the right side of it by construction**:
+  `VisitDirector.Tick(dt, now, worldTime)` takes `now = UnityEngine.Time.time` and
+  `worldTime = ZNet.GetTimeSeconds()`, and the market's drift and the visit clock count `worldTime` (so they stop
+  with nobody there, which is what should happen) while the roll interval and the scheduler's cooldowns count
+  `now` (so they keep running). Do not "fix" either to match the other.
+- **`ZoneSystem.GetGroundHeight` is a physics raycast, not a lookup**: "without a loaded Heightmap the float
+  overload silently returns your input Y; prefer the `out bool` overload and treat false as 'no terrain'"
+  (`VALHEIM-DEDICATED-SERVER-FACTS.md`; the miss behaviour again in
+  `SNAPTOGROUND-AND-REMOTE-ZONE-LOADING-FACTS.md`). It is why the drop's Y is refined on the PILOT's client, which
+  has the terrain, and never on the server.
+- **Routed-RPC names share ONE global hash namespace with the base game and every mod — "prefix with your plugin
+  GUID"** (`VALHEIM-DEDICATED-SERVER-FACTS.md`; `IMPLEMENTATIONS/SoM-v2-Surveys/SURVEY-vanilla-api.md` item 14).
+  This is the fact behind issue #16: the old two-letter `vc_` was not this mod's to claim, and `Core/Keys.cs` now
+  types every name once under `VCargo_`. Same source, same paragraph: registration is a `Dictionary.Add` on a
+  **per-world-session** `ZRoutedRpc`, so a same-name double-register **throws** and a stale "already registered"
+  flag from the previous world leaves the next one with NO handlers — key registration on the instance reference,
+  which `AdminRpc.EnsureRegistered` does.
+- **The routed-RPC parameter types are a closed list**: int, uint, long, float, double, bool, string, `ZPackage`,
+  `List<string>`, `Vector3`, `Quaternion`, `ZDOID`, `HitData`, `ISerializableParameter`. **"No arrays or enums —
+  unsupported types are silently dropped and the receiver deserialises garbage."** And `Everybody` (0L) **"also
+  invokes the handler locally on the caller"**, so a broadcast must not also act by hand or a listen host does it
+  twice (`SURVEY-vanilla-api.md` item 14; `VALHEIM-DEDICATED-SERVER-FACTS.md`).
+- **A non-persistent ZDO the server creates is never handed to a client by the engine**: `ReleaseNearbyZDOS`
+  "SKIPS `!Persistent` ZDOs entirely ... never simulates, never culls, leaks until restart
+  (`RemoveOrphanNonPersistentZDOS` only reaps on peer disconnect)" (`VALHEIM-DEDICATED-SERVER-FACTS.md`;
+  `IMPLEMENTATIONS/MistsofAvalor.md` calls it "the one absolute constraint"). `Spawner` is safe **because it sets
+  the owner explicitly at creation** (`bird.SetOwner(pilotUid)`), which is the only way a non-persistent ZDO ever
+  reaches a client — and the bird is reaped when that peer disconnects, which is the behaviour wanted.
+- **A PERSISTENT ZDO is never released when its owner disconnects** (`HEADLESS-AND-EMPTY-SERVER-FACTS.md` §3;
+  `MASTER_IMPLEMENTATIONS.md` lesson 14); the only handover is the 2 s `ZDOMan.ReleaseZDOS` sweep, which
+  "only scans sectors near each peer's refpos" (`IMPLEMENTATIONS/AwayFromHome.md`). The merchant is persistent,
+  so if the pilot logs out standing on him nobody adopts him until a peer walks into the sector — which is what
+  `Spawner.Sweep` at boot exists to clean up after.
+- **`transform.position` does not move a non-kinematic Rigidbody** — "assigning it is reverted on the next physics
+  step; use `rb.position` (and zero `velocity`/`angularVelocity` if you don't want it to resume its previous
+  motion)" (`HEADLESS-AND-EMPTY-SERVER-FACTS.md` §4; the same trap cost AwayFromHome a debugging day,
+  `MASTER_IMPLEMENTATIONS.md` lesson 13). The carry pin sets both, deliberately.
+- **Four longs look like a player and only one is an identity** (`PLAYER-IDENTITY-FACTS.md` §1–2):
+  `PlayerProfile.GetPlayerID()` / `ZDOVars.s_playerID` is **the** identity, "forever, across worlds and servers";
+  `ZNetPeer.m_uid` is a connection; and **`ZDOID.UserID` is the trap** — it is `ZDOMan.m_sessionID`, "this session
+  only", and "will never equal `s_creator`, `s_playerID`, or anything you can persist. The name is the whole
+  problem." Our owed ledger keys on `peer.m_socket.GetHostName()` (the platform id, `Steam_7656…`), which is
+  stable across sessions and is fine.
+- **A dedicated server's `Game.instance.GetPlayerProfile()` is a placeholder**: `("Stranger", <random long>)`,
+  generated at boot, "and a placeholder written down is worse than a null" — guard with `IsDedicated()` **and**
+  reject the literal names `"Stranger"` and `"..."` (`PLAYER-IDENTITY-FACTS.md` §5). `CargoTick.HostKey` reads the
+  profile and must therefore run only on a listen host.
+- **A client-side admin check is advisory at most; the server decides.** Server-side `ZNet.ListContainsId` "parses
+  the id and falls back from the qualified form", matching both `76561…` and `Steam_76561…`; client-side
+  `ZNet.PlayerIsAdmin` does a plain `Contains` of only one form, and **`ZNet.GetAdminList()` returns an EMPTY list
+  on a client** — Njord shipped a client-side gate on `LocalPlayerIsAdminOrHost()` and refused a listed admin
+  (`CONSOLE-COMMAND-ROUTING-FACTS.md`). Ours is right by this rule: `VCargo_admin` rides to the server and
+  `AdminGate` decides there.
+- **A console command runs on the machine it was typed into.** The `onlyServer` flag gates *permission*, not
+  location; `Terminal.IsCheatsEnabled()` returns `ZNet.instance.IsServer()`, so **"do not register a mod command
+  with `isCheat: true` if admins on a dedicated server need it"** — a client would be refused
+  (`CONSOLE-COMMAND-ROUTING-FACTS.md`). `cargo` is registered with neither flag and routes its own admin verbs.
+  Vanilla's own pipe, if ever wanted, is `ZNet.RemoteCommand`, adminlist-checked in `RPC_RemoteCommand`.
+- **512 KiB (524,288 bytes) per reliable Steam message**, and an oversized one is retried forever until the peer
+  drops ~30 s later; "keep any single ZDO's total payload under ~440 KB" (`ZDO-WIRE-LIMITS-FACTS.md`). Ours are
+  hundreds of bytes; a future payload chunks or it takes the server down quietly.
+- **`ZNet.GetAllCharacterZDOS()` is THE server-side "where is every player"** — the local character ZDO plus every
+  ready peer's, position and rotation kept fresh each physics tick — and it **allocates, so never per-tick**.
+  `ZNetPeer.m_refPos` is "always populated, updated every 2 s, **NOT gated** by the map-visibility toggle"
+  (~2 s stale), while **`ZNet.GetPlayerList()` positions ARE gated** by `m_publicPosition` and read `(0,0,0)` for
+  a player with the map toggle off: "never use for game logic" (`VALHEIM-DEDICATED-SERVER-FACTS.md`).
+  `VisitDirector.Gather` uses the first, once a second.
+
+### From the P10a client-vs-server sweep (`docs/engine-sweeps/2026-09-07-baseline-client-vs-server.md`)
+
+- **`ZNet.IsDedicated()` is a per-assembly compile-time constant, not a runtime test**: `return false` in the
+  client's `assembly_valheim`, `return true` in the server's (`PLAYER-IDENTITY-FACTS.md` §6, now **confirmed
+  against both real builds** by the sweep rather than inferred). Reading the client decompile to reason about a
+  dedicated branch says the branch is dead; it is not. This mod already refuses to use it — `HasRenderer` is
+  `SystemInfo.graphicsDeviceType` — and that decision is recorded in `ValkyriesCargo.cs`.
+- **`Terminal.AddString` logs on a dedicated server and not on a client.** The server build's overload writes
+  every console line to the log; the client's does not. That is a fact about how every headless proof in this
+  file is read: a console answer that appears in `LogOutput.log` on a server will not appear there on a client,
+  and the same command's output has to be read off the screen instead.
+- The flight bullet above — "a dedicated server pins its reference position to (1000000, 0, 1000000) every fixed
+  frame and instantiates nothing of ours" — was checked word for word against both builds and is correct as
+  written. It is the difference **that matters**, not the only one: five more surface members differ between the
+  two builds, and that report names each with the reason it changes nothing here.
+
+### From Wu'barrk's headless prefab reads (PR #14 comment, 2026-09-07; a shadow dedicated server with BepInEx)
+
+- **A dedicated build strips animator controllers.** Every `Animator` parameter count reads 0 headless and Odin's
+  controller is null, so `SetBool("dropped")` and every animation name P5 drives **must be read on a CLIENT** —
+  a headless `cargo prefab` dump can never settle them. This is why the animator parameter names are on
+  Wu'barrk's list and not provable from any server run (`docs/TODO.md` §2).
+
 ---
 
 ## INTEGRATED IN-GAME RUN, 2026-09-07 (all four branches merged, listen host, shadow client)

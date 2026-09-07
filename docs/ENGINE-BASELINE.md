@@ -44,6 +44,12 @@ invent differences.
 
 ## The assemblies
 
+**Why the hashes are the fingerprint and the version stamp is not.** Valheim "stamps **every** assembly
+`AssemblyVersion 0.0.0.0` / `FileVersion 0.0.0.0`"
+(`docs/knowledge-base/REFERENCE-DLL-PROVENANCE.md`), so nothing in the file metadata moves between builds.
+The four numbers in the table above come out of the `internal Version` type's own fields, and the content
+hash and mtime below are the only staleness signals a script can check without decompiling.
+
 | build | assembly | bytes | modified | SHA-256 (first 16) |
 |---|---|---|---|---|
 | installed client | `assembly_valheim.dll` | 2,126,848 | 2026-07-02 07:35 | `3B26C8512778F6E0` |

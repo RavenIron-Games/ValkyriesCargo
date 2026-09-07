@@ -118,6 +118,16 @@ and `cargo prefab <name>` are not. Console commands are not config: `LockConfigu
 
 ### 3.2 Authoring the flight — `Server/Spawner.cs`, `Client/CargoFlight.cs`, `Patches/Patch_Valkyrie_Awake.cs`
 
+> **Checked against both real builds, 2026-09-07** (`docs/engine-sweeps/2026-09-07-baseline-client-vs-server.md`,
+> and its Linux twin beside it). The reference-position pin this whole section is built on — a dedicated server
+> pins itself to (1000000, 0, 1000000) every fixed frame, so it instantiates nothing of ours and every object
+> must be authored as a ZDO owned by a client — is confirmed **word for word**, and every consequence drawn from
+> it here holds. One softening: it is the difference **that matters**, not the only one. Six surface members
+> differ between the client and dedicated-server assemblies (`Game.FixedUpdate`, which is the pin;
+> `ZNet.IsDedicated`, `Terminal.AddString`,
+> `GameCamera.UpdateMouseCapture`, `ZNet.Awake`, `ZNet.RPC_PeerInfo`); the report names each and why the other
+> five change nothing here.
+
 **The active-block constraint.** A client instantiates a ZDO only while `ZNetScene.InActiveArea(zone(zdo), zone(client))`
 holds (`|zone − centre| ≤ m_activeArea − 1`, 64 m zones). Outside it `RemoveObjects` destroys the instance, and a
 non-persistent owned ZDO with it. Vanilla's intro survives 500 m only because the passenger's reference position rides the
