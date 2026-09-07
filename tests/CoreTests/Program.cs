@@ -3197,6 +3197,20 @@ namespace ValkyriesCargo.Tests
             s = MerchantPlan.Next(1, false, true, distance: 60f, timeInState: 19.9f, farSeconds: 0f, approachDistance: 3.5f);
             Check(s.State == 1 && !s.CallOut, "and not one tick before 20 s");
 
+            // `TimedOut` is what tells the two ways into trading apart. It is the whole reason the
+            // 2026-09-07 visit's "gave up walking after 20 s" reads as a failure rather than an
+            // arrival, and `CargoMerchant` writes its walk diagnosis off it - so a step that reached
+            // the player must NEVER carry it, or every healthy visit logs a defect.
+            s = MerchantPlan.Next(1, false, true, distance: 60f, timeInState: 20f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.TimedOut, "the 20 s fallback is flagged TimedOut, so the caller need not match on Why");
+
+            s = MerchantPlan.Next(1, false, true, distance: 3.4f, timeInState: 4f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(!s.TimedOut, "but a real arrival is not: reaching the player carries no TimedOut");
+
+            s = MerchantPlan.Next(1, false, true, distance: 3.4f, timeInState: 999f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 2 && s.Changed && !s.TimedOut,
+                  "and arriving on the very tick the timeout would have fired still counts as arriving");
+
             // The callout is once per visit: state 2 never re-enters itself.
             int callouts = 0;
             int st = 1; float t = 0f;

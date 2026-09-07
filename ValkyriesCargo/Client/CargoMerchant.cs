@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using RavenIron.ValkyriesCargo.Config;
 using RavenIron.ValkyriesCargo.Client.Terminal;
 using RavenIron.ValkyriesCargo.Core;
@@ -63,6 +64,14 @@ namespace RavenIron.ValkyriesCargo.Client
 
         private int _visitId, _seed, _state;
         private float _timeInState, _farSeconds, _age, _nextReassert;
+
+        /// <summary>
+        /// Metres he has actually covered since this approach began, summed off his own transform.
+        /// `BaseAI.HavePath` and `m_path` are protected (house rule 5) and `MoveTo` reports nothing,
+        /// so his own displacement is the only honest answer to "did vanilla drive him at all".
+        /// </summary>
+        private float _approachMoved;
+        private Vector3 _lastApproachPos;
         private int _reasserted;
         private bool _calledOut, _vanishing;
         private float _dismissArmedAt = -99f;
@@ -93,6 +102,7 @@ namespace RavenIron.ValkyriesCargo.Client
                 _seed = zdo.GetInt(Spawner.SeedHash, 0);
                 _state = zdo.GetInt(Spawner.StateHash, MerchantState.Carried);
                 _calledOut = _state >= MerchantState.Trading;
+                _lastApproachPos = transform.position;
 
                 if (_character != null) _character.m_name = Lines.Title;
 
@@ -173,6 +183,26 @@ namespace RavenIron.ValkyriesCargo.Client
                 _ai.m_passiveAggresive = false;
                 _ai.m_alertRange = 0f;
                 _ai.m_randomMoveRange = 1.5f;
+
+                // The shipped Dverger's own consume list is `CookedMeat, Coins, Sausages,
+                // YggdrasilWood`, searched every 10 s inside 10 m - read off the prefab dump
+                // (libs-Tools WubarrksEye 2026-09-03, build21981559), not guessed. Two reasons this
+                // has to go, and the first is the one that breaks the visit:
+                //
+                // 1. `MonsterAI.UpdateConsumeItem` returns TRUE while a consumable is in range, and
+                //    that return sits ABOVE the follow branch in `UpdateAI`. A merchant who lands
+                //    within 10 m of a dropped stack stops approaching the player and walks to the
+                //    stack instead - which is a walk-up that times out at 20 s having gone the wrong
+                //    way, with nothing in any log to say why.
+                // 2. He then EATS it (`ItemDrop.RemoveOne`). Ingvar trades in Coins. A merchant who
+                //    eats the customer's coins off the floor is worse than one who does not arrive.
+                //
+                // A NEW list rather than `Clear()`: the list is a serialized field and clearing it
+                // would mutate whatever it turns out to be shared with. Assigning replaces only ours,
+                // and `UpdateConsumeItem` returns false on its first line from then on. It runs once:
+                // after the swap the count is 0 and the branch never allocates again.
+                if (_ai.m_consumeItems != null && _ai.m_consumeItems.Count > 0)
+                    _ai.m_consumeItems = new List<ItemDrop>();
             }
             // He arrives holding a crossbow otherwise: the prefab's own default items.
             if (_humanoid != null) _humanoid.UnequipAllItems();
@@ -268,6 +298,9 @@ namespace RavenIron.ValkyriesCargo.Client
 
             _timeInState += dt;
             if (_state == MerchantState.Trading) _farSeconds = MerchantPlan.AccumulateFar(_farSeconds, distance, dt);
+            if (_state == MerchantState.Approaching)
+                _approachMoved += Vector3.Distance(transform.position, _lastApproachPos);
+            _lastApproachPos = transform.position;
 
             float approach = ModConfig.ApproachDistance != null ? ModConfig.ApproachDistance.Value : 3.5f;
             MerchantPlan.Step step = MerchantPlan.Next(_state, Pinned, grounded, distance, _timeInState, _farSeconds, approach);
@@ -277,9 +310,13 @@ namespace RavenIron.ValkyriesCargo.Client
 
             if (!step.Changed) return;
 
+            // Taken before the reset below eats the numbers the diagnosis needs.
+            string diagnosis = step.TimedOut ? WalkDiagnosis(distance) : null;
+
             _state = step.State;
             _timeInState = 0f;
             _farSeconds = 0f;
+            _approachMoved = 0f;
             ZDO zdo = _nview.GetZDO();
             if (zdo != null) zdo.Set(Spawner.StateHash, _state);
 
@@ -295,6 +332,49 @@ namespace RavenIron.ValkyriesCargo.Client
                 }
             }
             ValkyriesCargo.Log.LogInfo("cargo merchant #" + _visitId + ": " + step);
+            if (diagnosis != null)
+                ValkyriesCargo.Log.LogWarning("cargo merchant #" + _visitId + ": the walk-up did not finish. " + diagnosis);
+        }
+
+        /// <summary>
+        /// One line naming every gate on `MonsterAI.UpdateAI`'s follow branch that we are allowed to
+        /// read, written when the approach times out. It exists because the timeout is a SILENT
+        /// fallback: he calls out from where he stands and the visit carries on looking healthy, so
+        /// without this the log of a merchant who never moved is identical to the log of one who
+        /// walked up perfectly (CLAUDE.md, "Debugging discipline").
+        ///
+        /// `moved` is the number that splits the field in two. Near zero and vanilla never drove him
+        /// at all - look at the follow target and `tamed`. Tens of metres with no arrival and it drove
+        /// him somewhere else, or the terrain has no path to the player and `MoveTo` kept calling
+        /// `StopMoving`. Everything here is public on the real assembly (checked against the
+        /// non-publicized decompile, house rule 5): `GetFollowTarget`, `IsTamed`, `IsAlerted` and
+        /// `GetTargetCreature`. `HavePath` is protected, which is why `moved` is measured rather
+        /// than asked for.
+        /// </summary>
+        private string WalkDiagnosis(float distance)
+        {
+            string follow = "?", tamed = "?", alerted = "?", target = "?";
+            try
+            {
+                if (_ai != null)
+                {
+                    GameObject f = _ai.GetFollowTarget();
+                    follow = f == null ? "NONE" : f.name;
+                    alerted = _ai.IsAlerted() ? "yes" : "no";
+                    Character c = _ai.GetTargetCreature();
+                    target = c == null ? "none" : c.name;
+                }
+                if (_character != null) tamed = _character.IsTamed() ? "yes" : "NO";
+            }
+            catch (Exception ex)
+            {
+                if (_throws++ < 3) ValkyriesCargo.Log.LogWarning("cargo merchant #" + _visitId + ": the diagnosis threw: " + ex.Message);
+            }
+            return "moved " + Wire.Float(_approachMoved) + " m in " +
+                   Wire.Float(MerchantPlan.ApproachTimeoutSeconds) + " s and stopped " +
+                   Wire.Float(distance) + " m away; follow target " + follow +
+                   ", tamed " + tamed + ", alerted " + alerted + ", AI target " + target +
+                   ", grounded " + (_character == null || _character.IsOnGround() ? "yes" : "no") + ".";
         }
 
         // ---- speech ------------------------------------------------------------------------------
