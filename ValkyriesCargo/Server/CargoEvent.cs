@@ -27,6 +27,34 @@ namespace RavenIron.ValkyriesCargo.Server
         public const string Name = "valkyries_cargo";
 
         private static int _failures;
+        private static bool _disabledLogged;
+
+        /// <summary>
+        /// P10b: the rank-1 probe said the RandomEvent surface is not what this file was written
+        /// against. Everything below would then be a silent no-op - vanilla's `SetRandomEventByName`
+        /// resolves the name from each machine's OWN list, so a registration that quietly did nothing
+        /// looks exactly like a registration that worked. So we do not register, we do not start, and
+        /// `cargo status` says the visit is disabled and why.
+        /// </summary>
+        public static bool Disabled => !EngineProbes.Current.Ok(EngineProbes.RandEvent);
+
+        /// <summary>The probe's own words, or "". What `cargo status` prints beside "disabled".</summary>
+        public static string DisabledReason => EngineProbes.Current.Reason(EngineProbes.RandEvent);
+
+        /// <summary>Say it once, wherever the refusal is noticed. Returns true when the event is off.</summary>
+        private static bool RefuseOnce(string what)
+        {
+            if (!Disabled) return false;
+            if (!_disabledLogged)
+            {
+                _disabledLogged = true;
+                ValkyriesCargo.Log.LogWarning(
+                    "event '" + Name + "' is DISABLED: the engine probe 'randevent' failed (" + DisabledReason +
+                    "). No visit can start on this build. Everything else keeps running; `cargo engine` has the detail.");
+            }
+            ValkyriesCargo.Log.LogDebug("event '" + Name + "': " + what + " skipped, the engine probe failed");
+            return true;
+        }
 
         public static bool IsRegistered(RandEventSystem res) => res != null && res.HaveEvent(Name);
 
@@ -43,6 +71,7 @@ namespace RavenIron.ValkyriesCargo.Server
         {
             try
             {
+                if (RefuseOnce("registration")) return;
                 if (res == null || res.m_events == null) return;
                 if (Prototype(res) != null) return;
                 var ev = new RandomEvent
@@ -87,6 +116,7 @@ namespace RavenIron.ValkyriesCargo.Server
         /// </summary>
         public static bool Start(RandEventSystem res, Vector3 pos)
         {
+            if (RefuseOnce("start")) return false;
             if (res == null) return false;
             RandomEvent proto = Prototype(res);
             if (proto == null) { Register(res); proto = Prototype(res); if (proto == null) return false; }
