@@ -296,7 +296,12 @@ Catalogue lines `Prefab:BasePrice:TargetStock:MaxStock:Kind` (`Ware` = he sells 
 their reasons and the item data they were checked against are in `docs/CATALOGUE.md` and `docs/data/`. Unknown prefab
 names at boot are dropped with one log line, never a crash; the off-game tests validate the defaults against the item
 table so a misspelling fails on the desk. Price `= base × clamp((target / max(1, stock))^α, MinMult, MaxMult)`, `α = 0.35`, clamps 0.4 / 3.0; `sell = base ×
-multiplier × SpreadBuy` (0.7) rounded once, never the rounded price times 0.7. A deal is priced as a whole at the moment
+multiplier × SpreadBuy` (0.7) rounded once, never the rounded price times 0.7. **The Fair Market Act** (2026-09-07,
+§8, `docs/DECISIONS-WUBARRK.md` §2): for a `Ware`, the multiplier on the sell side only is capped at 1.0 before
+`SpreadBuy` is applied — `MaxMultiplier` (3.0) × `SpreadBuy` (0.7) = 2.1 > 1 otherwise, so an empty shelf paid more
+to buy back than a full one charged to sell, and buying it out then selling it straight back pumped the purse for
+free (`docs/ECONOMY-SIM.md` §9). The buy price and every `Want` are untouched; `MarketRules.FairMarketAct`
+(`Server.FairMarketAct`), synced+locked, defaults on. A deal is priced as a whole at the moment
 of settlement, `count × unit` at the current price, and stock moves after (§8: a bulk deal beats a drip-feed, by
 design). Bought units decrement, sold units increment, refused above `max`, `0` is SOLD OUT. Drift between visits:
 `stock += (target − stock) × (1 − 0.5^(days / StockHalfLifeGameDays))` in world time, a day being
@@ -454,6 +459,8 @@ PriceElasticity              0.35
 MinPriceMultiplier           0.4
 MaxPriceMultiplier           3.0
 SpreadBuy                    0.7
+FairMarketAct                true      caps a Ware's buy-back at base x SpreadBuy (the Fair Market Act, §8);
+                                       off restores the pre-2026-09-07 number, MaxPriceMultiplier x SpreadBuy
 StockHalfLifeGameDays        1.0
 PurseCoins                   800
 PurseCarryPercent            50
@@ -514,6 +521,7 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Lifespan / dismissal | 300 s event clock; Shift+E twice; any visitor | locked / proposed |
 | Restart mid-visit | Resume: vanilla saves the running event with the world; the director adopts it from the sidecar's `session` row within 15 s of boot, else the visit is over | built (P6) |
 | Deal pricing | The whole quantity at the price on screen when confirmed; stock moves after. A bulk deal beats a drip-feed, bounded by his purse and his stock | proposed (review 2026-09-06) |
+| The round trip (Fair Market Act) | A Ware's buy-back multiplier clamped at 1.0 in `Market.PaysFor`, not a lower `MaxPriceMultiplier`: he never pays more than `base × SpreadBuy` for something he sells, but still charges the full 3.0× and still pays a `Want` unclamped. `MarketRules.FairMarketAct`, synced+locked, default on | locked (owner, 2026-09-07); built |
 | Visit and delivery ids | Visit ids monotonic and persisted; `deliveryId = salt-visit-seq`, the world's salt (`demo` for the demo), seq persisted | proposed (review 2026-09-06) |
 | Cooldown persistence | Saved as remaining seconds, rebased at load | proposed (review 2026-09-06) |
 | Day length | `EnvMan.instance.m_dayLengthSec` read when the director starts and printed by `cargo status`; 1800 assumed only without an EnvMan | **verified 1800 s on StormTest 2026-09-06** |

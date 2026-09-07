@@ -362,7 +362,7 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
 | Deals | Direct peer `ZRpc`, server-validated, nonce ring, the prices the player saw; inventory touched only after the answer |
 | Departure | The Odin vanish (`Odin.m_despawn`), once per screen; 300 s event clock or Shift+E twice |
 | Price-change policy | Reconfirm (provisional; `Teardown` behind config) |
-| The round trip | OPEN (2026-09-07, from `docs/ECONOMY-SIM.md`): `MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1, so buying a shelf out and selling it back drains his purse; pay a Ware bought back at most par, or lower the multiplier. Owners decide before anyone trades |
+| The round trip | **The Fair Market Act (owner, 2026-09-07; `docs/DECISIONS-WUBARRK.md` §2).** The code fix, not the config fix: `Market.PaysFor` clamps a Ware's buy-back multiplier at 1.0, so he never pays more than `base × SpreadBuy` for something he sells; `PriceFor` (what he charges) and every `Want` are untouched. `MarketRules.FairMarketAct` / `Server.FairMarketAct`, synced+locked, default on |
 | 0.1 body | `Dverger`, tamed, following, immortal |
 | Console prefix / GUID / namespace | `cargo` / `com.raveniron.valkyriescargo` / `RavenIron.ValkyriesCargo` |
 

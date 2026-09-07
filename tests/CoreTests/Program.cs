@@ -782,6 +782,87 @@ namespace ValkyriesCargo.Tests
             MarketItem wood = m.Find("Wood");                 // base 1, target 200, max 600
             wood.Stock = 600;
             Equal(0, m.Trend(wood), "a base price of 1 cannot move, so Wood's trend stays flat");
+
+            // ---- the Fair Market Act, 2026-09-07 (docs/DECISIONS-WUBARRK.md §2) ----------------------------
+            // Unclamped, MaxMultiplier (3.0) x SpreadBuy (0.7) = 2.1 > 1: an empty Ware shelf pays MORE than a
+            // full one charges, so buying a shelf out and selling it straight back pumps the purse for free
+            // (docs/ECONOMY-SIM.md §9, "the round trip"). The fix clamps the buy-back multiplier at 1.0 for a
+            // Ware only: PriceFor (what he CHARGES) and every Want are untouched.
+            Section("Market: the Fair Market Act (2026-09-07)");
+
+            MarketRules fma = MarketRules.Default;                       // FairMarketAct true by default
+            Check(fma.FairMarketAct, "the rule ships ON: nobody gets the old exploit by accident");
+            MarketRules noFma = new MarketRules { FairMarketAct = false };
+
+            // (1) The round trip itself, played through Settle -- the same door the exploit used. Buy the
+            // whole Iron shelf (base 25, target 20) in one deal at the full-shelf price, then sell the same
+            // 20 back in one deal at the now-empty-shelf price. Pre-fix (docs/ECONOMY-SIM.md §9): charge 25,
+            // pay back 50 -- a PROFIT of 500. The clamp leaves the charge at 25 (the scarcity signal survives
+            // on the way out) but caps the pay-back at round(25 * 1.0 * 0.7) = 18, not 50.
+            Market rt = NewMarket(0);
+            rt.StartVisit(1, 0, 0);
+            MarketItem rtIron = rt.Find("Iron");
+            Equal(20, rtIron.Stock, "Iron starts at its target stock, 20");
+            DealResult bought = rt.Settle(new Deal
+            {
+                VisitId = 1,
+                Nonce = 1,
+                Wanted = new DealLine { Prefab = "Iron", Count = 20, UnitPriceSeen = rt.Charge(rtIron) },
+            }, 10000, 0);
+            Check(bought.Ok, "buying the whole shelf in one deal succeeds");
+            int spent = -bought.CoinsDelta;
+            Equal(500, spent, "20 Iron at the full-shelf charge of 25 is 500 coins spent");
+            Equal(0, rtIron.Stock, "the shelf is now empty");
+            DealResult soldBack = rt.Settle(new Deal
+            {
+                VisitId = 1,
+                Nonce = 2,
+                Offered = new List<DealLine> { new DealLine { Prefab = "Iron", Count = 20, UnitPriceSeen = rt.Pays(rtIron) } },
+            }, 0, 0);
+            Check(soldBack.Ok, "selling the same 20 back in one deal succeeds");
+            int receivedBack = soldBack.CoinsDelta;
+            Equal(360, receivedBack, "he pays round(25 * 1.0 * 0.7) = 18 a unit clamped, 18 * 20 = 360");
+            Check(receivedBack < spent, "a real LOSS on the round trip, not merely break-even: the pump is dead");
+
+            // (2) A Ware flooded to its MAX (not merely back to target) pays the ordinary, unchanged
+            // number: the clamp only bites above a 1.0 multiplier and never touches the flooded side.
+            Equal(12, Market.PaysFor(25, 20, 60, EntryKind.Ware, fma),
+                  "Iron flooded to its 60 max: mult 0.68078, round(25 * 0.68078 * 0.7) = 12, clamp or not");
+            Equal(Market.PaysFor(25, 20, 60, noFma), Market.PaysFor(25, 20, 60, EntryKind.Ware, fma),
+                  "below a 1.0 multiplier the clamped and legacy numbers agree exactly");
+
+            // (3) PriceFor -- what he CHARGES -- still reaches the full 3.0x ceiling on an empty Ware
+            // shelf: the Act touches only what he pays, never what he asks.
+            Equal(300, Market.PriceFor(100, 100, 1, fma), "an empty shelf still charges the 3x ceiling, Act on");
+            Equal(300, Market.PriceFor(100, 100, 1, noFma), "and the same with the Act off: PriceFor never changed");
+
+            // (4) A real Want -- he never sells it back, so there is no round trip to protect it from --
+            // pays the unclamped amount at scarce stock, Act on or off alike.
+            Equal(23, Market.PaysFor(22, 30, 10, EntryKind.Want, fma),
+                  "IronScrap (a Want) scarce at stock 10 of 30: mult 1.4689, round(22 * 1.4689 * 0.7) = 23, unclamped");
+            Equal(Market.PaysFor(22, 30, 10, noFma), Market.PaysFor(22, 30, 10, EntryKind.Want, fma),
+                  "a Want pays the same whether the Act is on or off");
+
+            // (5) With the rule off, the old exploitable number returns exactly -- an owner who wants the
+            // pre-2026-09-07 behaviour on a private server can still have it.
+            Equal(50, Market.PaysFor(25, 20, 0, EntryKind.Ware, noFma),
+                  "Act off: an empty Iron shelf pays the old, unclamped 50 -- the exact exploit number");
+            Equal(50, Market.PaysFor(25, 20, 0, noFma), "and the legacy 4-argument overload still agrees: no clamp, ever");
+
+            // (6) At a multiplier of exactly 1.0 the clamp has nothing to do: min(1.0, 1.0) is 1.0.
+            Equal(1.0, Market.MultiplierFor(20, 20, fma), "target stock is exactly a 1.0 multiplier");
+            Equal(Market.PaysFor(25, 20, 20, noFma), Market.PaysFor(25, 20, 20, EntryKind.Ware, fma),
+                  "so at target stock a Ware pays the identical number clamped or not");
+
+            // (7) MarketRules never crosses EncodeState/ApplyState or the sidecar: Core/Sidecar.cs has no
+            // Rules row at all, and the director rebuilds Rules from Server.* config fresh every boot
+            // through ModConfig.FillMarketRules -- ServerSync, not the world save, is what carries a changed
+            // FairMarketAct to a rejoining client. Checked by inspection; nothing to round-trip. Prove it
+            // stays that way: the encoded state is identical whichever way the rule is set.
+            Market ruleOnMarket = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), MarketRules.Default, 0);
+            Market ruleOffMarket = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), new MarketRules { FairMarketAct = false }, 0);
+            Equal(ruleOnMarket.EncodeState(), ruleOffMarket.EncodeState(),
+                  "EncodeState never mentions Rules, so FairMarketAct cannot leak into the sidecar");
         }
 
         private static void MarketConstructionTests()

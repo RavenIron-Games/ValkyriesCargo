@@ -49,6 +49,7 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<float>  MinPriceMultiplier;
         public static ConfigEntry<float>  MaxPriceMultiplier;
         public static ConfigEntry<float>  SpreadBuy;
+        public static ConfigEntry<bool>   FairMarketAct;
         public static ConfigEntry<float>  StockHalfLifeGameDays;
         public static ConfigEntry<int>    PurseCoins;
         public static ConfigEntry<int>    PurseCarryPercent;
@@ -156,6 +157,8 @@ namespace RavenIron.ValkyriesCargo.Config
             SpreadBuy = S(cfg, "Server", "SpreadBuy", 0.7f,
                 "What he pays as a fraction of what he charges for the same item. Read on the SERVER.",
                 new AcceptableValueRange<float>(0.1f, 1f));
+            FairMarketAct = S(cfg, "Server", "FairMarketAct", true,
+                "Caps what he pays to buy back a Ware at par (base x SpreadBuy), so MaxPriceMultiplier x SpreadBuy > 1 can never turn buying a shelf out and selling it straight back into free coins. Read on the SERVER.");
             StockHalfLifeGameDays = S(cfg, "Server", "StockHalfLifeGameDays", 1f,
                 "Between visits his stock drifts back toward target with this half-life, in world days. Read on the SERVER.",
                 new AcceptableValueRange<float>(0.1f, 30f));
@@ -211,6 +214,7 @@ namespace RavenIron.ValkyriesCargo.Config
             r.MinMultiplier = MinPriceMultiplier.Value;
             r.MaxMultiplier = MaxPriceMultiplier.Value;
             r.Spread = SpreadBuy.Value;
+            r.FairMarketAct = FairMarketAct.Value;
             r.HalfLifeGameDays = StockHalfLifeGameDays.Value;
             r.PurseCoins = PurseCoins.Value;
             r.PurseCarryPercent = PurseCarryPercent.Value;

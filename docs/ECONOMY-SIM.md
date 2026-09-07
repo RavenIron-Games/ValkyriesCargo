@@ -347,6 +347,14 @@ and a new visit every 500 deals. What came back:
 
 ## 9. The round trip — buying a shelf out and selling it straight back
 
+**RESOLVED 2026-09-07 — the Fair Market Act (`docs/DECISIONS-WUBARRK.md` §2).** `Market.PaysFor` now clamps a
+Ware's buy-back multiplier at 1.0, so he never pays more than `base × SpreadBuy` — the target-stock rate — for
+something he also sells; `PriceFor` (what he charges) and every Want are untouched, and the rule is a synced,
+locked config knob (`MarketRules.FairMarketAct` / `Server.FairMarketAct`) defaulting on. The numbers below are the
+PRE-FIX simulation, kept as the evidence the decision was made on, not as the shipped behaviour: replayed today,
+every "he pays (empty shelf)" figure for a Ware would instead read `round(base × SpreadBuy)` — the same number as
+its own "at target" pay price — and every round trip in the table below settles at a loss, not a profit.
+
 `Settle` prices a whole deal at the pre-deal shelf (DESIGN section 8, 'a bulk deal beats a drip-feed') and Ingvar buys
 his own Wares back. Put those two together in one visit: buy the whole shelf at the full-shelf price, then sell the
 same goods back at the empty-shelf price. Nothing else happens; the shelf ends where it started.
@@ -418,17 +426,26 @@ the contract describes (scenario 7). This part is done.
 
 ### What looks off
 
-**1. `MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1, and 2.1 > 1: he buys his own wares back for more than he sold
-them.** Scenario 9. Buy a shelf out at the full-shelf price, sell it straight back at the empty-shelf price, and the coins
-come out of his purse — 800 coins on the first visit, on Iron, with the shelf left exactly where it started so nothing in
-the saved state shows it happened. It works on every Ware whose target is 3 or more, which is 17 of the 18. This is the
-one finding I would not ship without a decision on.
+**1. RESOLVED 2026-09-07 (the Fair Market Act, `docs/DECISIONS-WUBARRK.md` §2). `MaxPriceMultiplier` 3.0 x `SpreadBuy`
+0.7 = 2.1, and 2.1 > 1: he buys his own wares back for more than he sold them.** Scenario 9. Buy a shelf out at the
+full-shelf price, sell it straight back at the empty-shelf price, and the coins come out of his purse — 800 coins on the
+first visit, on Iron, with the shelf left exactly where it started so nothing in the saved state shows it happened. It
+worked on every Ware whose target is 3 or more, which is 17 of the 18. This was the one finding I would not have shipped
+without a decision on; it now has one, and everything below this line is the analysis that decision was made on, kept
+as evidence, not as an open question.
 
 *The config-only fix is `MaxPriceMultiplier` 3.0 -> 1.4* (`1 / SpreadBuy` = 1.43 is the break-even), which also throws away
 most of the scarcity signal the mod is for. *The cheap code fix is one clause in `Market.Pays`*: when the offered row is a
 Ware, price the buy-back at `min(multiplier, 1.0)`, so he never pays more than `base x spread` for something he sells. A
 player who empties a shelf then repents still gets his coins back at the ordinary rate, and the pump dies. Either way it
 is a decision for DESIGN section 8, next to 'a bulk deal beats a drip-feed', which is where it comes from.
+
+**Taken: the code fix.** `Market.PaysFor` now takes the row's `EntryKind` and clamps the buy-back multiplier at 1.0
+for a Ware exactly as proposed above; `MinPriceMultiplier`/`MaxPriceMultiplier` are untouched, so `PriceFor` still
+reaches the full 3.0x. `MarketRules.FairMarketAct` (`Server.FairMarketAct` in config), synced and locked, defaults
+on; an owner who wants the old, exploitable number back can turn it off. `tests/CoreTests/Program.cs`,
+"Market: the Fair Market Act (2026-09-07)", proves the round trip now loses money on a real Ware, that a Want is
+never clamped, that the charge side never moves, and that the old number returns exactly with the rule off.
 
 **2. `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the 72 rows has `Max = 3 x Target`, so the
 lowest multiplier any shelf can reach by trading is `(1/3)^0.35 = 0.6808`; the floor would need `Max > 13.7 x Target`.
