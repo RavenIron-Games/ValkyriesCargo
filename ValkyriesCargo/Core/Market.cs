@@ -19,6 +19,11 @@ namespace RavenIron.ValkyriesCargo.Core
         public double MinMultiplier = 0.4;      // floor when flooded
         public double MaxMultiplier = 3.0;      // ceiling when out
         public double Spread = 0.7;             // what he pays as a fraction of what he charges
+        // The Fair Market Act (2026-09-07, docs/DECISIONS-WUBARRK.md §2): MaxMultiplier x Spread = 2.1 > 1,
+        // so an unclamped Ware pays MORE to buy back than it charged to sell, and a shelf bought out and sold
+        // straight back pumps the purse for free (docs/ECONOMY-SIM.md §9). On: PaysFor caps a Ware's buy-back
+        // multiplier at 1.0. Off: the pre-fix number, for an owner who wants it back.
+        public bool FairMarketAct = true;
         public double HalfLifeGameDays = 1.0;   // stock drifts back to target with this half-life
         public double SecondsPerGameDay = DefaultSecondsPerGameDay;   // EnvMan.instance.m_dayLengthSec, read once at boot
         public int PurseCoins = 800;
@@ -175,12 +180,36 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>
         /// What he pays: base × multiplier × spread, rounded ONCE, never below 1. Not the rounded charge times
         /// the spread: that squashes the spread on cheap goods (amber flooded: 3.34 → 3, not round(5 × 0.7) = 4).
+        ///
+        /// The Fair Market Act (2026-09-07, docs/DECISIONS-WUBARRK.md §2): for a Ware, with
+        /// <see cref="MarketRules.FairMarketAct"/> on, the multiplier on THIS side only is capped at 1.0 before
+        /// the spread is applied, so he never pays more than base × spread — the target-stock rate — for
+        /// something he also sells. <see cref="MultiplierFor"/> and <see cref="PriceFor"/> (what he CHARGES)
+        /// are untouched either way: an empty shelf still charges the full 3.0× going out. A Want is never
+        /// clamped; he does not sell it back, so there is no round trip to protect it from.
+        /// </summary>
+        public static int PaysFor(int basePrice, int target, int stock, EntryKind kind, MarketRules r) =>
+            PaysForCore(basePrice, target, stock, kind == EntryKind.Ware && r.FairMarketAct, r);
+
+        /// <summary>
+        /// The legacy 4-argument shape, kept working because CLAUDE.md's working agreement keeps an existing
+        /// signature alive rather than break its callers. It does not know the row's kind, so it always takes
+        /// the no-clamp path: the pre-Fair-Market-Act number, exactly. Every real trade reaches
+        /// <see cref="Pays(MarketItem)"/>, which calls the 5-argument overload above and does carry the kind;
+        /// prefer that one for anything new.
         /// </summary>
         public static int PaysFor(int basePrice, int target, int stock, MarketRules r) =>
-            Math.Max(1, (int)Math.Round(basePrice * MultiplierFor(target, stock, r) * r.Spread, MidpointRounding.AwayFromZero));
+            PaysForCore(basePrice, target, stock, clampToPar: false, r);
+
+        private static int PaysForCore(int basePrice, int target, int stock, bool clampToPar, MarketRules r)
+        {
+            double mult = MultiplierFor(target, stock, r);
+            if (clampToPar && mult > 1.0) mult = 1.0;
+            return Math.Max(1, (int)Math.Round(basePrice * mult * r.Spread, MidpointRounding.AwayFromZero));
+        }
 
         public int Charge(MarketItem it) => PriceFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, Rules);
-        public int Pays(MarketItem it) => PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, Rules);
+        public int Pays(MarketItem it) => PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, it.Entry.Kind, Rules);
         /// <summary>Derived from the charge against base for both kinds; monotone with Pays, so the arrow is right for a Want too.</summary>
         public int Trend(MarketItem it) { int c = Charge(it); return c > it.Entry.BasePrice ? 1 : c < it.Entry.BasePrice ? -1 : 0; }
 
