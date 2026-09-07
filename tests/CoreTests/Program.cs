@@ -2418,6 +2418,80 @@ namespace ValkyriesCargo.Tests
             Equal(0f, z.SmoothedSpeed, "forgets the speed");
             Equal(1f, z.Weight(BodyClip.Idle), "and stands him back at idle");
 
+            // ---- a one-shot fired MID-CROSSFADE (adversarial review) -----------------------------------
+            // The checks above catch a gesture from a standing start and from a settled walk. Neither
+            // touches the case where the crossfade is still moving underneath it, which is where the two
+            // halves of Recompute - the locomotion pair and the one-shot - can disagree.
+            BodyMotion x = new BodyMotion();
+            for (int i = 0; i < 4; i++) x.Tick(1f / 60f, 1f);
+            float blendAtFire = x.WalkBlend;
+            Check(blendAtFire > 0.1f && blendAtFire < 0.9f, "the crossfade is caught part way before the gesture starts");
+            Check(x.Fire(BodyClip.Shrug), "a one-shot fires mid-crossfade");
+            BodyRun(x, 0.10f, 1f);
+            Equal(1f, x.ShotWeight, "and takes the whole body");
+            Equal(0f, x.Weight(BodyClip.Walk), "so locomotion shows at nothing while it plays");
+            Check(Math.Abs(BodySum(x) - 1f) < 1e-5f, "the weights still sum to 1 with a gesture over a moving crossfade");
+            Check(x.WalkBlend > blendAtFire, "and the crossfade kept running UNDERNEATH it rather than freezing");
+            BodyRun(x, 3f, 1f);
+            Equal(BodyClip.None, x.Current, "the shrug hands back");
+            Check(Math.Abs(x.Weight(BodyClip.Walk) - 1f) < 1e-4f, "onto the walk it finished crossfading into, not onto the stale blend it started from");
+
+            // ---- a DIFFERENT one-shot started during the hand-back --------------------------------------
+            // The replacement check above swaps at full weight, where "picks up the weight it held" and
+            // "snaps to 1" are the same number and prove nothing.
+            BodyMotion q = new BodyMotion();
+            q.Fire(BodyClip.Nod);                                   // 1.25 s: hands back at 1.0625 s
+            BodyRun(q, 1.00f, 0f);
+            Equal(1f, q.ShotWeight, "at 1.00 s of a 1.25 s nod it still owns the body");
+            q.Tick(0.02f, 0f);
+            Equal(1f, q.ShotWeight, "and at 1.02 s, still short of 85%");
+            q.Tick(0.05f, 0f);                                      // 1.07 s: releasing, one partial step out
+            Check(q.ShotWeight > 0.1f && q.ShotWeight < 0.3f, "one step past the hand-back point it is part way out");
+            float mid = q.ShotWeight;
+            Check(q.Fire(BodyClip.Talk), "a different one-shot can start DURING the hand-back");
+            Equal(mid, q.ShotWeight, "and picks the weight up exactly where the nod dropped it");
+            Equal(0f, q.Weight(BodyClip.Nod), "the nod is out at once");
+            Equal(mid, q.Weight(BodyClip.Talk), "and Talk is in at that weight, so the swap still has no gap");
+            Check(Math.Abs(BodySum(q) - 1f) < 1e-5f, "and the weights sum to 1 across the swap");
+            q.Tick(1f / 60f, 0f);
+            Check(q.ShotWeight > mid, "then it blends UP from there: the release was cleared, not carried over");
+
+            // ---- a hitch DURING the hand-back must not leave a negative weight --------------------------
+            BodyMotion neg = new BodyMotion();
+            neg.Fire(BodyClip.Shrug);                               // 2.00 s: hands back at 1.70 s
+            BodyRun(neg, 1.68f, 0f);
+            Equal(BodyClip.Shrug, neg.Current, "the shrug is still running just short of its hand-back");
+            neg.Tick(0.05f, 0f);
+            Check(neg.ShotWeight > 0f && neg.ShotWeight < 1f, "and one step later it is part way out");
+            neg.Tick(BodyMotion.MaxStepSeconds, 0f);
+            Equal(BodyClip.None, neg.Current, "a hitch through the rest of the blend ends the gesture rather than stalling it");
+            Equal(0f, neg.ShotWeight, "and never leaves a NEGATIVE weight behind");
+            Equal(1f, neg.Weight(BodyClip.Idle), "with the body back on Idle at full weight");
+
+            // ---- a clip shorter than the blend-in still ends ---------------------------------------------
+            // 85% of 0.05 s is 0.0425 s, inside OneShotBlendSeconds: the gesture starts releasing before it
+            // has finished blending in. It must still reach zero and give the body back, not stick part way.
+            BodyMotion tiny = new BodyMotion();
+            tiny.SetLength(BodyClip.Nod, 0.05f);
+            tiny.Fire(BodyClip.Nod);
+            BodyRun(tiny, 0.50f, 0f);
+            Equal(BodyClip.None, tiny.Current, "a clip shorter than the blend-in still ends instead of sticking at partial weight");
+            Equal(1f, tiny.Weight(BodyClip.Idle), "and hands the whole body back");
+
+            // ---- a cast that is not a clip reaches every accessor without throwing -----------------------
+            // The driver indexes these with (BodyClip)i and the console with ByName; a bad value must be
+            // answered, not thrown, because both call sites are inside a cosmetic try/catch that would
+            // otherwise eat the body whole.
+            BodyMotion b = new BodyMotion();
+            Equal(0f, b.Weight((BodyClip)99), "Weight of a value that is not a clip is 0, not an exception");
+            Equal(0f, b.Length((BodyClip)(-7)), "and its length is 0 too");
+            Equal(0f, b.Length(BodyClip.None), "as is None's");
+            b.SetLength((BodyClip)99, 5f);
+            b.SetLength(BodyClip.None, 5f);
+            Equal(BodyMotion.IdleLength, b.Length(BodyClip.Idle), "and SetLength on one changes no real clip's length");
+            Check(!b.Fire((BodyClip)99), "and it cannot be fired");
+            Equal(BodyClip.None, b.Current, "so nothing is playing after any of that");
+
             // ---- the invariant, over a long deterministic random walk ---------------------------------
             // Weights that do not sum to 1 are a body that half-fades into its bind pose; nothing on a
             // screen says so in words, so it is asserted here instead.

@@ -24,7 +24,7 @@ thing the release note has to say (step 5).
 .\tools\run-tests.ps1
 ```
 
-Expect `926 passed, 0 failed` at the version this file was written against; the number only goes up.
+Expect `1034 passed, 0 failed` at the version this file was written against; the number only goes up.
 A red harness is not a release candidate. Anything new since the last release needs its own checks,
 and each proven to fail without its fix (the working agreement in `CLAUDE.md`).
 
