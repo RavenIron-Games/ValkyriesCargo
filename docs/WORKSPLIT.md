@@ -198,11 +198,11 @@ a shared session on a server both can reach.
 - `main` always builds and boots headless. Whoever breaks it fixes it.
 - Contract changes: a PR touching a §2 file needs a comment from the other track before merge.
 - No binaries in the repo, with **one named exception**: the body's source art, `models/ingvar.fbx`
-  (4.3 MB) and `models/ingvar_albedo.png` (6.6 MB). **This rule is currently overridden and the override is
-  an open owner decision** (`docs/TODO.md` §1, "The tracked DLL"): PR #22 committed
-  `HexiumDist/plugins/ValkyriesCargo.dll` (4.1 MB, rebuilt every package run), `HexiumDist/icon.png` and
-  963 KB of `media/`. The recommendation on the table is to stop tracking the DLL and publish payloads as
-  release assets; the blobs already in history stay either way. Everything else stays out — the built bundle ships
+  (4.3 MB) and `models/ingvar_albedo.png` (6.6 MB), plus the store artwork (`icon.png`, `HexiumDist/icon.png`,
+  `media/`), which is source art in the same sense. **The rule was overridden for one day**: PR #22 committed
+  `HexiumDist/plugins/ValkyriesCargo.dll` (4.1 MB, rebuilt every package run); **the owner decided 2026-09-07
+  to stop tracking it** — `HexiumDist/plugins/` is gitignored, the payload is a GitHub release asset beside the
+  baked bundle, and the two blobs already in history stay. Everything else stays out — the built bundle ships
   beside the DLL in the package, and Meshy's raw per-clip output (343 MB, six files each carrying a
   duplicate mesh and 22 MB of the same textures) is gitignored.
   **Decided by Wu'barrk, 2026-09-06**, answering the question Don raised on PR #4. The reasoning: the

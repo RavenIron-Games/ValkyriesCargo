@@ -19,15 +19,13 @@ every bake reaches Don as a release asset (section 2, first item).
 
 ### Decisions (the owner's; nobody else's to take)
 
-- [ ] **The JSON dependency.** `ValheimModding-JsonDotNET-13.0.4` is in `manifest.json` and `Newtonsoft.Json`
-      is a compile-time reference (PR #21, `docs/DECISIONS-WUBARRK.md` §3), overriding the locked
-      "BepInExPack only" row. Keep as merged, or have the one `JsonConvert.SerializeObject` call in
-      `Server/BarrkBotExport.cs` replaced by a pure writer in Core and the manifest entry dropped.
-      *Recommended: the swap.*
-- [ ] **The tracked DLL.** `HexiumDist/plugins/ValkyriesCargo.dll` (4.1 MB, rebuilt every package run) is in
-      git, against WORKSPLIT §4's two-binaries rule. Keep tracking it, or ignore `HexiumDist/plugins/`,
-      delete the tracked copy and publish payloads as release assets. The two blobs already in history
-      stay either way. *Recommended: stop tracking.*
+- [x] **The JSON dependency.** DECIDED 2026-09-07: the swap. The two serializer calls in
+      `Server/BarrkBotExport.cs` go through the pure `Core/Json.cs` (a writer, never a reader, shaped like
+      Newtonsoft's output); the `<Reference>` and the `ValheimModding-JsonDotNET` manifest entry are gone.
+      BepInExPack only, the locked row stands. Built on Track A (section 3).
+- [x] **The tracked DLL.** DECIDED 2026-09-07: stop tracking. `HexiumDist/plugins/` is gitignored, the
+      tracked copy deleted, payloads are GitHub release assets beside the bundle; the two blobs already
+      in history stay. Built on Track A (section 3).
 - [ ] **Client-asserted comfort numbers.** The client writes `VCargo_rested` / `VCargo_comfort` on its own
       ZDO and the server believes them (`docs/HANDOFF-CLAUDE.md` "Decisions still for the two owners").
       P11 proposes "accept; worst case an undeserved visit". Yes, or ask for a server-side check.
@@ -136,10 +134,12 @@ step 4).
       nearest the event — vanilla passes the caller's own position — and authors the visit. Known and
       not widened: `event` is `onlyServer` in vanilla (server console or listen host; `cargo visit` stays
       the client route), and `stopevent` ends the visit reporting `timer` rather than the true reason.
-- [ ] *Pending Don's decision above:* stop tracking the DLL (ignore `HexiumDist/plugins/`, delete the
-      tracked copy, payloads on releases).
-- [ ] *Pending Don's decision above:* replace the Newtonsoft call with a pure writer and drop the
-      manifest dependency.
+- [x] ~~Pending Don's decision: stop tracking the DLL.~~ Decided and done on Track A 2026-09-07 (section 3).
+      Yours after it: `docs/DECISIONS-WUBARRK.md` §7's "the bake runs on both machines" premise and §3 want a
+      one-line "overridden by the owner 2026-09-07" each, and `BARRKBOT_CONTRACT.md` no longer needs to name
+      Newtonsoft as a requirement (its "shape-verified against Newtonsoft" history can stay).
+- [x] ~~Pending Don's decision: replace the Newtonsoft call with a pure writer.~~ Decided and done on Track A
+      2026-09-07 (section 3): `Core/Json.cs`. Item 23 (the files landing live) is unchanged and still yours.
 
 Not his: the two-client items (cannot run on his side); Don's three branches (rebased here).
 
@@ -163,6 +163,12 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       DONE 2026-09-07 (owner's word): 3,845,930 bytes; a build here is 4,181,504 bytes with Ingvar in it.
 - [ ] **The audit's probe rows into P10b's registry** (`docs/AUDIT-P4P5-2026-09-07.md` §2), now that
       PR #28 is in; and item 24 run on a real machine.
+- [ ] **The two owner decisions of 2026-09-07, built here (PR open on the owner's word):** the JSON
+      dependency swapped for `Core/Json.cs` (writer only; compact and indented output shaped like
+      Newtonsoft's so the rollover's part boundaries and BarrkBOT's files do not move; the `<Reference>`,
+      the `libs` check, the `fetch-libs` copy and the manifest entry removed), and the built DLL untracked
+      (`HexiumDist/plugins/` ignored, the tracked copy deleted, payloads as release assets). Docs: RELEASE,
+      WORKSPLIT §4, CLAUDE.md, DESIGN §8, README's dependency line.
 - [x] **F11 ghost mode — PR #37, merged 2026-09-07.** The owner's decision, built here because
       Track B is loaded: a `Priority.Low` prefix on the static `BaseAI.IsEnemy(a, b)`, any pair with the
       merchant in it answers "not enemies" while a visit runs; `Core/Ghost.Decide` pure, 11 checks, three

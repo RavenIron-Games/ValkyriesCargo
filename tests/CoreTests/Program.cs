@@ -54,6 +54,7 @@ namespace ValkyriesCargo.Tests
             OwedLedgerTests();
             PatchLedgerTests();
             GhostTests();
+            JsonTests();
             SessionRowTests();
             BodyMotionTests();
             TrayModelTests();
@@ -2348,6 +2349,91 @@ namespace ValkyriesCargo.Tests
             Equal(3, problems.Count, "unknown row, second session row and a bad format line are each reported");
             Check(junk.FormatMatches, "and the good format line stands");
             Equal("", Sidecar.Split("format\t1\n", null).MarketRows, "a header-only file has empty bundles and tolerates a null problem list");
+        }
+
+        private static void JsonTests()
+        {
+            Section("Json (the writer that replaced Newtonsoft for the BarrkBOT export; the owner's decision 2026-09-07)");
+
+            // Scalars, shaped like Newtonsoft's.
+            Equal("null", Json.Write(null), "null");
+            Equal("true", Json.Write(true), "true");
+            Equal("false", Json.Write(false), "false");
+            Equal("42", Json.Write(42), "an int");
+            Equal("-7", Json.Write(-7), "a negative int");
+            Equal("9000000000", Json.Write(9000000000L), "a long");
+            Equal("87.3", Json.Write(87.3), "a double with a fraction");
+            Equal("120.0", Json.Write(120.0), "a whole double keeps its .0, as Newtonsoft writes it, so it never reads back as an integer");
+            Equal("0.1", Json.Write(0.1), "0.1 round-trips as 0.1, not a 17-digit expansion");
+            Equal("1E+21", Json.Write(1e21), "exponent form stays as the round-trip text gives it");
+            Equal("\"NaN\"", Json.Write(double.NaN), "NaN is the quoted string Newtonsoft writes by default");
+            Equal("\"Infinity\"", Json.Write(double.PositiveInfinity), "and so is Infinity");
+            Equal("\"-Infinity\"", Json.Write(double.NegativeInfinity), "and -Infinity");
+            Equal("2.5", Json.Write(2.5f), "a float");
+            Equal("3.75", Json.Write(3.75m), "a decimal");
+            Equal("2", Json.Write(Ghost.Verdict.NotEnemies), "an enum is its integer, as Newtonsoft writes it by default");
+            Equal("\"2026-09-07T14:00:00Z\"", Json.Write(new DateTime(2026, 9, 7, 14, 0, 0, DateTimeKind.Utc)), "a DateTime is ISO 8601 with Z");
+            Equal("\"System.Object\"", Json.Write(new object()), "an unknown type becomes its ToString as a string, never a throw");
+
+            // Strings: Newtonsoft's default escape set, nothing more.
+            Equal("\"\"", Json.Write(""), "the empty string");
+            Equal("\"a\\\"b\\\\c\"", Json.Write("a\"b\\c"), "the quote and the backslash");
+            Equal("\"\\b\\f\\n\\r\\t\"", Json.Write("\b\f\n\r\t"), "the five named controls");
+            Equal("\"\\u0001\\u001f\"", Json.Write("\u0001\u001f"), "every other control as lowercase \\u00xx");
+            Equal("\"\\u0085\\u2028\\u2029\"", Json.Write("\u0085\u2028\u2029"), "the three line terminators Newtonsoft also escapes");
+            Equal("\"Ingvar the Far-Travelled / Ödin ☃\"", Json.Write("Ingvar the Far-Travelled / Ödin ☃"), "the slash and non-ASCII pass through untouched");
+
+            // Containers, compact: no whitespace, insertion order, {} and [] for empty.
+            var doc = new Dictionary<string, object>
+            {
+                ["a"] = 1, ["b"] = "x", ["c"] = null,
+                ["d"] = new List<object> { 1, 2.5, "s" },
+                ["e"] = new Dictionary<string, object>(),
+                ["f"] = new List<object>(),
+            };
+            Equal("{\"a\":1,\"b\":\"x\",\"c\":null,\"d\":[1,2.5,\"s\"],\"e\":{},\"f\":[]}", Json.Write(doc),
+                  "compact: no whitespace, insertion order kept, empty containers as {} and []");
+            Equal("{\"1\":\"one\"}", Json.Write(new Dictionary<int, string> { [1] = "one" }), "a non-string key becomes a string");
+            Equal("{\"k\":7}", Json.Write(new Dictionary<string, int> { ["k"] = 7 }), "a typed dictionary renders the same as an object one");
+            Equal("{\"a\\\"b\":1}", Json.Write(new Dictionary<string, object> { ["a\"b"] = 1 }), "keys are escaped like strings");
+            Equal("[[1,2],[]]", Json.Write(new List<object> { new List<object> { 1, 2 }, new List<object>() }), "nested arrays");
+
+            // Indented: two spaces, a space after the colon, one element per line, Newtonsoft's shape.
+            string nl = Environment.NewLine;
+            string expected =
+                "{" + nl +
+                "  \"a\": 1," + nl +
+                "  \"b\": \"x\"," + nl +
+                "  \"c\": null," + nl +
+                "  \"d\": [" + nl +
+                "    1," + nl +
+                "    2.5," + nl +
+                "    \"s\"" + nl +
+                "  ]," + nl +
+                "  \"e\": {}," + nl +
+                "  \"f\": []" + nl +
+                "}";
+            Equal(expected, Json.Write(doc, indented: true), "indented: Newtonsoft's Formatting.Indented shape");
+            var nested = new Dictionary<string, object>
+            {
+                ["leaders"] = new List<object> { new Dictionary<string, object> { ["name"] = "Ingvar", ["value"] = 12 } },
+            };
+            string expected2 =
+                "{" + nl +
+                "  \"leaders\": [" + nl +
+                "    {" + nl +
+                "      \"name\": \"Ingvar\"," + nl +
+                "      \"value\": 12" + nl +
+                "    }" + nl +
+                "  ]" + nl +
+                "}";
+            Equal(expected2, Json.Write(nested, indented: true), "an object inside an array indents one level further");
+            Equal("{}", Json.Write(new Dictionary<string, object>(), indented: true), "an empty object is {} even indented");
+            Equal("[]", Json.Write(new List<object>(), indented: true), "an empty array is [] even indented");
+
+            // The width the rollover paginates by is the compact rendering of one row, exactly.
+            var row = new Dictionary<string, object> { ["Iron"] = new Dictionary<string, object> { ["stock"] = 20, ["trend"] = -1 } };
+            Equal("{\"Iron\":{\"stock\":20,\"trend\":-1}}".Length, Json.Write(row).Length, "the compact width is the row's rendered length");
         }
 
         private static void GhostTests()

@@ -35,10 +35,11 @@ in `Core/Keys.cs`, under the `VCargo_` prefix (issue #16).
 
 **What that does NOT mean.** Exactly ONE live visit has been run, on Wu'barrk's client — see "INTEGRATED IN-GAME
 RUN" below for what it did and did not prove. The glide, the drop, the walk-up completing, the terminal on a real
-visit, a trade and the vanish have never been watched; no two-client item has run at all. And **a build on this
-machine carries no body**: `Assets/` is gitignored and the only copy of the baked bundle in git is inside the
-tracked `HexiumDist/plugins/ValkyriesCargo.dll`, so the rc1 release DLL is the only build here that has Ingvar
-in it until the bundle arrives as a release asset (`docs/TODO.md` §2, first item).
+visit, a trade and the vanish have never been watched; no two-client item has run at all. **A build on any
+machine carries the body only if `Assets/valkyriescargo_kit` is on it**: `Assets/` is gitignored, the bake is
+Wu'barrk's machine's, and every bake reaches the other side as a release asset (attached to `v0.1.0-rc1` on
+2026-09-07, and on Don's machine since). The built DLL is NOT tracked in git (owner, 2026-09-07):
+`HexiumDist/plugins/` is ignored and a payload is a release asset, never a commit.
 
 The paragraphs below are the history, each with the lines seen.
 
@@ -197,10 +198,12 @@ Both new ledgers are in-memory, reset per session, fed from `Server/VisitDirecto
 (a trader's row) and `End` (a visit's row) — no new hook into the deal wire or the event system. `Core/BarrkExport.cs`
 (PURE) shapes the rows; `Core/BarrkRollover.cs` (PURE) paginates by each row's REAL rendered JSON width
 (measured with the real serializer, never guessed) and ranks `<collection>_leaders` over the whole roster
-before a split, the v4 contract's "hard rule". `Server/BarrkBotExport.cs` renders through Newtonsoft.Json
-(decision 3, `docs/DECISIONS-WUBARRK.md`; `<Reference>` against `libs\Newtonsoft.Json.dll`, `Private=false`,
-runtime copy from the new manifest dependency `ValheimModding-JsonDotNET-13.0.4` — version confirmed live
-against Fatty's own shipped manifest, not guessed) and writes each file `.tmp`-then-rename. Decision 4 (the
+before a split, the v4 contract's "hard rule". `Server/BarrkBotExport.cs` renders through the pure
+`Core/Json.cs` — a writer, never a reader, shaped like Newtonsoft's compact and indented output so the
+widths and the files do not move — and writes each file `.tmp`-then-rename. (It rendered through
+Newtonsoft.Json for one day: decision 3 in `docs/DECISIONS-WUBARRK.md` brought in a `<Reference>` and the
+`ValheimModding-JsonDotNET-13.0.4` manifest dependency for those two calls; **the owner had it removed on
+2026-09-07** — BepInExPack only, the locked row stands.) Decision 4 (the
 sidecar stays authoritative, the JSON is a mirror) is enforced, not just documented: `VisitDirector.Tick`
 runs a new `ExportCadenceSeconds` (60 s) timer alongside the existing save cadence — no new coroutine, house
 rule 2 — that calls `Core/SidecarThenMirror.Run`, which runs the sidecar's own `Flush` to completion first and
