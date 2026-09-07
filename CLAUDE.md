@@ -195,6 +195,30 @@ server and watched `barrkbot_cargo_*.json` land on disk, and BarrkBOT itself has
 files — shape-verified, not live-verified (the authoritative contract's own distinction). See "What to verify
 in-game" item 23.
 
+**P10b the boot-time engine probes, 2026-09-07 (branch `a/p10b-probes`).** `Core/EngineBaseline.cs` (PURE) is
+the build this DLL was compiled against as constants — 0.221.12, network 36, player 43, world 37, the two Steam
+build ids — and the comparison against the four numbers actually running; the numbers are copied rather than
+referenced because vanilla's `Version` type is `internal` and its three numbers are `const`, so a direct
+reference would be inlined at OUR compile time and answer "same build" on every Valheim ever released.
+`Core/EngineProbes.cs` (PURE) is the registry: 19 named engine facts, ranked worst-first by how much SILENCE a
+break would come with, each with what it looks at and what turns itself off; four are method BODIES and are
+registered as **not probeable**, which `cargo engine` says out loud rather than implying a pass. A probe is a
+veto and never a permit — a fact that has not run, could not be probed, or was never registered answers YES, so
+a bug in the registry can never be the thing that turns the mod off. `EngineCheck.cs` is the one file that
+touches a game type: every probe is a PAIR (a catching `Probe*` and a `[MethodImpl(NoInlining)]` `Check*`),
+because Mono resolves a member access when the CALLER is JIT-compiled and a try/catch in the same method never
+runs. It is the mod's ONE named exception to "our files name no private member": `ZSyncTransform.m_velocityCached`,
+`BaseAI.m_character`, `Character.RPC_Damage` and `RandEventSystem.Awake` are named in strings, handed to
+reflection, and never called. It runs from plugin `Awake` AFTER the config binds and BEFORE `PatchAll`. Two
+features consult their probe and degrade rather than throw (`Server/CargoEvent.cs` refuses to register or start
+the event; `Client/BodyLoader.cs` keeps the stand-in), and `Server/MarketStore.cs` REFUSES a sidecar written by
+a newer build — held, never `.corrupt`, nothing saved over it, because that is somebody's market and not a
+corrupt file. The gap `docs/P10B-PROBE-GAP.md` found is fixed: the probe asked for the public
+`Character.Damage` while the immortality patches the private `Character.RPC_Damage(long, HitData)`. Off-game:
+builds clean (0 warnings), 1423 checks. **Never seen on a machine that has a game under it**: no probe has
+resolved a real member, so a false failure is possible until item 24 is run. The document is
+`docs/ENGINE-PROBES.md`; the baseline it is dated against is `docs/ENGINE-BASELINE.md` (P10a).
+
 ---
 
 ## Commands
@@ -220,9 +244,12 @@ The owner's client runs through Gale (`%APPDATA%\com.kesomannen.gale\valheim\pro
 dedicated test servers live under `C:\Users\donfr\ValheimServers\` (CairnTest on port 2466 is the
 minimal one; the runbook is `RagnaroksWrath\docs\HANDOFF.md`). Valheim locks the DLL while running.
 
-Console today: `cargo status | version | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] |
+Console today: `cargo status | version | engine | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] |
 deal buy|sell <prefab> [count] | claim | terminal demo|open|close | visit [player] | dismiss | reset | save`.
-`visit`, `dismiss`, `reset` and `save` are
+`engine` (P10b) prints the Valheim build this DLL was written on against the one actually running, then every
+engine probe with its risk rank, what it looked at and what turns itself off when it fails; `cargo status`
+carries the same thing in one line, second from the top. It is the first thing to ask for in a bug report from
+a player whose Valheim moved. `visit`, `dismiss`, `reset` and `save` are
 admin verbs: on a server or listen host they run in place; from a client they ride `VCargo_admin` to the server,
 where the public `ZNet.IsAdmin` (RavenEye's `AdminGate` shape, fail closed) decides and `VCargo_reply` prints the
 answer in the caller's console. `deal` is the terminal's deal without the terminal: it builds the same `Deal`,
@@ -666,6 +693,17 @@ The BarrkBOT export (`BARRKBOT_CONTRACT.md`), on a dedicated server, `Server.Bar
     or the timer) adds a row to `barrkbot_cargo_visits.json` the same way. `Server.BarrkBotExport` set to false stops
     all three files from updating (existing ones are left as they were, not deleted). BarrkBOT itself, pointed at this
     server's `BepInEx/config`, answers a real question from the live files within its own 60 s sweep.
+
+P10b, the engine probes (any boot, client or server, no visit needed):
+24. **The probes resolve**: the boot line carries `built against Valheim 0.221.12 (network 36, player 43, world 37;
+    ...); running same build 0.221.12 (net 36, player 43, world 37); probes 15/15 ok, 4 not probeable.` on an
+    unmodified install, and `cargo engine` lists all 19 facts worst-rank-first with no `FAILED` among them and no
+    `registry:` line. **This is the one thing about P10b a clean build cannot prove**: every probe is a reflection
+    lookup against a member this mod has never resolved at runtime, so a typo or a wrong overload shows up as a
+    FALSE failure that disables a working feature. Any `FAILED` line on a stock 0.221.12 is a bug in
+    `EngineCheck.cs`, not in Valheim. Then the other direction, once: install on a machine whose Valheim has moved
+    (or edit `EngineBaseline`'s constants and rebuild) and confirm the boot line says the version moved, the mod
+    still loads, and nothing throws.
 
 ---
 

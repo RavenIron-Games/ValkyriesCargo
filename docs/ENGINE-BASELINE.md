@@ -175,6 +175,18 @@ see that sweep report for the full accounting.
 `public-test` among them. Not a fetch that quietly failed on one platform — the branch is not there
 today, checked twice, on two different operating systems.
 
+## The same numbers, compiled into the DLL (P10b)
+
+`ValkyriesCargo/Core/EngineBaseline.cs` carries this table's identity as constants — `0.221.12`,
+network `36`, player `43`, world `37`, client build `21981559`, server build `21981590`, plus the
+date the method BODIES were read (`2026-09-06`) — and `EngineCheck` compares them against the four
+numbers of whatever Valheim is actually under the mod at boot. `cargo engine` prints both sides. If a
+future sweep moves any row above, that file's constants move with it: they are the same fact written
+twice, once for a human and once for the running mod. **The date matters as much as the numbers**,
+because a branch re-push keeps the version and changes the bodies — which is the whole reason P10a's
+comparative decompile exists and the reason four of P10b's nineteen facts are registered as *not
+probeable* and pointed back here. The probes themselves are `docs/ENGINE-PROBES.md`.
+
 ## The sweeps taken against this baseline
 
 - `docs/engine-sweeps/2026-09-07-baseline-client-vs-server.md` — the complete list of differences
