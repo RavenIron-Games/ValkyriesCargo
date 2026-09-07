@@ -177,14 +177,14 @@ namespace RavenIron.ValkyriesCargo.Net
         }
 
         /// <summary>
-        /// Design 3.8 says vc_dismiss may come from "any visitor". A visitor is someone AT the visit, and
+        /// Design 3.8 says VCargo_dismiss may come from "any visitor". A visitor is someone AT the visit, and
         /// the radius that already means that in this mod is the event's own `m_eventRange` (96 m,
         /// CargoEvent): inside it a player sees the banner and keeps the visit's clock running, outside it
         /// the clock pauses. Being online is not being a visitor.
         ///
         /// The position is the peer's own reported reference position (`ZNet.RPC_ServerSyncedPlayerData`
         /// resolves the peer from the SOCKET, so it belongs to this caller), but the number in it is the
-        /// client's own claim -- the same trust class as `vc_rested`. What this closes is any client
+        /// client's own claim -- the same trust class as `VCargo_rested`. What this closes is any client
         /// anywhere in the world ending anyone's visit; what it does not close is a modified client
         /// claiming to stand where it does not. There is nothing on the server that could tell the
         /// difference: vanilla keeps no server-side position for a player either.

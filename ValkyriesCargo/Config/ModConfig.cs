@@ -118,7 +118,7 @@ namespace RavenIron.ValkyriesCargo.Config
                 "How long Ingvar stays, as the vanilla random event's duration. Ours alone: Odin's prefab says 60, not the 300 his field initialiser says, so this number was never inherited from him. Read on the SERVER.",
                 new AcceptableValueRange<float>(30f, 1800f));
             ApproachDistance = S(cfg, "Server", "ApproachDistance", 3.5f,
-                "Metres from the pilot at which he stops walking. NOT READ BY ANY CODE IN 0.1.0: the merchant does not walk yet (P5). Changing it does nothing today. Read on the SERVER once P5 lands.",
+                "Metres from the player at which Ingvar stops walking up (P5, CargoMerchant). Read on the CLIENT that owns the merchant, synced from the server.",
                 new AcceptableValueRange<float>(1f, 10f));
             BodyPrefab = S(cfg, "Server", "BodyPrefab", "Dverger",
                 "The engine creature prefab the merchant is CLONED FROM, for good: Character, MonsterAI and the collider all come from it. Must have a Humanoid, a MonsterAI and an Animator. This is not the custom-body switch - that is CustomBody. Read on the SERVER.");
