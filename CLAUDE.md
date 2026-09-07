@@ -37,6 +37,18 @@ Cairn.dll and RavenEye.dll):** within 20 s of launch the BepInEx log showed, in 
 predates us: it is in the 10:32 VantageTest run with only Cairn and RavenEye loaded. Not yet seen: a
 client boot, the version wall, the config lock, the prefab dumps. See "What to verify in-game".
 
+**The contract (PR #1, merged) and the market core (branch `a/market-core`, 2026-09-06).** Pure, off-game:
+`Core/Market.cs` (rules sanitized on the way in; the price curve, one rounding for the charge and one for
+what he pays; purse and carry; drift by the EnvMan day length; settlement in the contract's refusal order;
+salted delivery ids; sidecar rows incl. `purseStart`/`visit`/`seq`), `Core/Scheduler.cs` (eligibility,
+the roll, tickets, cooldowns saved as remaining seconds), `Core/VisitClock.cs` (a countdown mirror the
+server retargets); `DemoMarket` is the real Market with a price-driven `Tick`. **714 off-game checks,
+mutation-proven** (20 mutations by an Opus prover, 8 more by hand; each fails without its fix). Reviewed
+against DESIGN and CATALOGUE by an Opus reviewer; its blockers are fixed and the documents corrected
+(CATALOGUE section 5 numbers; DESIGN section 8 gained five proposed decisions). Nothing on the game side
+calls any of it yet. `cargo status` now prints `EnvMan.m_dayLengthSec`, the day the drift counts: its
+compiled default is 1200, the scene is expected to say 1800, and that is UNVERIFIED until a client boots.
+
 ---
 
 ## Commands
@@ -77,6 +89,13 @@ ValkyriesCargo/
   Config/ModConfig.cs        Server.* synced+locked, Client.* local, VisitState/MarketState channels
   Core/CargoTick.cs          the ONLY Update in the mod; role decided at runtime
   Core/Catalogue.cs          PURE: the catalogue line parser and the 72 defaults
+  Core/Wire.cs Core/MarketSnapshot.cs Core/VisitSnapshot.cs Core/Deal.cs   PURE: the contract (PR #1)
+  Core/Market.cs             PURE: rules, price curve, purse, drift, settlement, sidecar rows
+  Core/Scheduler.cs          PURE: eligibility, the roll, tickets, cooldowns and their rows
+  Core/VisitClock.cs         PURE: the countdown mirror (world seconds; the server retargets it)
+  Core/DemoMarket.cs         PURE: the real Market behind `cargo terminal demo`, plus Tick and Advance
+  Net/CargoRpc.cs            the client-side surface the terminal calls; the demo transport (PR #1)
+  Client/Terminal/ICargoTerminal.cs   what the merchant calls; Track B implements it (PR #1)
   Patches/Patch_Terminal.cs  the `cargo` console: status, version, prefab dump
   Libs/ServerSync.cs         NOT OURS: blaxxun ConfigSync.cs, compiled in as shared source
 tests/CoreTests/             net10 harness; compiles the REAL Core sources against stubs
@@ -88,8 +107,7 @@ docs/                        DESIGN, TLDR, CATALOGUE, REVIEW-v5, data/items tabl
 Planned (design section 3; names are final, files do not exist yet):
 
 ```
-  Core/Market.cs Core/Scheduler.cs Core/Deal.cs Core/VisitClock.cs Net/CargoPackets.cs   (pure, tested)
-  Server/VisitDirector.cs Server/Spawner.cs Server/MarketStore.cs Net/CargoRpc.cs
+  Server/VisitDirector.cs Server/Spawner.cs Server/MarketStore.cs Net/CargoTransport.cs (the real ICargoTransport)
   Client/ComfortReporter.cs Client/CargoFlight.cs Client/CargoMerchant.cs Client/Terminal/*.cs
   Patches/Patch_RandEventSystem_Awake.cs Patch_Valkyrie_Awake.cs Patch_Humanoid_Awake.cs
   Patches/Patch_Character_InIntro.cs Patch_Character_Damage.cs

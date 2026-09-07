@@ -122,12 +122,30 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
 
 Rules the contract carries:
 - The terminal **never computes a price**; it renders `MarketSnapshot` and sends `Deal`s.
+- **Snapshots are values, not live objects.** A `MarketRow` held from an earlier snapshot never changes;
+  after every `MarketChanged` (and after every accepted deal) re-read rows from `CargoRpc.Market`, and
+  send the `UnitPriceSeen` from the row the player is looking at NOW. Prices move with every deal.
 - The client touches its inventory **only** inside `onAnswer` when `Ok`, using `ItemsToAdd/Remove` and `CoinsDelta`.
 - `UnitPriceSeen` is what the player saw; a mismatch comes back as `price_changed` with `NewMarketState`
   (policy Reconfirm: keep the tray, redraw, ask once more).
 - Nonce: 64-bit random per deal; the client keeps a bounded inbox of applied `DeliveryId`s and acks.
 - Console: `cargo terminal demo` (Track B) opens the terminal on `MarketSnapshot.Demo` with `CargoRpc.UseDemo(true)`,
   so the UI is developable and reviewable with no server and no merchant.
+
+What the market-core review (2026-09-06) says the terminal must know:
+- For a `wanted` line send `row.Buy` as `UnitPriceSeen`; for an `offered` line send `row.Sell`. Backwards is a
+  permanent `price_changed` loop.
+- `Wanted` must be a Ware; offering a Want back to him answers `unknown_item`, not a friendlier code.
+- Only `price_changed` carries `NewMarketState`; `sold_out` and `over_max` come back with an empty one, so the tray
+  waits for the next `MarketChanged`.
+- SOLD is `Stock == 0`, never the price: an empty shelf still quotes a price (as if one were left).
+- The "you pay" line is `count × unit`, a flat quote at the price on screen, not a running sum; that is how the
+  server prices it too.
+- `Trend` is derived from the buy price against base, for Wants as well; the arrow is monotone with `Sell`.
+- `CargoRpc.Market` is the cached snapshot. Never read `DemoMarket.Market` in a draw path: it builds 72 rows per call.
+- `CargoRpc.Demo.Market.Tick(prefab, scarcer: true|false)` walks that row's stock until the number the terminal
+  shows (Buy for a Ware, Sell for a Want) actually moves, and returns false only at the row's bound; use it to see
+  `price_changed` on any row.
 
 ## 3. Order of work
 
