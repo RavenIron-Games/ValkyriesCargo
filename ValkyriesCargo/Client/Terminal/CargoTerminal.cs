@@ -123,7 +123,12 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
                 UIFocus.SetWantsCursor(WindowId, true);
                 UIFocus.SetBlocksGameInput(WindowId, true);
 
-                if (Input.GetKeyDown(KeyCode.Escape)) { Close("escape"); return; }
+                // ZInput, not UnityEngine.Input: this build reads every key through ZInput's new-Input-System
+                // wrapper (Menu.Update 307/364, FejdStartup 1702, InventoryGui 396, Minimap 616) and reads no
+                // legacy Input anywhere, so whether the legacy manager is even enabled is not a thing to bet
+                // the one way out of this window on. ZInput is null-safe and is initialised in FejdStartup.Awake
+                // (314), so this works at the main menu too, which is where `cargo terminal demo` has to work.
+                if (ZInput.GetKeyDown(KeyCode.Escape)) { Close("escape"); return; }
                 // Every relayed button is stood down with ResetButtonStatus. Closing releases the
                 // BlocksGameInput token in the same frame, and MonoBehaviour Update order is undefined:
                 // InventoryGui.Update and Minimap.Update both open on `!Chat.HasFocus()` plus a still-
