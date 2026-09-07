@@ -82,6 +82,12 @@ namespace RavenIron.ValkyriesCargo.Server
             // A fresh world gets its file at once, so the path is proven on the desk and not on the first deal.
             if (d.Store.Path != null && d._pendingSessionRow == null) d.Flush(d.Loaded > 0 ? "boot" : "first write", force: true);
 
+            // P5, design 3.7: the merchant is the persistent half of the pair, so a server that stopped
+            // mid-visit brings him back with the world. Put away anyone who is not the visit we just
+            // adopted, and clear any restored carry link -- a ZDOID does not survive a world read.
+            string swept = Spawner.Sweep(d._session != null && d._session.Active ? d._session.VisitId : 0);
+            if (swept != null) ValkyriesCargo.Log.LogInfo(swept);
+
             ValkyriesCargo.Log.LogInfo("director up: salt " + salt + ", day " + Wire.Double(day) + " s (" + (fromEngine ? "EnvMan.m_dayLengthSec" : "ASSUMED, no EnvMan") +
                                        "), catalogue " + d._market.Count + " entries, purse " + d._market.Purse + ", next visit #" + d._market.NextVisitId +
                                        ", roll every " + Wire.Float(sr.IntervalSeconds) + " s at " + Wire.Float(sr.ChancePercent) + "%, first roll one interval from now; sidecar " +

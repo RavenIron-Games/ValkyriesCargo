@@ -56,6 +56,7 @@ namespace ValkyriesCargo.Tests
             TrayModelTests();
             CargoRpcTests();
             FlightPlanTests();
+            MerchantPlanTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
             return _failed == 0 ? 0 : 1;
@@ -2964,6 +2965,89 @@ namespace ValkyriesCargo.Tests
             Check(none.Ok || Math.Abs(none.DescentY - (30f + FlightPlan.DropAltitude)) < 0.01f,
                   "and parks its descent waypoint at drop height, so nothing reads a 120 m altitude off a flight that is not flown");
         }
+
+        private static void MerchantPlanTests()
+        {
+            Section("MerchantPlan: the carry, and what ends it");
+
+            var s = MerchantPlan.Next(0, carried: true, grounded: false, distance: 40f, timeInState: 3f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 0 && !s.Changed && !s.Follow, "carried and still hanging: he stays in state 0 and does not walk");
+
+            // The bird cuts the link 10 m up. Landing on the state change rather than the link is
+            // what stops the arrival effect firing while he is still in the air.
+            s = MerchantPlan.Next(0, carried: false, grounded: false, distance: 14f, timeInState: 0.1f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 0 && !s.Changed, "link cut but still falling: still state 0, no landing yet");
+
+            s = MerchantPlan.Next(0, carried: false, grounded: true, distance: 14f, timeInState: 1f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 1 && s.Changed && s.Follow && !s.CallOut,
+                  "feet on the ground: state 1, he starts walking, and he does NOT call out yet");
+
+            Section("MerchantPlan: the approach, and the timeout that saves it");
+
+            s = MerchantPlan.Next(1, false, true, distance: 9f, timeInState: 4f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 1 && !s.Changed && s.Follow, "still too far: keeps walking");
+
+            s = MerchantPlan.Next(1, false, true, distance: 3.4f, timeInState: 4f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 2 && s.Changed && s.CallOut, "inside ApproachDistance: state 2 and the callout fires");
+
+            s = MerchantPlan.Next(1, false, true, distance: 60f, timeInState: 20f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 2 && s.Changed && s.CallOut,
+                  "unreachable player, 20 s gone: he stops and calls out anyway rather than walking into a wall forever");
+
+            s = MerchantPlan.Next(1, false, true, distance: 60f, timeInState: 19.9f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 1 && !s.CallOut, "and not one tick before 20 s");
+
+            // The callout is once per visit: state 2 never re-enters itself.
+            int callouts = 0;
+            int st = 1; float t = 0f;
+            for (int i = 0; i < 400; i++)
+            {
+                var step = MerchantPlan.Next(st, false, true, 2f, t, 0f, 3.5f);
+                if (step.CallOut) callouts++;
+                t = step.Changed ? 0f : t + 0.05f;
+                st = step.State;
+            }
+            Check(callouts == 1, $"400 ticks beside the player produce exactly one callout (got {callouts})");
+
+            Section("MerchantPlan: the trading leash");
+
+            s = MerchantPlan.Next(2, false, true, distance: 13f, timeInState: 30f, farSeconds: 4.9f, approachDistance: 3.5f);
+            Check(s.State == 2 && !s.Changed, "13 m for 4.9 s: he waits, he does not chase");
+
+            s = MerchantPlan.Next(2, false, true, distance: 13f, timeInState: 30f, farSeconds: 5f, approachDistance: 3.5f);
+            Check(s.State == 1 && s.Changed && s.Follow, "13 m for a full 5 s: he walks after them");
+
+            s = MerchantPlan.Next(2, false, true, distance: 11.9f, timeInState: 30f, farSeconds: 60f, approachDistance: 3.5f);
+            Check(s.State == 2, "inside 12 m, however long: he stays put (the distance gate is AND, not OR)");
+
+            // The timer itself: it must reset on the way in, or a player who steps out and back
+            // still sends him walking a minute later.
+            float far = 0f;
+            far = MerchantPlan.AccumulateFar(far, 20f, 1f);
+            far = MerchantPlan.AccumulateFar(far, 20f, 1f);
+            Check(Math.Abs(far - 2f) < 0.001f, "the far timer accumulates while he is outside the leash");
+            far = MerchantPlan.AccumulateFar(far, 5f, 1f);
+            Check(far == 0f, "and resets to zero the moment the player is back inside it");
+
+            Section("MerchantPlan: leaving is terminal, and the restart rule");
+
+            foreach (bool carried in new[] { true, false })
+                foreach (bool grounded in new[] { true, false })
+                {
+                    var leaving = MerchantPlan.Next(3, carried, grounded, 1f, 100f, 100f, 3.5f);
+                    if (leaving.State != 3 || leaving.Changed)
+                    { Check(false, "leaving was pulled back out of state 3"); return; }
+                }
+            Check(true, "nothing measured on the ground pulls him back out of leaving");
+
+            // The ZDOID trap: after a world reload every id in the save is renumbered, so a merchant
+            // restored in state 0 with a stale carrier id must NOT be pinned to whatever now holds
+            // that number. ShouldPin requires the carrier to have actually resolved.
+            Check(MerchantPlan.ShouldPin(0, carrierResolved: true), "state 0 with a live carrier: pin him to the talon");
+            Check(!MerchantPlan.ShouldPin(0, carrierResolved: false),
+                  "state 0 with a carrier id that resolves to nothing (a restart renumbered it): do NOT pin");
+            Check(!MerchantPlan.ShouldPin(1, carrierResolved: true), "and never pin once he is on his feet");
+        }
     }
 
     /// <summary>Fake transport for testing duplicate delivery handling.</summary>
@@ -2979,6 +3063,8 @@ namespace ValkyriesCargo.Tests
         {
             onAnswer(_result);
         }
+
+
 
 
     }

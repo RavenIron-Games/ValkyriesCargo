@@ -31,6 +31,40 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string RefusePurse = "My purse is bare, friend.";
         public const string RefuseUnknown = "That I do not deal in.";
 
+        /// <summary>
+        /// The table `vc_say` indexes (design 3.6: an index crosses the wire, never text, so a line
+        /// can be reworded in a patch without a protocol change and a hostile client cannot make
+        /// Ingvar say anything he does not already know). Append only - an index that moves changes
+        /// what an old client hears.
+        /// </summary>
+        public static readonly string[] Says =
+        {
+            Open,           // 0
+            PriceChanged,   // 1
+            OneMinute,      // 2
+            DismissFirst,   // 3
+            Farewell,       // 4
+            RefuseFull,     // 5
+            RefusePurse,    // 6
+            RefuseUnknown,  // 7
+        };
+
+        public static class Say
+        {
+            public const int Open = 0;
+            public const int PriceChanged = 1;
+            public const int OneMinute = 2;
+            public const int DismissFirst = 3;
+            public const int Farewell = 4;
+            public const int RefuseFull = 5;
+            public const int RefusePurse = 6;
+            public const int RefuseUnknown = 7;
+        }
+
+        /// <summary>One line by index, or empty for an index this build does not know.</summary>
+        public static string Reaction(int index)
+            => index >= 0 && index < Says.Length ? Says[index] : "";
+
         /// <summary>The arrival line a visit's seed picks; the same on every client.</summary>
         public static string ArrivalFor(int seed) => Pick(Arrival, seed);
 

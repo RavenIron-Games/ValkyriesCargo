@@ -323,7 +323,31 @@ owner overwrites next frame).
 - **Objects are instantiated on a client only inside its active zone block**
   (`ZNetScene.InActiveArea`: `|zone − centre| ≤ m_activeArea − 1`, 64 m zones); outside it
   `RemoveObjects` destroys the instance and a non-persistent owned ZDO with it. The Valkyrie starts
-  ~90 m out, never 500.
+  ~90 m out, never 800.
+- **`ZoneSystem.m_activeArea` is 2, not the compiled default of 1** (read live, 2026-09-07). The block
+  is 3x3 zones - 192 m - so `FlightPlan`'s configured 90 m start survives whole and neither the shrink
+  nor the bearing turn fires in practice. Both still ship, because the value is an inspector field and
+  a scene may say otherwise; `Spawner` reads it at runtime and never assumes.
+- **The `Valkyrie` prefab overrides almost every field initialiser** (read live, 2026-09-07):
+  `m_speed` 20 (not 10), `m_turnRate` 20 (not 5), `m_startDistance` **800** (not 500), `m_startAltitude`
+  190 (not 500), `m_descentAltitude` 180, `m_startDescentDistance` 300, `m_attachOffset` (0, 0.30, 0.40)
+  (not (0,0,1)). `m_attachPoint` EXISTS: `'Attach'`, under `valkyrie2/Armature/.../r_foot` - the
+  merchant hangs from her right talon. Our flight uses none of vanilla's numbers except `m_dropHeight`;
+  speed and turn rate are `Server.FlightSpeed` / `FlightTurnRate`.
+- **`Odin.m_ttl` on the shipped prefab is 60, not the 300 the field initialiser says** (read live,
+  2026-09-07). Nothing reads it - the departure borrows only the `m_despawn` EffectList - but design 3.6
+  cited the 300 as the reason our visit is 300 s, and that reasoning was never true. **Never add the
+  `Odin` COMPONENT to the merchant**: he would delete himself a fifth of the way into the visit.
+  `m_despawn`'s one entry, `vfx_odin_despawn`, carries a `ZNetView`, so by the effect rule the owner
+  creates it and vanilla replicates it - one vanish per screen.
+- **The shipped `Dverger` has `NpcTalk`** (`randomTalkInterval` 30) and **spawns holding
+  `DvergerArbalest`** + `Dverger_melee` (read live, 2026-09-07). Both are why design 3.3's "NpcTalk
+  disabled if present" and `UnequipAllItems()` are load-bearing rather than precautionary. It has **no**
+  `Tameable`, so `MonsterAI.m_follow` (private, non-persisted) is re-established by us, never restored.
+- **`Character.InIntro()` zeroes velocity; it does NOT grant immunity.** Its caller sets
+  `m_maxAirAltitude` to the current height and zeroes the Rigidbody's linear and angular velocity, which
+  is exactly what a carried merchant needs and nothing more. Immortality is a separate patch, and it
+  belongs on `Character.RPC_Damage`, not `Character.Damage` - see the knowledge-base section.
 - **`ZRoutedRpc.instance` is null for the whole of plugin `Awake`** and is re-created on every world
   join; register routed handlers per session, direct `ZRpc` handlers on peer connect.
 - `EnvMan.IsDay()` is static. `Character.m_collider` is a `CapsuleCollider`. `Odin.m_despawn` and

@@ -63,14 +63,13 @@ namespace RavenIron.ValkyriesCargo.Server
 
         /// <summary>
         /// P5 (`CargoMerchant`) is what pins the merchant to the talons, keeps him peaceful, walks him
-        /// up and puts him away again. Until it lands there is nothing to author him INTO: a bare
-        /// vanilla Dverger falls 120 m and then stands next to the pilot with a live `MonsterAI`. So
-        /// P4 ships the flight alone, and this is the single line P5 flips. Everything below it is
-        /// already written and already reviewed; it just does not run yet (PR #8's review, finding 4).
+        /// up and puts him away again. P4 shipped with this false because a bare vanilla Dverger falls
+        /// 120 m and then stands next to the pilot with a live `MonsterAI` (PR #8's review, finding 4).
+        /// P5 landed; this is the line it flips.
         /// </summary>
-        /// <remarks>`static readonly`, not `const`: a const false folds and the compiler then reports the
-        /// whole merchant block as unreachable code, which is a warning we do not ship.</remarks>
-        public static readonly bool MerchantEnabled = false;
+        /// <remarks>`static readonly`, not `const`: a const folds and the compiler reports the other
+        /// branch as unreachable code, which is a warning we do not ship.</remarks>
+        public static readonly bool MerchantEnabled = true;
 
         /// <summary>What the server remembers about the flight it authored. Not persisted: the bird cannot survive a restart (non-persistent) and the merchant is found again by his `vc_ingvar` key (design 3.7).</summary>
         public static ZDOID Bird { get; private set; }
@@ -275,6 +274,74 @@ namespace RavenIron.ValkyriesCargo.Server
 
         /// <summary>How long a missing bird is given before the visit gives up on being carried.</summary>
         public const float OrphanGraceSeconds = 5f;
+
+        /// <summary>
+        /// Design 3.7, the restart sweep. The merchant is the PERSISTENT half of the pair, so a server
+        /// that stopped mid-visit brings him back with the world - standing in a field, with no visit
+        /// around him and no bird to be carried by. This walks the ZDO table for `vc_ingvar` and puts
+        /// away anyone who is not the visit now running.
+        ///
+        /// It also clears `vc_carrier` on the ones it keeps, and that is not tidiness. **A `ZDOID` is
+        /// a session handle, not an identity**: `ZDO.Load` renumbers every id in the save on every
+        /// world read, so a restored `vc_carrier` holds a number that now belongs to some unrelated
+        /// object, and a merchant left believing it would pin himself to whatever that is. The carry
+        /// never survives a restart by design - the bird is non-persistent - so the honest value
+        /// afterwards is None. (`libs-Tools\IMPLEMENTATIONS\MASTER_IMPLEMENTATIONS.md`; it cost
+        /// TortalPortal its favourites feature. See CLAUDE.md's knowledge-base section.)
+        ///
+        /// Returns a line to log, or null when there was nothing to do.
+        /// </summary>
+        public static string Sweep(int liveVisitId)
+        {
+            try
+            {
+                ZDOMan man = ZDOMan.instance;
+                ZNetScene scene = ZNetScene.instance;
+                if (man == null || scene == null) return null;
+
+                string bodyName = ModConfig.BodyPrefab != null ? ModConfig.BodyPrefab.Value : "Dverger";
+                int bodyHash = bodyName.GetStableHashCode();
+
+                var found = new List<ZDO>();
+                int index = 0;
+                // The iterative form is the one that does not allocate the whole table: it fills the
+                // list and returns whether it finished, so it is called until it says it has.
+                while (!man.GetAllZDOsWithPrefabIterative(bodyName, found, ref index)) { }
+
+                int cleared = 0, stranded = 0;
+                foreach (ZDO zdo in found)
+                {
+                    if (zdo == null || !zdo.IsValid()) continue;
+                    int visit = zdo.GetInt(IngvarHash, 0);
+                    if (visit == 0) continue;                       // not ours: an ordinary Dverger
+
+                    if (visit != liveVisitId)
+                    {
+                        // Left over from a visit that is not running any more.
+                        zdo.SetOwner(ZDOMan.GetSessionID());
+                        man.DestroyZDO(zdo);
+                        stranded++;
+                        continue;
+                    }
+                    if (!zdo.GetZDOID(CarrierKey).IsNone())
+                    {
+                        zdo.SetOwner(ZDOMan.GetSessionID());
+                        zdo.Set(CarrierKey, ZDOID.None);
+                        zdo.Set(StateHash, MerchantState.Approaching);
+                        cleared++;
+                    }
+                }
+                if (stranded == 0 && cleared == 0) return null;
+                return "restart sweep: " + stranded + " stranded merchant(s) destroyed" +
+                       (cleared > 0 ? ", " + cleared + " carry link(s) cleared (a restored ZDOID means nothing)" : "") +
+                       "; prefab '" + bodyName + "' hash " + bodyHash;
+            }
+            catch (Exception ex)
+            {
+                if (_throws++ < 3) ValkyriesCargo.Log.LogError("spawner: the restart sweep threw: " + ex);
+                return null;
+            }
+        }
 
         /// <summary>`cargo status`: what the server authored and what it has seen since.</summary>
         public static string Describe()
