@@ -133,7 +133,7 @@ max stock, so flooding them changes nothing a player can see:
 ## 3. The purse — exhaustion, carry, and twenty visits
 
 The purse is `min(PurseCoins x PurseCapMultiple, PurseCoins + round(lastTakings x PurseCarryPercent/100))`,
-i.e. 800 + half of last visit's takings, capped at 2400 (Market.StartVisit). `Takings` is `Purse - purseAtVisitStart`,
+i.e. 1500 + half of last visit's takings, capped at 4500 (Market.StartVisit). `Takings` is `Purse - purseAtVisitStart`,
 **floored at zero**: a visit in which he only bought pays nothing forward.
 
 ### Selling until he cannot pay
@@ -151,7 +151,7 @@ smelter (CATALOGUE section 1). One player, one visit, one unit at a time, into t
 | FlametalOreNew | 90 | 20 | 63 -> 43 | 1019 | 481 | `over_max` | 0 |
 
 **Takings are 0 in every one of those visits.** `Takings` is `Purse - purseAtVisitStart` floored at zero, so a visit in
-which players only sold him things pays nothing forward: the next purse is the bare 800 again.
+which players only sold him things pays nothing forward: the next purse is the bare 1500 again.
 
 ### Twenty visits, two kinds of server
 
@@ -176,7 +176,7 @@ to buy from the second visit on, so the takings fall to zero and the purse is ba
 
 **Shoppers and sellers: the cap engages on 0 visits and the carry is 0 every single time.** The same player who put
 thousands in takes more back out before he leaves, so the visit's NET takings are zero and the next purse is the bare
-800. That is the shape of a real server — people sell him more than they buy, because he is how you turn ore into
+1500. That is the shape of a real server — people sell him more than they buy, because he is how you turn ore into
 coin. **Carry as written rewards a shopping server and does nothing at all for a supplying one**, and a supplying
 server is the one the catalogue was built for.
 
@@ -268,8 +268,8 @@ and the two differ, because rounding away from zero moves at least one unit per 
 empty until a player sells him that item back, or an admin raises its target (`cargo catalogue add`). That is the
 decision: his stock is what the server's players put in his hands, not a shelf that fills itself overnight.
 **Every damaged Want is back inside 5% of target within 16 game days** either way; the slowest row is Wood.
-A game day is 1800 real seconds, so that is **8.0 real hours** of server uptime. A flood is
-forgotten in a real evening, and he never fills up for good: that is what the Want half-life is for.
+A game day is 1800 real seconds, so that is **8.0 real hours** of server uptime: a flood is
+forgotten within a real day of play, and he never fills up for good. That is what the Want half-life is for.
 
 ## 7. Edge sweep — the refusal order, asserted
 

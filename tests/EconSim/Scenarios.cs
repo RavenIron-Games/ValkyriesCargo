@@ -307,7 +307,7 @@ namespace ValkyriesCargo.EconSim
             md.H(2, "3. The purse — exhaustion, carry, and twenty visits");
 
             md.Line("The purse is `min(PurseCoins x PurseCapMultiple, PurseCoins + round(lastTakings x PurseCarryPercent/100))`,");
-            md.Line("i.e. 800 + half of last visit's takings, capped at 2400 (Market.StartVisit). `Takings` is `Purse - purseAtVisitStart`,");
+            md.Line("i.e. 1500 + half of last visit's takings, capped at 4500 (Market.StartVisit). `Takings` is `Purse - purseAtVisitStart`,");
             md.Line("**floored at zero**: a visit in which he only bought pays nothing forward.");
 
             md.H(3, "Selling until he cannot pay");
@@ -348,7 +348,7 @@ namespace ValkyriesCargo.EconSim
             }
             md.Table(new[] { "row", "base", "units before he stops", "he paid, a unit", "coins to the player", "purse left", "stopped by", "takings" }, oreRows);
             md.Line("**Takings are 0 in every one of those visits.** `Takings` is `Purse - purseAtVisitStart` floored at zero, so a visit in");
-            md.Line("which players only sold him things pays nothing forward: the next purse is the bare 800 again.");
+            md.Line("which players only sold him things pays nothing forward: the next purse is the bare 1500 again.");
             md.Blank();
             md.H(3, "Twenty visits, two kinds of server");
 
@@ -377,7 +377,7 @@ namespace ValkyriesCargo.EconSim
             md.Blank();
             md.Line("**Shoppers and sellers: the cap engages on " + Sim.N(capBoth) + " visits and the carry is 0 every single time.** The same player who put");
             md.Line("thousands in takes more back out before he leaves, so the visit's NET takings are zero and the next purse is the bare");
-            md.Line("800. That is the shape of a real server — people sell him more than they buy, because he is how you turn ore into");
+            md.Line("1500. That is the shape of a real server — people sell him more than they buy, because he is how you turn ore into");
             md.Line("coin. **Carry as written rewards a shopping server and does nothing at all for a supplying one**, and a supplying");
             md.Line("server is the one the catalogue was built for.");
         }
@@ -717,8 +717,8 @@ namespace ValkyriesCargo.EconSim
             md.Line("decision: his stock is what the server's players put in his hands, not a shelf that fills itself overnight.");
             md.Line("**Every damaged Want is back inside 5% of target within " + Sim.N(worstOneCall) + " game days**" +
                     (worstStepped == worstOneCall ? " either way" : ", or " + Sim.N(worstStepped) + " when he is visited every day") + "; the slowest row is " + worstRow + ".");
-            md.Line("A game day is 1800 real seconds, so that is **" + Sim.F(worstOneCall * 0.5, 1) + " real hours** of server uptime. A flood is");
-            md.Line("forgotten in a real evening, and he never fills up for good: that is what the Want half-life is for.");
+            md.Line("A game day is 1800 real seconds, so that is **" + Sim.F(worstOneCall * 0.5, 1) + " real hours** of server uptime: a flood is");
+            md.Line("forgotten within a real day of play, and he never fills up for good. That is what the Want half-life is for.");
             Sim.Note("s6.days", Sim.N(worstOneCall));
             Sim.Note("s6.stepped", Sim.N(worstStepped));
             Sim.Note("s6.stuck", string.Join(", ", stuck.ToArray()));
