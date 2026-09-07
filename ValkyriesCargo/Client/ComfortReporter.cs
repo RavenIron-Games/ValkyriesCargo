@@ -1,4 +1,5 @@
 using System;
+using RavenIron.ValkyriesCargo.Core;
 
 namespace RavenIron.ValkyriesCargo.Client
 {
@@ -12,8 +13,8 @@ namespace RavenIron.ValkyriesCargo.Client
     /// </summary>
     public sealed class ComfortReporter
     {
-        public static readonly int RestedHash = "VCargo_rested".GetStableHashCode();
-        public static readonly int ComfortHash = "VCargo_comfort".GetStableHashCode();
+        public static readonly int RestedHash = Keys.Rested.GetStableHashCode();
+        public static readonly int ComfortHash = Keys.Comfort.GetStableHashCode();
 
         public const float IntervalSeconds = 2f;
 

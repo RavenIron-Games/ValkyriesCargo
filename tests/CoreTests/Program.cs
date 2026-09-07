@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using RavenIron.ValkyriesCargo.Core;
 using RavenIron.ValkyriesCargo.Net;
 using RavenIron.ValkyriesCargo.Client.Terminal;
@@ -57,6 +58,7 @@ namespace ValkyriesCargo.Tests
             CargoRpcTests();
             FlightPlanTests();
             MerchantPlanTests();
+            KeysTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
             return _failed == 0 ? 0 : 1;
@@ -3075,6 +3077,37 @@ namespace ValkyriesCargo.Tests
                   "and a NEGATIVE id is 0 too (the id-0 case above passes with or without the guard, so it proves nothing alone)");
             Check(VisitSession.VisitIdOf(savedRow + "\r") == 41, "a row with a trailing CR still parses (Windows sidecar)");
 
+        }
+
+        /// <summary>
+        /// Issue #16's centralisation: every ZDO key and RPC name lives once, in `Core/Keys.cs`. Read by
+        /// reflection rather than a hand-typed list of the 21 names, so a future addition to `Keys` is
+        /// covered automatically instead of silently skipped by a harness nobody remembered to update.
+        /// </summary>
+        private static void KeysTests()
+        {
+            Section("Keys (every VCargo_ name, in one place)");
+
+            FieldInfo[] fields = typeof(Keys)
+                .GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string))
+                .ToArray();
+
+            Check(fields.Length >= 21, "at least the 21 names issue #16 inventoried are present (found " + fields.Length + ")");
+
+            var values = new List<string>();
+            foreach (FieldInfo f in fields)
+            {
+                string v = (string)f.GetRawConstantValue();
+                values.Add(v);
+                Check(!string.IsNullOrEmpty(v), "Keys." + f.Name + " is not empty");
+                Check(v.StartsWith("VCargo_", StringComparison.Ordinal),
+                      "Keys." + f.Name + " ('" + v + "') carries the VCargo_ prefix, not the old two-letter one");
+            }
+
+            var distinct = new HashSet<string>(values, StringComparer.Ordinal);
+            Equal(values.Count, distinct.Count,
+                  "no two Keys constants collide (" + values.Count + " names declared, " + distinct.Count + " distinct)");
         }
     }
 

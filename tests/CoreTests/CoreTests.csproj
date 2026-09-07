@@ -33,6 +33,7 @@
     <Compile Include="..\..\ValkyriesCargo\Core\VisitClock.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\FlightPlan.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\MerchantPlan.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\Keys.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\VisitSession.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Lines.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Sidecar.cs" />

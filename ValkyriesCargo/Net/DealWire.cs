@@ -16,7 +16,7 @@ namespace RavenIron.ValkyriesCargo.Net
     /// </summary>
     public static class DealWire
     {
-        public const string Open = "VCargo_open", Close = "VCargo_close", DealName = "VCargo_deal", Ack = "VCargo_ack", Claim = "VCargo_claim", Dismiss = "VCargo_dismiss", Dealt = "VCargo_dealt";
+        public const string Open = Keys.Open, Close = Keys.Close, DealName = Keys.Deal, Ack = Keys.Ack, Claim = Keys.Claim, Dismiss = Keys.Dismiss, Dealt = Keys.Dealt;
 
         private static readonly HashSet<ZRpc> _registered = new HashSet<ZRpc>();
         private static readonly HashSet<long> _open = new HashSet<long>();
@@ -86,7 +86,7 @@ namespace RavenIron.ValkyriesCargo.Net
                 Deal deal = Deal.Parse(encoded, problems);
                 if (deal == null)
                 {
-                    ValkyriesCargo.Log.LogWarning("VCargo_deal from " + Who(peer) + " did not parse: " + string.Join("; ", problems.ToArray()));
+                    ValkyriesCargo.Log.LogWarning(DealName + " from " + Who(peer) + " did not parse: " + string.Join("; ", problems.ToArray()));
                     Answer(rpc, DealResult.Refuse(0, DealReason.Malformed));
                     return;
                 }
@@ -97,7 +97,7 @@ namespace RavenIron.ValkyriesCargo.Net
             }
             catch (Exception ex)
             {
-                if (_throws++ < 3) ValkyriesCargo.Log.LogError("VCargo_deal handler threw: " + ex);
+                if (_throws++ < 3) ValkyriesCargo.Log.LogError(DealName + " handler threw: " + ex);
             }
         }
 
@@ -112,7 +112,7 @@ namespace RavenIron.ValkyriesCargo.Net
             }
             catch (Exception ex)
             {
-                if (_throws++ < 3) ValkyriesCargo.Log.LogError("VCargo_ack handler threw: " + ex);
+                if (_throws++ < 3) ValkyriesCargo.Log.LogError(Ack + " handler threw: " + ex);
             }
         }
 
@@ -125,11 +125,11 @@ namespace RavenIron.ValkyriesCargo.Net
                 if (d == null || peer == null) return;
                 List<DealResult> owed = d.Owed(KeyFor(peer));
                 foreach (DealResult r in owed) { Answer(rpc, r); Redeliveries++; }
-                if (owed.Count > 0) ValkyriesCargo.Log.LogInfo("VCargo_claim from " + Who(peer) + ": redelivered " + owed.Count + " owed deal(s)");
+                if (owed.Count > 0) ValkyriesCargo.Log.LogInfo(Claim + " from " + Who(peer) + ": redelivered " + owed.Count + " owed deal(s)");
             }
             catch (Exception ex)
             {
-                if (_throws++ < 3) ValkyriesCargo.Log.LogError("VCargo_claim handler threw: " + ex);
+                if (_throws++ < 3) ValkyriesCargo.Log.LogError(Claim + " handler threw: " + ex);
             }
         }
 
@@ -141,11 +141,11 @@ namespace RavenIron.ValkyriesCargo.Net
                 VisitDirector d = CargoTick.Director;
                 if (d == null || peer == null) return;
                 if (!d.Session.Active || d.Session.VisitId != visitId) return;
-                ValkyriesCargo.Log.LogInfo("VCargo_dismiss from " + Who(peer) + ": " + d.Dismiss("dismissed by " + Who(peer)));
+                ValkyriesCargo.Log.LogInfo(Dismiss + " from " + Who(peer) + ": " + d.Dismiss("dismissed by " + Who(peer)));
             }
             catch (Exception ex)
             {
-                if (_throws++ < 3) ValkyriesCargo.Log.LogError("VCargo_dismiss handler threw: " + ex);
+                if (_throws++ < 3) ValkyriesCargo.Log.LogError(Dismiss + " handler threw: " + ex);
             }
         }
 
@@ -155,7 +155,7 @@ namespace RavenIron.ValkyriesCargo.Net
         {
             if (rpc == null || r == null) return;
             try { rpc.Invoke(Dealt, r.Encode()); }
-            catch (Exception ex) { if (_throws++ < 3) ValkyriesCargo.Log.LogError("VCargo_dealt send threw: " + ex); }
+            catch (Exception ex) { if (_throws++ < 3) ValkyriesCargo.Log.LogError(Dealt + " send threw: " + ex); }
         }
 
         private static ZNetPeer PeerFor(ZRpc rpc)

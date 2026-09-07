@@ -42,22 +42,22 @@ namespace RavenIron.ValkyriesCargo.Server
     public static class Spawner
     {
         // The bird.
-        public static readonly int CargoHash = "VCargo_cargo".GetStableHashCode();      // int visitId: this is ours
-        public static readonly int TargetHash = "VCargo_target".GetStableHashCode();    // Vector3: where to put him down
-        public static readonly int DroppedHash = "VCargo_dropped".GetStableHashCode();  // bool: he is on the ground
+        public static readonly int CargoHash = Keys.Cargo.GetStableHashCode();      // int visitId: this is ours
+        public static readonly int TargetHash = Keys.Target.GetStableHashCode();    // Vector3: where to put him down
+        public static readonly int DroppedHash = Keys.Dropped.GetStableHashCode();  // bool: he is on the ground
         /// <summary>
         /// `VCargo_turn`: the descent waypoint, whole, from the server's plan. It has a key of its own
         /// because the first version had the client rebuild it from the start and the drop, and the
         /// rebuild came out on the opposite side, at a different distance, with none of the plan's
         /// block clamp (PR #8's review). One author, one number, no second copy of the maths.
         /// </summary>
-        public static readonly int TurnHash = "VCargo_turn".GetStableHashCode();        // Vector3: the descent waypoint
+        public static readonly int TurnHash = Keys.Turn.GetStableHashCode();        // Vector3: the descent waypoint
         // The merchant.
-        public static readonly int IngvarHash = "VCargo_ingvar".GetStableHashCode();    // int visitId: this is Ingvar
-        public static readonly int SeedHash = "VCargo_seed".GetStableHashCode();        // int: his lines and his bearing
-        public static readonly int StateHash = "VCargo_state".GetStableHashCode();      // int: carried/approaching/trading/leaving
+        public static readonly int IngvarHash = Keys.Ingvar.GetStableHashCode();    // int visitId: this is Ingvar
+        public static readonly int SeedHash = Keys.Seed.GetStableHashCode();        // int: his lines and his bearing
+        public static readonly int StateHash = Keys.State.GetStableHashCode();      // int: carried/approaching/trading/leaving
         /// <summary>`VCargo_carrier`: the bird he hangs from, ZDOID.None once he is down. Two int keys, the way ZDO stores an id.</summary>
-        public static readonly KeyValuePair<int, int> CarrierKey = ZDO.GetHashZDOID("VCargo_carrier");
+        public static readonly KeyValuePair<int, int> CarrierKey = ZDO.GetHashZDOID(Keys.Carrier);
 
         public const string BirdPrefab = "Valkyrie";
 

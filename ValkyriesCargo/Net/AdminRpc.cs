@@ -13,8 +13,8 @@ namespace RavenIron.ValkyriesCargo.Net
     /// </summary>
     public static class AdminRpc
     {
-        public const string Request = "VCargo_admin";
-        public const string Reply = "VCargo_reply";
+        public const string Request = Keys.Admin;
+        public const string Reply = Keys.Reply;
 
         private static ZRoutedRpc _registeredOn;
         private static int _throws;

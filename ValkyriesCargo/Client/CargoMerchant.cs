@@ -104,8 +104,8 @@ namespace RavenIron.ValkyriesCargo.Client
 
                 if (_nview.IsValid())
                 {
-                    _nview.Register<int>("VCargo_say", RPC_Say);
-                    _nview.Register("VCargo_vanish", RPC_Vanish);
+                    _nview.Register<int>(Keys.Say, RPC_Say);
+                    _nview.Register(Keys.Vanish, RPC_Vanish);
                 }
 
                 Reassert();
