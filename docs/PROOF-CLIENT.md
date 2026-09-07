@@ -676,18 +676,33 @@ with the server's `comfort>=4`.
 
 ### 19, 20 — the body (when the bundle exists)
 
-The loader lands this round (`Client/BodyLoader.cs`, WORKSPLIT track A5) and adds `cargo body` and
-`cargo body preview` to the console. **Both need a baked bundle, which does not exist yet**: Wu'barrk
-bakes it on Unity 6000.0.61f1 (DESIGN §11, §5). Until then these two items cannot be run at all.
+The loader is on `main` (`Client/BodyLoader.cs`, `Client/IngvarBody.cs`, P8 mod side). **Both items need a
+baked bundle, which does not exist yet**: Wu'barrk bakes it on Unity 6000.0.61f1 (`models/SETUP-FOR-CLAUDE.md`),
+it goes to `Assets\valkyriescargo_kit` at the repo root and the csproj embeds it on the next build (the DLL grows
+by about the bundle's size; `tools/package.ps1` prints both sizes). For trying a bake without a rebuild, the same
+file beside the DLL in the plugin folder is accepted, and `cargo body` labels it as a LOCAL file. Until a bundle
+exists the verbs still answer, honestly, and that answer is worth one line in the log.
 
-- **19 — `cargo body`:** the loader's own report — whether the bundle resource was found, its size, the
-  prefab inside it, and whether the Animator controller and its clips resolved.
-- **20 — `cargo body preview`:** the body drawn in the world without a visit, so the rig, the material
-  and the clips can be looked at before P5 exists.
+- **19 — `cargo body`** (client console, any time; on a dedicated server console too, if one is attached).
+  Format strings from `Patches/Patch_Terminal.cs`, `BodyReport`:
+  - `body: source embedded - <detail>` then `  resource: 'ValkyriesCargo.valkyriescargo_kit' inside this DLL, which is what makes every player's Ingvar the same one`. With no bake: `body: source none - <detail>`. With a loose file: `body: source file - <detail>` and `  file: <path> - a LOCAL file, NOT the copy other players have; embed it before it ships`.
+  - `  bundle open, prefab 'ingvar' found, CustomBody=True (false keeps the Dverger stand-in), renderer=yes` — on a dedicated server `renderer=no` and nothing after it says anything about appearance.
+  - `  clips (6 of 6 wanted): <names with lengths>`; any absent take prints `    MISSING '<name>': it plays at weight 0 and the rest carry on`. Expect `Walk 4.21s, Idle 10.00s, Talk 5.17s, Hello 3.79s, Shrug 2.00s, Nod 1.25s` (`models/README.md` section 1).
+  - `  rig: SkinnedMeshRenderer=yes, bones=24 (24 expected), tris=31112 (31112 expected); <bounds>; ground offset 0.000 m, derived from the meshes (0 expected: his origin is at his feet)`. An offset that is NOT near 0 prints ` - NOT near 0, and his origin is meant to be at his feet`: that is the bake, not the loader.
+  - `  preview: none (cargo body preview)`.
+  Paste the whole block into `CLAUDE.md` Status. The log carries the same facts at load, prefixed `body:`.
+- **20 — `cargo body preview`** (client console, in a world, standing on open ground):
+  - `cargo: Ingvar is standing 2.5 m in front of you at y <n> (ground offset <n> m), 6 clip(s) bound, graph live. Nothing about him is networked. ...`. Refusals: `cargo: nothing to draw here (no renderer)`, `cargo: no body to show - <detail>`, `cargo: no local player to stand in front of`.
+  - Look: about 1.37 m tall (a head shorter than you), feet ON the ground, facing you, the idle moving rather than frozen.
+  - `cargo body walk` → `cargo: walking on the spot at a simulated 1.0 m/s; the blend crosses over 0.15 s`; again → `cargo: back to his real speed, which for a body that does not move is zero`.
+  - `cargo body clip Hello` → `cargo: Hello - blends in over 0.06 s, hands back at 85% of its length`; a second one while it plays → `cargo: 'Hello' is already playing, or the bundle does not carry it`. Then `Talk`, `Shrug`, `Nod` (the nod is subtle by design).
+  - `cargo body` while he stands there: `  preview: up, graph live, 6 clip(s) bound, speed 0.00 m/s, blend 0.00 toward Idle, one-shot none` (with `(SIMULATED 1.0)` and `toward Walk` after `walk`).
+  - `cargo body clear` → `cargo: the preview is gone`; again → `cargo: there was no preview`.
+  Paste the preview line and what you saw into `CLAUDE.md` Status, and a screenshot into the PR that lands the bundle.
 
-**These two are the only entries in this file whose expected lines are NOT quoted from code** — the
-loader was not on `main` when this was written. Before running them, read the two verbs in
-`Patches/Patch_Terminal.cs` and paste the format strings in here, the way every other item is written.
+Then on a merchant (P5, Wu'barrk's): the Dverger and his crossbow gone, Ingvar walking when the agent walks,
+`cargo prefab` showing the same component set as before the swap, and nothing in the log about a vanilla system
+losing its animator.
 
 ---
 
