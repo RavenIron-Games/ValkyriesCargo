@@ -15,8 +15,11 @@ namespace RavenIron.ValkyriesCargo.Client
     /// The maths is vanilla `UpdateValkyrie`, read from the decompile and kept: three waypoints, a 25 m
     /// look-ahead clamped to the ground, a banked turn capped at 30 degrees of error mapped to 45 degrees
     /// of roll, linear steps at the flight speed, arrival on 0.5 m of XZ distance. What differs is only
-    /// what the design changes: EVERY waypoint comes from the server's plan, read off the ZDO, the floor
-    /// is `max(ground, water) + m_dropHeight`, and nothing anywhere touches `Player.m_localPlayer`.
+    /// what the design changes: EVERY waypoint comes from the server's plan, read off the ZDO; the floor
+    /// is `max(ground, water) + m_dropHeight` WHEN the ground raycast succeeds and otherwise no floor at
+    /// all (F7, 2026-09-07 -- `TryFloorAt`/`FlightPlan.TryFloor`: an unknown floor leaves the altitude
+    /// exactly where it already was, matching vanilla's own success-branch-only behaviour); and nothing
+    /// anywhere touches `Player.m_localPlayer`.
     ///
     /// Two of those are corrections from PR #8's review, and both are worth naming because a clean build
     /// and 878 green checks hid them both:
@@ -61,6 +64,8 @@ namespace RavenIron.ValkyriesCargo.Client
         private Animator _animator;
         private Vector3 _drop, _descentStart, _away;
         private bool _descent, _dropped, _animated;
+        /// <summary>F7: logged once per bird, the first time the ground raycast has nothing to say.</summary>
+        private bool _loggedFloorUnknown;
         // Speed and turn rate are the synced config's; only the drop height is the prefab's. The
         // prefab says speed 20, turn rate 20, drop height 10, and the first two are vanilla's tuning
         // for a 500 m approach we are not flying. See the class comment.
@@ -167,8 +172,10 @@ namespace RavenIron.ValkyriesCargo.Client
 
             // Look 25 m ahead along the bearing and lift that point clear of ground and water; steering
             // at the lifted point is what keeps the bird from flying into a hillside on the way in.
+            // F7: an unknown floor leaves this alone -- `ahead.y` already carries the current climb/dive
+            // trend forward from `transform.position`, which is exactly "leave the altitude alone" here.
             Vector3 ahead = transform.position + (target - transform.position).normalized * LookAhead;
-            ahead.y = Mathf.Max(ahead.y, Floor(ahead) + _dropHeight);
+            if (TryFloorAt(ahead, out float aheadFloor)) ahead.y = Mathf.Max(ahead.y, aheadFloor + _dropHeight);
 
             Vector3 heading = (ahead - transform.position).normalized;
             Quaternion want = Quaternion.LookRotation(heading);
@@ -180,7 +187,10 @@ namespace RavenIron.ValkyriesCargo.Client
 
             Vector3 velocity = transform.forward * _speed;
             Vector3 next = transform.position + velocity * dt;
-            next.y = Mathf.Max(next.y, Floor(next) + _dropHeight);
+            // F7: same rule. `next.y` already carries forward from `transform.position.y` via the pitch
+            // the steering above just chose, so an unknown floor means "trust that", not "assume p.y is
+            // also the ground" -- the self-reference that used to add dropHeight back in every step.
+            if (TryFloorAt(next, out float nextFloor)) next.y = Mathf.Max(next.y, nextFloor + _dropHeight);
             transform.position = next;
 
             // So every other screen sees a bird gliding rather than stepping. See the class comment.
@@ -198,8 +208,11 @@ namespace RavenIron.ValkyriesCargo.Client
             _dropped = true;
             _descent = true;
 
+            // F7: if the ground under the drop point is not known yet, keep the AUTHORED y (the pilot's
+            // own altitude plus DropAltitude, from FlightPlan.Make) rather than overwrite it with
+            // anything -- a guess here is what P5 stands the merchant on.
             Vector3 at = _drop;
-            at.y = Floor(at);
+            if (TryFloorAt(at, out float dropFloor)) at.y = dropFloor;
             ZDO zdo = _nview.GetZDO();
             if (zdo != null)
             {
@@ -246,17 +259,29 @@ namespace RavenIron.ValkyriesCargo.Client
             return null;
         }
 
-        /// <summary>Ground or water, whichever is higher: he is never carried below the sea.</summary>
-        private static float Floor(Vector3 p)
+        /// <summary>
+        /// The engine half of F7 (2026-09-07): run the ground raycast and hand its answer to the pure
+        /// `FlightPlan.TryFloor` for the actual decision. Ground or water, whichever is higher, when the
+        /// raycast succeeds; "leave the altitude alone" -- signalled by returning false, never by a
+        /// sentinel float -- when it does not, e.g. a freshly generated zone at the flight's own 90 m
+        /// start whose terrain collider has not finished building
+        /// (`ZoneSystem.GetGroundHeight(Vector3, out float)`, decompiled 2026-09-06/07: returns false
+        /// with `height = 0` on a raycast miss). Logged once per bird so a screen run explains a bird
+        /// that sat still on altitude rather than looking like a silent no-op (debugging discipline).
+        /// </summary>
+        private bool TryFloorAt(Vector3 p, out float floor)
         {
-            float ground = p.y;
             ZoneSystem zs = ZoneSystem.instance;
-            if (zs != null)
+            if (zs == null) { floor = 0f; return false; }
+            bool groundKnown = zs.GetGroundHeight(p, out float ground);
+            bool known = FlightPlan.TryFloor(groundKnown, ground, zs.m_waterLevel, out floor);
+            if (!known && !_loggedFloorUnknown)
             {
-                if (!zs.GetGroundHeight(p, out ground)) ground = p.y;
-                ground = Mathf.Max(ground, zs.m_waterLevel);
+                _loggedFloorUnknown = true;
+                ValkyriesCargo.Log.LogInfo("cargo flight #" + _visitId + ": ground unknown at " + Vec(p) +
+                                            " (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds");
             }
-            return ground;
+            return known;
         }
 
         private static float DistanceXZ(Vector3 a, Vector3 b)

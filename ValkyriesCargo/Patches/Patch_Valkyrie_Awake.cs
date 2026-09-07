@@ -35,11 +35,27 @@ namespace RavenIron.ValkyriesCargo.Patches
             if (!__runOriginal) return false;    // somebody ahead of us already decided; honour it
             try
             {
-                // Public API only: ZNetView.GetZDO. On the create path the ZDO is already attached and
-                // already carries the server's keys, because ZNetScene.CreateObject parks it in
-                // ZNetView.m_initZDO and ZNetView.Awake consumes it before any other Awake runs.
+                // Public API only: ZNetView.GetZDO, and, on the F8 fallback below, ZNetView.m_initZDO.
+                //
+                // Component Awake order on a GameObject is the PREFAB'S SERIALIZED ORDER, not a
+                // guarantee -- it is not vanilla's to promise and nothing pins it. If ZNetView sits
+                // after Valkyrie in the prefab, `nview.GetZDO()` reads null here, because ZNetView.Awake
+                // (which assigns its private m_zdo) has not run yet on this same GameObject.
+                //
+                // The fallback is safe, not a guess (decompiled 2026-09-07): ZNetScene.CreateObject sets
+                // the PUBLIC STATIC `ZNetView.m_initZDO = zdo;` immediately before the synchronous
+                // `Object.Instantiate(prefab, position, rotation)` call, and ZNetView.Awake's first act
+                // is `m_zdo = m_initZDO; m_initZDO = null;` -- consumed and nulled in the same statement.
+                // If nothing on the new object claims it, CreateObject itself nulls it right after
+                // Instantiate returns (`if (m_initZDO != null) { ...; m_initZDO = null; }`), so it is
+                // ALWAYS null outside the single synchronous Instantiate call it was set for. Unity calls
+                // every component's Awake on a freshly instantiated object before Instantiate returns,
+                // on the same thread, so no other CreateObject can run while we are inside this one --
+                // a non-null m_initZDO observed from here can only be THIS object's ZDO, never a stale
+                // one left over from something instantiated earlier or later.
                 ZNetView nview = __instance.GetComponent<ZNetView>();
                 ZDO zdo = nview != null ? nview.GetZDO() : null;
+                if (zdo == null) zdo = ZNetView.m_initZDO;
                 if (zdo == null || zdo.GetInt(Spawner.CargoHash, 0) == 0) return true;   // a real intro; leave it alone
 
                 __instance.enabled = false;
