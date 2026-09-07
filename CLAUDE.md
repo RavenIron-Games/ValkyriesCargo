@@ -225,19 +225,25 @@ owner overwrites next frame).
 
 ## The workspace knowledge base — read it BEFORE deriving anything
 
-`..\libs-Tools\` is the family's accumulated engine knowledge, written up from mods that shipped and
+`libs-Tools\` is the family's accumulated engine knowledge, written up from mods that shipped and
 broke in production. **This mod did not consult it until 2026-09-07 and paid for that once already**
 (see the two corrections below). Consult it before decompiling, and before designing any system whose
 shape another mod has already found the hard way.
 
-| Where | What is in it |
+> **It lives on Wu'barrk's machine only** — `~/WubarrkCODING/libs-Tools/`, a sibling of this repo there,
+> and it is not in this repository or on Don's. It is Markdown, not binaries, so it *could* be shared;
+> until it is, the table below is a catalogue of what to ask him for, not a path to open. Anything from
+> it that this mod actually depends on gets copied into this repo as a quoted fact with its source
+> named — as the two corrections below are — so the code here never rests on a document Don cannot read.
+
+| What to ask for | What is in it |
 |---|---|
-| `libs-Tools\IMPLEMENTATIONS\MASTER_IMPLEMENTATIONS.md` | The index: every reusable system in every project, one line each, pointing at a per-project detail file. Its **READ FIRST** section is the moving-an-object rules and the traps that cost real player data. |
-| `libs-Tools\IMPLEMENTATIONS\DvergrAllies.md` | **P5's ground truth.** A shipped mod that clones Dverger prefabs, tames them, makes them follow and overrides their `MonsterAI`. The exact de-hostility field list, `Character.Faction.Players`, the staggered re-apply, the `Tameable` retrofit. |
-| `libs-Tools\IMPLEMENTATIONS\WingsoftheValkyrie.md` | Flight movement and a multiplayer VFX state sync over custom ZDO fields — the same shape as `vc_state`. |
-| `libs-Tools\IMPLEMENTATIONS\AwayFromHome.md`, `MistsofAvalor.md` | The bundle pipeline and the grave-relocation disaster. Already cited by `models\README.md`. |
-| `libs-Tools\VALHEIM-API-REFERENCE\` | 13 files of decompiled API facts with line numbers. `09-DAMAGE-ZDO-MULTIPLAYER.md` is the ZDO and damage authority: who runs what, and a GOTCHAS list that is worth reading whole. |
-| `libs-Tools\*-FACTS.md` | Per-topic findings: dedicated server, headless/empty server, ZDO wire limits, console routing, player identity, player attach. |
+| `IMPLEMENTATIONS\MASTER_IMPLEMENTATIONS.md` | The index: every reusable system in every project, one line each, pointing at a per-project detail file. Its **READ FIRST** section is the moving-an-object rules and the traps that cost real player data. |
+| `IMPLEMENTATIONS\DvergrAllies.md` | **P5's ground truth.** A shipped mod that clones Dverger prefabs, tames them, makes them follow and overrides their `MonsterAI`. The exact de-hostility field list, `Character.Faction.Players`, the staggered re-apply, the `Tameable` retrofit. |
+| `IMPLEMENTATIONS\WingsoftheValkyrie.md` | Flight movement and a multiplayer VFX state sync over custom ZDO fields — the same shape as `vc_state`. |
+| `IMPLEMENTATIONS\AwayFromHome.md`, `MistsofAvalor.md` | The bundle pipeline and the grave-relocation disaster. Already cited by `models\README.md`. |
+| `VALHEIM-API-REFERENCE\` | 13 files of decompiled API facts with line numbers. `09-DAMAGE-ZDO-MULTIPLAYER.md` is the ZDO and damage authority: who runs what, and a GOTCHAS list that is worth reading whole. |
+| `*-FACTS.md` | Per-topic findings: dedicated server, headless/empty server, ZDO wire limits, console routing, player identity, player attach. |
 
 ### Two corrections it forces on this repo
 
