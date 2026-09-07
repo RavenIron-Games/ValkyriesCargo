@@ -2373,29 +2373,41 @@ namespace ValkyriesCargo.Tests
             Check(Math.Abs(BodySum(r) - 1f) < 1e-5f, "and the weights still sum to 1");
 
             // ---- guards: a hitch, a bad delta, a bad sample -------------------------------------------
+            // The crossfade is deliberately caught PART WAY, where a bad delta has somewhere to go wrong.
+            // Asserted at a resting state these checks pass whatever the guard does, which is worthless.
             BodyMotion g = new BodyMotion();
-            BodyRun(g, 2f, 1f);
-            float walkBefore = g.WalkBlend, speedBefore = g.SmoothedSpeed;
+            g.Tick(1f / 60f, 1f);
+            g.Tick(1f / 60f, 1f);
+            float walkBefore = g.WalkBlend, speedBefore;
+            Check(walkBefore > 0.1f && walkBefore < 0.9f, "the crossfade is caught part way, mid-move");
             g.Tick(float.NaN, 1f);
             Equal(walkBefore, g.WalkBlend, "a NaN delta moves nothing");
+            Check(!float.IsNaN(g.SmoothedSpeed), "and leaves no NaN in the filter");
             g.Tick(-5f, 1f);
             Equal(walkBefore, g.WalkBlend, "nor does a negative one");
+            Check(g.SmoothedSpeed >= 0f, "and time never runs backwards through the filter");
             g.Tick(float.PositiveInfinity, 1f);
             Check(!float.IsNaN(g.WalkBlend) && !float.IsNaN(g.SmoothedSpeed), "an infinite one leaves no NaN behind");
-            g.Tick(0f, 1f);
-            Equal(walkBefore, g.WalkBlend, "a zero delta is a no-op");
-            g.Tick(float.NaN, float.NaN);
-            Check(!float.IsNaN(g.SmoothedSpeed), "a NaN speed sample never reaches the filter");
-            speedBefore = g.SmoothedSpeed;
-            g.Tick(0.1f, float.NaN);
-            Equal(speedBefore, g.SmoothedSpeed, "the filter HOLDS on a NaN sample rather than snapping to zero");
-            g.Tick(0.1f, -4f);
-            Check(g.SmoothedSpeed < speedBefore && g.SmoothedSpeed >= 0f, "a negative speed is read as standing still, never as motion");
+            BodyMotion g2 = new BodyMotion();
+            g2.Tick(1f / 60f, 1f);
+            float held = g2.WalkBlend;
+            g2.Tick(0f, 1f);
+            Equal(held, g2.WalkBlend, "a zero delta is a no-op");
+            g2.Tick(float.NaN, float.NaN);
+            Check(!float.IsNaN(g2.SmoothedSpeed), "a NaN speed sample never reaches the filter");
+            speedBefore = g2.SmoothedSpeed;
+            g2.Tick(0.1f, float.NaN);
+            Equal(speedBefore, g2.SmoothedSpeed, "the filter HOLDS on a NaN sample rather than snapping to zero");
+            g2.Tick(0.1f, -4f);
+            Check(g2.SmoothedSpeed < speedBefore && g2.SmoothedSpeed >= 0f, "a negative speed is read as standing still, never as motion");
 
+            // A hitch must not swallow a gesture whole: without the clamp, one frame of 600 s takes a
+            // one-shot past its hand-back point and Ingvar never waves at all.
             BodyMotion j = new BodyMotion();
-            j.Fire(BodyClip.Nod);
+            j.Fire(BodyClip.Hello);
             j.Tick(600f, 0f);
-            Check(j.ShotTime <= BodyMotion.MaxStepSeconds + 1e-5f, "a 10-minute hitch advances by at most MaxStepSeconds");
+            Equal(BodyMotion.MaxStepSeconds, j.ShotTime, "a 10-minute hitch advances a one-shot by at most MaxStepSeconds");
+            Equal(BodyClip.Hello, j.Current, "so the hitch does not swallow the gesture whole");
             Check(Math.Abs(BodySum(j) - 1f) < 1e-5f, "and leaves the weights whole");
 
             BodyMotion z = new BodyMotion();
