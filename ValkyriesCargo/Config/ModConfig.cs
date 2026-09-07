@@ -87,7 +87,7 @@ namespace RavenIron.ValkyriesCargo.Config
             };
 
             LockConfiguration = cfg.Bind("Server", "LockConfiguration", true,
-                "Server enforces every Server.* value on every client. Admins on adminlist.txt may still change them. Read on the SERVER.");
+                "Server enforces every Server.* value on every client. Admins on adminlist.txt may still change them. Read by ServerSync on EVERY machine; the server's value is the one that arrives.");
             Sync.AddLockingConfigEntry(LockConfiguration);
 
             Enabled = S(cfg, "Server", "Enabled", true,
@@ -95,7 +95,7 @@ namespace RavenIron.ValkyriesCargo.Config
             RequireRested = S(cfg, "Server", "RequireRested", true,
                 "A player must carry the Rested effect to be eligible. Read on the SERVER.");
             MinComfortLevel = S(cfg, "Server", "MinComfortLevel", 4,
-                "Minimum comfort level (the number in the Rested tooltip) for eligibility. A bed, a fire and a roof give 3; 4 needs a chair or a banner. Read on the SERVER.",
+                "Minimum comfort level (the number in the Rested tooltip) for eligibility. Vanilla counts 1 outdoors, 2 under a roof, and one step more for each distinct comfort piece within 10 m - a bed, a fire, a chair, a banner (SE_Rested.CalculateComfortLevel). `cargo status` prints what your own character reports. Read on the SERVER.",
                 new AcceptableValueRange<int>(0, 20));
             MinBaseValue = S(cfg, "Server", "MinBaseValue", 1,
                 "Vanilla base value at the player (workbench/forge coverage); vanilla raids use 3. Read on the SERVER.",
@@ -118,18 +118,18 @@ namespace RavenIron.ValkyriesCargo.Config
                 "How long Ingvar stays, as the vanilla random event's duration. Ours alone: Odin's prefab says 60, not the 300 his field initialiser says, so this number was never inherited from him. Read on the SERVER.",
                 new AcceptableValueRange<float>(30f, 1800f));
             ApproachDistance = S(cfg, "Server", "ApproachDistance", 3.5f,
-                "Metres from the pilot at which he stops walking. Read on the SERVER.",
+                "Metres from the player at which Ingvar stops walking up (P5, CargoMerchant). Read on the CLIENT that owns the merchant, synced from the server.",
                 new AcceptableValueRange<float>(1f, 10f));
             BodyPrefab = S(cfg, "Server", "BodyPrefab", "Dverger",
-                "The creature prefab that plays Ingvar until the custom body exists. Must have a Humanoid, a MonsterAI and an Animator. Read on the SERVER.");
+                "The engine creature prefab the merchant is CLONED FROM, for good: Character, MonsterAI and the collider all come from it. Must have a Humanoid, a MonsterAI and an Animator. This is not the custom-body switch - that is CustomBody. Read on the SERVER.");
             CustomBody = S(cfg, "Server", "CustomBody", true,
-                "Put Ingvar's own body on the BodyPrefab clone from the AssetBundle embedded in this DLL. False keeps the Dverger stand-in visible, and so does a build with no bundle embedded (`cargo body` says which). This is the switch, NOT BodyPrefab: BodyPrefab stays the engine prefab the merchant is cloned from, because Character, MonsterAI and the collider all come from it. Read on the SERVER.");
+                "Put Ingvar's own body on the BodyPrefab clone from the AssetBundle embedded in this DLL. False keeps the Dverger stand-in visible, and so does a build with no bundle embedded (`cargo body` says which). This is the switch, NOT BodyPrefab: BodyPrefab stays the engine prefab the merchant is cloned from, because Character, MonsterAI and the collider all come from it. Read on the CLIENT, synced from the server; a dedicated server never reads it.");
             FlightStartDistance = S(cfg, "Server", "FlightStartDistance", 90f,
-                "Metres from the pilot where the Valkyrie appears; clamped at runtime into the pilot's active zone block. Read on the SERVER.",
-                new AcceptableValueRange<float>(24f, 200f));
+                "Metres from the pilot where the Valkyrie appears; shrunk at runtime, 12 m at a time, until the start fits inside the pilot's active zone block. The floor is FlightPlan.MinimumStartDistance (30 m): below that the bird would appear on top of the player. Read on the SERVER.",
+                new AcceptableValueRange<float>(30f, 200f));
             FlightStartAltitude = S(cfg, "Server", "FlightStartAltitude", 120f,
                 "Altitude of the Valkyrie's start point, metres above the drop. Read on the SERVER.",
-                new AcceptableValueRange<float>(30f, 500f));
+                new AcceptableValueRange<float>(30f, 400f));
             FlightDescentDistance = S(cfg, "Server", "FlightDescentDistance", 50f,
                 "Metres out at which the descent leg begins. Read on the SERVER.",
                 new AcceptableValueRange<float>(10f, 200f));
@@ -138,10 +138,10 @@ namespace RavenIron.ValkyriesCargo.Config
             // the same flight takes 17 s. The turn rate is ours for the same reason, and because the
             // prefab's 20 deg/s is a 57 m turning circle - wider than the whole approach (PR #8).
             FlightSpeed = S(cfg, "Server", "FlightSpeed", 8f,
-                "Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. Read on the SERVER, synced to every client, which is where the flying happens.",
+                "Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. Read on the CLIENT that owns the bird (CargoFlight.Awake), synced from the server; the server never reads it.",
                 new AcceptableValueRange<float>(2f, 40f));
             FlightTurnRate = S(cfg, "Server", "FlightTurnRate", 45f,
-                "Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the SERVER, synced to every client.",
+                "Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the CLIENT that owns the bird, synced from the server; the server never reads it.",
                 new AcceptableValueRange<float>(5f, 360f));
             CatalogueLine = S(cfg, "Server", "Catalogue", Catalogue.DefaultLine,
                 "What Ingvar sells and buys: Prefab:BasePrice:TargetStock:MaxStock:Kind entries separated by commas; Kind is Ware (sells and buys back) or Want (buys only). Every number's reason is in docs/CATALOGUE.md. Unknown prefabs are dropped with one log line. Read on the SERVER.");
@@ -176,7 +176,7 @@ namespace RavenIron.ValkyriesCargo.Config
                 "supplying server the catalogue was written for. Read on the SERVER.",
                 new AcceptableValueRange<int>(0, 100));
             EnableBarter = S(cfg, "Server", "EnableBarter", true,
-                "Allow paying with goods he wants, valued at his live buy price. Read on the SERVER.");
+                "Allow paying with goods he wants, valued at his live buy price. False hides the terminal's Barter button; the server settles a barter deal either way. Read on the CLIENT, synced from the server.");
             // PriceChangePolicy is deliberately NOT bound. It was a synced, locked knob offering a choice
             // between Reconfirm and Teardown that NOTHING read: the terminal implements Reconfirm and only
             // Reconfirm (`Client/Terminal/TrayModel.cs`). A setting that promises a behaviour the code does

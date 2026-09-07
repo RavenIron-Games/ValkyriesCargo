@@ -239,7 +239,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                           : "none (no world)") +
                       ", inbox " + CargoRpc.Inbox.Count + " applied deliver" + (CargoRpc.Inbox.Count == 1 ? "y" : "ies") +
                       ", terminal " + (CargoTerminal.Instance != null ? (CargoTerminal.Instance.IsOpen ? "OPEN" + (CargoTerminal.Instance.IsDemo ? " (demo)" : "") : "closed" + (CargoTerminal.Instance.LastCloseReason.Length > 0 ? " (last: " + CargoTerminal.Instance.LastCloseReason + ")" : "")) : "none (no renderer)") +
-                      ", routed RPCs " + (AdminRpc.Registered ? "registered" : "not registered"));
+                      ", admin wire " + (AdminRpc.Registered ? "up (direct peer ZRpc)" : "not up"));
 
             BodyLoader.Load();
             Say(args, "  " + BodyLoader.StatusLine() + " (cargo body for the whole of it)");

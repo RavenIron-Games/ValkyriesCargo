@@ -28,6 +28,8 @@ namespace RavenIron.ValkyriesCargo.Server
         /// _dirty, because generated_at must keep moving even on a quiet server, or BarrkBOT starts
         /// calling perfectly current numbers stale past its own 60-minute threshold.</summary>
         public const float ExportCadenceSeconds = 60f;
+        /// <summary>How many refused deals get a log line before the rest are only counted.</summary>
+        public const int RefusalsLogged = 3;
 
         private readonly Scheduler _scheduler;
         private readonly Market _market;
@@ -73,6 +75,8 @@ namespace RavenIron.ValkyriesCargo.Server
         public string Problems { get; private set; } = "";
         public bool Dirty => _dirty;
         public int Loaded { get; private set; }
+        /// <summary>Deals this session refused, for every reason. Only the first few are logged; see Settle.</summary>
+        public int Refusals { get; private set; }
 
         public VisitDirector(Catalogue catalogue, MarketRules marketRules, SchedulerRules schedulerRules, double worldTime, string salt)
         {
@@ -309,6 +313,27 @@ namespace RavenIron.ValkyriesCargo.Server
         /// <summary>
         /// The wire's entry: settle against the market at the current prices, remember an accepted result as
         /// owed to this player until acked, publish the market. `visit_over` when no visit is running.
+        ///
+        /// THE COINS THE CLIENT CLAIMS ARE ADVISORY, and that is a decision, not an oversight (P11's
+        /// authority audit, 2026-09-07; DESIGN section 8). `deal.CoinsOffered` is a field the client
+        /// writes, and it is passed straight through as `playerCoins`. The server cannot check it and
+        /// never will be able to: vanilla keeps the inventory on the client-owned player ZDO and puts
+        /// no part of it on the wire, so there is no server-side count of anyone's coins to compare
+        /// against, and none of the player's items either -- a modified client can equally offer him
+        /// goods it does not carry. `coins_short` is therefore a courtesy to an honest client, not a
+        /// guard.
+        ///
+        /// What actually bounds a lying client is the MARKET's own numbers, every one of them the
+        /// server's (Core/Market.Settle):
+        ///   - `sold_out`: he cannot be bought out past his shelf, so a free buy costs him stock, and
+        ///     stock is what it was going to be after an honest deal anyway.
+        ///   - `over_max`: a phantom sale cannot overflow the shelf past the catalogue's MaxStock.
+        ///   - `purse_empty`: a phantom sale cannot draw a coin more than the purse holds, so the
+        ///     worst a lying client takes from one visit is the whole purse (PurseCoins plus the
+        ///     carry, capped at three purses) and no more.
+        ///   - the nonce ring and the visit id: neither replayed nor carried across visits.
+        /// The exposure is bounded and per-visit, and it is bounded by numbers the SERVER owns. Nothing
+        /// here reads the client's number for anything except refusing an honest client early.
         /// </summary>
         public DealResult Settle(Deal deal, string playerKey, string playerName)
         {
@@ -323,9 +348,15 @@ namespace RavenIron.ValkyriesCargo.Server
                 PublishMarket();
                 ValkyriesCargo.Log.LogInfo("deal " + r.DeliveryId + " with " + playerName + ": " + Describe(r) + "; purse " + _market.Purse);
             }
-            else if (r.Reason != DealReason.PriceChanged)
+            else
             {
-                ValkyriesCargo.Log.LogInfo("deal refused for " + playerName + ": " + r.Reason);
+                Refusals++;
+                // A refusal is free for the sender -- a malformed, duplicate or stale deal costs one
+                // packet and leaves the market untouched -- so this line is the one thing a client can
+                // flood. Capped like a patch body's, and the count is kept for `cargo status`.
+                if (r.Reason != DealReason.PriceChanged && Refusals <= RefusalsLogged)
+                    ValkyriesCargo.Log.LogInfo("deal refused for " + playerName + ": " + r.Reason +
+                                               (Refusals == RefusalsLogged ? "; further refusals are counted, not logged" : ""));
             }
             return r;
         }

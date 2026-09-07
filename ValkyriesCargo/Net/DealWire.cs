@@ -21,6 +21,8 @@ namespace RavenIron.ValkyriesCargo.Net
         private static readonly HashSet<ZRpc> _registered = new HashSet<ZRpc>();
         private static readonly HashSet<long> _open = new HashSet<long>();
         private static int _throws;
+        private static int _farDismissals;
+        private static int _badDeals;
 
         public static int Registered => _registered.Count;
         public static int OpenTerminals => _open.Count;
@@ -60,7 +62,7 @@ namespace RavenIron.ValkyriesCargo.Net
             if (_registered.Count > live.Count) _registered.RemoveWhere(r => !live.Contains(r));
         }
 
-        public static void Reset() { _registered.Clear(); _open.Clear(); }
+        public static void Reset() { _registered.Clear(); _open.Clear(); _lastClaim.Clear(); }
 
         // ---- handlers -------------------------------------------------------------------------------
 
@@ -86,7 +88,10 @@ namespace RavenIron.ValkyriesCargo.Net
                 Deal deal = Deal.Parse(encoded, problems);
                 if (deal == null)
                 {
-                    ValkyriesCargo.Log.LogWarning(DealName + " from " + Who(peer) + " did not parse: " + string.Join("; ", problems.ToArray()));
+                    // Client-driven: a malformed deal costs the sender one packet, so the log line is capped.
+                    if (_badDeals++ < 3)
+                        ValkyriesCargo.Log.LogWarning(DealName + " from " + Who(peer) + " did not parse: " + string.Join("; ", problems.ToArray()) +
+                                                      (_badDeals == 3 ? "; further parse failures are silent" : ""));
                     Answer(rpc, DealResult.Refuse(0, DealReason.Malformed));
                     return;
                 }
@@ -116,6 +121,16 @@ namespace RavenIron.ValkyriesCargo.Net
             }
         }
 
+        /// <summary>
+        /// A claim redelivers every owed row on the socket, so one small packet can ask the server for up
+        /// to `OwedLedger.DefaultPerPlayer` (50) packets back. That is an amplifier, and the client only
+        /// ever needs it once per connection (`CargoTransport.ClaimOnce`) or when a player types
+        /// `cargo claim`. One claim per peer per this many seconds; the rest are dropped in silence.
+        /// </summary>
+        public const float ClaimCooldownSeconds = 5f;
+
+        private static readonly Dictionary<long, float> _lastClaim = new Dictionary<long, float>();
+
         private static void OnClaim(ZRpc rpc)
         {
             try
@@ -123,6 +138,10 @@ namespace RavenIron.ValkyriesCargo.Net
                 ZNetPeer peer = PeerFor(rpc);
                 VisitDirector d = CargoTick.Director;
                 if (d == null || peer == null) return;
+                float now = UnityEngine.Time.time;
+                float last;
+                if (_lastClaim.TryGetValue(peer.m_uid, out last) && now - last < ClaimCooldownSeconds) return;
+                _lastClaim[peer.m_uid] = now;
                 List<DealResult> owed = d.Owed(KeyFor(peer));
                 foreach (DealResult r in owed) { Answer(rpc, r); Redeliveries++; }
                 if (owed.Count > 0) ValkyriesCargo.Log.LogInfo(Claim + " from " + Who(peer) + ": redelivered " + owed.Count + " owed deal(s)");
@@ -141,12 +160,45 @@ namespace RavenIron.ValkyriesCargo.Net
                 VisitDirector d = CargoTick.Director;
                 if (d == null || peer == null) return;
                 if (!d.Session.Active || d.Session.VisitId != visitId) return;
+                if (!AtTheVisit(peer, d.Session))
+                {
+                    if (_farDismissals++ < 3)
+                        ValkyriesCargo.Log.LogWarning("refused " + Dismiss + " from " + Who(peer) + ": " + Wire.Float(DistanceToVisit(peer, d.Session)) +
+                                                      " m from visit #" + visitId + "'s drop point, and a visitor is within " + Wire.Float(VisitorRange) + " m" +
+                                                      (_farDismissals == 3 ? "; further refusals are silent" : ""));
+                    return;
+                }
                 ValkyriesCargo.Log.LogInfo(Dismiss + " from " + Who(peer) + ": " + d.Dismiss("dismissed by " + Who(peer)));
             }
             catch (Exception ex)
             {
                 if (_throws++ < 3) ValkyriesCargo.Log.LogError(Dismiss + " handler threw: " + ex);
             }
+        }
+
+        /// <summary>
+        /// Design 3.8 says VCargo_dismiss may come from "any visitor". A visitor is someone AT the visit, and
+        /// the radius that already means that in this mod is the event's own `m_eventRange` (96 m,
+        /// CargoEvent): inside it a player sees the banner and keeps the visit's clock running, outside it
+        /// the clock pauses. Being online is not being a visitor.
+        ///
+        /// The position is the peer's own reported reference position (`ZNet.RPC_ServerSyncedPlayerData`
+        /// resolves the peer from the SOCKET, so it belongs to this caller), but the number in it is the
+        /// client's own claim -- the same trust class as `VCargo_rested`. What this closes is any client
+        /// anywhere in the world ending anyone's visit; what it does not close is a modified client
+        /// claiming to stand where it does not. There is nothing on the server that could tell the
+        /// difference: vanilla keeps no server-side position for a player either.
+        /// </summary>
+        public const float VisitorRange = 96f;
+
+        private static bool AtTheVisit(ZNetPeer peer, VisitSession session)
+            => DistanceToVisit(peer, session) <= VisitorRange;
+
+        private static float DistanceToVisit(ZNetPeer peer, VisitSession session)
+        {
+            UnityEngine.Vector3 at = peer.GetRefPos();
+            float dx = at.x - session.DropX, dz = at.z - session.DropZ;
+            return (float)Math.Sqrt(dx * dx + dz * dz);
         }
 
         // ---- helpers --------------------------------------------------------------------------------
@@ -158,7 +210,12 @@ namespace RavenIron.ValkyriesCargo.Net
             catch (Exception ex) { if (_throws++ < 3) ValkyriesCargo.Log.LogError(Dealt + " send threw: " + ex); }
         }
 
-        private static ZNetPeer PeerFor(ZRpc rpc)
+        /// <summary>
+        /// The peer on the other end of THIS socket, by reference. The one identity on the direct wire
+        /// that a client cannot write: the ZRpc is the connection, not a field in the packet. `AdminRpc`
+        /// uses it too, which is why it is public rather than a second copy of the loop.
+        /// </summary>
+        public static ZNetPeer PeerFor(ZRpc rpc)
         {
             ZNet znet = ZNet.instance;
             if (znet == null || rpc == null) return null;

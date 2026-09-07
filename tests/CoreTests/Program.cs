@@ -1222,6 +1222,11 @@ namespace ValkyriesCargo.Tests
             r = m.Settle(new Deal { VisitId = 7, Nonce = 15, Offered = new List<DealLine> { new DealLine { Prefab = "IronScrap", Count = 60, UnitPriceSeen = 15 } } }, 1000, 0);
             Equal(DealReason.PurseEmpty, r.Reason, "60 scrap iron at 15 is 900, and the purse holds 800: purse_empty");
 
+            // P11 (docs/TRUST-BOUNDARY.md section 2): the coins a client claims to hold are ADVISORY. The purse is
+            // the server's number, so the same sell is refused purse_empty whatever the client says it carries.
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 1516, Offered = new List<DealLine> { new DealLine { Prefab = "IronScrap", Count = 60, UnitPriceSeen = 15 } } }, int.MaxValue, 0);
+            Equal(DealReason.PurseEmpty, r.Reason, "the same sell from a client claiming int.MaxValue coins is still purse_empty: the client's coins are not the bound");
+
             // Not one of those refusals moved anything.
             Equal(800, m.Purse, "no refusal touched the purse");
             Equal(20, m.Find("Iron").Stock, "no refusal touched a shelf");

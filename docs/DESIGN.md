@@ -444,13 +444,16 @@ EventChancePercent           25
 PlayerCooldownMinutes        60
 CooldownRadius               60
 MerchantLifespanSeconds      300       = RandomEvent.m_duration (NOT Odin.m_ttl: the prefab says 60)
-ApproachDistance             3.5
+ApproachDistance             3.5       read on the CLIENT that owns the merchant (P5, CargoMerchant)
 BodyPrefab                   Dverger   the ENGINE prefab the merchant is cloned from (Character, MonsterAI, collider)
 CustomBody                   true      put Ingvar's own body on that clone, from the bundle embedded in the DLL;
                                        false keeps the stand-in visible, and so does a build with no bundle (P8)
-FlightStartDistance          90        clamped into the pilot's active block at runtime
-FlightStartAltitude          120
-FlightDescentDistance        50
+FlightStartDistance          90        30-200; clamped into the pilot's active block at runtime, shrunk in 12 m
+                                       steps, never below FlightPlan.MinimumStartDistance (30)
+FlightStartAltitude          120       30-400 (the code clamps at 400, so the config says 400)
+FlightDescentDistance        50        10-200; also capped at MaxDescentFraction (0.75) of the run
+FlightSpeed                  8         2-40; ours, not the prefab's 20; read on the CLIENT that owns the bird (P4)
+FlightTurnRate               45        5-360; ours, not the prefab's 20; read on the CLIENT that owns the bird (P4)
 Catalogue                    (72 entries; the authoritative list with every number's reason is docs/CATALOGUE.md,
                              built from docs/data/items-valheim-2026-07-31.tsv: 18 Wares he sells and buys back,
                              54 Wants he only buys. Bases anchored so he pays Haldor's rate for the four vanilla
@@ -462,10 +465,15 @@ SpreadBuy                    0.7
 FairMarketAct                true      caps a Ware's buy-back at base x SpreadBuy (the Fair Market Act, §8);
                                        off restores the pre-2026-09-07 number, MaxPriceMultiplier x SpreadBuy
 StockHalfLifeGameDays        1.0
-PurseCoins                   800
+PurseCoins                   1500      was 800 until 2026-09-07 (docs/DECISIONS-WUBARRK.md); the carry is
+                                       measured on the GROSS coins a visit took in, not the net
 PurseCarryPercent            50
-EnableBarter                 true
-PriceChangePolicy            Reconfirm   Reconfirm | Teardown   (section 3.4, guarantee 3)
+EnableBarter                 true      read on the CLIENT: it hides the terminal's Barter button; the server
+                                       settles a barter deal either way (docs/CONFIG-SHAKEDOWN.md)
+BarrkBotExport               true      the three barrkbot_cargo_*.json mirrors under BepInEx/config/ValkyriesCargo,
+                                       written after the sidecar saves, never the source of truth (P12)
+                                       (PriceChangePolicy was deleted 2026-09-07: nothing read it; only Reconfirm
+                                       exists. Section 3.4 guarantee 3 and section 8 still carry the open choice.)
 
 [Client]
 ShowArrivalMessage           true
@@ -501,6 +509,8 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Authority split | Server: config, schedule, event, existence, market, clock, destruction. Owner client: motion. Every client: rendering. Player inventory: vanilla, mutated only after the server answers | locked |
 | ServerSync | Compiled in as shared source (`Libs/ServerSync.cs`), `ModRequired`, all `Server.*` locked, `VisitState` + `MarketState` custom values; first in the family | locked by the brief |
 | Rested and comfort | On the player's own ZDO, read by `GetAllCharacterZDOS()` | locked |
+| Client-reported eligibility | `VCargo_rested`, `VCargo_comfort`, and vanilla's own `baseValue`, `playerName`, `dead` and position are all written by the client on its own character ZDO and read by the server's scheduler. **Accept.** Worst case is an undeserved visit: a merchant, on a cooldown the liar spends, at a place the liar named. Server-side comfort would mean reimplementing `SE_Rested.CalculateComfortLevel` (static, local, walks the pieces around the player's own transform) against the server's piece list — a large new surface to stop somebody giving themselves a shop (`docs/TRUST-BOUNDARY.md` §3) | proposed: accept (P11, 2026-09-07; owner to confirm) |
+| The merchant's state key | `VCargo_state` is a client-to-client rendering hint (which pose on each screen). The server writes it at authoring and on adoption and never reads it; the visit's phase lives in `VisitState`, written by `VisitSession.SetPhase`. A server decision must never consult it, because whichever client's block holds the persistent merchant owns the ZDO and writes the key (`docs/TRUST-BOUNDARY.md` §3) | locked (P11, 2026-09-07; verified against P5 as merged) |
 | Event tie-in | Real `RandomEvent`, `m_random=false`, scheduled by us, ended by vanilla or `ResetRandomEvent` | locked |
 | Object creation | Server authors both ZDOs with owner = pilot; pilot's `ZNetScene` instantiates them | proposed; v1 pending-flag spawn is the fallback |
 | Flight start | Inside the pilot's active block, ~90 m out, ~120 m up; never 500 m | locked by the engine |
