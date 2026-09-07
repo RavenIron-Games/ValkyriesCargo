@@ -21,6 +21,7 @@ namespace RavenIron.ValkyriesCargo.Net
         private static readonly HashSet<ZRpc> _registered = new HashSet<ZRpc>();
         private static readonly HashSet<long> _open = new HashSet<long>();
         private static int _throws;
+        private static int _farDismissals;
 
         public static int Registered => _registered.Count;
         public static int OpenTerminals => _open.Count;
@@ -141,12 +142,45 @@ namespace RavenIron.ValkyriesCargo.Net
                 VisitDirector d = CargoTick.Director;
                 if (d == null || peer == null) return;
                 if (!d.Session.Active || d.Session.VisitId != visitId) return;
+                if (!AtTheVisit(peer, d.Session))
+                {
+                    if (_farDismissals++ < 3)
+                        ValkyriesCargo.Log.LogWarning("refused " + Dismiss + " from " + Who(peer) + ": " + Wire.Float(DistanceToVisit(peer, d.Session)) +
+                                                      " m from visit #" + visitId + "'s drop point, and a visitor is within " + Wire.Float(VisitorRange) + " m" +
+                                                      (_farDismissals == 3 ? "; further refusals are silent" : ""));
+                    return;
+                }
                 ValkyriesCargo.Log.LogInfo(Dismiss + " from " + Who(peer) + ": " + d.Dismiss("dismissed by " + Who(peer)));
             }
             catch (Exception ex)
             {
                 if (_throws++ < 3) ValkyriesCargo.Log.LogError(Dismiss + " handler threw: " + ex);
             }
+        }
+
+        /// <summary>
+        /// Design 3.8 says vc_dismiss may come from "any visitor". A visitor is someone AT the visit, and
+        /// the radius that already means that in this mod is the event's own `m_eventRange` (96 m,
+        /// CargoEvent): inside it a player sees the banner and keeps the visit's clock running, outside it
+        /// the clock pauses. Being online is not being a visitor.
+        ///
+        /// The position is the peer's own reported reference position (`ZNet.RPC_ServerSyncedPlayerData`
+        /// resolves the peer from the SOCKET, so it belongs to this caller), but the number in it is the
+        /// client's own claim -- the same trust class as `vc_rested`. What this closes is any client
+        /// anywhere in the world ending anyone's visit; what it does not close is a modified client
+        /// claiming to stand where it does not. There is nothing on the server that could tell the
+        /// difference: vanilla keeps no server-side position for a player either.
+        /// </summary>
+        public const float VisitorRange = 96f;
+
+        private static bool AtTheVisit(ZNetPeer peer, VisitSession session)
+            => DistanceToVisit(peer, session) <= VisitorRange;
+
+        private static float DistanceToVisit(ZNetPeer peer, VisitSession session)
+        {
+            UnityEngine.Vector3 at = peer.GetRefPos();
+            float dx = at.x - session.DropX, dz = at.z - session.DropZ;
+            return (float)Math.Sqrt(dx * dx + dz * dz);
         }
 
         // ---- helpers --------------------------------------------------------------------------------
