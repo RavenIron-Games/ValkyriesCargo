@@ -29,10 +29,15 @@ namespace RavenIron.ValkyriesCargo.Server
     ///   30 Hz tick (`ZNetScene.RemoveObjects` -> `ZDOMan.DestroyZDO`), and one whose owner disconnects
     ///   is swept by `RemoveOrphanNonPersistentZDOS`. That is the bird's whole lifetime policy, and it
     ///   is why `FlightPlan` refuses to put a waypoint outside the pilot's block.
-    /// - a dedicated server's own `GetReferencePosition()` stays `Vector3.zero` (nothing but local-player
-    ///   paths and `Tracker` ever set it), so the server instantiates nothing except near the origin, and
-    ///   the "destroy a ZDO with an unresolvable prefab" branch in `CreateObjectsSorted` can only bite a
-    ///   visit that happens at world centre. `HasPrefab` is checked here anyway, before authoring.
+    /// - a DEDICATED SERVER PINS its reference position to (1000000, 0, 1000000) every fixed frame -
+    ///   `Game.FixedUpdate` in the server build ends with exactly that line, and the client build has no
+    ///   such line at all. It is the one real behavioural difference between the two builds in anything
+    ///   this mod touches. So the server's `ZNetScene` active area never covers a real world position and
+    ///   the server instantiates NOTHING of ours, anywhere - not the bird, not the merchant. Two
+    ///   consequences: the "destroy a ZDO whose prefab will not resolve" branch in `CreateObjectsSorted`
+    ///   can never reach us (it only walks the server's own sector list, out at a million), and every
+    ///   line of `CargoFlight` and `CargoMerchant` runs on a player's machine. `HasPrefab` is still
+    ///   checked below, because a prefab the CLIENTS cannot resolve is silently retried forever.
     /// </summary>
     public static class Spawner
     {

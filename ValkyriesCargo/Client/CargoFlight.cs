@@ -31,8 +31,8 @@ namespace RavenIron.ValkyriesCargo.Client
     /// </summary>
     public sealed class CargoFlight : MonoBehaviour
     {
-        /// <summary>Vanilla's `m_dropHeight`: ground clearance the whole way, not just at the drop.</summary>
-        public const float DropHeight = 10f;
+        /// <summary>Fallback only; the real value is read off the prefab's own `m_dropHeight` in Awake.</summary>
+        public const float DefaultDropHeight = 10f;
         public const float LookAhead = 25f;
         public const float ArriveDistance = 0.5f;
         public const float MaxBankDegrees = 45f;
@@ -46,7 +46,10 @@ namespace RavenIron.ValkyriesCargo.Client
         private Animator _animator;
         private Vector3 _drop, _descentStart, _away;
         private bool _descent, _dropped, _animated;
-        private float _speed = 10f, _turnRate = 5f;
+        // The COMPILED defaults, which the shipped prefab overrides: it says speed 20, turn rate 20,
+        // drop height 10. Reading them off the component is what gets the real numbers, and is why a
+        // game update that retunes the bird retunes ours with it.
+        private float _speed = 10f, _turnRate = 5f, _dropHeight = DefaultDropHeight;
         private float _flying;
         private int _visitId;
         private int _throws;
@@ -71,6 +74,7 @@ namespace RavenIron.ValkyriesCargo.Client
                 // flies the same way it does.
                 _speed = _valkyrie.m_speed;
                 _turnRate = _valkyrie.m_turnRate;
+                _dropHeight = _valkyrie.m_dropHeight;
             }
 
             ZDO zdo = _nview != null ? _nview.GetZDO() : null;
@@ -92,8 +96,11 @@ namespace RavenIron.ValkyriesCargo.Client
             _away.y = transform.position.y;
             _descent = _dropped;
 
+            // The flight time is worth printing: at the prefab's real 20 m/s a 90 m approach is about six
+            // seconds, not the fifteen to twenty design 3.2 estimated from the compiled default of 10.
             ValkyriesCargo.Log.LogInfo("cargo flight #" + _visitId + ": " + (_nview.IsOwner() ? "flying" : "watching") +
-                                       " from " + Vec(transform.position) + " to " + Vec(_drop) + ", " + Wire.Float(run) + " m out");
+                                       " from " + Vec(transform.position) + " to " + Vec(_drop) + ", " + Wire.Float(run) +
+                                       " m out at " + Wire.Float(_speed) + " m/s (about " + Wire.Float(_speed > 0.1f ? run / _speed : 0f) + " s)");
         }
 
         private void FixedUpdate()
@@ -146,7 +153,7 @@ namespace RavenIron.ValkyriesCargo.Client
             // Look 25 m ahead along the bearing and lift that point clear of ground and water; steering
             // at the lifted point is what keeps the bird from flying into a hillside on the way in.
             Vector3 ahead = transform.position + (target - transform.position).normalized * LookAhead;
-            ahead.y = Mathf.Max(ahead.y, Floor(ahead) + DropHeight);
+            ahead.y = Mathf.Max(ahead.y, Floor(ahead) + _dropHeight);
 
             Vector3 heading = (ahead - transform.position).normalized;
             Quaternion want = Quaternion.LookRotation(heading);
@@ -158,7 +165,7 @@ namespace RavenIron.ValkyriesCargo.Client
 
             Vector3 velocity = transform.forward * _speed;
             Vector3 next = transform.position + velocity * dt;
-            next.y = Mathf.Max(next.y, Floor(next) + DropHeight);
+            next.y = Mathf.Max(next.y, Floor(next) + _dropHeight);
             transform.position = next;
 
             // So every other screen sees a bird gliding rather than stepping. See the class comment.
