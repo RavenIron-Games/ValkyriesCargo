@@ -80,11 +80,10 @@ step 4).
 
 ## 2. Wu'barrk — flight, merchant, body, sweeps, export
 
-- [ ] **The P4/P5 audit's findings (`docs/AUDIT-P4P5-2026-09-07.md`; the issue opened 2026-09-07).** First
-      and alone: **F1 is a blocker on `main` and in rc1** — `Patch_Character_Damage.cs:30` returns `false`
-      from the prefix whenever `CargoMerchant.LiveCount == 0`, and a false prefix return skips the original,
-      so `Character.RPC_Damage` never runs for anyone while no merchant is instanced: nothing in the world
-      can take damage. One-line fix (`return true` on that path). Then F2 (the hover text never draws:
+- [ ] **The P4/P5 audit's findings (`docs/AUDIT-P4P5-2026-09-07.md`; issue #29).** **F1 DONE**: PR #30 merged
+      2026-09-07 (the decision moved into the pure `Core/Immortality.RunOriginal`, seven checks) — but rc1
+      still carries it, so **the rc1 tag must not reach a tester**; the next cut replaces it. Still open,
+      F2 to F6 and the risks: F2 (the hover text never draws:
       `Character` is itself `Hoverable` and wins), F3 (`VCargo_vanish`/`VCargo_say` registered, never sent:
       no Odin vanish, single-screen speech), F4 (a resumed visit never rebinds `Spawner.Merchant`, so `End`
       leaves an immortal merchant in the world), F5 (the flat 20 s timeout and the 12 m leash loop from
@@ -109,9 +108,13 @@ step 4).
 - [ ] **Item 23, the export, live:** a visit on his dedicated server, `barrkbot_cargo_*.json` landing under
       `BepInEx/config/ValkyriesCargo/` once a minute, the log line pasted into `BARRKBOT_CONTRACT.md`
       ("shape-verified, not yet live-verified"), and BarrkBOT's scanner picking the files up.
-- [ ] **Truth pass on his files.** *First half done, PR #27 merged 2026-09-07:* the base 2 → 3 reason is
-      decision 8 in `docs/DECISIONS-WUBARRK.md`, and `docs/CATALOGUE.md` matches the code entry by entry.
-      *Still open, in flight on his branch:* `README.md` still lists the deleted `PriceChangePolicy` row (line ~195)
+- [x] **Truth pass on his files.** DONE: PR #27 (decision 8, CATALOGUE matched to the code) and PR #33
+      (README, CHANGELOG, models/README, plus the README config corrections from `docs/CONFIG-SHAKEDOWN.md`),
+      both merged 2026-09-07.
+- [x] **`event valkyries_cargo` from the vanilla console** starts a real visit instead of being killed as a
+      leftover (owner's ask; PR #34 merged 2026-09-07; `Scheduler.NearestTo` pure, NaN-safe). Not yet
+      typed on a screen.
+- [ ] *(history)* The truth-pass list as it stood: `README.md` still lists the deleted `PriceChangePolicy` row (line ~195)
       and says "No custom body yet" (line ~39); `CHANGELOG.md` says P4 is in review (~228) and P5 and
       the bundle are not started (~230); `models/README.md` §2 names `BodyPrefab` where `CustomBody` is
       the switch and §6's stream-disposal note is wrong (`docs/HANDOFF-WUBARRK.md` §0 item 2); the
@@ -154,3 +157,10 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       handoffs and WORKSPLIT and TLDR re-cut). Still open: **the proof lines as Don sends them.**
 - [x] **Housekeeping:** PR #17 merged; issue #23 answered; #16 closed by him. Still open: the release-time
       README status and CHANGELOG entry (`docs/RELEASE.md` step 4) when the proofs are in.
+- [x] **Issue #31, the bare `PatchAll()`** (raised by Thorium; Don's file). DONE: PR #35 merged 2026-09-07 —
+      every patch class applied on its own (`Patching.cs`), failures named and counted (`Core/PatchLedger.cs`,
+      pure), the boot line `patches N/M applied`, `cargo status` prints the failures, ServerSync's rows refuse
+      the mod; 1462 → 1470 with #34. **Not yet seen on a machine**: the new boot line (item 2) and a
+      deliberately failing patch in a scratch build printing its name rather than killing the mod.
+- [ ] **Owner's decision, when convenient:** widen the load-bearing set beyond ServerSync's patches, or leave
+      it. Recorded in CLAUDE.md house rule 3.
