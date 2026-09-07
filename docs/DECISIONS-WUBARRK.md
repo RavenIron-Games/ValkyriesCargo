@@ -181,3 +181,34 @@ the shipped default string underneath them both still said 2. Both are corrected
 document was then checked against `Catalogue.DefaultLine` mechanically rather than by eye — every one
 of the 72 entries and all 72 table rows agree with the code as of this commit. Nothing enforces that
 going forward; it is a document, and it drifts the moment a number moves without one.
+
+## 9. The load-bearing set stays ServerSync only; the flight gets the middle tier
+
+**2026-09-07. Delegated by the owner (issue #31, PR #35, `docs/TODO.md` §2). Declines to widen
+`PatchLedger.IsLoadBearing`; adds `PatchLedger.IsApplied` instead.**
+
+Refusing the whole mod is the right answer to exactly one kind of failure: the one where running
+degraded would be a **lie to other machines**. That is ServerSync's three — the version gate, the RPC
+registration, the config lock. Without them a client on another build joins, a locked config is not
+locked, and every other feature runs on a false premise. Nothing of ours has that property. Every one of
+our patches failing leaves a mod that is worse but honest: no visits (`RandEventSystem.Awake`), a bare
+Dverger (`Humanoid.Awake`), a mortal Ingvar (the damage prefixes), a blind hover, a merchant who falls off
+the talon (non-players take no fall damage), a console with no `cargo`. Refusing the mod for any of those
+trades a missing feature for a missing mod.
+
+One patch is different, and it is why the answer is not simply "leave it". `Patch_Valkyrie_Awake` skips
+vanilla's `Valkyrie.Awake` for our bird only. If it does not apply, vanilla runs on our bird:
+`m_instance = this`, then `Player.m_localPlayer` is teleported into the sky (CLAUDE.md engine facts;
+audit F8). That is not a degraded feature — it is our object flinging the player. But the mod is not the
+right unit to refuse; the **flight** is. So `Spawner` asks `Patching.Ledger.IsApplied("Patch_Valkyrie_Awake")`
+and, when the answer is no, authors no bird and places Ingvar on the ground at the drop point — the
+"the visit continues on the ground" path that already exists for a bird that dies mid-flight — with one
+loud log line saying why. The visit happens; nobody flies.
+
+That is the middle tier issue #31 left open, and it is the honest granularity: a feature whose safety
+rests on one patch gates itself on that patch, loudly, and nothing else pays for it. `IsApplied` answers
+FALSE for a name it never saw and matches exactly — a feature must not assume a patch it cannot find, and
+`Patch_Valkyrie` must not vouch for `Patch_Valkyrie_Awake`. Seven checks; two mutations caught (a prefix
+match fails 1, an unknown name vouched for fails 4).
+
+The `Spawner` half lands with F4 in `b/f4-resume-vanish`, because that branch owns the file.
