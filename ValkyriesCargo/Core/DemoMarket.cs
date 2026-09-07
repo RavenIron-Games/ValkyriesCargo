@@ -19,9 +19,23 @@ namespace RavenIron.ValkyriesCargo.Core
 
         public static DemoMarket Default()
         {
-            var core = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), MarketRules.Default, 0, Salt);
+            var core = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), DemoRules(), 0, Salt);
             core.StartVisit(1, 0, 0);
             return new DemoMarket(core);
+        }
+
+        /// <summary>
+        /// The demo's own rules: the core baseline with a one-game-day half-life on BOTH kinds, so `Advance`
+        /// visibly moves a ticked row back and the walk stays price-driven. The shipped knobs (a Ware never
+        /// drifts, a Want at three days; 2026-09-07) are the server's economy, not what a demo of the window
+        /// needs to show, and nothing here reaches a real market.
+        /// </summary>
+        private static MarketRules DemoRules()
+        {
+            var r = MarketRules.Default;
+            r.WareHalfLifeGameDays = 1.0;
+            r.WantHalfLifeGameDays = 1.0;
+            return r;
         }
 
         /// <summary>The underlying market, for tests and for the demo console.</summary>

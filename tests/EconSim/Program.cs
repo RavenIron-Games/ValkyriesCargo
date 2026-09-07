@@ -52,6 +52,7 @@ namespace ValkyriesCargo.EconSim
             Checks.Seven(md, seed);
             Checks.Eight(md, seed);
             Scenarios.Nine(md, seed);
+            Scenarios.Ten(md, seed);
             Verdict(md, seed);
 
             string text = md.Render();
@@ -101,7 +102,7 @@ namespace ValkyriesCargo.EconSim
                 new[] { "`MinPriceMultiplier` / `MaxPriceMultiplier`", Sim.F(rules.MinMultiplier, 1) + " / " + Sim.F(rules.MaxMultiplier, 1), "`ModConfig` defaults" },
                 new[] { "`SpreadBuy`", Sim.F(rules.Spread, 1), "`ModConfig` default" },
                 new[] { "`FairMarketAct`", rules.FairMarketAct ? "on" : "off", "`ModConfig` default" },
-                new[] { "`StockHalfLifeGameDays`", Sim.F(rules.HalfLifeGameDays, 1), "`ModConfig` default" },
+                new[] { "`WareHalfLifeGameDays` / `WantHalfLifeGameDays`", (rules.WareHalfLifeGameDays <= 0 ? "never" : Sim.F(rules.WareHalfLifeGameDays, 1)) + " / " + (rules.WantHalfLifeGameDays <= 0 ? "never" : Sim.F(rules.WantHalfLifeGameDays, 1)), "`ModConfig` defaults (the owner, 2026-09-07: wares never, wants 3; scenario 10)" },
                 new[] { "`PurseCoins` / `PurseCarryPercent` / cap", Sim.N(rules.PurseCoins) + " / " + Sim.N(rules.PurseCarryPercent) + "% of the GROSS / " + Sim.N(rules.PurseCapMultiple) + "x", "`ModConfig` defaults" },
                 new[] { "a game day", Sim.F(rules.SecondsPerGameDay, 0) + " s", "`EnvMan.m_dayLengthSec`, verified on StormTest 2026-09-06" },
             });
@@ -142,9 +143,10 @@ namespace ValkyriesCargo.EconSim
             md.Line(Sim.Fact("s2.scraprange") + " as it fills (scenario 2). Big enough to notice in a session, small enough that two or three deals do not");
             md.Line("wreck a row. Keep it.");
             md.Blank();
-            md.Line("**`StockHalfLifeGameDays` 1.** Every row damaged in scenarios 1 and 2 is back inside 5% of target within " +
-                    Sim.Fact("s6.days") + " game days");
-            md.Line("(scenario 6), and a shelf emptied every single day settles at half target rather than collapsing. Keep it.");
+            md.Line("**`WareHalfLifeGameDays` 0 and `WantHalfLifeGameDays` 3** (the owner, 2026-09-07). A Ware keeps what trading left: an");
+            md.Line("emptied shelf stays empty until a player sells it back or an admin raises the target (scenario 6, and scenario 1 from");
+            md.Line("its second visit on). A Want is back inside 5% of target within " + Sim.Fact("s6.days") + " game days (scenario 6), so he keeps");
+            md.Line("buying; with both kinds at never he refused " + Sim.Fact("s10.neverRefused") + " of 30 supplying visits (scenario 10). Keep them.");
             md.Blank();
             md.Line("**The pure core's bounds.** " + Sim.Fact("s8.accepted") + " settled deals out of ten thousand random ones, and not a single throw, negative");
             md.Line("stock, over-max shelf, negative purse, sub-1 price or repeated delivery id (scenario 8). The refusal order is the one");
@@ -235,7 +237,7 @@ namespace ValkyriesCargo.EconSim
             md.Line("  pure core cannot fix this: the check belongs on the server side of the wire, against the peer's inventory.");
             md.Line("- **A Want asked for as a Ware answers `unknown_item`** (Market.cs 272), so the terminal cannot say 'he only buys those'.");
             md.Line("- **`Relax` is path-dependent.** Rounding away from zero moves at least one unit per call, so N daily calls close a gap");
-            md.Line("  faster than one call N days later (scenario 6's two columns). The server calls it once a visit, so this is a difference");
+            md.Line("  faster than one call N days later (scenario 6's two columns, on the Wants; a Ware at half-life 0 never moves). The server calls it once a visit, so this is a difference");
             md.Line("  between a busy server and a quiet one, not a bug — but a shelf recovers faster on the server people play on.");
             md.Line("- **A market that has never started a visit will settle a deal numbered 0** (`VisitId` starts at 0). Unreachable through");
             md.Line("  `VisitDirector`, which refuses `visit_over` first.");

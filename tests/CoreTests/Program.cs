@@ -698,24 +698,33 @@ namespace ValkyriesCargo.Tests
             ok.Sanitize(problems);
             Equal(0, problems.Count, "the shipped defaults are all in range and report nothing");
             Check(ok.Elasticity == 0.35 && ok.MinMultiplier == 0.4 && ok.MaxMultiplier == 3 &&
-                  ok.Spread == 0.7 && ok.HalfLifeGameDays == 1 &&
+                  ok.Spread == 0.7 && ok.WareHalfLifeGameDays == 0 && ok.WantHalfLifeGameDays == 3 &&
                   ok.PurseCoins == 800 && ok.PurseCarryPercent == 50 && ok.PurseCapMultiple == 3,
                   "an in-range value is left exactly as configured");
+
+            // The half-life edges (2026-09-07): 0 is never and 365 is the ceiling, both in range, both silent.
+            problems.Clear();
+            MarketRules edge = new MarketRules { WareHalfLifeGameDays = 365, WantHalfLifeGameDays = 0 };
+            edge.Sanitize(problems);
+            Equal(0, problems.Count, "a half-life of 0 (never) or 365 (the ceiling) is in range and reports nothing");
+            Equal(365.0, edge.WareHalfLifeGameDays, "365 stays 365");
+            Equal(0.0, edge.WantHalfLifeGameDays, "0 stays 0");
 
             // Every float below its floor is clamped up and named.
             problems.Clear();
             MarketRules low = new MarketRules
             {
                 Elasticity = 0.001, MinMultiplier = 0.001, MaxMultiplier = 0.5,
-                Spread = 0.01, HalfLifeGameDays = 0.01,
+                Spread = 0.01, WareHalfLifeGameDays = -1, WantHalfLifeGameDays = -0.5,
             };
             low.Sanitize(problems);
             Equal(0.05, low.Elasticity, "Elasticity clamped up to its floor 0.05");
             Equal(0.05, low.MinMultiplier, "MinMultiplier clamped up to its floor 0.05");
             Equal(1, low.MaxMultiplier, "MaxMultiplier clamped up to its floor 1");
             Equal(0.1, low.Spread, "Spread clamped up to its floor 0.1");
-            Equal(0.1, low.HalfLifeGameDays, "HalfLifeGameDays clamped up to its floor 0.1");
-            Equal(5, problems.Count, "five values out of range, five problems reported");
+            Equal(0.0, low.WareHalfLifeGameDays, "a negative WareHalfLifeGameDays clamps up to 0, never");
+            Equal(0.0, low.WantHalfLifeGameDays, "and so does a negative WantHalfLifeGameDays");
+            Equal(6, problems.Count, "six values out of range, six problems reported");
             Check(problems[0].Contains("Elasticity") && problems[0].Contains("clamped up"),
                   "the report names the value and says which way it moved");
 
@@ -724,15 +733,16 @@ namespace ValkyriesCargo.Tests
             MarketRules high = new MarketRules
             {
                 Elasticity = 5, MinMultiplier = 2, MaxMultiplier = 50,
-                Spread = 2, HalfLifeGameDays = 100,
+                Spread = 2, WareHalfLifeGameDays = 1000, WantHalfLifeGameDays = 366,
             };
             high.Sanitize(problems);
             Equal(1.5, high.Elasticity, "Elasticity clamped down to its ceiling 1.5");
             Equal(1, high.MinMultiplier, "MinMultiplier clamped down to its ceiling 1");
             Equal(10, high.MaxMultiplier, "MaxMultiplier clamped down to its ceiling 10");
             Equal(1, high.Spread, "Spread clamped down to its ceiling 1");
-            Equal(30, high.HalfLifeGameDays, "HalfLifeGameDays clamped down to its ceiling 30");
-            Equal(5, problems.Count, "five ceilings, five problems reported");
+            Equal(365.0, high.WareHalfLifeGameDays, "WareHalfLifeGameDays clamped down to its ceiling 365, about a real week of uptime");
+            Equal(365.0, high.WantHalfLifeGameDays, "and WantHalfLifeGameDays the same");
+            Equal(6, problems.Count, "six ceilings, six problems reported");
             Check(problems[2].Contains("MaxMultiplier") && problems[2].Contains("clamped down"),
                   "the report names the value and says which way it moved");
 
@@ -741,15 +751,16 @@ namespace ValkyriesCargo.Tests
             MarketRules nan = new MarketRules
             {
                 Elasticity = double.NaN, MinMultiplier = double.NaN, MaxMultiplier = double.PositiveInfinity,
-                Spread = double.NegativeInfinity, HalfLifeGameDays = double.NaN,
+                Spread = double.NegativeInfinity, WareHalfLifeGameDays = double.NaN, WantHalfLifeGameDays = double.PositiveInfinity,
             };
             nan.Sanitize(problems);
             Equal(0.05, nan.Elasticity, "a NaN Elasticity falls back to the floor");
             Equal(0.05, nan.MinMultiplier, "a NaN MinMultiplier falls back to the floor");
             Equal(1, nan.MaxMultiplier, "an infinite MaxMultiplier falls back to the floor");
             Equal(0.1, nan.Spread, "a negative-infinity Spread falls back to the floor");
-            Equal(0.1, nan.HalfLifeGameDays, "a NaN HalfLifeGameDays falls back to the floor");
-            Equal(5, problems.Count, "five non-numbers, five problems reported");
+            Equal(0.0, nan.WareHalfLifeGameDays, "a NaN WareHalfLifeGameDays falls back to the shipped 0, never");
+            Equal(3.0, nan.WantHalfLifeGameDays, "an infinite WantHalfLifeGameDays falls back to the shipped 3");
+            Equal(6, problems.Count, "six non-numbers, six problems reported");
             Check(problems[0].Contains("was not a number"), "a NaN is reported as not a number, not as a clamp");
 
             // The integer knobs.
@@ -1131,7 +1142,9 @@ namespace ValkyriesCargo.Tests
         {
             Section("Market.Relax");
 
-            Market m = NewMarket(0);
+            // Both kinds at a one-game-day half-life: the checks down to the shipped-knobs block are about the
+            // FORMULA; the shipped knobs (a Ware never drifts, a Want at three days) are checked after it.
+            Market m = Drifting(1, 1);
             MarketItem iron = m.Find("Iron");        // target 20
 
             // Half a game day at a one-game-day half-life closes 1 - 0.5^0.5 = 29.29% of the gap.
@@ -1167,23 +1180,22 @@ namespace ValkyriesCargo.Tests
             m.Relax(1800 * 20);
             Equal(20, iron.Stock, "a full shelf relaxes down to target and stops there");
 
-            // The overshoot clamp itself. With a sane half-life the fraction stays in [0, 1], so the move
-            // can never exceed the gap and the clamp is unreachable. Market takes its rules AS GIVEN --
-            // it never calls Sanitize -- so a config that skipped sanitising can hand it a NEGATIVE
-            // half-life, which makes 1 - 0.5^(days / halfLife) fall below -1 and the raw move overshoot,
-            // backwards and without limit. The clamp is what keeps the promise "never overshoots".
+            // A NEGATIVE half-life would make 1 - 0.5^(days / halfLife) fall below -1 and the raw move
+            // overshoot backwards without limit. The constructor's Sanitize turns a negative into 0, never,
+            // so the row does not move at all, and the formula is never reached with a half-life below zero.
             Market hostile = new Market(Catalogue.Parse(Catalogue.DefaultLine, null),
-                                        new MarketRules { HalfLifeGameDays = -1f }, 0);
+                                        new MarketRules { WareHalfLifeGameDays = -1, WantHalfLifeGameDays = -1 }, 0);
+            Equal(0.0, hostile.Rules.WareHalfLifeGameDays, "a negative half-life is sanitized to 0 (never) by the constructor");
             MarketItem h = hostile.Find("Iron");                      // target 20
             h.Stock = 10; h.UpdatedWorldTime = 0;
             hostile.Relax(3600);
-            Equal(20, h.Stock, "two days at a -1 half-life computes a move of -30 on a gap of +10: clamped to the gap, 10 -> 20, not -20");
+            Equal(10, h.Stock, "and a row at 'never' does not move: 10 stays 10, not -20");
             h.Stock = 30; h.UpdatedWorldTime = 0;
             hostile.Relax(3600);
-            Equal(20, h.Stock, "and the same from a surplus: a move of +30 on a gap of -10 is clamped, 30 -> 20, not 60");
+            Equal(30, h.Stock, "from a surplus too: 30 stays 30, not 60");
 
             // Each item drifts from its OWN timestamp.
-            Market m2 = NewMarket(0);
+            Market m2 = Drifting(1, 1);
             MarketItem a = m2.Find("Iron"), b = m2.Find("Bronze");   // both target 20
             a.Stock = 10; a.UpdatedWorldTime = 0;
             b.Stock = 10; b.UpdatedWorldTime = 900;
@@ -1192,7 +1204,7 @@ namespace ValkyriesCargo.Tests
             Equal(13, b.Stock, "Bronze, last touched at 900, has had half of one: 10 -> 13");
 
             // A deal stamps only the lines it touched; everything else keeps its older clock.
-            Market m3 = NewMarket(0);
+            Market m3 = Drifting(1, 1);
             m3.StartVisit(1, 0, 0);
             MarketItem ironD = m3.Find("Iron"), bronzeD = m3.Find("Bronze");
             bronzeD.Stock = 10;                                       // scarce, and its clock still reads 0
@@ -1205,7 +1217,7 @@ namespace ValkyriesCargo.Tests
             Equal(15, bronzeD.Stock, "Bronze drifts from 0: half of a gap of 10, so 10 -> 15");
 
             // dt <= 0 is a no-op.
-            Market m4 = NewMarket(1000);
+            Market m4 = Drifting(1, 1, 1000);
             MarketItem it4 = m4.Find("Iron");
             it4.Stock = 10;
             m4.Relax(1000);
@@ -1215,16 +1227,74 @@ namespace ValkyriesCargo.Tests
 
             // A half-life of half a day moves half the gap in half a day.
             Market fast = new Market(Catalogue.Parse(Catalogue.DefaultLine, null),
-                                     new MarketRules { HalfLifeGameDays = 0.5f }, 0);
+                                     new MarketRules { WareHalfLifeGameDays = 0.5, WantHalfLifeGameDays = 0.5 }, 0);
             MarketItem f = fast.Find("Iron");
             f.Stock = 10; f.UpdatedWorldTime = 0;
             fast.Relax(900);
             Equal(15, f.Stock, "at a half-day half-life, half a day is one half-life: 10 -> 15");
+
+            // THE SHIPPED KNOBS (2026-09-07, the owner: "wares never, wants 3"). A Ware keeps exactly what
+            // trading left, for ever; a Want drifts at a three-day half-life; one Relax call does both.
+            Section("Market.Relax: the shipped knobs - a Ware never drifts, a Want at three game days (2026-09-07)");
+            Market shipped = NewMarket(0);
+            Equal(0.0, shipped.Rules.WareHalfLifeGameDays, "MarketRules.Default ships WareHalfLifeGameDays 0, never");
+            Equal(3.0, shipped.Rules.WantHalfLifeGameDays, "and WantHalfLifeGameDays 3");
+            MarketItem sIron = shipped.Find("Iron"), sWood = shipped.Find("Wood");   // a Ware, target 20; a Want, target 200, max 600
+            sIron.Stock = 0; sIron.UpdatedWorldTime = 0;
+            sWood.Stock = 600; sWood.UpdatedWorldTime = 0;
+            shipped.Relax(1800);
+            Equal(0, sIron.Stock, "one game day: an emptied Ware is still empty");
+            Equal(0.0, sIron.UpdatedWorldTime, "and its stamp is untouched (nothing happened to it)");
+            Equal(517, sWood.Stock, "the same call moves the flooded Want: a day is 1 - 0.5^(1/3) = 20.6% of a gap of 400, 83 units, 600 -> 517");
+            Equal(1800.0, sWood.UpdatedWorldTime, "and stamps it");
+            shipped.Relax(1800 * 3);
+            Equal(400, sWood.Stock, "three game days from the flood is one half-life: 600 -> 400 (through 517, the path the server takes)");
+            shipped.Relax(1800 * 30);
+            Equal(0, sIron.Stock, "thirty game days, fifteen real hours: the Ware is still empty - only a player selling it back, or an admin's target, refills it");
+            Equal(200, sWood.Stock, "while the Want is back at target");
+            Market visited = NewMarket(0);
+            MarketItem vIron = visited.Find("Iron");
+            vIron.Stock = 0; vIron.UpdatedWorldTime = 0;
+            visited.StartVisit(2, 1800 * 30, 0);
+            Equal(0, vIron.Stock, "StartVisit relaxes too, and leaves the Ware alone the same way");
+        }
+
+        /// <summary>A default-catalogue market with both drift knobs set: for the checks about the formula, not the shipped values.</summary>
+        private static Market Drifting(double wareHalfLife, double wantHalfLife, double worldTime = 0)
+        {
+            var rules = MarketRules.Default;
+            rules.WareHalfLifeGameDays = wareHalfLife;
+            rules.WantHalfLifeGameDays = wantHalfLife;
+            return new Market(Catalogue.Parse(Catalogue.DefaultLine, null), rules, worldTime);
         }
 
         private static void MarketSettleTests()
         {
             Section("Market.Settle (the real market, in the server's refusal order)");
+
+            // Two offered lines of the SAME prefab are counted together against the max (2026-09-07, found by
+            // EconSim scenario 8 once the Ware drift stopped hiding it): one line's room is not two lines' room.
+            {
+                Market two = NewMarket(0);
+                two.StartVisit(1, 0, 0);
+                MarketItem wood = two.Find("Wood");              // target 200, max 600
+                wood.Stock = 500;
+                int pays = two.Pays(wood);
+                DealResult split = two.Settle(new Deal
+                {
+                    VisitId = 1, Nonce = 901,
+                    Offered = { new DealLine { Prefab = "Wood", Count = 60, UnitPriceSeen = pays }, new DealLine { Prefab = "Wood", Count = 60, UnitPriceSeen = pays } },
+                }, 0, 0);
+                Equal(DealReason.OverMax, split.Reason, "two lines of 60 into a shelf with room for 100 are over max together, though each fits alone");
+                Equal(500, wood.Stock, "and nothing moved");
+                DealResult fits = two.Settle(new Deal
+                {
+                    VisitId = 1, Nonce = 902,
+                    Offered = { new DealLine { Prefab = "Wood", Count = 60, UnitPriceSeen = pays }, new DealLine { Prefab = "Wood", Count = 40, UnitPriceSeen = pays } },
+                }, 0, 0);
+                Check(fits.Ok, "two lines that fit together are accepted: " + fits.Reason);
+                Equal(600, wood.Stock, "and the shelf lands exactly on max, never past it");
+            }
 
             var problems = new List<string>();
             Market m = new Market(Catalogue.Parse(Catalogue.DefaultLine, problems), MarketRules.Default, 0);
@@ -2289,12 +2359,12 @@ namespace ValkyriesCargo.Tests
             Equal(5, b.VisitId, "and refused");
 
             // Relax keeps the time it could not yet spend.
-            Market often = NewMarket(0);
+            Market often = Drifting(1, 1);   // a Ware at the shipped 'never' would not move at all; this is about the stamp
             MarketItem iron = often.Find("Iron");
             iron.Stock = 19; iron.UpdatedWorldTime = 0;
             for (int i = 1; i <= 50; i++) often.Relax(i * 720);          // every 0.4 game days for 20 days
             Equal(20, iron.Stock, "a gap of one closes even when Relax is called every 0.4 days: the stamp waits until a unit moves");
-            Market once = NewMarket(0);
+            Market once = Drifting(1, 1);
             MarketItem iron2 = once.Find("Iron");
             iron2.Stock = 19; iron2.UpdatedWorldTime = 0;
             once.Relax(720);
@@ -2317,7 +2387,7 @@ namespace ValkyriesCargo.Tests
             Equal(MarketRules.MaxPurseCoins * 100, rich.Purse, "capped at PurseCapMultiple x PurseCoins, computed in long: never negative");
 
             // The day length is a rule, read from EnvMan on the game side; the drift follows it.
-            MarketRules shortDay = new MarketRules { SecondsPerGameDay = 1200 };
+            MarketRules shortDay = new MarketRules { SecondsPerGameDay = 1200, WareHalfLifeGameDays = 1, WantHalfLifeGameDays = 1 };
             Market sd = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), shortDay, 0);
             MarketItem si = sd.Find("Iron");
             si.Stock = 10; si.UpdatedWorldTime = 0;

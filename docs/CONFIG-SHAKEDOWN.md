@@ -65,7 +65,8 @@ its `AcceptableValueRange`. "agrees" means the two bounds are the same number.
 | `MaxPriceMultiplier` | `3.0` | 1–10 | SERVER | `ModConfig.cs:212` → `Market.cs:167` | `Sanitize` 1.0–10.0 (`Market.cs:35`) — **agrees** | true | OK (but see "the defaults") |
 | `SpreadBuy` | `0.7` | 0.1–1 | SERVER | `ModConfig.cs:213` → `Market.cs:179` | `Sanitize` 0.1–1.0 (`Market.cs:36`) — **agrees** | true | OK (but see "the defaults") |
 | `FairMarketAct` | `true` | — | SERVER | `FillMarketRules` → `MarketRules.FairMarketAct` → `Market.PaysFor` (a Ware's buy-back multiplier capped at 1.0). New in PR #22 | — | true | OK — closes the round trip this pass left open |
-| `StockHalfLifeGameDays` | `1.0` | 0.1–30 | SERVER | `ModConfig.cs:214` → `Market.cs:217`, `:225` | `Sanitize` 0.1–30 (`Market.cs:37`) — **agrees** | true | OK |
+| `WareHalfLifeGameDays` | `0` (never) | 0–365 | SERVER | `FillMarketRules` → `MarketRules.WareHalfLifeGameDays` → `Market.Relax` (Wares only) | `Sanitize` 0–365, a negative → 0, NaN → the shipped 0 — **agrees** | true | OK — replaced `StockHalfLifeGameDays` 2026-09-07 (the owner: wares never, wants 3; `docs/ECONOMY-SIM.md` §10) |
+| `WantHalfLifeGameDays` | `3` | 0–365 | SERVER | `FillMarketRules` → `MarketRules.WantHalfLifeGameDays` → `Market.Relax` (Wants only) | `Sanitize` 0–365, a negative → 0, NaN → the shipped 3 — **agrees** | true | OK |
 | `PurseCoins` | `1500` (800 at the audit; raised in PR #22) | 0–100 000 | SERVER | `ModConfig.cs:215` → `Market.cs:142`, `:198`, `:199` | `Sanitize` 0–`MaxPurseCoins` 1 000 000 (`Market.cs:39`–`40`); config tighter | true | OK |
 | `PurseCarryPercent` | `50` | 0–100 | SERVER | `ModConfig.cs:216` → `Market.cs:197` | `Sanitize` 0–100 (`Market.cs:41`) — **agrees** | true | OK |
 | `EnableBarter` | `true` | — | ~~SERVER~~ → CLIENT | `CargoTerminal.cs:213` — it hides a button; the server settles a barter deal either way | — | **was false** on the side, and hid that the server does not enforce it | **fixed** |
@@ -115,7 +116,7 @@ commit). It fails today on rows 1 and 2 and passes after this branch:
 Check(SchedulerRules.Default is var _ && true, "...");
 // MarketRules.Sanitize vs the ModConfig ranges, one Check per pair:
 //   Elasticity 0.05..1.5, MinMultiplier 0.05..1.0, MaxMultiplier 1.0..10.0, Spread 0.1..1.0,
-//   HalfLifeGameDays 0.1..30, PurseCarryPercent 0..100  -- all six agree today and must stay agreeing.
+//   WareHalfLifeGameDays 0..365, WantHalfLifeGameDays 0..365, PurseCarryPercent 0..100  -- all seven agree today and must stay agreeing.
 // FlightPlan: Make(startDistance) below MinimumStartDistance must come back AT MinimumStartDistance,
 //   which is what pins ModConfig's FlightStartDistance floor to 30.
 ```
