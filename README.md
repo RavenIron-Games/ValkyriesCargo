@@ -189,14 +189,14 @@ itself is what arms the lock.
 | `PlayerCooldownMinutes` | `60` | 0-1440 | Real minutes before the same player can be chosen again; stamped at dispatch. |
 | `CooldownRadius` | `60` | 0-500 | Metres: a base on cooldown blocks its neighbours within this radius. |
 | `MerchantLifespanSeconds` | `300` | 30-1800 | How long Ingvar stays, as the vanilla random event's duration. |
-| `ApproachDistance` | `3.5` | 1-10 | Metres from the pilot at which he stops walking. |
-| `BodyPrefab` | `Dverger` | | The creature prefab that plays Ingvar until the custom body exists. Must have a `Humanoid`, a `MonsterAI` and an `Animator`. |
-| `CustomBody` | `true` | | Put Ingvar's own body on the `BodyPrefab` clone from the AssetBundle embedded in this DLL. `false` keeps the Dverger stand-in visible, and so does a build with no bundle embedded (`cargo body` says which). This is the switch, not `BodyPrefab`. |
-| `FlightStartDistance` | `90` | 24-200 | Metres from the pilot where the Valkyrie appears; clamped at runtime into the pilot's active zone block. |
-| `FlightStartAltitude` | `120` | 30-500 | Altitude of the Valkyrie's start point, metres above the drop. |
+| `ApproachDistance` | `3.5` | 1-10 | Metres from the player at which he stops walking up. Read on the **client that owns the merchant**, synced from the server. |
+| `BodyPrefab` | `Dverger` | | The engine creature prefab the merchant is **cloned from, for good** — `Character`, `MonsterAI` and the collider all come from it, whatever body is drawn on top. Must have a `Humanoid`, a `MonsterAI` and an `Animator`. This is not the custom-body switch; that is `CustomBody`. |
+| `CustomBody` | `true` | | Put Ingvar's own body on the `BodyPrefab` clone from the AssetBundle embedded in this DLL. `false` keeps the Dverger stand-in visible, and so does a build with no bundle embedded (`cargo body` says which). This is the switch, not `BodyPrefab`. Read on the **client**, synced from the server; a dedicated server never reads it. |
+| `FlightStartDistance` | `90` | 30-200 | Metres from the pilot where the Valkyrie appears; shrunk at runtime, 12 m at a time, until the start fits inside the pilot's active zone block. The floor is `FlightPlan.MinimumStartDistance` (30 m) — below that the bird would appear on top of the player. |
+| `FlightStartAltitude` | `120` | 30-400 | Altitude of the Valkyrie's start point, metres above the drop. |
 | `FlightDescentDistance` | `50` | 10-200 | Metres out at which the descent leg begins. |
-| `FlightSpeed` | `8` | 2-40 | Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. |
-| `FlightTurnRate` | `45` | 5-360 | Degrees a second the Valkyrie may turn, overriding the prefab's own. |
+| `FlightSpeed` | `8` | 2-40 | Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. Read on the **client that owns the bird**, synced from the server; the server never reads it. |
+| `FlightTurnRate` | `45` | 5-360 | Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the **client that owns the bird**, synced from the server. |
 | `Catalogue` | 72 entries | | What Ingvar sells and buys: `Prefab:BasePrice:TargetStock:MaxStock:Kind` entries separated by commas; `Kind` is `Ware` (sells and buys back) or `Want` (buys only). The default is 18 wares and 54 wants; every number's reason is in `docs/CATALOGUE.md`. An unknown prefab name is dropped with one log line and the rest still loads. |
 | `PriceElasticity` | `0.35` | 0.05-1.5 | Exponent of (target / stock) in the price; higher is steeper. |
 | `MinPriceMultiplier` | `0.4` | 0.05-1 | Floor on the price multiplier when he is flooded. |
@@ -206,7 +206,7 @@ itself is what arms the lock.
 | `StockHalfLifeGameDays` | `1` | 0.1-30 | Between visits his stock drifts back toward target with this half-life, in world days. |
 | `PurseCoins` | `1500` | 0-100000 | Coins he arrives with. |
 | `PurseCarryPercent` | `50` | 0-100 | Percent of last visit's takings added to the next purse, capped at three purses. |
-| `EnableBarter` | `true` | | Allow paying with goods he wants, valued at his live buy price. |
+| `EnableBarter` | `true` | | Allow paying with goods he wants, valued at his live buy price. `false` hides the terminal's Barter button; the server settles a barter deal either way. Read on the **client**, synced from the server. |
 | `BarrkBotExport` | `true` | | Write `barrkbot_cargo_market.json`, `barrkbot_cargo_traders.json` and `barrkbot_cargo_visits.json` under `BepInEx/config/ValkyriesCargo/` for BarrkBOT to read, refreshed about once a minute; the world sidecar is still the source of truth. |
 
 ### `[Client]`
