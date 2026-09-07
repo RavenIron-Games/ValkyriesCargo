@@ -1,8 +1,8 @@
 {
     "name": "ValkyriesCargo",
     "version_number": "0.1.0",
-    "website_url": "https://github.com/RavenIron-Games/ValkyriesCargo",
-    "description": "NOT YET PLAYABLE. A Valkyrie will drop a wandering merchant at your base when you are rested; Ingvar buys and sells from a live stock at supply-and-demand prices. The server side runs headless; the flight and the merchant are not built yet.",
+    "website_url": "https://ravenirongames.com/",
+    "description": "A Valkyrie air-drops Ingvar the Far-Travelled, a red-bearded dwarven merchant, beside your hearth when rested. Buy & sell wares at dynamic supply-and-demand prices before he vanishes like Odin. Server-synced.",
     "dependencies": [
         "denikson-BepInExPack_Valheim-5.4.2333"
     ]
