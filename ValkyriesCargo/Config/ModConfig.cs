@@ -179,6 +179,53 @@ namespace RavenIron.ValkyriesCargo.Config
             CatalogueLine.SettingChanged += (_, __) => ReparseCatalogue();
         }
 
+        // ---- The pure cores' rule bags, filled from the live entries (the director refreshes them once a second) ----
+
+        /// <summary>A MarketRules from the Server.* entries; the day length comes from the engine, not config.</summary>
+        public static MarketRules BuildMarketRules(double secondsPerGameDay, List<string> problems)
+        {
+            var r = new MarketRules { SecondsPerGameDay = secondsPerGameDay };
+            FillMarketRules(r, problems);
+            return r;
+        }
+
+        public static void FillMarketRules(MarketRules r, List<string> problems)
+        {
+            if (r == null) return;
+            r.Elasticity = PriceElasticity.Value;
+            r.MinMultiplier = MinPriceMultiplier.Value;
+            r.MaxMultiplier = MaxPriceMultiplier.Value;
+            r.Spread = SpreadBuy.Value;
+            r.HalfLifeGameDays = StockHalfLifeGameDays.Value;
+            r.PurseCoins = PurseCoins.Value;
+            r.PurseCarryPercent = PurseCarryPercent.Value;
+            r.PurseCapMultiple = 3;
+            r.Sanitize(problems);
+        }
+
+        public static SchedulerRules BuildSchedulerRules(List<string> problems)
+        {
+            var r = new SchedulerRules();
+            FillSchedulerRules(r, problems);
+            return r;
+        }
+
+        public static void FillSchedulerRules(SchedulerRules r, List<string> problems)
+        {
+            if (r == null) return;
+            r.Enabled = Enabled.Value;
+            r.RequireRested = RequireRested.Value;
+            r.DaytimeOnly = DaytimeOnly.Value;
+            r.MinComfort = MinComfortLevel.Value;
+            r.MinBaseValue = MinBaseValue.Value;
+            r.IntervalSeconds = EventCheckIntervalMinutes.Value * 60f;
+            r.ChancePercent = EventChancePercent.Value;
+            r.PlayerCooldownSeconds = PlayerCooldownMinutes.Value * 60f;
+            r.CooldownRadius = CooldownRadius.Value;
+            r.TownRadius = 40f;   // design 3.1: candidates within 40 m are one ticket; not a knob
+            r.Sanitize(problems);
+        }
+
         private static void ReparseCatalogue()
         {
             var problems = new List<string>();
