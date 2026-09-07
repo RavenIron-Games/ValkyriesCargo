@@ -513,7 +513,7 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Day length | `EnvMan.instance.m_dayLengthSec` read when the director starts and printed by `cargo status`; 1800 assumed only without an EnvMan | **verified 1800 s on StormTest 2026-09-06** |
 | Forced visits | `cargo visit` ignores cooldowns, keeps every other gate | proposed (review 2026-09-06) |
 | Build | net472, `libs\` via fetch-libs, `ILRepack.targets`, `AllowUnsafeBlocks` false; Unity project as a sibling directory; Editor 6000.0.61f1 for bundles | proposed |
-| Where bundles get built | open: install 6000.0.61f1 here, or Wu'barrk's Linux box | open |
+| Where bundles get built | Don's machine: Unity 6000.0.61f1 being installed (owner, 2026-09-06: "i will get unity 6000.0.61f1"); `tools/setup-ingvar-unity.ps1` scaffolds the sibling project and bakes | locked (owner) |
 | Console prefix | `cargo` — `status`, `version`, `prefab <name>`; admin: `visit [player]`, `dismiss` (built, P3), `stock`, `reset` (planned). From a client the admin verbs ride `vc_admin`; a dedicated console names the player | built (P3) |
 | Dependencies | BepInExPack only | locked |
 
