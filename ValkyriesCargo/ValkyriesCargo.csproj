@@ -30,6 +30,11 @@
   <Target Name="CheckLibs" BeforeTargets="BeforeBuild">
     <Error Condition="!Exists('$(LibsDir)\assembly_valheim_publicized.dll')"
            Text="libs\ is missing or empty. Run tools\fetch-libs.ps1 to populate it from your Valheim install." />
+    <!-- A fresh clone that cannot build is the exact bug class that once hid Libs\ServerSync.cs here
+         (CLAUDE.md, "The libs/ gitignore trap"). Newtonsoft.Json.dll does not come from the game
+         install, so fetch-libs.ps1 succeeding is not proof this one landed; call it out by name. -->
+    <Error Condition="!Exists('$(LibsDir)\Newtonsoft.Json.dll')"
+           Text="libs\Newtonsoft.Json.dll is missing. Run tools\fetch-libs.ps1 (it now also copies this from the workspace's libs-Tools\); see BARRKBOT_CONTRACT.md." />
   </Target>
 
   <!--
@@ -73,6 +78,15 @@
     <!-- assembly_guiutils, the STOCK dll: Localization for the terminal's item names. The publicized copy in the game folder lacks the Localization types (2026-09-06); public members are all we use. -->
     <Reference Include="assembly_guiutils">
       <HintPath>$(LibsDir)\assembly_guiutils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- BarrkBOT export (Server/BarrkBotExport.cs): Valheim's own Managed folder carries no JSON
+         library worth the name (only JsonUtility: no dictionaries, no top-level arrays). Compile-time
+         only (Private=false); the runtime copy comes from the declared Thunderstore dependency
+         ValheimModding-JsonDotNET, never a copy shipped beside this plugin: two Newtonsoft builds in
+         one BepInEx/plugins tree is a known way to break a server (docs/DECISIONS-WUBARRK.md #3). -->
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>$(LibsDir)\Newtonsoft.Json.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
