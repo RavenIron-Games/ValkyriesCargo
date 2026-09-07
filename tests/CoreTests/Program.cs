@@ -3300,6 +3300,33 @@ namespace ValkyriesCargo.Tests
         /// </summary>
         private static void KeysTests()
         {
+            Section("Immortality: F1 — the prefix that made the whole world invulnerable");
+
+            // A Harmony prefix's bool is "run the original", so `false` SKIPS it. The shipped guard
+            // was `if (!__runOriginal || LiveCount == 0) return false;`, which cancelled
+            // `Character.RPC_Damage` for EVERY character in the world whenever no merchant was
+            // instanced. It reached main and v0.1.0-rc1. These are the checks that would have caught it.
+            Check(Immortality.RunOriginal(true, 0, false),
+                  "no visit running, an ordinary character: vanilla RUNS — the world can still take damage");
+            Check(Immortality.RunOriginal(true, 0, true),
+                  "no visit running, and not even our own merchant is cancelled: LiveCount is a fast path, not a decision");
+            Check(!Immortality.RunOriginal(true, 1, true),
+                  "a visit running and this IS our merchant: cancelled, which is the whole feature");
+            Check(Immortality.RunOriginal(true, 1, false),
+                  "a visit running but this is somebody else: vanilla runs, so a raid can still hurt the player");
+            Check(!Immortality.RunOriginal(false, 1, false),
+                  "another prefix cancelled first: honoured, and not quietly un-cancelled");
+            Check(!Immortality.RunOriginal(false, 0, false),
+                  "and honoured even on the fast path, where the old code got the right answer for the wrong reason");
+
+            // The bug in one line: exactly one of the eight inputs may cancel.
+            int cancels = 0;
+            foreach (bool ro in new[] { true, false })
+                foreach (int lc in new[] { 0, 1 })
+                    foreach (bool mine in new[] { true, false })
+                        if (ro && !Immortality.RunOriginal(ro, lc, mine)) cancels++;
+            Check(cancels == 1, $"across every input with no prior cancel, exactly one cancels (got {cancels})");
+
             Section("Keys (every VCargo_ name, in one place)");
 
             FieldInfo[] fields = typeof(Keys)
