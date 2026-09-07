@@ -3,12 +3,49 @@
 The repo is scaffolded, builds clean, tests pass, and boots headless on a dedicated server. This is
 what it is, what of yours is already in it, what we need from you, and exactly where each thing goes.
 
-## 0. The evening of 2026-09-07: your list, in order
+## 0. Where things stand, 2026-09-07 after the rc1 merge
 
-Where main is: P1, P2, P3, P6 and P7 merged; the P8 loader and the P9 release pass are being reviewed
-and land tonight; three more branches follow them (a client proof runbook with deploy scripts, an
-economy simulation, a decompile audit of the never-run client paths). Your PR #8 has a review on it.
-Don merges everything; nothing below asks you to merge.
+**Your list now lives in `docs/TODO.md` section 2.** That file is the tracker — three tracks, one per owner,
+each editing only its own section — and it is cut from `main` at 8453b65. Everything below in this section is
+the history of how we got here; when the two disagree, TODO wins.
+
+`main` is at 2cf0f1c: 0 warnings, **1301 checks**, `v0.1.0-rc1` tagged with the store zip on the release and
+**uploaded to no store**. Your PR #22 merged the whole 0.1.0 integration (P5 the merchant, P4's drop bound,
+the `VCargo_` rename with `Core/Keys.cs`, your P10a continuation, and P12 the BarrkBOT export) with Thorium's
+economy decisions in it — the Fair Market Act, purse 1500, four Wants to base 3, `PriceChangePolicy` gone —
+and PR #17 completed the knowledge-base snapshot at 67 files.
+
+**One live visit has been run, on your client**, and `CLAUDE.md`'s INTEGRATED IN-GAME RUN is its record.
+Ingvar landed in his own baked body, the state machine and the leash worked, a visit resumed off the sidecar
+and another ended on its timer — and he **gave up walking after 20 s** and called out from the drop point,
+which is the designed fallback and not a success. The glide, the drop, the walk-up completing, the terminal
+on a real visit, a trade and the vanish have never been watched, and no two-client item has run.
+
+**Three things TODO §2 needs from you first**, and the first one blocks Don's whole screen-proof track:
+1. **Attach `Assets/valkyriescargo_kit` to the v0.1.0-rc1 release**, and to every release after a re-bake.
+   The bake is your machine's (the owner decided that on 2026-09-07: Don installs no Unity), so a bake that
+   never leaves your box means every build on his side loses the body — today the only copy in git is inside
+   the tracked `HexiumDist/plugins/ValkyriesCargo.dll`.
+2. **The walk-up**, the 20-second timeout above. Your client, your P5, and cheaper for you to find than for
+   Don to burn screen time on the same wall.
+3. **P10a against Valheim 1.0 on 2026-09-09.** Any change in the 244-row surface is a stop-ship.
+
+Also on your list there: the client-only proofs (the animator parameter names cannot be read on a dedicated
+build — see `CLAUDE.md`'s engine facts), item 23 (the export live on your dedicated server), the truth pass on
+your own files (`README.md`, `CHANGELOG.md`, `models/README.md`, and the reason four Wants went to base 3,
+which is only in the release note), and closing issue #16.
+
+Two of the four owner decisions in TODO §1 land on your work if they go the other way: the Newtonsoft
+dependency P12 added, and the tracked DLL. Neither is yours to act on before the word.
+
+---
+
+### The evening of 2026-09-07: your list as it stood then (history)
+
+Where main was: P1, P2, P3, P6 and P7 merged; the P8 loader and the P9 release pass being reviewed
+and landing that night; three more branches following them (a client proof runbook with deploy scripts, an
+economy simulation, a decompile audit of the never-run client paths). PR #8 had a review on it.
+Don merged everything; nothing below asked you to merge.
 
 1. ~~**PR #8: answer the review and push the fix.**~~ DONE 2026-09-07: answered 05:09, verified on Don's side
    (1078 checks with main merged; the flight table reproduced), merged as 1884fcd. The rest of this item is history.
@@ -84,6 +121,10 @@ Don merges everything; nothing below asks you to merge.
    after #15 and P11 land; P10a is yours after P5; the knowledge base is at `docs/knowledge-base/` (add
    `VALHEIM-API-REFERENCE`); three PRs of Don's (P10a tooling, P10b, P11) arrive overnight, read them in the
    morning. `docs/HANDOFF-CLAUDE.md` section 0 is the full state.
+   **What actually happened:** the agents were stopped at the owner's word before any of those three PRs was
+   opened, and PR #15 was never merged as itself — you carried it, and everything else, into **PR #22**. The
+   three branches (`a/p10a-sweep`, `a/p10b-probes`, `a/p11-shakedown`) are still unmerged; `a/p10a-sweep` holds
+   nothing main lacks, and the other two are being rebased on Don's side now.
 
 ## 1. Where things are
 
