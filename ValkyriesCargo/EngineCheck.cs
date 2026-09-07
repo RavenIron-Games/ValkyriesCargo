@@ -628,9 +628,14 @@ namespace RavenIron.ValkyriesCargo
             NeedHash(typeof(ZDOVars), "s_dead", "dead", bad);
             NeedField(typeof(ZDOVars), "s_playerName", typeof(int), true, bad);
             NeedHash(typeof(ZDOVars), "s_playerName", "playerName", bad);
+            // The cooldown key (D2, 2026-09-07): `Player.SetPlayerID` writes it as a long beside the
+            // name; `VisitDirector.Gather` reads it with `GetLong`. A key read without a probe is what
+            // this registry exists to forbid.
+            NeedField(typeof(ZDOVars), "s_playerID", typeof(int), true, bad);
+            NeedHash(typeof(ZDOVars), "s_playerID", "playerID", bad);
             NeedMethod(typeof(ZNet), "GetAllCharacterZDOS", Type.EmptyTypes, bad);
             NeedField(typeof(Player), "m_localPlayer", typeof(Player), true, bad);   // whose ZDO the report is written on
-            return 13;
+            return 15;
         }
 
         private static void ProbeDayLength()

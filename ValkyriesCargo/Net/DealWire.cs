@@ -40,6 +40,8 @@ namespace RavenIron.ValkyriesCargo.Net
             foreach (ZNetPeer peer in peers)
             {
                 if (peer == null || peer.m_rpc == null) continue;
+                // See AdminRpc.SweepPeers (D4a): no uid or name until RPC_PeerInfo; gate above the count.
+                if (!peer.IsReady()) continue;
                 live.Add(peer.m_rpc);
                 if (_registered.Contains(peer.m_rpc)) continue;
                 try

@@ -170,7 +170,7 @@ namespace RavenIron.ValkyriesCargo.Core
                                  "the walk-up, the crossbow strip and the fire avoidance; a body change here is silent", ProbeState.NotProbeable);
             Declare(InventoryOps, 7, "Inventory.RemoveItem(string,int,int,bool) / AddItem(GameObject,int) / CanAddItem(GameObject,int) / CountItems, ObjectDB.GetItemPrefab",
                                      "a delivery cannot be applied (DealApplier)");
-            Declare(Comfort, 8, "Player.GetComfortLevel / m_localPlayer, SEMan.s_statusEffectRested / HaveStatusEffect, ZDOVars.s_baseValue / s_dead / s_playerName",
+            Declare(Comfort, 8, "Player.GetComfortLevel / m_localPlayer, SEMan.s_statusEffectRested / HaveStatusEffect, ZDOVars.s_baseValue / s_dead / s_playerName / s_playerID",
                                 "the client's eligibility report (ComfortReporter, Scheduler)");
             Declare(DayLength, 9, "EnvMan.instance, EnvMan.m_dayLengthSec (long), EnvMan.IsDay()",
                                   "the market's drift half-life falls back to the compiled 1200 s");

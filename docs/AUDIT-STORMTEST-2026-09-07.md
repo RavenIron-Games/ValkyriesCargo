@@ -240,6 +240,8 @@ Note for the docs: every quoted `restart sweep: 1 stranded merchant(s) destroyed
 
 ## 3. D2 — the cooldown key
 
+> **Built 2026-09-07 evening as PR #48**, as below, with the harness checks and the mutation proof in the PR. §4 the same.
+
 **Finding** (code high, consequence narrower than first recorded). `VisitDirector.Gather` builds `Candidate.Uid = zdo.GetOwner()` (`Server/VisitDirector.cs:672`); `Scheduler` stamps and checks `_playerCooldownUntil` on that long (`Core/Scheduler.cs:181, 195, 245-254`) and persists it as `cool\t<uid>\t<remaining>` (`:288`). `zdo.GetOwner()` is the ZDO's CURRENT owner (`ZDO.cs:1491-1498`, 0 when none is recorded), which equals the client's `ZDOMan.m_sessionID` here only because a client owns its own character ZDO — and that session id is minted per **world join**, not per process: the server log shows one Steam id under three uids (`-794915846`, `860278520`, `73796573`) with the second and third joins 12 s apart inside one client process. Hence three `cool` rows for one player.
 
 **Why it did not bite today:** `StampCooldown` also stamps a base cooldown at the dispatch point, 60 m for the same 3600 s (`Scheduler.cs:248`, checked at `:196`, persisted as `coolbase`), and all six dispatches were within 2 m of each other. The hole opens for a player who relogs AND rolls more than `CooldownRadius` from every live dispatch point — a second base. Narrow, real, and `roll: no eligible player: 1 on cooldown` (`server-LogOutput.log:4813`) only reads that way because the player bucket is checked before the base bucket.
