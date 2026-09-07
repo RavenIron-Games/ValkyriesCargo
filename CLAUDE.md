@@ -21,7 +21,7 @@ and the model: `docs/REVIEW-v5-2026-09-06.md`.
 
 ## Status
 
-**Main after P8 and P9, 2026-09-07. Builds clean (0 warnings), 1004/1004 off-game checks, packages
+**Main after P8 and P9, 2026-09-07. Builds clean (0 warnings), 1034/1034 off-game checks, packages
 (`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right layout).** What exists: the plugin entry, ServerSync
 vendored and armed, the config surface bound and locked, the `cargo` console, the catalogue with 72 defaults, the
 market and the scheduler, the event and the director, the deal wire, the world sidecar, the Cargo Terminal and the
@@ -116,10 +116,15 @@ mutations caught. **Not yet seen on a screen**: the window itself (item 17).
 the DLL for trying a bake without a rebuild — once, and never unloads it. `Attach(Character)` hangs the prefab as a
 child named `IngvarBody` on the merchant's ROOT at local `(0, groundOffset, 0)`, derived from `sharedMesh.bounds`
 unioned over the renderers and expected to be 0, and hides the stand-in by DISABLING every other `Renderer` under the
-character — never destroying one, never deactivating `Visual` — so `Character.m_animator`, `VisEquipment`,
+character AND its `LODGroup` (Unity's LOD system owns `Renderer.enabled` for the renderers it lists, and
+`Character.SetVisible` on every ownership change plus `VisEquipment.UpdateLodgroup` on every equipment change would
+switch them back on; found by the review) — never destroying one, never deactivating `Visual` — so `Character.m_animator`, `VisEquipment`,
 `CharacterAnimEvent`, `ZSyncAnimation` and the `CapsuleCollider` all keep working and every vanilla
 `GetComponentInChildren<Animator>` still finds the vanilla animator first (ours is appended last; the search is
-depth-first in child order). It re-hides every 2 s, because `VisEquipment` rebuilds a crossbow on any equipment change.
+depth-first in child order). The whole stock assembly has six root-scoped lookups that can run after Awake:
+`Character.Awake`, `ZSyncAnimation.Awake`, `NpcTalk.Start`, `FootStep.Start`, `RandomAnimation.Start` and
+`Projectile.RPC_Attach`; the appended-last defence covers all six, and P5 attaching from the `Humanoid.Awake`
+postfix means the three Start-time ones WILL run. It re-hides every 2 s, because `VisEquipment` rebuilds a crossbow on any equipment change.
 `Client/IngvarBody.cs` plays the six clips through a `PlayableGraph` — one `AnimationPlayableOutput` on the prefab's own
 `Animator`, an `AnimationMixerPlayable`, one `AnimationClipPlayable` per clip found BY NAME, a missing clip logged once
 and left at weight 0 — with **no AnimatorController anywhere**, `applyRootMotion=false` and
@@ -131,7 +136,9 @@ at 85% of the clip's OWN length, no self-interrupt, a different one replaces wit
 summing to 1 across a 40,000-step random walk. New config `Server.CustomBody` (synced+locked, default true) is the
 switch; `Server.BodyPrefab` stays the engine prefab the merchant is cloned from. Console: `cargo body`, `cargo body
 preview | walk | clip <Hello|Talk|Shrug|Nod> | clear`, and one line in `cargo status`. Off-game: builds clean (net48,
-0 warnings), 1004 checks, five model mutations caught; a 131,072-byte stand-in dropped at `Assets\valkyriescargo_kit`
+0 warnings), 1034 checks (78 with the model, 30 more from the adversarial review: a one-shot over a moving crossfade,
+a replacement during the hand-back, a hitch through the blend-out, a clip shorter than the blend-in), nine model
+mutations caught between the two; a 131,072-byte stand-in dropped at `Assets\valkyriescargo_kit`
 embedded as `ValkyriesCargo.valkyriescargo_kit` and grew the DLL by exactly that much. **Not yet seen on a screen**:
 the body itself (items 19 and 20) — there is no baked bundle on this machine and nothing here has drawn a pixel.
 
@@ -234,7 +241,9 @@ Planned (design section 3; names are final, files do not exist yet):
    postfixes at default priority where appending is the whole point. Never a max- or high-priority
    replace.** The planned `Patch_Valkyrie_Awake` skips vanilla for our own object only, the narrow
    named exception RavenEye recorded for `UpdateNoMap`.
-2. **No long-lived coroutines.** `CargoTick` is the one `Update`. Nothing else owns a timer.
+2. **No long-lived coroutines.** `CargoTick` is the one `Update`. Nothing else owns a timer. Exception, written
+   down 2026-09-07: a driver MonoBehaviour that lives and dies with its own GameObject and updates only itself
+   (`Client/IngvarBody.cs`; `Client/CargoFlight.cs` when it lands). The rule is about timers that outlive their object.
 3. **Cosmetics off the gameplay path.** Every patch body is its own try/catch, logging at most three
    times.
 4. **Never patch `EnvMan`. Never touch materials, textures or shaders.** Reading `EnvMan.IsDay()` is
@@ -389,10 +398,12 @@ P8, the body (a client with a baked bundle embedded; none exists yet):
 19. **`cargo body`** says `source embedded ('ValkyriesCargo.valkyriescargo_kit')`, `bundle open`, `prefab 'ingvar'
     found`, six clips with the lengths from models/README.md (`Walk 4.21s, Idle 10.00s, Talk 5.17s, Hello 3.79s,
     Shrug 2.00s, Nod 1.25s`), `SkinnedMeshRenderer=yes, bones=24, tris=31112`, and a **ground offset within a few
-    millimetres of 0** — anything else and the bake, not the loader, is what to look at. On a dedicated server the
+    millimetres of 0** — anything else and the bake, not the loader, is what to look at (the console prints it as two
+    lines: `body: source embedded - ...` then `resource: 'ValkyriesCargo.valkyriescargo_kit' inside this DLL ...`). On a dedicated server the
     same verb answers `source none - client only; not loaded here` and says nothing about appearance.
 20. **`cargo body preview`** stands Ingvar 2.5 m in front of the player, facing them, feet ON the ground (not
-    floating, not sunk), about **1.37 m** tall — a head shorter than the player — idling, with the idle actually
+    floating, not sunk; test OUTDOORS: the preview stands on `GetGroundHeight`, the terrain, so on a floor he sinks to
+    the ground beneath it and that is the raycast mask, not the bake), about **1.37 m** tall — a head shorter than the player — idling, with the idle actually
     moving rather than frozen on frame 0. `cargo body walk` walks him on the spot and the crossfade takes about
     0.15 s in each direction; `cargo body clip Hello` waves and hands back to the idle near the end of the clip,
     and a second `cargo body clip Hello` while it plays is refused in the console; `Talk`, `Shrug` and `Nod` each

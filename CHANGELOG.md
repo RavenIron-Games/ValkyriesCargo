@@ -111,7 +111,9 @@ merchant are not built, and the custom body has its loader but no baked bundle.*
 - New `Server.CustomBody` (synced and locked, default true): the switch. `BodyPrefab` stays the engine prefab.
 - Console: `cargo body`, `cargo body preview | walk | clip <name> | clear`; a `body:` line in `cargo status`.
 - The bake needs nothing beyond what `tools\unity\IngvarBundleBuilder.cs` already produces.
-- **1004 off-game checks**, with five blend-model mutations caught. The embed proven off-game: a stand-in file
+- **1034 off-game checks** (30 of them from the adversarial review), with nine blend-model mutations caught between
+  the builder and the reviewer. The review also found and fixed the one runtime defect: Unity's LOD system would have
+  switched the hidden stand-in back on at every ownership or equipment change, so the loader disables the `LODGroup` too. The embed proven off-game: a stand-in file
   at `Assets\valkyriescargo_kit` grew the DLL by exactly its size and appeared as the resource
   `ValkyriesCargo.valkyriescargo_kit`.
 

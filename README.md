@@ -88,7 +88,7 @@ lines, `format 1`, 72 `stock` rows, `purse 800`, `purseStart 0`, `visit 0`, `seq
 to `.bak`. The same boot also printed `roll: no eligible player: nobody online` — the empty-server
 path, live.
 
-Off the game entirely: **1004 checks** in `tests\CoreTests`, which compiles the shipping sources
+Off the game entirely: **1034 checks** in `tests\CoreTests`, which compiles the shipping sources
 themselves — the whole of `Core\`, plus `Net\CargoRpc.cs`, the terminal's tray model and the body's blend model — against
 stubs, never a copy. Mutation-proven (28 mutations on the market core, seven more on the terminal's tray
 model, five on the body's blend model; each fails without its fix).
