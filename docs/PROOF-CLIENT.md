@@ -747,7 +747,7 @@ A healthy dedicated boot, in order (StormTest, 2026-09-06 19:25):
 [Info   : Unity Log] Registered 'com.raveniron.valkyriescargo ConfigSync' RPC - waiting for incoming connections
 [Info   : Unity Log] <time>: Load world: Dedicated (Dedicated)
 [Info   :Valkyrie's Cargo] role: dedicated server
-[Info   :Valkyrie's Cargo] routed RPCs registered for this session: VCargo_admin, VCargo_reply
+[Info   :Valkyrie's Cargo] admin wire up for this session: VCargo_admin is registered on each peer's OWN socket as it connects and ...
 [Info   :Valkyrie's Cargo] director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), ...
 [Info   :Valkyrie's Cargo] roll: no eligible player: nobody online
 ```
