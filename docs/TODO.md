@@ -189,6 +189,13 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       contradicted, 6 never exercised); Steam's new `default_pre1_0` branch for P10a. Proposed diffs only, his
       files untouched; fixes on the owner's word. **Corrections applied to the proofs record**: the sweep trails the
       end by ~2 s not 6, five flight times not six, `moved 597.9 m in 20 s` is not a speed.
+- [x] **D2 + D4 built** (owner: "do ours and merge", 2026-09-07 evening; PR #48): `Candidate.PlayerId` /
+      `CooldownKey` on `ZDOVars.s_playerID` with `Uid` as the fallback, keyed through `StampCooldown`, the bucket and
+      `Describe` (`Force` stays on `Uid`); `CheckComfort` 13 → 15 members with the `"playerID"` hash, the surface
+      string names it, `docs/ENGINE-PROBES.md` §9 row; the admin and deal wires gate on `ZNetPeer.IsReady()` above
+      the live count; the client's session-end line. Harness 1697 → 1701; `probes 18/18 ok` against the real
+      assembly; the hash mutation fails `comfort` and only `comfort`. **Not yet seen on a machine**: a relog from a
+      second base still on cooldown; the wire line naming the player on connect. D1 and D3 stay Track B's.
 - [x] **The two owner decisions of 2026-09-07, built here (PR #40 merged):** the JSON
       dependency swapped for `Core/Json.cs` (writer only; compact and indented output shaped like
       Newtonsoft's so the rollover's part boundaries and BarrkBOT's files do not move; the `<Reference>`,

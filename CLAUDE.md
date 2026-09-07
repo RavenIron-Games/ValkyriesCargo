@@ -725,8 +725,12 @@ the one log line that settles it; **D2** the per-player cooldown is keyed on the
 reclaim at visit end WORKS — `ZDOMan.DestroyZDO` only queues, and the sweep in the same call sees the ZDO still in
 the table, hence `restart sweep: 1 stranded merchant(s) destroyed` ~2 s after every end; reporting only. Also: of
 the eleven merged audit fixes, two are confirmed on a machine (F7, N1), two contradicted (F5 → D1, F4's sweep half
-→ D3), six never exercised (F1, F2, F6, F8, F9, F11; one-line recipes in the audit §5). Fixes on the owner's word;
-D1 and D3 are in Wu'barrk's files.
+→ D3), six never exercised (F1, F2, F6, F8, F9, F11; one-line recipes in the audit §5). **D2 and D4 BUILT the same
+evening (PR #48)**: `Candidate.CooldownKey` = `ZDOVars.s_playerID` with `Uid` as the fallback, two probe rows in
+`CheckComfort` (15 members, `probes 18/18 ok` on the real assembly, a wrong hash string fails the probe), the two
+wires register a peer once `IsReady()`, and a client's session-end line no longer claims a sidecar. Not yet seen
+on a machine: a relog from a second base still on cooldown, and the wire line naming the player. D1 and D3 are in
+Wu'barrk's files and wait for his word or the owner's reassignment.
 
 ## What to verify in-game
 
