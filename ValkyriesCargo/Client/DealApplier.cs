@@ -16,6 +16,14 @@ namespace RavenIron.ValkyriesCargo.Client
     {
         public const string CoinsPrefab = "Coins";
 
+        /// <summary>
+        /// The DeliveryId of the last result this applier wrote into a pack IN FULL. The transport acks on
+        /// it, because nothing else can answer "did it land": CargoRpc marks the inbox BEFORE handing the
+        /// result to the caller, so the inbox says "applied" for a delivery the pack then refused, and an
+        /// ack on that clears the server's owed row for good. Null while the last apply did not land.
+        /// </summary>
+        public static string LastApplied { get; private set; }
+
         /// <summary>Null when the whole result can be applied now; else the DealReason-style token that stops it.</summary>
         public static string CanApply(DealResult r)
         {
@@ -53,6 +61,7 @@ namespace RavenIron.ValkyriesCargo.Client
         /// </summary>
         public static bool Apply(DealResult r)
         {
+            LastApplied = null;
             string why = CanApply(r);
             if (why != null) { ValkyriesCargo.Log.LogWarning("deal apply refused: " + why); return false; }
             Player p = Player.m_localPlayer;
@@ -82,6 +91,7 @@ namespace RavenIron.ValkyriesCargo.Client
                 try { foreach (DealLine line in removed) if (AddStacks(inv, Prefab(line.Prefab), line.Count)) restored++; } catch { }
                 ValkyriesCargo.Log.LogWarning("deal apply: not every line landed (delivery " + r.DeliveryId + "); " + restored + " of " + removed.Count + " removal(s) put back");
             }
+            if (ok) LastApplied = r.DeliveryId;
             return ok;
         }
 
