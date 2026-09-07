@@ -80,10 +80,18 @@ step 4).
 
 ## 2. Wu'barrk — flight, merchant, body, sweeps, export
 
-- [ ] **Hand over the bundle, every bake.** The bake is his machine's (decided 2026-09-07). Attach
-      `Assets/valkyriescargo_kit` to the v0.1.0-rc1 release now, and to every release after a re-bake,
-      so a build on Don's machine carries Ingvar. Until then every rebuild on Don's side loses the body:
-      the only copy is inside the tracked DLL.
+- [ ] **The P4/P5 audit's findings (`docs/AUDIT-P4P5-2026-09-07.md`; the issue opened 2026-09-07).** First
+      and alone: **F1 is a blocker on `main` and in rc1** — `Patch_Character_Damage.cs:30` returns `false`
+      from the prefix whenever `CargoMerchant.LiveCount == 0`, and a false prefix return skips the original,
+      so `Character.RPC_Damage` never runs for anyone while no merchant is instanced: nothing in the world
+      can take damage. One-line fix (`return true` on that path). Then F2 (the hover text never draws:
+      `Character` is itself `Hoverable` and wins), F3 (`VCargo_vanish`/`VCargo_say` registered, never sent:
+      no Odin vanish, single-screen speech), F4 (a resumed visit never rebinds `Spawner.Merchant`, so `End`
+      leaves an immortal merchant in the world), F5 (the flat 20 s timeout and the 12 m leash loop from
+      51 m for ever — the live log), F6 (burning/poison/smoke call `ApplyDamage` directly and bypass the
+      patch). F1, F3, F4 and F6 were re-verified on this side against the code and the decompile.
+- [x] **Hand over the bundle, every bake.** DONE 2026-09-07: `Assets/valkyriescargo_kit` attached to
+      `v0.1.0-rc1`, byte-identical to the embedded copy (PR #27's note). Every re-bake: a new asset.
 - [ ] **The walk-up.** In the one live visit he `gave up walking after 20 s` and called out from the drop
       point (issue #23, release note). P5, his client, his to find before Don spends screen time on the
       same wall.
@@ -128,11 +136,12 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       checkout first.
 - [ ] **`a/p10a-sweep`.** Most of it reached main through PR #20. Diff what remains, apply the four doc
       corrections its client-vs-server report listed, open a small PR or delete the branch.
-- [ ] **P11d, the adversarial audit of P4 and P5** against the real assembly, now that P5 is on main
-      (`docs/P10-P11-FOR-DON.md` §11d: `Character.Damage`/`RPC_Damage`, `InIntro`, `MonsterAI.MakeTame`,
-      `BaseAI.IsEnemy`, ownership on every machine). The reviewer was stopped on the night of the 7th;
-      the `MakeTame`-before-`BaseAI.Awake` bug is exactly the class it exists to catch. Findings to
-      Wu'barrk as an issue.
+- [x] **P11d, the adversarial audit of P4 and P5** against the real assembly. DONE 2026-09-07:
+      `docs/AUDIT-P4P5-2026-09-07.md` (1 blocker, 5 bugs, 5 risks, 15 notes, ~45 probe rows for P10b, and
+      the list of what was checked and found correct); findings posted to Wu'barrk as an issue. The probe
+      rows go into P10b's registry after PR #28 merges.
+- [ ] **Download the bundle asset** from the v0.1.0-rc1 release into this machine's ignored `Assets/`
+      (owner's OK to download), so a build here carries Ingvar.
 - [ ] **After the proofs, if the screen shows it** (`docs/CLIENT-AUDIT.md` report-only findings): the game
       menu opening behind the terminal (finding 7, `Patch_Menu_Update`), the negative icon cache
       (finding 9), the full-pack deal check (finding 10, `CanApply`), `HasRenderer` as a cached field
