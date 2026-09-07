@@ -118,10 +118,15 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
                 UIFocus.SetBlocksGameInput(WindowId, true);
 
                 if (Input.GetKeyDown(KeyCode.Escape)) { Close("escape"); return; }
+                // Every relayed button is stood down with ResetButtonStatus. Closing releases the
+                // BlocksGameInput token in the same frame, and MonoBehaviour Update order is undefined:
+                // InventoryGui.Update and Minimap.Update both open on `!Chat.HasFocus()` plus a still-
+                // pressed ZInput button, so without this Tab closes the terminal AND opens the inventory,
+                // M closes it AND opens the map. (UIFocus's own header prescribes this for a token holder.)
                 if (ZInput.GetButtonDown("Use")) { ZInput.ResetButtonStatus("Use"); Close("use"); return; }
-                if (ZInput.GetButtonDown("Inventory")) { Close("inventory"); return; }
-                if (ZInput.GetButtonDown("Map")) { Close("map"); return; }
-                if (InventoryGui.IsVisible() || Minimap.IsOpen()) { Close("inventory or map open"); return; }
+                if (ZInput.GetButtonDown("Inventory")) { ZInput.ResetButtonStatus("Inventory"); Close("inventory"); return; }
+                if (ZInput.GetButtonDown("Map")) { ZInput.ResetButtonStatus("Map"); Close("map"); return; }
+                if (InventoryGui.IsVisible() || Minimap.IsOpen() || Menu.IsVisible()) { Close("a vanilla screen opened"); return; }
 
                 Player p = Player.m_localPlayer;
                 if (!_demo)
