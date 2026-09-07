@@ -53,6 +53,7 @@ namespace ValkyriesCargo.Tests
             SidecarTests();
             OwedLedgerTests();
             PatchLedgerTests();
+            GhostTests();
             SessionRowTests();
             BodyMotionTests();
             TrayModelTests();
@@ -2350,6 +2351,38 @@ namespace ValkyriesCargo.Tests
             Equal(3, problems.Count, "unknown row, second session row and a bad format line are each reported");
             Check(junk.FormatMatches, "and the good format line stands");
             Equal("", Sidecar.Split("format\t1\n", null).MarketRows, "a header-only file has empty bundles and tolerates a null problem list");
+        }
+
+        private static void GhostTests()
+        {
+            Section("Ghost: F11 — hostiles neither target nor fear Ingvar (the owner's decision 2026-09-07: ghost mode)");
+
+            // The same shape as Immortality, for the same reason: a prefix's bool is "run the original",
+            // and the gate must never fold "somebody cancelled first" into "this is none of our business".
+            Equal(Ghost.Verdict.RunOriginal, Ghost.Decide(true, 0, false, false), "no visit, two ordinary characters: vanilla decides");
+            Equal(Ghost.Verdict.RunOriginal, Ghost.Decide(true, 0, true, false), "no visit: LiveCount is a fast path, so even a stray merchant flag changes nothing");
+            Equal(Ghost.Verdict.RunOriginal, Ghost.Decide(true, -1, true, true), "a negative count is the fast path too, not a visit");
+            Equal(Ghost.Verdict.RunOriginal, Ghost.Decide(true, 1, false, false), "a visit running, two ordinary characters: vanilla decides, so a raid still fights the player");
+            Equal(Ghost.Verdict.NotEnemies, Ghost.Decide(true, 1, true, false), "Ingvar asking about anyone: not enemies — he threatens nobody");
+            Equal(Ghost.Verdict.NotEnemies, Ghost.Decide(true, 1, false, true), "anyone asking about Ingvar: not enemies — nothing targets him, nothing parks on him");
+            Equal(Ghost.Verdict.NotEnemies, Ghost.Decide(true, 1, true, true), "both ours: not enemies");
+            Equal(Ghost.Verdict.Cancelled, Ghost.Decide(false, 1, true, true), "another prefix cancelled first: honoured, and its answer left alone");
+            Equal(Ghost.Verdict.Cancelled, Ghost.Decide(false, 0, false, false), "and honoured on the fast path, never quietly un-cancelled");
+
+            // The invariant: with a visit running and no prior cancel, exactly the three pairs that have
+            // Ingvar in them are ghosted; the fourth is the world's own business.
+            int ghosted = 0;
+            foreach (bool a in new[] { false, true })
+                foreach (bool b in new[] { false, true })
+                    if (Ghost.Decide(true, 1, a, b) == Ghost.Verdict.NotEnemies) ghosted++;
+            Equal(3, ghosted, "of the four pairs, exactly the three with Ingvar in them answer not-enemies");
+
+            // And with no visit, none of them are - the whole world is vanilla's.
+            int touched = 0;
+            foreach (bool a in new[] { false, true })
+                foreach (bool b in new[] { false, true })
+                    if (Ghost.Decide(true, 0, a, b) != Ghost.Verdict.RunOriginal) touched++;
+            Equal(0, touched, "with no visit running, no pair is touched at all");
         }
 
         private static void PatchLedgerTests()

@@ -132,8 +132,8 @@ namespace RavenIron.ValkyriesCargo.Core
             // nothing of ours depends on it, while the PRIVATE `Character.RPC_Damage` is what
             // `Patch_Character_RPC_Damage` actually patches. Probing the sender was green while the
             // thing it stood for could be broken - `docs/P10B-PROBE-GAP.md`, fixed here.
-            Declare(CharacterAi, 6, "Character.GetAllCharacters / GetSEMan / InIntro / RPC_Damage, MonsterAI.MakeTame, BaseAI.IsEnemy",
-                                    "Ingvar is mortal (RPC_Damage), the carry does not hold him still (InIntro) and he is never tamed (MakeTame)");
+            Declare(CharacterAi, 6, "Character.GetAllCharacters / GetSEMan / InIntro / RPC_Damage, MonsterAI.MakeTame, BaseAI.IsEnemy (both overloads)",
+                                    "Ingvar is mortal (RPC_Damage), the carry does not hold him still (InIntro), he is never tamed (MakeTame) and hostiles hunt him (IsEnemy(a, b): the ghost-mode prefix has nothing to patch)");
             Declare(MerchantAwake, 6, "Humanoid.Awake / Start / GiveDefaultItems, BaseAI.Awake, BaseAI.m_character, MonsterAI.Awake, Character.SetTamed, ZNetView.IsValid",
                                       "Patch_Humanoid_Awake finds no target and no merchant is ever built (P5)");
             Declare(AwakeOrder, 6, "BaseAI.Awake is what assigns m_character, MonsterAI.MakeTame dereferences it on its FIRST line, and Humanoid.Start - not Awake - is what calls GiveDefaultItems",
