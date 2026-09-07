@@ -166,7 +166,10 @@ pending flag, the v1 design. Documented, not coded, until the check says it is n
 **Body contract.** `ZNetView`, `ZSyncTransform`, `ZSyncAnimation`, `Humanoid`, `MonsterAI`, a `SkinnedMeshRenderer`
 under an `Animator` that declares the vanilla parameter set (section 11), a `CapsuleCollider` (`Character.m_collider`),
 and optionally a `Visual` child. **0.1 body: `Dverger`** (config `Server.BodyPrefab`), checked at boot by `cargo prefab
-Dverger`. Thorium's body replaces it later behind the same contract (section 11).
+Dverger`. Every part of that contract stays the `BodyPrefab` clone's for good: as BUILT (P8, section 11.6) Ingvar's body
+does **not** replace it. It is ADDED as a child of the same clone and the clone's renderers are switched off, so the
+`Animator` that declares the vanilla parameter set, the `CapsuleCollider` and the whole component set are still the
+prefab's. Ingvar's own animator declares nothing of vanilla's (section 11.4) and never has to.
 
 `Patch_Humanoid_Awake` (postfix, default priority, try/catch): if the ZDO carries `vc_ingvar`, `AddComponent<CargoMerchant>()`.
 Every machine.
