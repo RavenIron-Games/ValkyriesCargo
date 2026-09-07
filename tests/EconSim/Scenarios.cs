@@ -189,7 +189,9 @@ namespace ValkyriesCargo.EconSim
                         if (firstRefusal.Length == 0) { firstRefusal = r.Reason; firstRefusalAt = want; }
                         string why;
                         int largest = Sim.LargestSale(m, prefab, want - 1, seller.Coins, 0, out why);
-                        if (largest <= 0) { stop = r.Reason; break; }
+                        // `why` is why the NEXT unit was refused, which is the true bound; r.Reason is only
+                        // why a fifty-stack was refused, and over_max is tested before the purse.
+                        if (largest <= 0) { stop = why != DealReason.Ok ? why : r.Reason; break; }
                         units = largest;
                         snap = m.Snapshot();
                         r = m.Settle(Sim.Sell(snap, prefab, units, seller.Coins), seller.Coins, 0);
@@ -219,9 +221,10 @@ namespace ValkyriesCargo.EconSim
             }
             md.Table(new[] { "Want", "base", "target / max", "units he took", "he paid, a unit", "coins to the player", "purse left", "shelf", "first refusal", "stopped by" }, rows);
 
-            md.Line("**`over_max` is checked before the purse** — per offered line, inside `Settle`, at Market.cs 288 against 299 — so a");
-            md.Line("fifty-stack is always refused for room first, whatever the state of the purse. Which bound actually bites shows up");
-            md.Line("only when the deals are small: see the next table. Scrap iron in fifties: " + Sim.Fact("s2.scrap") + ".");
+            md.Line("**`over_max` is checked before the purse** — per offered line, inside `Settle`, at Market.cs 288 against 299 — so the");
+            md.Line("*first* refusal is `over_max` on every row here, even where he could not have paid for the stack anyway. The last");
+            md.Line("column is the honest one: it is why the NEXT single unit was refused, and it says flametal ore stops on the purse");
+            md.Line("while the cheap rows stop on the shelf. Scrap iron in fifties: " + Sim.Fact("s2.scrap") + ".");
 
             md.H(3, "The same 200, one unit at a time");
 
@@ -255,8 +258,9 @@ namespace ValkyriesCargo.EconSim
             md.Line("goods in stacks, the mirror of CATALOGUE section 5's worked line, and the reason a player should always offer the");
             md.Line("whole stack at once.");
             md.Blank();
-            md.Line("**Cheap Wants fill his shelf; dear ones empty his purse.** Wood, deer hide and scrap iron all run out of room");
-            md.Line("(`over_max`) with coins still in the purse; flametal ore, at 63 a unit, runs him dry after fifteen (`purse_empty`) with");
+            md.Line("**Cheap Wants fill his shelf; dear ones empty his purse.** Two hundred wood troubles neither bound — 400 units of room");
+            md.Line("and 200 coins for the lot. Deer hide and scrap iron run out of room (`over_max`) with coins still in the purse.");
+            md.Line("Flametal ore, at 63 a unit, runs him dry after fifteen (`purse_empty`) with");
             md.Line("two thirds of the shelf still free. The crossover is `purse / (2 x target)` coins a unit — 13 for a 30-target row like");
             md.Line("scrap iron, 40 for a 10-target row like flametal ore. Above it, the purse is the wall and the shelf never matters.");
 

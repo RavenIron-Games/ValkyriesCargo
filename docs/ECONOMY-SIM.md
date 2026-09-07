@@ -83,12 +83,13 @@ exactly where each Want stops and why. He starts with the default purse of 800 c
 |---|---|---|---|---|---|---|---|---|---|
 | Wood | 1 | 200 / 600 | 200 | 1 -> 1 | 200 | 600 | 400 | - | took all 200 |
 | DeerHide | 3 | 60 / 180 | 120 | 2 -> 1 | 220 | 580 | 180 | over_max (at 50) | over_max |
-| IronScrap | 22 | 30 / 90 | 54 | 15 -> 11 | 794 | 6 | 84 | over_max (at 50) | over_max |
-| FlametalOreNew | 90 | 10 / 30 | 12 | 63 -> 63 | 756 | 44 | 22 | over_max (at 50) | over_max |
+| IronScrap | 22 | 30 / 90 | 54 | 15 -> 11 | 794 | 6 | 84 | over_max (at 50) | purse_empty |
+| FlametalOreNew | 90 | 10 / 30 | 12 | 63 -> 63 | 756 | 44 | 22 | over_max (at 50) | purse_empty |
 
-**`over_max` is checked before the purse** — per offered line, inside `Settle`, at Market.cs 288 against 299 — so a
-fifty-stack is always refused for room first, whatever the state of the purse. Which bound actually bites shows up
-only when the deals are small: see the next table. Scrap iron in fifties: sold 54 for 794 coins; stopped over_max with 6 coins left and the shelf at 84 of 90.
+**`over_max` is checked before the purse** — per offered line, inside `Settle`, at Market.cs 288 against 299 — so the
+*first* refusal is `over_max` on every row here, even where he could not have paid for the stack anyway. The last
+column is the honest one: it is why the NEXT single unit was refused, and it says flametal ore stops on the purse
+while the cheap rows stop on the shelf. Scrap iron in fifties: sold 54 for 794 coins; stopped purse_empty with 6 coins left and the shelf at 84 of 90.
 
 ### The same 200, one unit at a time
 
@@ -103,8 +104,9 @@ Scrap iron one at a time: 60 units for 745 coins, stopped over_max, 55 coins sti
 goods in stacks, the mirror of CATALOGUE section 5's worked line, and the reason a player should always offer the
 whole stack at once.
 
-**Cheap Wants fill his shelf; dear ones empty his purse.** Wood, deer hide and scrap iron all run out of room
-(`over_max`) with coins still in the purse; flametal ore, at 63 a unit, runs him dry after fifteen (`purse_empty`) with
+**Cheap Wants fill his shelf; dear ones empty his purse.** Two hundred wood troubles neither bound — 400 units of room
+and 200 coins for the lot. Deer hide and scrap iron run out of room (`over_max`) with coins still in the purse.
+Flametal ore, at 63 a unit, runs him dry after fifteen (`purse_empty`) with
 two thirds of the shelf still free. The crossover is `purse / (2 x target)` coins a unit — 13 for a 30-target row like
 scrap iron, 40 for a 10-target row like flametal ore. Above it, the purse is the wall and the shelf never matters.
 
