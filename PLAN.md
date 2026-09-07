@@ -122,32 +122,32 @@ SERVER (owns the economy, the clock and the trader ZDO once it exists)
        |  picks one eligible base (baseValue >= MinBaseValue, alive, y < 3000, no raid, day)
        |  and its player as the PILOT (RelicSync placement-delegation pattern)
        v
-  Visit.Start -- direct ZRpc "vc_visit"(target, seed) to the pilot; retry until confirmed
-       |         pilot confirms "vc_placed"(traderZdoId, valkyrieZdoId) after the drop
-       |         server takes ownership of the trader ZDO, writes vc_ingvar=1, vc_end=worldTime,
-       |         vc_purse=coins, vc_prices="linen:12;flax:4;..."; banner to everybody in range
+  Visit.Start -- direct ZRpc "VCargo_visit"(target, seed) to the pilot; retry until confirmed
+       |         pilot confirms "VCargo_placed"(traderZdoId, valkyrieZdoId) after the drop
+       |         server takes ownership of the trader ZDO, writes VCargo_ingvar=1, VCargo_end=worldTime,
+       |         VCargo_purse=coins, VCargo_prices="linen:12;flax:4;..."; banner to everybody in range
        v
-  Visit.Run -- direct ZRpc "vc_sell"(item, count) from a client -> Economy.Quote -> validate
+  Visit.Run -- direct ZRpc "VCargo_sell"(item, count) from a client -> Economy.Quote -> validate
        |        purse/list/clock -> update saturation, purse, prices on the ZDO
-       |        -> direct ZRpc "vc_sold"(ok, coins) back on the same socket
+       |        -> direct ZRpc "VCargo_sold"(ok, coins) back on the same socket
        v
-  Visit.End -- clock elapsed OR purse empty + grace -> "vc_vanish" to clients in range (Odin
+  Visit.End -- clock elapsed OR purse empty + grace -> "VCargo_vanish" to clients in range (Odin
               effect, cosmetic) -> SetOwner(self) + DestroyZDO (FlotsamSystem TTL pattern)
               cooldown stamped for that base area; economy persisted
 
 PILOT CLIENT (the player whose base was chosen; has terrain, has a local player)
-  on "vc_visit": set CargoFlight.s_pending, Object.Instantiate "Valkyrie" (as the intro does),
+  on "VCargo_visit": set CargoFlight.s_pending, Object.Instantiate "Valkyrie" (as the intro does),
                  our CargoFlight flies the vanilla path with a water floor, drops at target,
-                 Object.Instantiate "Haldor" on the ground, sends "vc_placed", flies away
+                 Object.Instantiate "Haldor" on the ground, sends "VCargo_placed", flies away
   Patch Valkyrie.Awake (prefix, Priority.Low): if s_pending -> consume it, vanilla component
                  enabled=false, __runOriginal=false (vanilla would teleport the local player)
 
 EVERY CLIENT
-  Patch Trader.Interact (prefix, Priority.Low, ___m_nview injected): if ZDO vc_ingvar ->
+  Patch Trader.Interact (prefix, Priority.Low, ___m_nview injected): if ZDO VCargo_ingvar ->
                  open CargoPanel, __runOriginal=false
   Patch Trader.Start/GetHoverName: name "Ingvar the Far-Travelled", our dialogue lists
   CargoPanel: cloned StoreGui elements; rows = inventory items on the buy list x unit price;
-              countdown from vc_end; purse from ZDO; Sell -> "vc_sell"; on "vc_sold" remove
+              countdown from VCargo_end; purse from ZDO; Sell -> "VCargo_sell"; on "VCargo_sold" remove
               items and add coins (vanilla's own trust model: the client mutates its inventory)
 ```
 
@@ -191,8 +191,8 @@ what you do not own). The Valkyrie stays pilot-owned and destroys itself at the 
 
 **Restart mid-visit**
 - Haldor's prefab is persistent: an Ingvar ZDO survives a restart. On boot the tick sweeps
-  `GetAllZDOsWithPrefabIterative("Haldor")` for `vc_ingvar` and either resumes the clock or
-  vanishes him if `vc_end` has passed. Never leave an orphan Ingvar standing in someone's base.
+  `GetAllZDOsWithPrefabIterative("Haldor")` for `VCargo_ingvar` and either resumes the clock or
+  vanishes him if `VCargo_end` has passed. Never leave an orphan Ingvar standing in someone's base.
 
 ---
 
@@ -213,7 +213,7 @@ what you do not own). The Valkyrie stays pilot-owned and destroys itself at the 
 | Fairness | One base per roll, cooldown per base area (`BaseCooldownGameDays`), towns count once | proposed |
 | Daytime only | Yes by default (the flight is the show) | proposed |
 | During raids/boss | Never spawn while `RandEventSystem.HaveActiveEvent()` | proposed |
-| Transport | ZDO fields for replicated state; direct peer `ZRpc` for `vc_visit`/`vc_placed`/`vc_sell`/`vc_sold` with a versioned payload (RosterPacket pattern); routed RPC only for the cosmetic `vc_vanish` broadcast | proposed |
+| Transport | ZDO fields for replicated state; direct peer `ZRpc` for `VCargo_visit`/`VCargo_placed`/`VCargo_sell`/`VCargo_sold` with a versioned payload (RosterPacket pattern); routed RPC only for the cosmetic `VCargo_vanish` broadcast | proposed |
 | Base gate | Vanilla `baseValue` from `m_serverSyncedPlayerData` for eligibility; `RagnaroksWrath/Core/Homestead.IsNearPlayerBuilt` (creator-tagged ZDOs, 3x3 sectors) to confirm the drop point is beside something built | proposed |
 | Model | Haldor's body renamed in 0.1; Thorium's Meshy model via asset bundle later | agreed |
 | Console prefix | `cargo` (`cargo status`, `cargo prices`, `cargo visit` admin-only force, `cargo reset`) | proposed |
@@ -275,7 +275,7 @@ Client.ShowArrivalBanner        true
 - `Core/CargoTick.cs` (the ONE Update): roll, delegate, confirm, run, end, boot sweep.
   Peer walk as in `RagnaroksWrath/Systems/ZoneSyncSystem.cs` (`GetPeers` then the character
   ZDO, `m_refPos` fallback) plus RavenEye's listen-host case (the host is not a peer).
-- `Server/VisitDirector.cs`: pick pilot, send `vc_visit`, retry until `vc_placed`, take
+- `Server/VisitDirector.cs`: pick pilot, send `VCargo_visit`, retry until `VCargo_placed`, take
   ownership, write keys; TTL reclaim as `Undertow/Systems/FlotsamSystem.cs` does it.
 - `Server/EconomyStore.cs`: Cairn's Persistence clone. `Server/VersionSync`: copy
   `RagnaroksWrath/Net/VersionSync.cs` (server broadcasts its version, skewed client warns once).
@@ -349,7 +349,7 @@ Client.ShowArrivalBanner        true
 - **Awake ordering on the pilot.** The pending flag must be set immediately before
   `Object.Instantiate` and consumed by the first `Valkyrie.Awake` that sees it; if anything
   else instantiates a Valkyrie in between (a second player's intro), the flag lands on the
-  wrong bird. Guard: also stamp the ZDO with `vc_cargo` in the prefix and check both.
+  wrong bird. Guard: also stamp the ZDO with `VCargo_cargo` in the prefix and check both.
 - **The pilot leaves.** If the chosen player disconnects mid-flight, no confirmation ever
   comes: the director retries with the next eligible base and forgets the visit after N tries.
 - **First asset bundle in the family.** Thorium's Meshy model would be the family's first

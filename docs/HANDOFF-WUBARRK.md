@@ -17,7 +17,8 @@ Don merges everything; nothing below asks you to merge.
    - the turn-in point sits inside that circle, so the bird never reaches it and orbits until
      `MaxFlightSeconds`; straight in works (drop at 3.8 s), or a turn rate of our own (60 deg/s works);
    - `CargoFlight.Awake` rebuilds a different turn-in from the one `FlightPlan` planned (other distance,
-     other side, no block clamp): write `vc_turn` beside `vc_target`, or delete the swing on both sides;
+     other side, no block clamp): write `vc_turn` beside `vc_target` (renamed `VCargo_turn`/`VCargo_target`
+     on 2026-09-07), or delete the swing on both sides;
    - `DescentY = StartY`, so the drop fires about 105 m up; give the turn-in a descent altitude and/or
      the bird a speed of our own (8 m/s from 120 m reaches 14 m in 20 s, which is also the 15-20 s
      design 3.2 wanted the sky to hold);
@@ -53,7 +54,8 @@ Don merges everything; nothing below asks you to merge.
      (the same gesture already playing). Idle and Walk need nothing from you: they follow the body's
      own movement.
    - `vc_dismiss` is on the wire; `VisitSession`'s phases and `SetDrop` are the director's; `vc_state`,
-     `vc_carrier` and `vc_seed` are your `Spawner`'s keys.
+     `vc_carrier` and `vc_seed` are your `Spawner`'s keys. (All four renamed to the `VCargo_` prefix on
+     2026-09-07.)
    The rest is design 3.3: the carry pin and `InIntro`, the drop handoff, follow and callout, immortal,
    dismissal, the Odin vanish, the restart sweep.
 

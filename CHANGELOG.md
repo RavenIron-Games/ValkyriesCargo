@@ -49,7 +49,7 @@ merchant are not built, and the custom body has its loader but no baked bundle.*
 
 ### P3 — eligibility and the event (PR #5)
 
-- `Client\ComfortReporter.cs` writes `vc_rested` / `vc_comfort` on the local player's own ZDO every
+- `Client\ComfortReporter.cs` writes `VCargo_rested` / `VCargo_comfort` on the local player's own ZDO every
   2 s (comfort never leaves the client in vanilla; this is the same trust class as `baseValue`).
 - `Server\CargoEvent.cs` and the `RandEventSystem.Awake` prefix register the vanilla random event
   `valkyries_cargo` on every machine.
@@ -63,8 +63,8 @@ merchant are not built, and the custom body has its loader but no baked bundle.*
 
 ### P6 — the deal wire and persistence (PR #6)
 
-- `Net\DealWire.cs` registers `vc_open`, `vc_close`, `vc_deal`, `vc_ack`, `vc_claim` and
-  `vc_dismiss` on each peer's own `ZRpc` as it connects, and answers `vc_dealt` on the same socket.
+- `Net\DealWire.cs` registers `VCargo_open`, `VCargo_close`, `VCargo_deal`, `VCargo_ack`, `VCargo_claim` and
+  `VCargo_dismiss` on each peer's own `ZRpc` as it connects, and answers `VCargo_dealt` on the same socket.
   `Net\CargoTransport.cs` is the client end, `LocalTransport` the listen host's in-process one,
   `Deliveries` the redelivery path.
 - `Client\DealApplier.cs` is the only code in the mod that writes an inventory for a deal (removals
@@ -122,8 +122,8 @@ merchant are not built, and the custom body has its loader but no baked bundle.*
 - `Core\FlightPlan.cs` (pure, 39 checks): the flight inside the pilot's active block, a straight approach with the
   descent waypoint on the line carrying the glide altitude, and `TurningRadius` / `Reachable` so the harness refuses
   any waypoint a pursuer at the shipped speed and turn rate cannot reach.
-- `Server\Spawner.cs`: the bird's ZDO authored whole and owned by the pilot (`vc_cargo`, `vc_target`, `vc_turn`,
-  `vc_dropped`); the merchant not authored until P5 (`MerchantEnabled`); both reclaimed on any visit end.
+- `Server\Spawner.cs`: the bird's ZDO authored whole and owned by the pilot (`VCargo_cargo`, `VCargo_target`, `VCargo_turn`,
+  `VCargo_dropped`); the merchant not authored until P5 (`MerchantEnabled`); both reclaimed on any visit end.
   `Patches\Patch_Valkyrie_Awake.cs`: vanilla `Awake` skipped for our bird only. `Client\CargoFlight.cs`: the owner
   flies vanilla's own maths and writes the velocity key so every other screen sees a glide.
 - New `Server.FlightSpeed` (8) and `Server.FlightTurnRate` (45): ours, synced, not the prefab's 20 and 20, whose
@@ -159,7 +159,7 @@ runs, and `renderer=False` in every boot line.
 - StormTest (port 2476), 2026-09-06 18:55, in a 117-plugin modpack clone: the same loaded line with
   `patches=13`; `event 'valkyries_cargo' registered (20 events now); duration 300 s, pauses with
   nobody within 96 m, no spawns, no music, no weather.`; `routed RPCs registered for this session:
-  vc_admin, vc_reply`; `director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72
+  VCargo_admin, VCargo_reply`; `director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72
   entries, purse 800, roll every 60 s at 25%, first roll one interval from now`; then `roll: held: a
   random event is active (a raid, a storm, or a visit)` against a live foreign event. The day length
   the drift counts is 1800 s from the live `EnvMan`, not the compiled default of 1200.
