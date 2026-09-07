@@ -79,6 +79,25 @@ if ($built -ne $want) {
     exit 1
 }
 
+# --- the body bundle, when it has been baked ----------------------------------------
+# The csproj embeds Assets\valkyriescargo_kit as a resource WHEN THAT FILE EXISTS, so a DLL
+# carrying it must be bigger than it. models\SETUP-FOR-CLAUDE.md section 3 records the failure
+# this catches: the copy from the Unity output into the repo is manual, and a stale copy ships
+# the old asset with no change in DLL size. A DLL smaller than the bundle is not carrying it
+# at all. Printed either way, because "no bundle" is also a fact about what is being shipped.
+$bundle = "$root\Assets\valkyriescargo_kit"
+$dllSize = (Get-Item $dll).Length
+if (Test-Path $bundle) {
+    $bundleSize = (Get-Item $bundle).Length
+    Write-Host ("Body bundle {0:N0} bytes, DLL {1:N0} bytes" -f $bundleSize, $dllSize) -ForegroundColor Cyan
+    if ($dllSize -lt $bundleSize) {
+        Write-Host "WARNING: the DLL is SMALLER than the bundle - it cannot be embedded." -ForegroundColor Yellow
+        Write-Host "         Check the EmbeddedResource line in the csproj, then rebuild." -ForegroundColor Yellow
+    }
+} else {
+    Write-Host ("No Assets\valkyriescargo_kit: this package ships the STAND-IN body (Server.BodyPrefab, default Dverger). DLL {0:N0} bytes." -f $dllSize) -ForegroundColor Yellow
+}
+
 # --- assemble the zip both stores expect --------------------------------------------
 # Layout and writer both learned on FireFront's upload day, 2026-08-27: store files at the
 # ROOT, the DLL under plugins/ (the BepInEx layout mod managers map onto BepInEx/plugins;
