@@ -185,6 +185,50 @@ namespace RavenIron.ValkyriesCargo.Core
             return Math.Abs(atY - authoredY) <= DropToleranceY;
         }
 
+        // ---- the altitude floor (F7, the 2026-09-07 audit) ------------------------------------------
+
+        /// <summary>
+        /// PURE decision behind `CargoFlight`'s per-step floor: given what the engine's ground raycast
+        /// found THIS step, what floor (if any) should the bird's altitude be held to? Returns false for
+        /// "no floor known" -- and that is a command, not a placeholder: a caller MUST read false as
+        /// "leave the altitude exactly as it is", never invent a number from it.
+        ///
+        /// That is the whole fix. The old code was `if (!GetGroundHeight(p, out ground)) ground = p.y;`,
+        /// which reads as a harmless fallback but is really `Floor(p) == p.y` -- the caller's OWN current
+        /// altitude, fed back into itself. Every caller does `next.y = Max(next.y, Floor(p) + dropHeight)`,
+        /// so a self-referential floor becomes `Max(next.y, next.y + dropHeight)` = `next.y + dropHeight`,
+        /// unconditionally, every physics step: +10 m at 50 Hz is a 500 m/s climb. This signature makes
+        /// that mistake structurally harder to reintroduce -- there is no `p.y` parameter here at all for
+        /// a fallback to reference, and a `bool` a caller must branch on is not a float a `Max()` can
+        /// silently swallow the way a sentinel (NaN, `float.MinValue`, ...) can (`DropAccepted`'s own
+        /// lesson, above: every comparison against NaN is false, so the natural spelling of a guard
+        /// quietly accepts the thing it meant to refuse).
+        ///
+        /// Vanilla's own `Valkyrie.UpdateValkyrie` (decompiled 2026-09-07) raises y ONLY inside the
+        /// `GetGroundHeight(..., out height)` success branch, twice, and touches nothing on failure --
+        /// the false case here mirrors that exactly. The true case ADDS to vanilla: it also floors at
+        /// `waterLevel`, which vanilla's flight never reads at all.
+        ///
+        /// Water is deliberately NOT used as a stand-in when the ground is unknown. `ZoneSystem.m_waterLevel`
+        /// is a constant, not a raycast, so it is tempting to treat "at least we know this much" as a safe
+        /// default -- but a failed raycast here means "this zone's terrain collider has not finished
+        /// building yet" (the freshly generated zone at the flight's own 90 m start, exactly where F7 was
+        /// found), not "this point is open ocean". Open ocean is a KNOWN, SUCCEEDING case: the raycast
+        /// hits the seabed and returns a real (often low) height, which is precisely why the true branch
+        /// clamps up to `waterLevel` -- to stop the bird ducking under the sea on a real hit. Assuming
+        /// ocean on a merely MISSING collider would invent a fact that is usually false (a flight starts
+        /// on or near land, beside a player's base) and, at `CargoFlight.Drop`'s call site, would overrule
+        /// a perfectly good authored altitude with a constant that has nothing to do with it. So: known
+        /// ground clamps up to the greater of itself and the water; unknown ground clamps to nothing and
+        /// stays inert until a later step's raycast succeeds -- which the audit's own evidence says
+        /// happens within moments of the zone finishing generation, not minutes.
+        /// </summary>
+        public static bool TryFloor(bool groundKnown, float ground, float waterLevel, out float floor)
+        {
+            if (!groundKnown) { floor = 0f; return false; }
+            floor = Math.Max(ground, waterLevel);
+            return true;
+        }
         // ---- the patch gate (decision 9, docs/DECISIONS-WUBARRK.md §9; F3) -------------------------
 
         /// <summary>
@@ -250,6 +294,27 @@ namespace RavenIron.ValkyriesCargo.Core
                     // the line can only fall outside it if the DROP does, which happens when the pilot
                     // stands within a margin of their own block's edge. Slide the waypoint back toward
                     // the start, which the loop above has already proved is inside.
+                    //
+                    // N1 (the 2026-09-07 audit), confirmed: at the runtime activeArea this mod actually
+                    // ships against -- 2, read live off the shipped scene, CLAUDE.md's engine facts --
+                    // this loop never runs. The pilot's own position is within `ZoneSize / 2` = 32 m of
+                    // their own zone centre by construction (that is what "their own zone" means), and
+                    // the margin box's half-width at activeArea >= 2 is `(activeArea - 1 + 0.5) * ZoneSize
+                    // - EdgeMargin` >= `1.5 * 64 - 8` = 88 m, comfortably past 32. The DROP waypoint sits
+                    // only `drop` (12-15 m) from the pilot, so it trivially clears the same box; the START
+                    // clears it too, because the outer `for` loop above only ever returns a `d` for which
+                    // it does. Two points inside a convex set put the whole segment between them inside
+                    // it, so every `descent` from 0 to `run` -- the whole line this waypoint slides along
+                    // -- is already inside before the `while` ever runs its condition once. It is NOT
+                    // dead code in general, only at this shape's block size: at activeArea == 1 the same
+                    // box is `0.5 * 64 - 8` = 24 m, which 32 m can exceed (N2), the convexity shortcut
+                    // above no longer applies, and the sweep below (activeArea 1) is the harness proving
+                    // the loop earns its keep there instead of by geometry alone (empirically confirmed:
+                    // 90 of 14,784 plans across 15 seeds and a 32-square grid actually slid). Left in
+                    // rather than special-cased on `activeArea`, because a scene is free to configure
+                    // either value and `Make` has no way to know which one shipped without being told
+                    // (see the ZoneSystem engine-fact block in CLAUDE.md) -- this is defence for a case
+                    // that is not reachable TODAY, not dead code with no reason to exist.
                     while (descent < run &&
                            !PointInBlockWithMargin(pilotX + dx * (drop + descent), pilotZ + dz * (drop + descent),
                                                    pilotX, pilotZ, activeArea))

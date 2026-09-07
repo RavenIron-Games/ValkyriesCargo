@@ -3337,6 +3337,114 @@ namespace ValkyriesCargo.Tests
             Check(!FlightPlan.DropAccepted(ax, ay, float.NaN, ax, ay, az), "a NaN z is refused");
             Check(!FlightPlan.DropAccepted(float.PositiveInfinity, ay, az, ax, ay, az), "an infinite x is refused");
             Check(!FlightPlan.DropAccepted(ax, float.NegativeInfinity, az, ax, ay, az), "an infinite y is refused");
+
+            Section("FlightPlan: the altitude floor -- F7 (2026-09-07 audit)");
+
+            // Known ground, above the water: floors at the ground itself.
+            Check(FlightPlan.TryFloor(true, 50f, 30f, out float floorKnown) && Math.Abs(floorKnown - 50f) < 0.001f,
+                  "known ground above the water floors at the ground (50 m)");
+
+            // The water clamp -- OUR addition on top of vanilla, which never reads m_waterLevel here at
+            // all. A raycast that legitimately hits the seabed (flying over open ocean) must not duck the
+            // bird under the sea, so a known-but-low reading floors at the water instead.
+            Check(FlightPlan.TryFloor(true, 5f, 30f, out float floorSeabed) && Math.Abs(floorSeabed - 30f) < 0.001f,
+                  "known ground below the water floors at the water instead (30 m, not the 5 m seabed)");
+
+            // Unknown ground refuses outright: false, not a number the caller could Max() against by
+            // mistake. This IS the fix -- the old code's fallback (`ground = p.y`) always "succeeded".
+            Check(!FlightPlan.TryFloor(false, 999f, 30f, out _),
+                  "unknown ground returns false: there is no floor to offer, only the caller's own altitude to keep");
+
+            // The caller pattern, modelled one step at a time: `if (TryFloor(...)) y = Max(y, floor +
+            // dropHeight);`. With the floor unknown the branch never runs, so y is untouched, bit for bit.
+            // Started BELOW water + dropHeight (5, not above it) on purpose: a mutation that answers
+            // "known" anyway would clamp this up to 40 and this check would catch it. A starting altitude
+            // already above 40 would pass whether or not the gate worked, which would prove nothing.
+            {
+                float y = 5f;
+                if (FlightPlan.TryFloor(false, 0f, 30f, out float f)) y = Math.Max(y, f + 10f);
+                Check(y == 5f, "one modelled step with the ground unknown leaves the altitude bit-for-bit unchanged (5 m, not clamped up to 40)");
+            }
+
+            // The regression witness for the shipped bug. `CargoFlight.Floor` used to be
+            // `if (!GetGroundHeight(p, out ground)) ground = p.y;` -- the caller's OWN current altitude,
+            // fed back in as though it were the raycast's answer -- so every failed step computed
+            // `next.y = Max(next.y, next.y + dropHeight)` = `next.y + dropHeight`, unconditionally, every
+            // physics step. Modelled here across 100 steps with the ground permanently unknown (the
+            // freshly generated zone at the flight's own 90 m start never finishes loading) and `ground`
+            // fed as the CURRENT altitude each iteration, the way the old fallback amounted to: with the
+            // `groundKnown` gate honoured, TryFloor refuses every time and the altitude never moves. A
+            // mutation that drops the gate (`if (!groundKnown) return false;` deleted, so TryFloor always
+            // succeeds) reproduces the exact +10 m/step climb -- proof pasted in the PR description.
+            {
+                const float dropHeight = 10f, waterLevel = 30f;
+                const int steps = 100;
+                float y = 150f;
+                for (int i = 0; i < steps; i++)
+                    if (FlightPlan.TryFloor(false, y, waterLevel, out float f)) y = Math.Max(y, f + dropHeight);
+                Check(Math.Abs(y - 150f) < 0.001f,
+                      $"100 steps with the ground permanently unknown: altitude stays at 150 m, not {150f + steps * dropHeight:0} m " +
+                      "(the +10 m/step climb F7 found, restored as a mutation, must fail this)");
+            }
+
+            Section("FlightPlan: the descent-slide loop -- N1 (2026-09-07 audit)");
+
+            // N1 claimed the slide inside Make's descent-waypoint placement never fires once activeArea
+            // is 2 or more (the convexity argument in the comment above the loop). Confirmed here by
+            // reconstructing, from OUTSIDE Make, what the descent distance would have been before any
+            // slide (Min(configured, run * MaxDescentFraction), clamped to >= 0) and comparing it against
+            // what Make actually returned, across the same 3x3-block sweep already run above: if they
+            // ever differ, the slide changed something and N1 is wrong.
+            int slidAt2 = 0, sweptAt2 = 0;
+            for (float px = -96f; px <= 96f; px += 8f)
+            {
+                for (float pz = -96f; pz <= 96f; pz += 8f)
+                {
+                    for (int seed = 1; seed < 4000; seed += 397)
+                    {
+                        var p = FlightPlan.Make(px, 30f, pz, seed, 2, 90f, 120f, 50f);
+                        if (!p.Ok) continue;
+                        sweptAt2++;
+                        float run = p.StartDistance - FlightPlan.DropDistance(seed);
+                        float preSlide = run > 0f ? Math.Min(50f, run * FlightPlan.MaxDescentFraction) : 0f;
+                        if (preSlide < 0f) preSlide = 0f;
+                        if (Math.Abs(preSlide - p.DescentDistance) > 0.01f) slidAt2++;
+                    }
+                }
+            }
+            Check(sweptAt2 > 0 && slidAt2 == 0,
+                  $"activeArea 2: the descent-slide never changed the waypoint across {sweptAt2} plans (N1's convexity argument holds where this mod actually ships)");
+
+            // The same reconstruction at activeArea 1, where N2 says the convexity shortcut can fail:
+            // this is the harness answering whether the loop is dead code everywhere, or only where the
+            // shipped block size makes it unreachable. Not a widening of scope -- it reuses the existing
+            // one-zone sweep above and adds one comparison per plan.
+            // seed 7 alone (the pre-existing sweep's choice) never reaches it: by hand, the slide needs a
+            // pilot near the 32 m zone edge on ONE axis with a bearing close to aligned with the OTHER
+            // axis -- e.g. pilotX = -28 (|-28| = 28 > 24, already outside the margin at t=0) and a
+            // bearing with a small dx, so the ray only re-enters the 24 m margin box on x well past the
+            // 12-15 m drop distance. seed 7's bearing is not that shape, so a handful more are tried
+            // rather than declaring the loop dead on one sample.
+            int slidAt1 = 0, sweptAt1 = 0;
+            foreach (int seed1 in new[] { 7, 11, 23, 41, 59, 97, 131, 173, 211, 257, 311, 379, 433, 501, 577 })
+            {
+                for (float px = -31f; px <= 31f; px += 2f)
+                {
+                    for (float pz = -31f; pz <= 31f; pz += 2f)
+                    {
+                        var p = FlightPlan.Make(px, 30f, pz, seed1, 1, 90f, 120f, 50f);
+                        if (!p.Ok) continue;
+                        sweptAt1++;
+                        float run = p.StartDistance - FlightPlan.DropDistance(seed1);
+                        float preSlide = run > 0f ? Math.Min(50f, run * FlightPlan.MaxDescentFraction) : 0f;
+                        if (preSlide < 0f) preSlide = 0f;
+                        if (Math.Abs(preSlide - p.DescentDistance) > 0.01f) slidAt1++;
+                    }
+                }
+            }
+            Check(sweptAt1 > 0, $"activeArea 1: {sweptAt1} plans to check across 15 seeds and a 32-square grid");
+            Check(slidAt1 > 0,
+                  $"activeArea 1: the slide DID fire ({slidAt1}/{sweptAt1}) -- N1 confirmed precisely: load-bearing at activeArea 1, dead only at activeArea >= 2 where this mod ships");
         }
 
         private static void MerchantPlanTests()
