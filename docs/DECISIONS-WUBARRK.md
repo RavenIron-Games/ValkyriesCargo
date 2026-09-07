@@ -81,6 +81,14 @@ Newtonsoft versions in one `BepInEx/plugins` tree is a known way to break a serv
 **This does not reopen Jotunn.** The dependency surface becomes BepInEx, Harmony and JsonDotNET, and
 stops there.
 
+**Reversed by the owner the same day — PR #40, merged 2026-09-07.** The dependency is gone. `Server/BarrkBotExport.cs`
+now renders through a pure `Core/Json.cs` of our own, checked byte-identical to Newtonsoft's output over 4,028
+comparisons, and `ValheimModding-JsonDotNET` is out of both manifests. The argument above was right about the
+problem — Valheim ships no JSON library worth the name — and wrong about the size of the answer: a keyed 72-row
+market needs a serializer, not a serialization *library*, and the family pattern of declaring one was adopted
+here for company rather than for need. The dependency surface is back to BepInEx and Harmony. Decision 4 is
+untouched and, if anything, stronger: nothing on any path now depends on a DLL that is not ours.
+
 ## 4. The world sidecar stays `.dat`. JSON is a mirror, never the source of truth
 
 **2026-09-07. Overrides the wider "JSON everywhere" option considered alongside decision 3.**
