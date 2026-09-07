@@ -125,6 +125,12 @@ step 4).
       corrections (the five client-read keys and the two ranges), applied only once #24 was on main so
       the README never contradicted the shipped descriptions. Ticks when #33 merges.
 - [x] **Close issue #16.** Closed 2026-09-07 on the rename shipped in #22, verified on `main`.
+- [ ] **The load-bearing set (issue #31, PR #35), delegated by the owner 2026-09-07.** Which patches'
+      failure to apply should REFUSE the mod rather than degrade it. As merged: `Core/PatchLedger.IsLoadBearing`
+      says yes for the `ServerSync` namespace only (the version gate, the RPC registration, the config lock).
+      Leave it and say so, or widen it: a PR against that predicate and its `PatchLedgerTests` checks, the
+      reason in `docs/DECISIONS-WUBARRK.md` and CLAUDE.md house rule 3. *(Restored 2026-09-07: the
+      coordinator's section rewrite dropped this item minutes after it was added. Answer in progress.)*
 - [ ] **`event valkyries_cargo` from the vanilla console** (owner request 2026-09-07). PR #34 (open): the
       director used to kill any run of our event it had not started; it now adopts it onto the player
       nearest the event — vanilla passes the caller's own position — and authors the visit. Known and
