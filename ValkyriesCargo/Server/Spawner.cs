@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using RavenIron.ValkyriesCargo.Config;
 using RavenIron.ValkyriesCargo.Core;
+using RavenIron.ValkyriesCargo.Patches;
 using UnityEngine;
 
 namespace RavenIron.ValkyriesCargo.Server
@@ -129,12 +130,28 @@ namespace RavenIron.ValkyriesCargo.Server
                     Clamp(ModConfig.FlightDescentDistance, 50f, 0f, 200f),
                     FlightPlan.DropAltitude);
 
+                // Decision 9 (docs/DECISIONS-WUBARRK.md §9), the coordinator's PR #36: whether a bird is
+                // actually authored is TWO independent gates, not one. Without `Patch_Valkyrie_Awake`,
+                // vanilla `Valkyrie.Awake` runs on our bird on every machine and teleports the local
+                // player into the sky (CLAUDE.md engine facts; audit F8) - that is not a degraded
+                // feature, it is our object flinging the player, so the FLIGHT switches itself off, not
+                // the mod. `PatchLedger.IsApplied` matches by exact short name; a rename of the class is
+                // a compile error here (`nameof`), never a silently-false string.
+                bool flightPatchApplied = Patching.Ledger.IsApplied(nameof(Patch_Valkyrie_Awake));
+                bool authorBird = FlightPlan.AuthorBird(plan.Ok, flightPatchApplied);
+
                 if (!plan.Ok)
                 {
                     // Nowhere in the pilot's block has room for a flight. Rather than fly a bird that
                     // pops out of existence, say so and let the visit run without one: the merchant is
                     // still authored, on the ground, already dropped.
                     LastProblem = "no room in the pilot's active block for a flight (activeArea " + activeArea + ")";
+                }
+                else
+                {
+                    // Null when the patch DID apply - plan.Ok stays the only reason to fall back to.
+                    string patchProblem = FlightPlan.PatchGateProblem(plan.Ok, flightPatchApplied, Patching.Ledger.Applied, Patching.Ledger.Expected);
+                    if (patchProblem != null) LastProblem = patchProblem;
                 }
 
                 var start = new Vector3(plan.StartX, plan.StartY, plan.StartZ);
@@ -143,7 +160,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 Quaternion look = LookAlong(plan.DropX - plan.StartX, plan.DropZ - plan.StartZ);
 
                 ZDO bird = null;
-                if (plan.Ok)
+                if (authorBird)
                 {
                     bird = man.CreateNewZDO(start, birdHash);
                     bird.SetPrefab(birdHash);              // CreateNewZDO does NOT do this
@@ -160,11 +177,12 @@ namespace RavenIron.ValkyriesCargo.Server
                     bird.SetOwner(pilotUid);               // LAST: after this the ZDO is the pilot's to write
                 }
 
-                // He hangs under the bird until the drop; with no flight he simply starts on the ground.
+                // He hangs under the bird until the drop; with no flight (no room, OR the patch gate
+                // above) he simply starts on the ground.
                 ZDO npc = null;
                 if (MerchantEnabled)
                 {
-                    Vector3 npcStart = plan.Ok ? start : drop;
+                    Vector3 npcStart = authorBird ? start : drop;
                     npc = man.CreateNewZDO(npcStart, bodyHash);
                     npc.SetPrefab(bodyHash);
                     npc.SetPosition(npcStart);
@@ -173,7 +191,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     npc.Distant = false;
                     npc.Set(IngvarHash, visitId);
                     npc.Set(SeedHash, seed);
-                    npc.Set(StateHash, plan.Ok ? MerchantState.Carried : MerchantState.Approaching);
+                    npc.Set(StateHash, authorBird ? MerchantState.Carried : MerchantState.Approaching);
                     npc.Set(CarrierKey, bird != null ? bird.m_uid : ZDOID.None);
                     npc.SetOwner(pilotUid);
                 }
@@ -182,11 +200,29 @@ namespace RavenIron.ValkyriesCargo.Server
                 Merchant = npc != null ? npc.m_uid : ZDOID.None;
                 AuthoredDrop = drop;                   // even with no flight: it is where he starts
                 VisitId = visitId;
-                Dropped = !plan.Ok;
+                Dropped = !authorBird;
                 _orphanWaited = 0f;
 
-                return (plan.Ok ? "flight authored: " + plan : "NO FLIGHT (" + LastProblem + "); the merchant starts on the ground at (" +
-                        Wire.Float(plan.DropX) + ", " + Wire.Float(plan.DropZ) + ")") +
+                string flightLine;
+                if (authorBird)
+                {
+                    flightLine = "flight authored: " + plan;
+                }
+                else if (!plan.Ok)
+                {
+                    flightLine = "NO FLIGHT (" + LastProblem + "); the merchant starts on the ground at (" +
+                                 Wire.Float(plan.DropX) + ", " + Wire.Float(plan.DropZ) + ")";
+                }
+                else
+                {
+                    // The geometry was fine; the patch gate vetoed it. Worded differently from the "NO
+                    // FLIGHT" line above on purpose, so a screen run can tell "no room" and "the patch
+                    // that makes a bird safe did not apply" apart at a glance.
+                    flightLine = "flight DISABLED - " + LastProblem + "; Ingvar placed on the ground at the drop point (" +
+                                 Wire.Float(plan.DropX) + ", " + Wire.Float(plan.DropZ) + ")";
+                }
+
+                return flightLine +
                        "; bird " + Bird +
                        (MerchantEnabled ? ", " + bodyName + " " + Merchant + ", both owned by the pilot"
                                         : ", owned by the pilot; NO MERCHANT (P5 is not in yet, so nothing is authored to carry)");
@@ -261,6 +297,62 @@ namespace RavenIron.ValkyriesCargo.Server
         }
 
         /// <summary>
+        /// F3 (docs/AUDIT-P4P5-2026-09-07.md), the server half: ask the merchant to vanish before
+        /// `Clear` destroys his ZDO, so `CargoMerchant.RPC_Vanish` -- which already exists and already
+        /// does the right thing on receive: the farewell line, `Leaving`, the Odin despawn effect
+        /// created by the OWNER -- gets a chance to run first. Nobody had ever sent it (F3's finding);
+        /// this is the send.
+        ///
+        /// The server has no `ZNetView` INSTANCE of the merchant to call `InvokeRPC` on -- this file's
+        /// own class comment: "the server instantiates NOTHING of ours, anywhere" -- so this goes
+        /// through the static, ZDOID-targeted overload instead. Confirmed in the decompile, 2026-09-07
+        /// (assembly_valheim.decompiled.cs, 0.221.12, ~144k lines):
+        /// - `ZRoutedRpc.InvokeRoutedRPC(long targetPeerID, ZDOID targetZDO, string methodName, params
+        ///   object[] parameters)` is public (class `ZRoutedRpc`, the four-argument overload).
+        /// - `ZRoutedRpc.Everybody` is `public static long` and is never assigned anywhere but its
+        ///   declaration, so it is `0L` (grepped every call site in the assembly). With
+        ///   `targetPeerID == 0L`, `InvokeRoutedRPC` calls `HandleRoutedRPC` LOCALLY as well as routing
+        ///   to every connected peer -- the same "Everybody also invokes locally" rule CLAUDE.md
+        ///   already documents for the config channel, confirmed again here for the routed RPC itself.
+        /// - `ZRoutedRpc.HandleRoutedRPC(RoutedRPCData)` resolves a non-None target ZDOID through
+        ///   `ZDOMan.instance.GetZDO` then `ZNetScene.instance.FindInstance`, and calls
+        ///   `ZNetView.HandleRoutedRPC` on whichever machine actually has that ZDO instanced -- which
+        ///   dispatches through `ZNetView`'s OWN per-object `m_functions` dictionary, exactly the one
+        ///   `CargoMerchant.Awake` adds to with `_nview.Register(Keys.Vanish, RPC_Vanish)`. On a
+        ///   dedicated server `FindInstance` finds nothing local (there is no instance to find), so the
+        ///   local call is a silent no-op there and a real one on every client that has him.
+        /// - `RPC_Vanish` is registered with `Register(string, Action&lt;long&gt;)` (no extra parameter),
+        ///   so this is sent with none; the non-generic `RoutedMethod.Invoke` ignores the package
+        ///   regardless.
+        ///
+        /// Does nothing when nothing is bound (`Merchant.IsNone()`); the caller (`VisitDirector.End`)
+        /// is expected to skip straight to reclaiming in that case rather than wait on a grace period
+        /// for an RPC with nowhere to go.
+        /// </summary>
+        public static void SendVanish()
+        {
+            if (Merchant.IsNone()) return;
+            try
+            {
+                ZRoutedRpc rpc = ZRoutedRpc.instance;
+                if (rpc == null) return;      // between worlds; Clear() is still the backstop
+                rpc.InvokeRoutedRPC(ZRoutedRpc.Everybody, Merchant, Keys.Vanish);
+            }
+            catch (Exception ex)
+            {
+                if (_throws++ < 3) ValkyriesCargo.Log.LogWarning("spawner: sending " + Keys.Vanish + " threw: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// F3's grace period: how long `VisitDirector.End` waits after `SendVanish` before `Clear`
+        /// destroys the merchant's ZDO -- long enough for the farewell line and the Odin despawn effect
+        /// to actually play on every screen that has him instanced. Named, not a coroutine:
+        /// `VisitDirector.Tick` already runs once a second and drives this from there (house rule 2).
+        /// </summary>
+        public const float VanishGraceSeconds = 2f;
+
+        /// <summary>
         /// The bird was still flying when the visit ended. Reclaim it and destroy it: taking ownership
         /// first is the only way a server may destroy a ZDO it does not own (`ZDOMan.DestroyZDO` is a
         /// no-op for a non-owner), and is Undertow's pattern.
@@ -270,8 +362,9 @@ namespace RavenIron.ValkyriesCargo.Server
             Reclaim(Bird, "bird");
             // The merchant is PERSISTENT, so unlike the bird he does not sweep himself up: a visit that
             // ends with him still standing would leave him in the world save forever. P5's departure is
-            // the Odin vanish and destroys him itself; this is the backstop under it, and the only
-            // thing standing between a crashed visit and a permanent Dverger (PR #8's review).
+            // the Odin vanish (`SendVanish`, above) and destroys him itself; this is the backstop under
+            // it, and the only thing standing between a crashed visit and a permanent Dverger (PR #8's
+            // review).
             Reclaim(Merchant, "merchant");
             Bird = ZDOID.None;
             Merchant = ZDOID.None;
@@ -279,6 +372,21 @@ namespace RavenIron.ValkyriesCargo.Server
             Dropped = false;
             AuthoredDrop = Vector3.zero;
             _orphanWaited = 0f;
+        }
+
+        /// <summary>
+        /// F3's guard: reclaim what `Author` (or `Rebind`) currently holds, but ONLY if nothing has
+        /// re-authored since `expectedVisitId` was the one ending. A visit that begins during the
+        /// grace window (an admin's `cargo visit` landing in the same second `cargo dismiss` did, say)
+        /// calls `Author` again, which overwrites `VisitId`/`Bird`/`Merchant` with the NEW visit's -- a
+        /// deferred `Clear()` that did not check would destroy the new visit's bird and merchant
+        /// instead of the one that actually ended. Returns true when it actually cleared.
+        /// </summary>
+        public static bool ClearIfStillOurs(int expectedVisitId)
+        {
+            if (expectedVisitId == 0 || VisitId != expectedVisitId) return false;
+            Clear();
+            return true;
         }
 
         /// <summary>
@@ -307,6 +415,22 @@ namespace RavenIron.ValkyriesCargo.Server
         public const float OrphanGraceSeconds = 5f;
 
         /// <summary>
+        /// Every ZDO carrying the configured body prefab, walked once. Shared by `Sweep` (the restart
+        /// backstop) and `Rebind` (F4: finding the one merchant ZDO an adopted visit belongs to) so
+        /// there is exactly one place that knows how to find "every merchant-shaped ZDO" -- reusing it
+        /// rather than inventing a second walk, per the audit.
+        /// </summary>
+        private static List<ZDO> FindBodyZDOs(ZDOMan man, string bodyName)
+        {
+            var found = new List<ZDO>();
+            int index = 0;
+            // The iterative form is the one that does not allocate the whole table: it fills the list
+            // and returns whether it finished, so it is called until it says it has.
+            while (!man.GetAllZDOsWithPrefabIterative(bodyName, found, ref index)) { }
+            return found;
+        }
+
+        /// <summary>
         /// Design 3.7, the restart sweep. The merchant is the PERSISTENT half of the pair, so a server
         /// that stopped mid-visit brings him back with the world - standing in a field, with no visit
         /// around him and no bird to be carried by. This walks the ZDO table for `VCargo_ingvar` and puts
@@ -319,6 +443,11 @@ namespace RavenIron.ValkyriesCargo.Server
         /// never survives a restart by design - the bird is non-persistent - so the honest value
         /// afterwards is None. (`libs-Tools\IMPLEMENTATIONS\MASTER_IMPLEMENTATIONS.md`; it cost
         /// TortalPortal its favourites feature. See CLAUDE.md's knowledge-base section.)
+        ///
+        /// Called at boot (sparing the visit about to be adopted) AND again by `VisitDirector` once a
+        /// visit's departure finishes (F4's belt-and-braces, alongside `ClearIfStillOurs`): after an
+        /// end, nothing is "live" but whatever NEW visit may already have begun in the meantime, so the
+        /// caller passes that visit's id, or 0 when none is running.
         ///
         /// Returns a line to log, or null when there was nothing to do.
         /// </summary>
@@ -333,14 +462,8 @@ namespace RavenIron.ValkyriesCargo.Server
                 string bodyName = ModConfig.BodyPrefab != null ? ModConfig.BodyPrefab.Value : "Dverger";
                 int bodyHash = bodyName.GetStableHashCode();
 
-                var found = new List<ZDO>();
-                int index = 0;
-                // The iterative form is the one that does not allocate the whole table: it fills the
-                // list and returns whether it finished, so it is called until it says it has.
-                while (!man.GetAllZDOsWithPrefabIterative(bodyName, found, ref index)) { }
-
                 int cleared = 0, stranded = 0;
-                foreach (ZDO zdo in found)
+                foreach (ZDO zdo in FindBodyZDOs(man, bodyName))
                 {
                     if (zdo == null || !zdo.IsValid()) continue;
                     int visit = zdo.GetInt(IngvarHash, 0);
@@ -370,6 +493,60 @@ namespace RavenIron.ValkyriesCargo.Server
             catch (Exception ex)
             {
                 if (_throws++ < 3) ValkyriesCargo.Log.LogError("spawner: the restart sweep threw: " + ex);
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// F4 (docs/AUDIT-P4P5-2026-09-07.md): a visit ADOPTED after a restart never goes through
+        /// `Author` in THIS process, so `Bird`/`Merchant`/`VisitId`/`Dropped`/`Active` are never bound
+        /// to it. Without this, `End` -&gt; `Clear` reclaims nothing (`Reclaim` returns at `id.IsNone()`),
+        /// and the merchant -- his ZDO is PERSISTENT -- stays in the world forever: immortal
+        /// (`CargoMerchant.LiveCount` &gt;= 1 wherever he is instanced), still `Interactable`, and the
+        /// next visit authors a SECOND one beside him. Called once, from `VisitDirector.Adopt`, right
+        /// after `VisitSession.Resume` succeeds.
+        ///
+        /// The boot sweep (`VisitDirector.Create` -&gt; `Sweep(keep)`) already ran by the time this does,
+        /// with `keep` peeked from the same saved row via `VisitSession.VisitIdOf` -- so it already
+        /// SPARED this exact ZDO (and cleared its carry link) rather than destroying it. This just
+        /// finds that same ZDO again and binds `Spawner` to it, reusing `Sweep`'s own walk.
+        ///
+        /// The BIRD is deliberately NOT rebound: `Author` sets `Persistent = false` on it, so it cannot
+        /// survive a restart -- by the time there is anything left to adopt, the bird that carried this
+        /// merchant is already gone, world-wide, and there is no ZDO left to find. `Bird` stays
+        /// `ZDOID.None`, which reads exactly like "no flight" already does (F3's `AuthorBird` /
+        /// `authorBird` = false path) -- an honest answer, not a special case.
+        ///
+        /// Returns a line to log, or null when no merchant ZDO carries this visit id (nothing to
+        /// rebind: it died before the restart, or `MerchantEnabled` was off when it was authored).
+        /// </summary>
+        public static string Rebind(int visitId)
+        {
+            try
+            {
+                ZDOMan man = ZDOMan.instance;
+                if (man == null || visitId == 0) return null;
+
+                string bodyName = ModConfig.BodyPrefab != null ? ModConfig.BodyPrefab.Value : "Dverger";
+                foreach (ZDO zdo in FindBodyZDOs(man, bodyName))
+                {
+                    if (zdo == null || !zdo.IsValid()) continue;
+                    if (zdo.GetInt(IngvarHash, 0) != visitId) continue;
+
+                    Bird = ZDOID.None;            // non-persistent: gone before this process existed
+                    Merchant = zdo.m_uid;
+                    VisitId = visitId;
+                    Dropped = true;               // can only be found already down; nothing carried him here
+                    AuthoredDrop = zdo.GetPosition();
+                    _orphanWaited = 0f;
+                    return "visit #" + visitId + " resumed: merchant ZDO " + Merchant +
+                           " rebound (the bird did not survive the restart - non-persistent by design)";
+                }
+                return null;
+            }
+            catch (Exception ex)
+            {
+                if (_throws++ < 3) ValkyriesCargo.Log.LogError("spawner: rebind threw: " + ex);
                 return null;
             }
         }
