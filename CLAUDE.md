@@ -732,6 +732,19 @@ wires register a peer once `IsReady()`, and a client's session-end line no longe
 on a machine: a relog from a second base still on cooldown, and the wire line naming the player. D1 and D3 are in
 Wu'barrk's files and wait for his word or the owner's reassignment.
 
+**THE EVENING SESSION, 15:33–15:53 the same day (main d55ce90 with D2/D4, visits 7 and 8, the server started
+from Don's Claude's shell; `docs/proofs/2026-09-07-stormtest-evening.log.txt`).** D4a seen: `admin wire registered
+for Nomadtest (-618124001)` and the deal wire's twin on connect (was `? (0)`). D2 seen in its shape: the natural
+roll refused `1 near a base on cooldown` — the morning's `coolbase` rows came back with their remaining time, and
+the old `cool` rows keyed on dead session uids no longer matched anyone. Item 12 again (`comfort < 4`, echoed).
+Item 19 DONE (the `cargo body` line). Two forced visits: flights of 17.02 s (straight in 90 m) and 15.26 s (the
+shrink path, 66 m out, 38.8 m short), both dropped on the authored X/Z; **D1's second regime on both** — the
+give-up 50 s and ~145 s after the drop with 165 m and 156 m of displacement, 33 m and 13 m from the pilot, then the
+leash and `reached the player` within 5 s; a barter and two Eitr deals with the Fair Market Act cap live again
+(he bought Eitr back at 31 = 0.7 × 45 with the curve held at par, then sold one at 45 with the shelf back at
+target); both visits ended on the timer with the D3 sweep line. **Found on screen: Ingvar walks backward** (item
+20, fixed the same evening). No exception on either side.
+
 ## What to verify in-game
 
 **An item is proven by its own pasted log line and a date, and by nothing else.** Done so far: **item 1**
@@ -885,7 +898,10 @@ P8, the body (a client with the baked bundle embedded; **the bundle exists as of
 Wu'barrk's Linux box in Unity 6000.0.61f1, 3,826,415 bytes, and the Debug DLL grows 273,408 -> 4,100,096
 when it is embedded. Note it is a `StandaloneWindows64` bundle, which is right for the ship and means a
 LINUX client needs a Linux bake through `BodyLoader`'s loose-file path to run these two items):
-19. **`cargo body`** says `source embedded ('ValkyriesCargo.valkyriescargo_kit')`, `bundle open`, `prefab 'ingvar'
+19. **`cargo body`** — **DONE 2026-09-07 15:36 (Don's client on StormTest)**: `body: source embedded, prefab 'ingvar', 6
+    clip(s) [Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s], SkinnedMeshRenderer=True,
+    bones=24, tris=31112, mesh bounds y -0.244 to 0.244 (0.94 x 0.49 x 1.37 m)` and the bind-pose note beneath it.
+    As written: says `source embedded ('ValkyriesCargo.valkyriescargo_kit')`, `bundle open`, `prefab 'ingvar'
     found`, six clips with the lengths Unity reported at the bake (`Walk 4.17s, Idle 10.00s, Talk 5.13s,
     Hello 3.75s, Shrug 1.96s, Nod 1.25s`; models/README.md's earlier row was one 24 fps frame longer on
     four of them, corrected 2026-09-07), `SkinnedMeshRenderer=yes, bones=24, tris=31112`, and a **bind-pose ground offset of about
@@ -894,7 +910,13 @@ LINUX client needs a Linux bake through `BodyLoader`'s loose-file path to run th
     near 0 is `cargo body preview`'s `lifted N m ... measured on the posed mesh` (the console prints it as two
     lines: `body: source embedded - ...` then `resource: 'ValkyriesCargo.valkyriescargo_kit' inside this DLL ...`). On a dedicated server the
     same verb answers `source none - client only; not loaded here` and says nothing about appearance.
-20. **`cargo body preview`** stands Ingvar 2.5 m in front of the player, facing them, feet ON the ground (not
+20. **The body on screen** — **FOUND 2026-09-07 15:50 on a live merchant (visit 8, Don's client): Ingvar WALKS
+    BACKWARD.** The bundle's forward axis is the Dverger's back, and the loader attached him with identity
+    rotation. Fixed the same evening: `Client.BodyYawDegrees` (default 180) applied at the attach and in the
+    preview, the attach line now reads `turned 180 deg (Client.BodyYawDegrees)`. **Not yet seen after the fix**:
+    the next visit must show him walking forward and facing the player when trading; if a bake ever comes out
+    the other way, the knob goes to 0. The walk and one-shot clips on a merchant otherwise still unreported.
+    As written: `cargo body preview` stands Ingvar 2.5 m in front of the player, facing them, feet ON the ground (not
     floating, not sunk; test OUTDOORS: the preview stands on `GetGroundHeight`, the terrain, so on a floor he sinks to
     the ground beneath it and that is the raycast mask, not the bake), about **1.37 m** tall — a head shorter than the player — idling, with the idle actually
     moving rather than frozen on frame 0. `cargo body walk` walks him on the spot and the crossfade takes about

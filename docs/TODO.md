@@ -198,7 +198,16 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       string names it, `docs/ENGINE-PROBES.md` §9 row; the admin and deal wires gate on `ZNetPeer.IsReady()` above
       the live count; the client's session-end line. Harness 1697 → 1701; `probes 18/18 ok` against the real
       assembly; the hash mutation fails `comfort` and only `comfort`. **Not yet seen on a machine**: a relog from a
-      second base still on cooldown; the wire line naming the player on connect. D1 and D3 stay Track B's.
+      second base still on cooldown; ~~the wire line naming the player on connect~~ SEEN 15:35:51 the same evening
+      (`admin wire registered for Nomadtest (-618124001)`). D1 and D3 stay Track B's.
+- [x] **Ingvar walks backward** (owner, on screen, 2026-09-07 15:50, visit 8; "fix the backwards walking"):
+      the bundle's forward axis is the Dverger's back and the loader attached him with identity rotation.
+      `Client.BodyYawDegrees` (local, default 180, range ±180) applied at `BodyLoader.Attach` and in the preview;
+      the attach line logs `turned N deg`. Harness untouched (Unity-side). **Not yet seen after the fix**: the next
+      visit shows him walking forward and facing the player; a bake that comes out facing forward sets it to 0.
+      The evening session's other lines are in CLAUDE.md's "THE EVENING SESSION" paragraph and
+      `docs/proofs/2026-09-07-stormtest-evening.log.txt` (D4a seen, D2's base bucket, item 19 DONE, D1's second
+      regime on both visits, the Fair Market Act on Eitr).
 - [x] **The two owner decisions of 2026-09-07, built here (PR #40 merged):** the JSON
       dependency swapped for `Core/Json.cs` (writer only; compact and indented output shaped like
       Newtonsoft's so the rollover's part boundaries and BarrkBOT's files do not move; the `<Reference>`,

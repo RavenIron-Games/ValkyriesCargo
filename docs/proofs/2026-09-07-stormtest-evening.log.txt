@@ -1,0 +1,117 @@
+# Valkyrie's Cargo - StormTest, the evening session 2026-09-07 15:33-15:53 (main d55ce90: D2/D4 built), visits 7 and 8. Server from line 4917 of its log; the client's one boot.
+
+## SERVER (StormTest, dedicated)
+[Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.0]
+[Info   :Valkyrie's Cargo] built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable.
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches 18/18 applied, catalogue=72 entries, engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+[Info   : Unity Log] 09/07/2026 15:33:22: Load world: Dedicated (Dedicated)
+[Info   :Valkyrie's Cargo] role: dedicated server
+[Info   :Valkyrie's Cargo] admin wire up for this session: VCargo_admin is registered on each peer's OWN socket as it connects and VCargo_reply answers on the same socket; the caller's identity is that socket, never a field in the packet
+[Info   :Valkyrie's Cargo] director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 1262, next visit #7, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_4690126.dat (86 rows loaded)
+[Info   :Valkyrie's Cargo] roll: no eligible player: nobody online
+[Info   : Unity Log] 09/07/2026 15:35:36: Got connection SteamID 76561198392625778
+[Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 to the client.
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 from the client.
+[Info   :Valkyrie's Cargo] admin wire registered for Nomadtest (-618124001)
+[Info   :Valkyrie's Cargo] deal wire registered for Nomadtest (-618124001)
+[Info   : Unity Log] 09/07/2026 15:35:56: Got character ZDOID from Nomadtest : -618124001:7
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 near a base on cooldown
+[Info   :Valkyrie's Cargo] admin Nomadtest (-618124001): cargo visit 
+[Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-51.5484352, 57.60533); 1 eligible, 1 ticket(s)
+[Info   : Unity Log] 09/07/2026 15:36:33: Random event set:valkyries_cargo
+[Info   :Valkyrie's Cargo] visit #7 begins: pilot Nomadtest (uid -618124001) at (-51.5484352, 57.60533), 300 s, purse 800, seed 936165590
+[Info   :Valkyrie's Cargo] visit #7: flight authored: start (-53.1191521, 147.591629) at 198.018311, descent (-52.63284, 119.730865) at 158.653381 (50 m short), drop (-51.76022, 69.73849) at 78.0183, straight in 90 m out; bird 859815415:89050, Dverger 859815415:89051, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #7: dropped at (-51.76022, 76.7047043, 69.73849)
+[Info   :Valkyrie's Cargo] deal w4790ce-7-1 with Nomadtest: sold 10 Eitr at 45, bought 2 BlackCore at 210, bought 2 Ruby at 20, coins +10 to the player; purse 790
+[Info   :Valkyrie's Cargo] visit #7: one minute left
+[Info   :Valkyrie's Cargo] visit #7 ended: timer; takings 0 coins, purse 790, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+[Info   :Valkyrie's Cargo] restart sweep: 1 stranded merchant(s) destroyed; prefab 'Dverger' hash 1283200037
+[Info   :Valkyrie's Cargo] admin Nomadtest (-618124001): cargo visit 
+[Info   :Valkyrie's Cargo] roll: forced: Nomadtest not eligible: comfort < 4; online: 1 comfort < 4
+[Info   :Valkyrie's Cargo] admin Nomadtest (-618124001): cargo visit 
+[Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-52.2445869, 57.2536469); 1 eligible, 1 ticket(s)
+[Info   : Unity Log] 09/07/2026 15:44:10: Random event set:valkyries_cargo
+[Info   :Valkyrie's Cargo] visit #8 begins: pilot Nomadtest (uid -618124001) at (-52.2445869, 57.2536469), 300 s, purse 800, seed 1482365770
+[Info   :Valkyrie's Cargo] visit #8: flight authored: start (13.2634583, 49.21027) at 198.026962, descent (0.4357913, 50.78531) at 170.526962 (38.772 m short), drop (-38.0472069, 55.51043) at 78.02696, straight in 66 m out; bird 859815415:89052, Dverger 859815415:89053, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #8: dropped at (-38.0472069, 79.19519, 55.51043)
+[Info   :Valkyrie's Cargo] deal w4790ce-8-1 with Nomadtest: bought 10 Eitr at 31, coins +310 to the player; purse 490
+[Info   :Valkyrie's Cargo] deal w4790ce-8-2 with Nomadtest: sold 1 Eitr at 45, coins -45 to the player; purse 535
+[Info   :Valkyrie's Cargo] visit #8: one minute left
+[Info   :Valkyrie's Cargo] visit #8 ended: timer; takings 0 coins, purse 535, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 not rested
+[Info   :Valkyrie's Cargo] restart sweep: 1 stranded merchant(s) destroyed; prefab 'Dverger' hash 1283200037
+[Info   : Unity Log] 09/07/2026 15:50:00: RPC_Disconnect
+[Info   : Unity Log] 09/07/2026 15:50:00: Closing socket 76561198392625778
+[Info   :Valkyrie's Cargo] roll: no eligible player: nobody online
+[Info   : Unity Log] 09/07/2026 15:53:40: Shutting down
+[Info   : Unity Log] 09/07/2026 15:53:40: ZNet Shutdown
+
+## CLIENT (Gale profile Default, one boot 15:34 onward)
+[Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.0]
+[Info   :Valkyrie's Cargo] built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable.
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=True, patches 18/18 applied, catalogue=72 entries, engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+[Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 to the server.
+[Info   :Valkyrie's Cargo] role: client
+[Info   : Unity Log] 09/07/2026 15:35:36: Got connection SteamID 90292347319028760
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 from the server.
+[Info   : Unity Log] Received 31 configs and 2 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] admin wire: registered VCargo_reply on the server socket
+[Info   :Valkyrie's Cargo] deal wire: registered VCargo_dealt on the server socket
+[Info   :Valkyrie's Cargo] body: source embedded, prefab 'ingvar', 6 clip(s) [Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s], SkinnedMeshRenderer=True, bones=24, tris=31112, mesh bounds y -0.244 to 0.244 (0.94 x 0.49 x 1.37 m), ground offset 0.244 m
+[Info   :Valkyrie's Cargo] body: the BIND-POSE box implies a 0.244 m offset, which on this asset is an artefact of that box and not a real lift -- the source is authored on a different up-axis and FBX axis conversion does not touch bind-pose bounds. Nothing is placed from this number: Attach and the preview both measure the POSED mesh (BakeMesh). Kept because it is still the fastest way to see a bake come out sideways.
+[Info   : Unity Log] 09/07/2026 15:36:33: Random event set:valkyries_cargo
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-51.5484352, 57.60533); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] cargo flight #7: flying from (-53.1191521, 198.018311, 147.591629) via (-52.63284, 158.653381, 119.730865) to (-51.76022, 78.0183, 69.73849), 77.865 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+[Info   :Valkyrie's Cargo] body: dressed Ingvar in a copy of the Dverger's own material ('DvergerBody', shader 'Custom/Creature') with our albedo in it. A baked bundle carries Unity's Standard, which Valheim lights only from direct light.
+[Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05; 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+[Info   :Valkyrie's Cargo] cargo merchant #7: awake as carried, ours, body=Ingvar
+[Info   :Valkyrie's Cargo] cargo flight #7: dropped at (-51.76022, 76.7047043, 69.73849) after 17.0201988 s
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] cargo flight #7: ground unknown at (-53.4948235, 174.391754, 224.074738) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+[Info   : Unity Log] 09/07/2026 15:37:12: Destroying valkyrie
+[Info   :Valkyrie's Cargo] cargo merchant #7: trading (entered: gave up walking after 20 s) [callout]
+[Warning:Valkyrie's Cargo] cargo merchant #7: the walk-up did not finish. moved 165.130508 m in 20 s (budget scaled from 0 m at entry; stuck 0 s of the last window) and stopped 33.0753975 m away; follow target Player(Clone), tamed yes, alerted no, AI target none, grounded yes.
+[Info   :Valkyrie's Cargo] cargo merchant #7: approaching (entered: the player left: 32.3142624 m for 5.01999569 s) [following]
+[Info   :Valkyrie's Cargo] cargo merchant #7: trading (entered: reached the player) [callout]
+[Info   :Valkyrie's Cargo] terminal opened: visit #7 on Dverger(Clone)
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] terminal deal on visit #7: ok w4790ce-7-1 +10 Eitr, -2 BlackCore, -2 Ruby, +10 coins
+[Info   :Valkyrie's Cargo] terminal closed: escape
+[Info   :Valkyrie's Cargo] terminal opened: visit #7 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] terminal closed: escape
+[Info   :Valkyrie's Cargo] terminal opened: visit #7 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] terminal closed: use
+[Info   :Valkyrie's Cargo] terminal opened: visit #7 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] terminal closed: use
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced: Nomadtest not eligible: comfort < 4; online: 1 comfort < 4
+[Info   : Unity Log] 09/07/2026 15:44:10: Random event set:valkyries_cargo
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-52.2445869, 57.2536469); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] cargo flight #8: flying from (13.2634583, 198.026962, 49.21027) via (0.4357913, 170.526962, 50.78531) to (-38.0472069, 78.02696, 55.51043), 51.696 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+[Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05; 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+[Info   :Valkyrie's Cargo] cargo merchant #8: awake as carried, ours, body=Ingvar
+[Info   :Valkyrie's Cargo] cargo flight #8: dropped at (-38.0472069, 79.19519, 55.51043) after 15.2601585 s
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] cargo flight #8: ground unknown at (96.0504456, 191.846146, 39.147) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+[Info   : Unity Log] 09/07/2026 15:44:50: Destroying valkyrie
+[Info   :Valkyrie's Cargo] cargo merchant #8: trading (entered: gave up walking after 20 s) [callout]
+[Warning:Valkyrie's Cargo] cargo merchant #8: the walk-up did not finish. moved 155.618362 m in 20 s (budget scaled from 0 m at entry; stuck 0 s of the last window) and stopped 13.3082743 m away; follow target Player(Clone), tamed yes, alerted no, AI target none, grounded yes.
+[Info   :Valkyrie's Cargo] cargo merchant #8: approaching (entered: the player left: 16.618372 m for 5.01999569 s) [following]
+[Info   :Valkyrie's Cargo] cargo merchant #8: trading (entered: reached the player) [callout]
+[Info   :Valkyrie's Cargo] terminal opened: visit #8 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] terminal closed: escape
+[Info   :Valkyrie's Cargo] terminal opened: visit #8 on Dverger(Clone)
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] terminal deal on visit #8: ok w4790ce-8-1 -10 Eitr, +310 coins
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] terminal deal on visit #8: ok w4790ce-8-2 +1 Eitr, -45 coins
+[Info   :Valkyrie's Cargo] terminal closed: escape
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   : Unity Log] 09/07/2026 15:50:00: Closing socket 90292347319028760
