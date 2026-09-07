@@ -1,9 +1,57 @@
 # Changelog
 
-## 0.1.0 (unreleased)
+## 0.1.0
 
-**Not playable. The server side runs headless; nothing has been seen from a client; the flight and the
-merchant are not built, and the custom body has its loader but no baked bundle.** Entries are in build order.
+A Valkyrie drops Ingvar the Far-Travelled beside your base at a random moment when you are rested and
+comfortable. He walks up, calls out, buys and sells from a live persistent stock at supply-and-demand
+prices for five minutes, and vanishes the way Odin does. Every player sees the same visit; only the
+server owns the market.
+
+**What has been seen on a screen, and what has not.** The plugin boots on a client and a dedicated
+server, the director runs, the market persists across restarts, and Ingvar's own body loads out of the
+bundle and stands correctly lit. A full visit -- the flight, the drop, the walk-up, the terminal and a
+trade -- has been proven off-game across 1301 checks and in a nine-scenario economy simulation, and is
+still being proven in-game; the runbook is `docs/PROOF-CLIENT.md` and what remains is listed in
+CLAUDE.md's "what to verify in-game". Treat 0.1.0 as a first playable, not as a settled one.
+
+Entries are in build order.
+
+### Phase 4-5 — the flight and the merchant
+
+- `Core/FlightPlan.cs` plans a straight approach inside the pilot's active block, shrinking the start
+  by 12 m steps and turning a quarter at a time when a bearing has no room; `TurningRadius`/`Reachable`
+  assert every waypoint is flyable at the shipped speed, because a pure pursuer whose target sits inside
+  its own turning circle never closes and orbits for ever.
+- `Server/Spawner.cs` authors the bird and the merchant as ZDOs owned by the pilot; `Client/CargoFlight.cs`
+  flies vanilla's own maths on the owner alone and writes `s_velHash` so every other screen dead-reckons
+  a glide instead of a stutter.
+- **The drop point the pilot reports is bounded against the one the server authored.** The bird is owned
+  by the pilot, so its target key is a value a client writes, and it used to be handed to the visit
+  unexamined -- a modified client could put Ingvar anywhere in the world. The bound refuses a forged NaN
+  as well, which the natural spelling of the check would have accepted.
+- `Client/CargoMerchant.cs` carries Ingvar under the talons, walks him up, calls out, keeps him peaceful
+  and immortal for the visit, and vanishes him with Odin's own effect.
+
+### Phase 8 — Ingvar's body
+
+- The bundle is baked and embedded in the DLL, so every player sees the same merchant with no download.
+- Five bake defects were found and fixed, every one of which produced a bundle that passed every gate a
+  build script can check. Written up in full at `docs/knowledge-base/SKINNED-CHARACTER-BUNDLE-FACTS.md`.
+
+### Phase 12 — BarrkBOT, and the economy
+
+- The market, the traders and the visits are published as JSON under `BepInEx/config/ValkyriesCargo/`
+  for BarrkBOT to read off the server filesystem. The world sidecar always saves first; a failure in the
+  export can never take down a save or a visit.
+- **The Fair Market Act.** Ingvar used to buy his own wares back for more than he sold them --
+  `MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1 -- so a player could empty a shelf, sell it straight
+  back, and walk off with his whole purse while the shelves ended exactly where they started. A Ware's
+  buy-back is now capped at par. What he charges still rises to the full 3.0x, and goods he only buys
+  are untouched.
+- His purse is 1500 rather than 800, and the carry between visits is measured on the coins that came in
+  rather than on the net, so a server that sells to him refills him as well as one that buys from him.
+- Four goods that paid firewood rates -- round logs, fine wood, feathers and leather scraps -- now pay
+  what they are worth.
 
 ### Phase 0 — the scaffold
 

@@ -5,12 +5,11 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: not yet playable.** The server side is built and has been run on a dedicated server;
-> the client side is built and has never been seen on a screen; the flight and the merchant himself
-> are not built. Nobody has traded with Ingvar yet, because there is nobody to trade with. This is
-> published so the design, the catalogue and the item data live in one place while the rest is
-> built. The Status section below says exactly what exists and what has been proven. Watch the
-> changelog.
+> **Status: 0.1.0, first playable.** The plugin boots on a client and a dedicated server, the
+> director runs, the market persists, and Ingvar's own body loads out of the bundle. A full visit is
+> proven off-game across 1301 checks and a nine-scenario economy simulation, and is still being proven
+> in-game -- `docs/PROOF-CLIENT.md` is the runbook and CLAUDE.md lists what remains. This file is the
+> developer's README; the store page is `HexiumDist/README.md`.
 
 ---
 
