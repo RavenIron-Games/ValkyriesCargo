@@ -113,9 +113,17 @@
       <HintPath>$(LibsDir)\UnityEngine.PhysicsModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
-    <!-- Animator lives here (forwarded out of CoreModule); the prefab dump reads its parameters. -->
+    <!-- Animator lives here (forwarded out of CoreModule); the prefab dump reads its parameters, and
+         IngvarBody's PlayableGraph is built from this module's AnimationPlayableOutput,
+         AnimationMixerPlayable and AnimationClipPlayable. -->
     <Reference Include="UnityEngine.AnimationModule">
       <HintPath>$(LibsDir)\UnityEngine.AnimationModule.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <!-- AssetBundle.LoadFromStream: Ingvar's body rides inside this DLL as an embedded resource
+         (models/SETUP-FOR-CLAUDE.md section 3). Nothing else in the game's Managed folder carries it. -->
+    <Reference Include="UnityEngine.AssetBundleModule">
+      <HintPath>$(LibsDir)\UnityEngine.AssetBundleModule.dll</HintPath>
       <Private>false</Private>
     </Reference>
 
@@ -127,6 +135,23 @@
       <HintPath>$(LibsDir)\0Harmony.dll</HintPath>
       <Private>false</Private>
     </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <!--
+      Ingvar's baked AssetBundle, embedded so every machine that has this DLL has the body: no
+      transfer, no download, and ModRequired with MinimumRequiredVersion == CurrentVersion means
+      everyone is on the same DLL and therefore the same bundle (models/README.md section 2).
+      It must NEVER travel over ServerSync, which is a config channel.
+
+      Conditional because the bundle is a BUILD INPUT that is not in git (.gitignore, WORKSPLIT
+      section 4): a fresh clone with no bake must still build, and does - `cargo body` then answers
+      `source none` and the Dverger stand-in is kept. Put it here with
+      tools\setup-ingvar-unity.ps1 -Embed, and check the DLL grew by roughly the bundle's size.
+    -->
+    <EmbeddedResource Include="..\Assets\valkyriescargo_kit"
+                      LogicalName="ValkyriesCargo.valkyriescargo_kit"
+                      Condition="Exists('..\Assets\valkyriescargo_kit')" />
   </ItemGroup>
 
 </Project>
