@@ -157,7 +157,7 @@ namespace RavenIron.ValkyriesCargo.Server
                         string republish = _session.Sync(worldTime, CargoEvent.Remaining(res));
                         if (republish != null) Publish(republish);
 
-                        // The server never flies anything: it watches the pilot's `vc_dropped` flag and
+                        // The server never flies anything: it watches the pilot's `VCargo_dropped` flag and
                         // moves the visit's phase and drop point to follow (P4).
                         string flightState;
                         string note = Spawner.Tick(_session, GatherIntervalSeconds, out flightState);
@@ -165,7 +165,7 @@ namespace RavenIron.ValkyriesCargo.Server
                         if (note != null) ValkyriesCargo.Log.LogInfo(note);
 
                         if (_session.Clock.OneMinuteWarningDue(worldTime))
-                            ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + ": one minute left");   // P5: vc_say the line
+                            ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + ": one minute left");   // P5: VCargo_say the line
                     }
                 }
                 else if (ours && _pendingSessionRow == null)
@@ -249,7 +249,7 @@ namespace RavenIron.ValkyriesCargo.Server
             return d.Reason;
         }
 
-        /// <summary>`cargo dismiss` and vc_dismiss: end the event now; the next tick ends the visit with this reason.</summary>
+        /// <summary>`cargo dismiss` and VCargo_dismiss: end the event now; the next tick ends the visit with this reason.</summary>
         public string Dismiss(string reason)
         {
             if (!_session.Active) return "no visit to dismiss";

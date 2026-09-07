@@ -7,7 +7,7 @@ namespace RavenIron.ValkyriesCargo.Core
     /// no engine call, so every transition is provable off-game and `CargoMerchant` is left with
     /// nothing but "measure the world, apply the decision, write the ZDO".
     ///
-    /// The states are the `vc_state` values `Spawner.MerchantState` already publishes, because the
+    /// The states are the `VCargo_state` values `Spawner.MerchantState` already publishes, because the
     /// ZDO is the only thing that survives an ownership handover mid-visit: a nearer client takes the
     /// merchant over and carries on from the number, not from a field.
     ///
@@ -28,7 +28,7 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>A landing is only a landing once; below this he is still falling, not down.</summary>
         public const float GroundedGraceSeconds = 0.25f;
 
-        /// <summary>What the caller should do this tick. `State` is always a valid `vc_state`.</summary>
+        /// <summary>What the caller should do this tick. `State` is always a valid `VCargo_state`.</summary>
         public struct Step
         {
             public int State;
@@ -107,7 +107,7 @@ namespace RavenIron.ValkyriesCargo.Core
 
         /// <summary>
         /// True when this state means the carry pin should be driving his transform. Kept beside the
-        /// machine because `CargoFlight` cuts the link by writing BOTH `vc_carrier` and `vc_state`,
+        /// machine because `CargoFlight` cuts the link by writing BOTH `VCargo_carrier` and `VCargo_state`,
         /// and the two must never be read as disagreeing: the carrier id is the authority while the
         /// world is loaded, and the state is the authority after a restart, when every `ZDOID` in
         /// the save has been renumbered and the old carrier id means nothing at all.

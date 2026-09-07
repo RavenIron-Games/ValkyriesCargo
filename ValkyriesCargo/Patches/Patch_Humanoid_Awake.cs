@@ -6,7 +6,7 @@ using RavenIron.ValkyriesCargo.Server;
 namespace RavenIron.ValkyriesCargo.Patches
 {
     /// <summary>
-    /// Design 3.3: a body whose ZDO carries `vc_ingvar` becomes Ingvar. A POSTFIX at default
+    /// Design 3.3: a body whose ZDO carries `VCargo_ingvar` becomes Ingvar. A POSTFIX at default
     /// priority, not a prefix - vanilla `Humanoid.Awake` must run in full, because it is what caches
     /// the Rigidbody and the collider and hands out `m_defaultItems`, and `CargoMerchant` needs all
     /// of that to exist before it strips the crossbow back off him.

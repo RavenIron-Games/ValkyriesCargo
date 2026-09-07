@@ -94,8 +94,8 @@ MarketState: v1;visitId;purse;prefab:kind:stock:target:max:buy:sell:trend|prefab
 
 ### 3.1 Eligibility and the roll — `Client/ComfortReporter.cs`, `Core/Scheduler.cs` (pure), `Server/VisitDirector.cs`
 
-**Client report** (2 s, on change, inside the mod's one tick): `zdo.Set("vc_rested", seman.HaveStatusEffect(SEMan.s_statusEffectRested))`
-and `zdo.Set("vc_comfort", player.GetComfortLevel())` on the local player's own ZDO. Client-owned, so it replicates;
+**Client report** (2 s, on change, inside the mod's one tick): `zdo.Set("VCargo_rested", seman.HaveStatusEffect(SEMan.s_statusEffectRested))`
+and `zdo.Set("VCargo_comfort", player.GetComfortLevel())` on the local player's own ZDO. Client-owned, so it replicates;
 same trust class as vanilla's `baseValue`.
 
 **Server view** from `ZNet.instance.GetAllCharacterZDOS()` (host and every ready peer): `ownerUid = zdo.GetOwner()`,
@@ -133,32 +133,32 @@ something built (`Homestead.IsNearPlayerBuilt`, Ragnarok's Wrath). The pilot ref
 ```
 bird = ZDOMan.instance.CreateNewZDO(start, 0); bird.SetPrefab("Valkyrie".GetStableHashCode());
 bird.SetPosition(start); bird.SetRotation(look); bird.Persistent = false; bird.Distant = false;
-bird.Set("vc_cargo", visitId); bird.Set("vc_target", drop); bird.SetOwner(pilotUid);
+bird.Set("VCargo_cargo", visitId); bird.Set("VCargo_target", drop); bird.SetOwner(pilotUid);
 npc = CreateNewZDO(start − attachOffset, 0); npc.SetPrefab(BodyPrefab.GetStableHashCode());
-npc.SetPosition(...); npc.Persistent = true; npc.Set("vc_ingvar", visitId); npc.Set("vc_seed", seed);
-npc.Set("vc_carrier", bird.m_uid); npc.Set("vc_state", 0); npc.SetOwner(pilotUid);
+npc.SetPosition(...); npc.Persistent = true; npc.Set("VCargo_ingvar", visitId); npc.Set("VCargo_seed", seed);
+npc.Set("VCargo_carrier", bird.m_uid); npc.Set("VCargo_state", 0); npc.SetOwner(pilotUid);
 ```
 `CreateNewZDO(pos, hash)` uses the hash only for the portal check, so `SetPrefab` is explicit. The pilot's
 `ZNetScene.CreateObject` instantiates both with `m_initZDO`, so the keys exist **before** any `Awake` runs.
 
 `Patch_Valkyrie_Awake` (prefix, `Priority.Low`): read the ZDO through public `GetComponent<ZNetView>().GetZDO()`. If it
-carries `vc_cargo`: `enabled = false`, `AddComponent<CargoFlight>()`, `__runOriginal = false`; never touch
+carries `VCargo_cargo`: `enabled = false`, `AddComponent<CargoFlight>()`, `__runOriginal = false`; never touch
 `Valkyrie.m_instance` (a real intro may be running for someone else). Otherwise `return true`. The narrow, named
 exception to "never replace", on our own object only (RavenEye's shape).
 
 `CargoFlight` (every machine that has the bird): the owner flies vanilla `UpdateValkyrie` maths (**three waypoints,
-linear steps, a banked turn; no spline**) with the target from `vc_target` and the floor
+linear steps, a banked turn; no spline**) with the target from `VCargo_target` and the floor
 `max(GetGroundHeight, ZoneSystem.instance.m_waterLevel) + m_dropHeight`; `m_dropHeight = 10` is ground clearance the whole
-way, and the drop fires on 0.5 m XZ proximity. Everyone watches `vc_dropped` and sets `animator.SetBool("dropped", true)`.
-`Drop()` (owner): `bird.Set("vc_dropped", true)`; refine drop Y; clear the merchant's carrier link (`npc.Set("vc_carrier",
-ZDOID.None)`, the pilot owns it now); send `vc_placed(visitId, npcZdo, dropPoint)` over the direct socket; fly the
+way, and the drop fires on 0.5 m XZ proximity. Everyone watches `VCargo_dropped` and sets `animator.SetBool("dropped", true)`.
+`Drop()` (owner): `bird.Set("VCargo_dropped", true)`; refine drop Y; clear the merchant's carrier link (`npc.Set("VCargo_carrier",
+ZDOID.None)`, the pilot owns it now); send `VCargo_placed(visitId, npcZdo, dropPoint)` over the direct socket; fly the
 fly-away waypoint (lateral, at altitude, not vertical); `m_nview.Destroy()`.
 
-Server on `vc_placed`: `SetRandomEventByName("valkyries_cargo", dropPoint)` (banner and 300 s clock for everyone within
+Server on `VCargo_placed`: `SetRandomEventByName("valkyries_cargo", dropPoint)` (banner and 300 s clock for everyone within
 96 m), `VisitState.phase = dropped`, `endWorldTime = now + MerchantLifespanSeconds`.
 
 **Fallback** if `cargo prefab Valkyrie` shows the prefab unregistered with `ZNetScene` (the server would `DestroyZDO` an
-unresolvable prefab in `CreateObjectsSorted`): the server sends `vc_visit` and the pilot instantiates locally with a
+unresolvable prefab in `CreateObjectsSorted`): the server sends `VCargo_visit` and the pilot instantiates locally with a
 pending flag, the v1 design. Documented, not coded, until the check says it is needed.
 
 ### 3.3 The merchant — `Client/CargoMerchant.cs`, `Patches/Patch_Humanoid_Awake.cs`, `Patch_Character_InIntro.cs`, `Patch_Character_Damage.cs`
@@ -171,14 +171,14 @@ does **not** replace it. It is ADDED as a child of the same clone and the clone'
 `Animator` that declares the vanilla parameter set, the `CapsuleCollider` and the whole component set are still the
 prefab's. Ingvar's own animator declares nothing of vanilla's (section 11.4) and never has to.
 
-`Patch_Humanoid_Awake` (postfix, default priority, try/catch): if the ZDO carries `vc_ingvar`, `AddComponent<CargoMerchant>()`.
+`Patch_Humanoid_Awake` (postfix, default priority, try/catch): if the ZDO carries `VCargo_ingvar`, `AddComponent<CargoMerchant>()`.
 Every machine.
 
 `CargoMerchant.Awake` (every machine): `character.m_name = "Ingvar the Far-Travelled"`; `NpcTalk` disabled if present;
-`m_nview.Register("vc_say", RPC_Say)` and `Register("vc_vanish", RPC_Vanish)`; subscribe to `VisitState.ValueChanged`.
+`m_nview.Register("VCargo_say", RPC_Say)` and `Register("VCargo_vanish", RPC_Vanish)`; subscribe to `VisitState.ValueChanged`.
 Owner only: `monsterAI.MakeTame()`, `m_aggravatable = false`, `m_randomMoveRange = 1.5f`, `humanoid.UnequipAllItems()`.
 
-**Carried.** While `zdo.GetZDOID("vc_carrier")` is not `None`, every machine's `LateUpdate` finds the bird with
+**Carried.** While `zdo.GetZDOID("VCargo_carrier")` is not `None`, every machine's `LateUpdate` finds the bird with
 `ZNetScene.instance.FindInstance(carrierId)` and pins `transform` and `m_body.position` to `m_attachPoint − TransformVector(m_attachOffset)`
 (vanilla `SyncPlayer` sets the rigidbody too; there is no IK anywhere in this, on either side).
 `Patch_Character_InIntro` (postfix, default priority, `___m_nview`): `__result = true` while the carrier link is set, so
@@ -186,21 +186,21 @@ the owner's physics zeroes velocity each step instead of accumulating a 120 m fa
 `InIntro()` branch). The falling animation plays while he hangs; that is what hanging looks like. When the link clears he
 falls the last 10 m; non-players take no fall damage (`UpdateGroundContact`: `IsPlayer() && num > 4f`).
 
-**On the ground** (owner writes `vc_state`; every client reacts):
+**On the ground** (owner writes `VCargo_state`; every client reacts):
 - `0 carried` → link cleared and `IsOnGround()`: landing effect (rule in 3.6), `SetFollowTarget(pilot's GameObject if
   instantiated here, else nearest Player)`, state `1`.
 - `1 approaching` → within `ApproachDistance` (3.5 m) or 20 s: `SetFollowTarget(null)`, `SetPatrolPoint()`, state `2`;
-  the **callout** (section 7, `large: true`, line = `vc_seed % lines.Count`, identical on every screen).
+  the **callout** (section 7, `large: true`, line = `VCargo_seed % lines.Count`, identical on every screen).
 - `2 trading` → if the nearest player is beyond 12 m for 5 s, state `1` toward them; never beyond `m_eventRange`.
 - `3 leaving` → set by `RPC_Vanish`.
 Ownership may pass to a nearer client mid-visit (vanilla); the state is in the ZDO, so the new owner continues.
 
-**Immortal.** `Patch_Character_Damage` (prefix, `Priority.Low`, `___m_nview`): `vc_ingvar` → `__runOriginal = false`. One
+**Immortal.** `Patch_Character_Damage` (prefix, `Priority.Low`, `___m_nview`): `VCargo_ingvar` → `__runOriginal = false`. One
 ZDO int read inside the hit pipeline; its try/catch returns `true` so vanilla runs if anything throws.
 
 **Interaction.** `CargoMerchant : Hoverable, Interactable` (the body has no `Tameable`): hover shows the name, `[E] Trade`,
-`[Shift+E] Send him on his way`, and the countdown from `VisitState.endWorldTime`. `alt` twice within 3 s → `vc_dismiss`.
-Plain → **open the Cargo Terminal directly** (section 3.4) and send `vc_open`. Vanilla `StoreGui` is never involved and
+`[Shift+E] Send him on his way`, and the countdown from `VisitState.endWorldTime`. `alt` twice within 3 s → `VCargo_dismiss`.
+Plain → **open the Cargo Terminal directly** (section 3.4) and send `VCargo_open`. Vanilla `StoreGui` is never involved and
 never patched.
 
 ### 3.4 The Cargo Terminal — `Client/Terminal/*.cs`, `Net/CargoRpc.cs`, `Core/Deal.cs` (pure)
@@ -262,15 +262,15 @@ first until value ≥ price; change in coins). `expected` carries the unit price
    accepts the new price. The alternative, dissolving every open tray on any tick, is one paragraph away and was declined
    for now because at a busy base it empties other players' trays on every deal and hands a griefer a lever.
 4. **Peer isolation**: trays are local; the server has no per-player staging state, only settled deals.
-5. **No local inventory mutation before the server's answer**: on `vc_dealt(ok)` the client removes and adds
+5. **No local inventory mutation before the server's answer**: on `VCargo_dealt(ok)` the client removes and adds
    (`Inventory.RemoveItem(item, amount)` / `AddItem`; check before remove; prefab-name keys, per
    `VANILLA-PIECE-INTEROP-FACTS` §1–2) and plays `m_buyEffects` / `m_sellEffects`; on refusal it changes nothing.
 
-**Wire.** `vc_open` / `vc_close` (subscription), `vc_deal` → `vc_dealt(deliveryId, ok, reason, coinsDelta, items[], newPrices?)`
+**Wire.** `VCargo_open` / `VCargo_close` (subscription), `VCargo_deal` → `VCargo_dealt(deliveryId, ok, reason, coinsDelta, items[], newPrices?)`
 on the **direct peer `ZRpc`** (client side `ZNet.GetServerRPC()`, server side each `peer.m_rpc`, keyed on the `ZRpc`
 instance as `RosterSync` does; registered per session, never in plugin `Awake`, where `ZRoutedRpc.instance` is still
 null). Refusals name their reason: sold out, over his max, purse empty, coins short, inventory full, visit over, unknown
-item, bad count, stale visit, duplicate nonce, price changed. The server sends `vc_say(index)` after a deal so every screen
+item, bad count, stale visit, duplicate nonce, price changed. The server sends `VCargo_say(index)` after a deal so every screen
 sees the same reaction.
 
 **Delivery, taken from VikingOS's escrow ("Trading, Without Trusting Anyone").** Its rule: the server keeps offering a
@@ -279,9 +279,9 @@ recognised rather than applied twice. Ported, not depended on:
 - Every accepted deal gets a `deliveryId` = `{salt}-{visitId}-{seq}`: the salt is the world's (`demo` for the demo),
   visit ids are monotonic and persisted, the sequence is persisted, so an id never repeats across restarts, worlds or
   the demo, and the inbox can be one file for every server. The client applies it once and records the id in a bounded local inbox (500
-  ids, sidecar file in the config dir, the `TradeInbox` shape without Newtonsoft), then sends `vc_ack(deliveryId)`.
+  ids, sidecar file in the config dir, the `TradeInbox` shape without Newtonsoft), then sends `VCargo_ack(deliveryId)`.
 - The server keeps an **owed ledger** per player id in the world sidecar (`owed` rows): a deal it committed but never
-  saw acked. On `vc_ack` the row clears. At session start the client sends `vc_claim`; the server redelivers every owed
+  saw acked. On `VCargo_ack` the row clears. At session start the client sends `VCargo_claim`; the server redelivers every owed
   row over the direct socket. A player who dropped between the merchant's commit and their own inventory write gets their
   goods next login, and never twice.
 - No heartbeat: the merchant is the server, and the socket's own connection state is the heartbeat. VikingOS needs one
@@ -321,12 +321,12 @@ without its fix.
 (vanilla replicates it); one without is created by **every client** locally. Applied to `Odin.m_despawn`'s entries and the
 landing effect. No effect is ever an RPC to everybody.
 
-**Speech.** Scripted moments derive from `vc_state` + `vc_seed` on every client; reactions come as `vc_say(index)` from the
+**Speech.** Scripted moments derive from `VCargo_state` + `VCargo_seed` on every client; reactions come as `VCargo_say(index)` from the
 server (routed, object-targeted; an index into our table, never text). `Chat.instance.SetNpcText` draws the bubble.
 
 **Departure (locked: the Odin vanish).** Triggers: the event's 300 s timer (server tick sees `GetCurrentRandomEvent()` no
-longer ours; polled, never edge-triggered), `vc_dismiss` (server calls `ResetRandomEvent()`), or `cargo dismiss`. Then:
-`VisitState.phase = leaving` (terminals close); server → routed object RPC `vc_vanish`: farewell line, then
+longer ours; polled, never edge-triggered), `VCargo_dismiss` (server calls `ResetRandomEvent()`), or `cargo dismiss`. Then:
+`VisitState.phase = leaving` (terminals close); server → routed object RPC `VCargo_vanish`: farewell line, then
 **`Odin.m_despawn` by the effect rule** (the public `EffectList` on the `odin` prefab; `Odin.m_ttl` is the same 300 s our
 clock quotes); after 1.5 s the server reclaims `SetOwner(session) + DestroyZDO` (Undertow's pattern); persist;
 `VisitState = none`; `cargo status` says `ended: timer | dismissed by <name> | admin`. A horn may sound too, as departure
@@ -336,7 +336,7 @@ audio; it is not the summon horn.
 
 - **Boot sweep**: the sidecar's `session` row is adopted when vanilla brings the event back (it saves the running
   event: name, time, position) and dropped after 15 s otherwise; P5 adds `GetAllZDOsWithPrefabIterative(BodyPrefab)`
-  for `vc_ingvar`: rebuild or reclaim. Never an orphan.
+  for `VCargo_ingvar`: rebuild or reclaim. Never an orphan.
 - **Pilot disconnects mid-flight**: the bird's ZDO is non-persistent and owner-less → vanilla drops it; the merchant's ZDO
   is persistent and gets adopted by whichever client's block holds it; none within 30 s → server reclaims, visit ends.
 - **Pilot disconnects mid-visit**: the merchant is adopted by a nearer client; the visit continues.
@@ -350,20 +350,20 @@ audio; it is not the summon horn.
 
 | Name | Direction | Transport | Payload | Trust |
 |---|---|---|---|---|
-| `vc_rested`, `vc_comfort` | client → server | own character ZDO | int, int | client-reported, like vanilla `baseValue` |
+| `VCargo_rested`, `VCargo_comfort` | client → server | own character ZDO | int, int | client-reported, like vanilla `baseValue` |
 | bird + merchant ZDOs | server → all | ZDO authoring, owner = pilot | prefab, pos, keys | server-authored |
-| `vc_placed` | pilot → server | direct `ZRpc` | visitId, npc ZDOID, drop | pilot trusted to place (co-op carve-out) |
+| `VCargo_placed` | pilot → server | direct `ZRpc` | visitId, npc ZDOID, drop | pilot trusted to place (co-op carve-out) |
 | `VisitState`, `MarketState` | server → all | ServerSync custom values | strings, versioned | server-only writes; ServerSync rejects others |
-| `vc_open` / `vc_close` | client → server | direct `ZRpc` | visitId | subscription only |
-| `vc_deal` / `vc_dealt` | client ↔ server | direct `ZRpc` | Deal / result | validated at server prices; nonce ring |
-| `vc_ack` | client → server | direct `ZRpc` | deliveryId | clears an owed row |
-| `vc_claim` | client → server, at session start | direct `ZRpc` | none | server redelivers owed rows |
-| `vc_dismiss` | client → server | direct `ZRpc` | visitId | any visitor |
-| `vc_say` | server → all in range | routed, object-targeted | line index | cosmetic |
-| `vc_vanish` | server → all in range | routed, object-targeted | none | cosmetic + owner effect |
+| `VCargo_open` / `VCargo_close` | client → server | direct `ZRpc` | visitId | subscription only |
+| `VCargo_deal` / `VCargo_dealt` | client ↔ server | direct `ZRpc` | Deal / result | validated at server prices; nonce ring |
+| `VCargo_ack` | client → server | direct `ZRpc` | deliveryId | clears an owed row |
+| `VCargo_claim` | client → server, at session start | direct `ZRpc` | none | server redelivers owed rows |
+| `VCargo_dismiss` | client → server | direct `ZRpc` | visitId | any visitor |
+| `VCargo_say` | server → all in range | routed, object-targeted | line index | cosmetic |
+| `VCargo_vanish` | server → all in range | routed, object-targeted | none | cosmetic + owner effect |
 | `SetEvent` | server → all | vanilla routed | name, time, pos | vanilla |
-| `vc_admin` | client → server | routed | verb, arg (`visit <name>`, `dismiss`) | the SERVER checks `ZNet.IsAdmin(hostName)`, fail closed; the request is never trusted |
-| `vc_reply` | server → client | routed | answer text | cosmetic (printed in the caller's console) |
+| `VCargo_admin` | client → server | routed | verb, arg (`visit <name>`, `dismiss`) | the SERVER checks `ZNet.IsAdmin(hostName)`, fail closed; the request is never trusted |
+| `VCargo_reply` | server → client | routed | answer text | cosmetic (printed in the caller's console) |
 | config | server → all | ServerSync | entries | locked; admins exempt |
 
 Every payload starts with a format version; RPC names stay stable (a mismatch is a log line naming the side to update).
@@ -375,10 +375,10 @@ Every payload starts with a format version; RPC names stay stable (a mismatch is
 | Target | Kind | Priority | Injected | Why |
 |---|---|---|---|---|
 | `RandEventSystem.Awake` | prefix, `return true` | Low | — | register `valkyries_cargo` (Ragnarok's Wrath precedent) |
-| `Valkyrie.Awake` | prefix, skip for `vc_cargo` only | Low | — (public `GetZDO`) | vanilla would teleport the local player and take `m_instance` |
-| `Humanoid.Awake` | postfix, try/catch | default | — | add `CargoMerchant` on `vc_ingvar` objects, every machine |
-| `Character.InIntro` | postfix, `__result=true` while `vc_carrier` set | default | `___m_nview` | owner physics holds still in the talons |
-| `Character.Damage` | prefix, skip for `vc_ingvar` | Low | `___m_nview` | immortal merchant; catch returns true |
+| `Valkyrie.Awake` | prefix, skip for `VCargo_cargo` only | Low | — (public `GetZDO`) | vanilla would teleport the local player and take `m_instance` |
+| `Humanoid.Awake` | postfix, try/catch | default | — | add `CargoMerchant` on `VCargo_ingvar` objects, every machine |
+| `Character.InIntro` | postfix, `__result=true` while `VCargo_carrier` set | default | `___m_nview` | owner physics holds still in the talons |
+| `Character.Damage` | prefix, skip for `VCargo_ingvar` | Low | `___m_nview` | immortal merchant; catch returns true |
 
 | `GameCamera.UpdateMouseCapture`, `Chat.HasFocus` | shared-source patches inside `UIFocus.cs` (VikingOS) | theirs | — | cursor and input focus while the terminal is open |
 
@@ -500,12 +500,12 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Where market state lives | ServerSync custom values + sidecar save; never on the merchant ZDO | locked by the engine |
 | **Trade UI** | **A terminal of our own**, opened from our `Interactable`; `StoreGui` untouched | **locked (owner, 2026-09-06); built (P7)** |
 | Terminal toolkit | IMGUI on VikingOS's `GiltFrameTheme` + `UIFocus`, vendored shared source (MIT); no runtime dependency on VikingOS | locked (owner: "we have VikingOS to use") |
-| Delivery semantics | At-least-once `vc_dealt` with a client inbox of applied delivery ids; server owed ledger by platform id, claimed at login (VikingOS's escrow rule, ported) | built (P6) |
+| Delivery semantics | At-least-once `VCargo_dealt` with a client inbox of applied delivery ids; server owed ledger by platform id, claimed at login (VikingOS's escrow rule, ported) | built (P6) |
 | Price-change policy | Reconfirm; Teardown behind `PriceChangePolicy` | provisional (owner unsure) |
 | Deals | Direct `ZRpc`, server-validated, nonce ring, `expected` prices, `MarketState` after | locked |
 | Departure | The Odin vanish, `Odin.m_despawn` by the effect rule; horn as extra audio only | locked by the brief |
 | Effects | Owner-only if the prefab is networked, everyone if not; decided at boot | locked |
-| Speech | State + seed for scripted lines; server `vc_say(index)` for reactions | proposed |
+| Speech | State + seed for scripted lines; server `VCargo_say(index)` for reactions | proposed |
 | 0.1 body | `Dverger`, tamed, following, immortal; custom body later behind the contract | locked for 0.1 |
 | Runtime material edits | Not in 0.1 (no custom body). When the body comes: bake the finished material into the bundle; no runtime `SetTexture` on a creature material | proposed |
 | **Body animation** | **Ingvar has his OWN Animator**: the bundle's controller and clips (Walk, Idle, Talk, Hello, Shrug, Nod), driven by `CargoMerchant` from the agent's velocity and the visit phase. No mapping onto the Dverger or any vanilla rig; vanilla's animator parameters (section 11.4) are not his contract | **locked (owner, 2026-09-06: "give Ingvar his own animator")**; **built (P8 loader): PlayableGraph over the six clips, no controller in the bundle** |
@@ -519,7 +519,7 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Forced visits | `cargo visit` ignores cooldowns, keeps every other gate | proposed (review 2026-09-06) |
 | Build | net472, `libs\` via fetch-libs, `ILRepack.targets`, `AllowUnsafeBlocks` false; Unity project as a sibling directory; Editor 6000.0.61f1 for bundles | proposed |
 | Where bundles get built | Wu'barrk bakes it: he is the Unity side and holds 6000.0.61f1. The bake is reproducible from the repo's source art on any machine with that Editor (`tools/setup-ingvar-unity.ps1`, then the Editor menu or the `unity` CLI, then `-Embed`), so nothing depends on one box | locked (owner, 2026-09-06: "wubarrk is also the unity guy") |
-| Console prefix | `cargo` — `status`, `version`, `prefab <name>`; admin: `visit [player]`, `dismiss` (built, P3), `stock`, `reset` (planned). From a client the admin verbs ride `vc_admin`; a dedicated console names the player | built (P3) |
+| Console prefix | `cargo` — `status`, `version`, `prefab <name>`; admin: `visit [player]`, `dismiss` (built, P3), `stock`, `reset` (planned). From a client the admin verbs ride `VCargo_admin`; a dedicated console names the player | built (P3) |
 | Dependencies | BepInExPack only | locked |
 
 ---
@@ -531,7 +531,7 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
    prefabs. Proof: logs and dumps in CLAUDE.md.
 2. **Pure core.** `Market`, `Scheduler`, `Deal`, `VisitClock`, the encoders, the persistence rows: tests green and
    mutation-proven. Needs none of the open decisions. Proof: `tools\run-tests.ps1`.
-3. **Eligibility and event.** `vc_rested`/`vc_comfort` in `cargo status`; `cargo visit` starts the event with banner and
+3. **Eligibility and event.** `VCargo_rested`/`VCargo_comfort` in `cargo status`; `cargo visit` starts the event with banner and
    300 s clock, and it ends itself. Proof: server log, one screen.
 4. **Authored flight.** Server creates the bird ZDO; the pilot flies it; a second client 60 m away sees it; no player moved.
    Proof: two screens, `m_instance` untouched (log).
@@ -591,7 +591,7 @@ Source of truth: the **resized** GLB from the v5 zip (1.37 m tall). Measured: on
    position: no `m_syncFloats` entry, no trigger, no extra ZDO key, and nothing that can desync. The blend maths
    is `Core/BodyMotion.cs` (pure, 78 off-game checks): idle below 0.05 m/s, walk above 0.06, 0.15 s crossfade;
    one-shots blend in over 0.06 s, own the body, and hand back at 85% of the clip's own length. `Greet()`,
-   `Talk()`, `Shrug()` and `Nod()` are the public API P5 calls on every machine from the ZDO state and `vc_say`.
+   `Talk()`, `Shrug()` and `Nod()` are the public API P5 calls on every machine from the ZDO state and `VCargo_say`.
    Vanilla's parameter set (`forward_speed`, `onGround`, the triggers `Character` and `MonsterAI` write) is NOT
    his contract; nothing maps him onto the Dverger skeleton.
    The `Armature` node carries scale 0.01 (cm to m): correct at 1.370 m, never "fixed".
@@ -631,7 +631,7 @@ Source of truth: the **resized** GLB from the v5 zip (1.37 m tall). Measured: on
 - **Valkyrie prefab registration** with `ZNetScene`: existence proof is the intro on dedicated servers; check first; the
   v1 fallback stays documented.
 - **ZDO authoring**: `CreateNewZDO` + `SetPrefab` + `SetOwner(peer)` is what vanilla does for portals and spawners; verify the
-  pilot instantiates the authored bird and `Valkyrie.Awake` sees `vc_cargo` on first run.
+  pilot instantiates the authored bird and `Valkyrie.Awake` sees `VCargo_cargo` on first run.
 - **`InIntro` postfix scope**: `Player` overrides it, `Humanoid` does not (decompile); players unaffected.
 - **Dverger specifics**: `Visual` child, `NpcTalk`, crossbow in `m_defaultItems`, `MakeTame` across ownership handoff;
   each a `cargo prefab` line or a ten-second test. Fallback body `Skeleton`.

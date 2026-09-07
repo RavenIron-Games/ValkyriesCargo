@@ -9,10 +9,10 @@ using UnityEngine;
 namespace RavenIron.ValkyriesCargo.Client
 {
     /// <summary>
-    /// Ingvar (design 3.3), added by `Patch_Humanoid_Awake` to any body whose ZDO carries `vc_ingvar`.
+    /// Ingvar (design 3.3), added by `Patch_Humanoid_Awake` to any body whose ZDO carries `VCargo_ingvar`.
     /// It runs on EVERY machine: the carry pin and the speech have to look the same on every screen,
     /// and ownership can pass to a nearer client mid-visit. Only the owner decides anything; the state
-    /// lives in `vc_state` so the new owner picks the visit up from the number.
+    /// lives in `VCargo_state` so the new owner picks the visit up from the number.
     ///
     /// The decisions are all in `Core/MerchantPlan`, pure and proven off-game. This file measures the
     /// world, applies what the plan says, and writes the ZDO. That split is the same one P4 used for
@@ -36,7 +36,7 @@ namespace RavenIron.ValkyriesCargo.Client
     ///
     /// And one from the master index, which is the reason `Pinned` asks whether the carrier RESOLVED
     /// rather than whether the key is set: **a `ZDOID` is a session handle, not an identity.**
-    /// `ZDO.Load` renumbers every id on every world read, so `vc_carrier` on this PERSISTENT ZDO is
+    /// `ZDO.Load` renumbers every id on every world read, so `VCargo_carrier` on this PERSISTENT ZDO is
     /// meaningless after a restart and must never be trusted to still mean the bird.
     /// </summary>
     public sealed class CargoMerchant : MonoBehaviour, Hoverable, Interactable
@@ -104,8 +104,8 @@ namespace RavenIron.ValkyriesCargo.Client
 
                 if (_nview.IsValid())
                 {
-                    _nview.Register<int>("vc_say", RPC_Say);
-                    _nview.Register("vc_vanish", RPC_Vanish);
+                    _nview.Register<int>("VCargo_say", RPC_Say);
+                    _nview.Register("VCargo_vanish", RPC_Vanish);
                 }
 
                 Reassert();

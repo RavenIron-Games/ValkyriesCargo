@@ -32,7 +32,7 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string RefuseUnknown = "That I do not deal in.";
 
         /// <summary>
-        /// The table `vc_say` indexes (design 3.6: an index crosses the wire, never text, so a line
+        /// The table `VCargo_say` indexes (design 3.6: an index crosses the wire, never text, so a line
         /// can be reworded in a patch without a protocol change and a hostile client cannot make
         /// Ingvar say anything he does not already know). Append only - an index that moves changes
         /// what an old client hears.
