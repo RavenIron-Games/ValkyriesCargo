@@ -3,10 +3,11 @@
 **Track B deliverable, 2026-09-06.** The rigged, animated merchant and everything needed to
 turn it into a shipping AssetBundle embedded in `ValkyriesCargo.dll`.
 
-Nothing here is wired into the mod yet. It cannot be: there is no merchant to attach a body
-to. `Client/CargoMerchant.cs`, `Client/BodyLoader.cs` and `Server/Spawner.cs` do not exist,
-and the merchant is **P5**, three packages down Track A's chain. This folder is the body
-waiting for its owner.
+**Wired in now.** `Client/BodyLoader.cs` opens the bundle and hangs Ingvar on the merchant;
+`Client/IngvarBody.cs` drives the six clips; `Client/CargoMerchant.cs` (P5) calls
+`BodyLoader.Attach` from `Patch_Humanoid_Awake`, on every machine. This folder stays the source
+of the asset itself — the FBX, the bake recipe, the import settings; section 7 records what
+wiring it onto the merchant actually does now, not a plan for doing it.
 
 ---
 
@@ -74,14 +75,17 @@ What actually guarantees every player sees the same Ingvar is the thing already 
   means a client on any other build is refused at handshake. So "everyone has the same DLL"
   is enforced, and therefore "everyone has the same bundle" is enforced.
 
-ServerSync's *only* job around the body is the one config entry that already exists:
+ServerSync's *only* job around the body is the two config entries that already exist:
 
 ```csharp
 BodyPrefab = S(cfg, "Server", "BodyPrefab", "Dverger", ...)   // synced + locked
+CustomBody = S(cfg, "Server", "CustomBody", true, ...)        // synced + locked
 ```
 
-Set it to `Ingvar` to use the custom body, leave it `Dverger` to fall back. Because it is a
-`Server.*` entry it is synced and locked, so the server decides which body every client
+`BodyPrefab` is NOT the custom-body switch: it stays the engine prefab the merchant is cloned
+from (Character, MonsterAI, the collider), whatever body is drawn on top. The switch is the
+separate `Server.CustomBody` (synced + locked, default true), added in P8. Because both are
+`Server.*` entries they are synced and locked, so the server decides which body every client
 builds, and an admin can flip it without a rebuild. That is the whole integration.
 
 ---
@@ -99,13 +103,14 @@ CS0246). If you do put it inside, the guard is:
 ```
 
 - Editor **6000.0.61f1** exactly — same as AwayFromHome, Let It Grow and IronCohort22.
-- One package beyond the 3D template: `"com.unity.cloud.gltfast": "6.19.0"` in
-  `Packages/manifest.json`.
-- Give this mod its **own** project. Avalor's builder sweeps every `.glb` under `Assets/`
-  into one bundle; sharing a project means the next rebuild folds Ingvar into someone else's
-  shipping bundle.
+- **No gltfast.** `tools/setup-ingvar-unity.sh` writes a `Packages/manifest.json` with none —
+  left out on purpose: the FBX path this project actually uses does not need it, and its
+  transitive `com.unity.collections` is exactly what landmine 2 below is a workaround for.
+- Give this mod its **own** project. Sharing one risks the next rebuild folding Ingvar into
+  someone else's shipping bundle.
 
-Drop `ingvar.glb` at `Assets/ingvar.glb`.
+Drop `ingvar.fbx` and `ingvar_albedo.png` at `Assets/` (`tools/setup-ingvar-unity.sh` does this
+for you). Not `ingvar.glb` — section 1's `Use the FBX, not the GLB` is why.
 
 ---
 
@@ -123,8 +128,8 @@ For Ingvar, ship a **prefab**, not a mesh:
 | Animation Type | **Generic** | Every clip is on the same skeleton that rigged the mesh, so bone paths already match. Humanoid adds a retarget step that can silently mangle a pose and buys nothing when nothing retargets across characters. (IronCohort22's `RiggedCharacterPipeline.cs` reached the same conclusion the hard way.) |
 | Avatar Definition | Create From This Model | |
 | Import Animation | ✅ | six clips live in the same file |
-| Global Scale | **1** | glTF is already real-world metres. A second scale factor is the classic route to a 100× character. |
-| Read/Write | ✅ enabled | glTFast defaults it **off**, and a disabled mesh returns empty `vertices` at runtime. Only needed if anything reads mesh data CPU-side — enable it and stop guessing. |
+| Global Scale | **1** | The FBX is already real-world metres. A second scale factor is the classic route to a 100× character. |
+| Read/Write | ✅ enabled | The importer defaults it **off**, and a disabled mesh returns empty `vertices` at runtime. Only needed if anything reads mesh data CPU-side — enable it and stop guessing. |
 | Loop Time | ✅ on `Walk`, `Idle`, `Talk` | not on `Hello`, `Shrug`, `Nod` — those are one-shots |
 | Material Import | Import Standard | one material, one texture |
 | Texture max size | 2048, DXT1, **not** crunched | crunch is a second lossy pass stacked on DXT1, traded for download size — and this texture doesn't travel on its own, it's read from the DLL. The trade buys nothing and costs detail. |
@@ -152,8 +157,9 @@ public static void BuildKit()
         return;
     }
 
-    // tag the imported prefab (NOT a combined mesh) into the bundle
-    AssetImporter.GetAtPath("Assets/ingvar.glb").SetAssetBundleNameAndVariant(BundleName, "");
+    // tag the imported prefab (NOT a combined mesh) AND the texture into the bundle
+    AssetImporter.GetAtPath("Assets/ingvar.fbx").SetAssetBundleNameAndVariant(BundleName, "");
+    AssetImporter.GetAtPath("Assets/ingvar_albedo.png").SetAssetBundleNameAndVariant(BundleName, "");
 
     // LANDMINE 2 — BuildAssetBundles compiles Player scripts for the target first, and
     // com.unity.collections@2.6.6 (pulled in transitively by gltfast) fails there with
@@ -192,11 +198,17 @@ looks like crap" and chased through the material every time.
 
 ## 6. Embedding it in the DLL
 
-Exactly the AwayFromHome pattern. Copy the built bundle into the repo, then:
+Exactly the AwayFromHome pattern. Copy the built bundle to `Assets\valkyriescargo_kit` at the
+repo root (gitignored — a build input, not source), then:
 
 ```xml
-<EmbeddedResource Include="Assets\valkyriescargo_kit" LogicalName="ValkyriesCargo.valkyriescargo_kit" />
+<EmbeddedResource Include="..\Assets\valkyriescargo_kit"
+                  LogicalName="ValkyriesCargo.valkyriescargo_kit"
+                  Condition="Exists('..\Assets\valkyriescargo_kit')" />
 ```
+
+Conditional, because the bundle never reaches git: a fresh clone with no bake still builds, and
+`cargo body` then answers `source none` with the Dverger stand-in kept.
 
 Add the reference the loader needs:
 
@@ -217,50 +229,57 @@ Runtime load — no Jotunn, resolve the resource by suffix so a rename can't sil
 Assembly asm = Assembly.GetExecutingAssembly();
 string res = asm.GetManifestResourceNames()
                 .FirstOrDefault(n => n.EndsWith(BundleName, StringComparison.Ordinal));
-using (Stream s = asm.GetManifestResourceStream(res))
-    _bundle = AssetBundle.LoadFromStream(s);
+_stream = asm.GetManifestResourceStream(res);          // kept open — see below, not `using`
+_bundle = AssetBundle.LoadFromStream(_stream);
 
-_body = _bundle.LoadAsset<GameObject>("ingvar");   // the prefab, with its SkinnedMeshRenderer
+_prefab = _bundle.LoadAsset<GameObject>("ingvar");     // the prefab, with its SkinnedMeshRenderer
 ```
+
+⚠️ **Do not wrap the stream in a `using`.** An earlier draft of this section did —
+`using (Stream s = ...) { _bundle = AssetBundle.LoadFromStream(s); }` — and that is wrong:
+`LoadFromStream` reads the bundle lazily, as assets are requested, so the stream has to outlive
+it. A `using` closes the stream the moment `LoadFromStream` returns, and the first `LoadAsset`
+after that throws `ObjectDisposedException`. `BodyLoader` keeps it in a static field for the
+life of the process instead — the same lifetime as the bundle itself — and nothing leaks: the
+bytes are the DLL's own resource, never a file handle.
 
 Load **once**, cache it, and never call `AssetBundle.Unload(true)` while an instance is alive.
 
 ---
 
-## 7. Wiring it onto the merchant (P5, when it exists)
+## 7. Wiring it onto the merchant (P5, built 2026-09-07)
 
 The documented pattern in this workspace is **clone the vanilla creature, swap only what is
 visual** — `DvergrAllies` clones a Dverger precisely to inherit its `Animator`,
-`ZSyncAnimation` and `Character`, then drives it with vanilla calls.
+`ZSyncAnimation` and `Character`, then drives it with vanilla calls. `CargoMerchant` clones the
+same way and for the same reason (`Server.BodyPrefab`, still `Dverger`, is where `Character`,
+`Humanoid`, `MonsterAI` and the `CapsuleCollider` all come from) — but Ingvar's body is not a
+swap of what that clone draws.
 
-For Ingvar there is a choice, and it is not yet made:
-
-- **Own rig, we drive it.** Keep the 24-bone skeleton and its six clips, give the prefab a
-  plain `Animator` with a small controller, and drive it from `CargoMerchant` off the agent's
-  velocity. We own the merchant, so we do not need `ZSyncAnimation`. **Recommended** — it
-  avoids bone-mapping onto Valheim's skeleton, which nobody in this workspace has ever done.
-- **Marry it to the vanilla Dverger rig.** Free vanilla locomotion and netcode, but requires
-  our mesh skinned to Valheim's exact bone names. Genuinely new ground, no worked example.
-
-A minimal controller for the first option — parameters `Speed` (float) and `Greet`/`Nod`
-(triggers):
-
-```
-Idle  --(Speed > 0.06)-->  Walk        hasExitTime=false, duration 0.15
-Walk  --(Speed < 0.05)-->  Idle
-AnyState --(Greet)-->      Hello       duration 0.06, canTransitionToSelf=false
-AnyState --(Nod)-->        Nod
-Hello/Nod --> Idle                     hasExitTime, exitTime 0.85
-```
+**The choice was own rig, we drive it — built as an additive child, not a hand-built
+`Animator` controller.** `BodyLoader.Attach` hangs the 24-bone rig under the clone's root as a
+child named `IngvarBody`, appended last so every vanilla `GetComponentInChildren<Animator>()`
+still finds the clone's own `Animator` first, and disables the clone's `Renderer`s and
+`LODGroup` rather than destroying anything or deactivating the GameObject they sit on —
+`Character.m_animator`, `VisEquipment` and `ZSyncAnimation` all keep reading it undisturbed.
+**There is no `AnimatorController` anywhere.** `Client/IngvarBody.cs` plays the six clips
+through a `PlayableGraph` instead — one `AnimationMixerPlayable`, one `AnimationClipPlayable`
+per clip found BY NAME — blended by `Core/BodyMotion.cs` off this transform's own frame-to-frame
+displacement (idle below 0.05 m/s, walk above 0.06, a 0.15 s crossfade, a one-shot handed back
+at 85% of its own length): every machine derives the same walk from the same replicated
+position, so the animation needs no `ZSyncAnimation` field of its own.
 
 `animator.applyRootMotion = false` — the server owns position, and a clip that walks the
 transform forward fights the netcode. `cullingMode = CullUpdateTransforms`.
 
-**Ground offset:** never hardcode the lift. Ingvar's origin is already at his feet
-(`bounds.min.y == 0`), so he should need none — but derive it anyway and log it, because
-`SkinnedMeshRenderer.bounds` is the authored bind-pose box and was wrong by 0.27–0.64 m on
-IronCohort's Meshy rigs. Measure `sharedMesh.bounds` from the renderer, union it, and warn if
-the result is not what you expect.
+**Ground offset:** never hardcode the lift, and never derive it from `sharedMesh.bounds` — tried
+on this asset, and wrong. That box is bind-pose data in the mesh's own space that FBX axis
+conversion never touches, so here it puts his 1.36 m of height on **Z** and implies a lift that
+is really half his width; neither `ModelImporter.bakeAxisConversion` nor a Blender re-export
+with `axis_up='Y'` fixes it. `BodyLoader` measures the POSED mesh instead
+(`SkinnedMeshRenderer.BakeMesh`, the lowest corner transformed into the parent's space) — right
+whatever the source axes are, and it comes out near 0, because Ingvar's origin really is
+authored at his feet.
 
 ---
 
@@ -270,11 +289,17 @@ the result is not what you expect.
 single-sided material, 2048 texture. All read back out of the exported file and rendered
 (`preview/`).
 
-**Proven in sibling mods:** the bundle recipe, both landmines, the embedded-resource load,
-and the donor-material traps — from AwayFromHome, Let It Grow and Mists of Avalor.
+**Proven in sibling mods, and hit again here:** the bundle recipe, both landmines, the
+embedded-resource load and the donor-material traps — first found in AwayFromHome, Let It Grow
+and Mists of Avalor, then found again on this asset and fixed
+(`docs/knowledge-base/SKINNED-CHARACTER-BUNDLE-FACTS.md` records all five, including the one —
+the bind-pose box lying about the up axis — that no bake can fix, only the loader).
 
-**Not proven anywhere:** a custom *skinned* character in Valheim. Every art integration this
-studio has shipped is a static mesh swap on a building piece. Section 7's first option is the
-low-risk route, but it has not been run in a live world by anyone here. Budget for surprises
-at the animator and at ownership handoff, and put `cargo prefab Dverger` output beside this
-before wiring, so the vanilla comparison is on the desk.
+**Seen on a screen, 2026-09-07:** `cargo body preview` stands him upright, textured, feet on the
+ground, at a client — a custom *skinned* character in Valheim, where every other art integration
+this studio has shipped is a static mesh swap on a building piece. On an actual merchant, the
+integrated run logged `body=Ingvar`, not the stand-in (`CLAUDE.md`'s INTEGRATED IN-GAME RUN).
+**Not yet seen:** how he reads in daylight (that run was at midnight), and the walk and one-shot
+clips actually playing on a merchant rather than a preview — `CLAUDE.md` keeps its own checklist
+item 20 open on exactly those two. Put `cargo prefab Dverger` output beside a run before
+trusting the comparison.
