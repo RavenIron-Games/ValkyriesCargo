@@ -14,6 +14,13 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 Don is asleep; his Claude carries the night with the owner's merge authority (review, then merge what is
 clean, ours and yours). Sections 1–11 below are older and survive where they do not disagree with this.
 
+**Amended later the same night, at the owner's word ("shut the agents down and take the data"):** the four agents
+were stopped. P10a had FINISHED: branch `a/p10a-sweep` is pushed and PR-ready. P10b and P11 were stopped mid-work and
+pushed as they stood: `a/p10b-probes` (6 commits, builds clean, 1193 checks) and `a/p11-shakedown` (6 code commits
+plus a WIP commit of two partial documents, builds clean, 1078 checks); neither is reviewed. The P5 review was stopped
+before it produced anything, so **PR #15 is open, unreviewed by our side, unmerged.** Nothing was merged after the
+stop, and no PR was opened. The paragraphs below describe the state as it was before the stop.
+
 **Merged to `main` since the last handover, all by PR, in this order:**
 
 | PR | What | Proof |
