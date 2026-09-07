@@ -33,7 +33,7 @@ namespace RavenIron.ValkyriesCargo.Core
         /// `ApproachBudget`'s divisor: the metres-per-second he is assumed able to close. Below BOTH the
         /// shipped Dverger's `Humanoid.m_walkSpeed` (2) and `m_runSpeed` (7) — WubarrksEye's live prefab
         /// dump, 2026-09-03, build21981559 (`Humanoid.m_walkSpeed=2, m_runSpeed=7`) — on purpose:
-        /// `BaseAI.Follow` only asks for `m_runSpeed` past 10 m (`asm:4227-4239`,
+        /// `BaseAI.Follow` only asks for `m_runSpeed` past 10 m (`asm:4230-4242`,
         /// `run = distance > 10f`), so a real walk-up spends most of a long distance running and only
         /// the last stretch on foot, and even a walk-only worst case (a base cluttered enough that he
         /// never gets a clear 10 m run) needs less per second than this. The slack left over covers

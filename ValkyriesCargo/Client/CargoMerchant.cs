@@ -243,9 +243,11 @@ namespace RavenIron.ValkyriesCargo.Client
         /// <summary>
         /// F10: `m_faction`, `MonsterAI.m_alertRange`, `BaseAI.m_aggravatable` / `m_passiveAggresive`
         /// and `m_randomMoveRange` are plain fields with NO replication path at all - no RPC, no ZDO key,
-        /// ever touches them (`asm:6887` `Character.m_faction`, `asm:5640` `MonsterAI.m_alertRange`,
-        /// `asm:3917`/`3919` `BaseAI.m_aggravatable`/`m_passiveAggresive`, `asm:3881`
-        /// `BaseAI.m_randomMoveRange`). A machine that only ever WATCHES Ingvar keeps its own copy at
+        /// ever touches them (`asm:6891` `Character.m_faction`, `asm:5644` `MonsterAI.m_alertRange`,
+        /// `asm:3919`/`3921` `BaseAI.m_aggravatable`/`m_passiveAggresive`, `asm:3883`
+        /// `BaseAI.m_randomMoveRange`; line numbers re-verified against this machine's own copy of the
+        /// decompile with `grep -n`, not copied from the audit's citations, which sit a few lines off
+        /// against this copy). A machine that only ever WATCHES Ingvar keeps its own copy at
         /// whatever a vanilla Dverger initialises it to unless IT sets them too, and ownership can hand
         /// over mid-visit (the boot sweep and the release/claim path the audit's "Ownership through the
         /// visit" section confirms), so the NEW owner needs these already right, not five seconds of
