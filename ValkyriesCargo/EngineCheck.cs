@@ -345,7 +345,10 @@ namespace RavenIron.ValkyriesCargo
             NeedMethod(c, "RPC_Damage", new[] { typeof(long), typeof(HitData) }, bad);
             NeedMethod(typeof(MonsterAI), "MakeTame", Type.EmptyTypes, bad);
             NeedMethod(typeof(BaseAI), "IsEnemy", new[] { typeof(Character) }, bad);
-            return 6;
+            // The STATIC overload is what `Patch_BaseAI_IsEnemy` patches (ghost mode, F11): every targeting
+            // path, hit filter and the enemy HUD go through it. Decompiled line 4994.
+            NeedMethod(typeof(BaseAI), "IsEnemy", new[] { typeof(Character), typeof(Character) }, bad);
+            return 7;
         }
 
         private static void ProbeMerchantAwake()
