@@ -1,11 +1,81 @@
-# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06
+# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06 (updated the same night: Wu'barrk takes over)
 
 You are the second engineering session on this mod. Don's session (me) built what is here; you and
 Wu'barrk take part of what is left. This file tells you everything you need to act, in the order to
 read it, and ends with the one job to do first: **divide the work packages with your owner, write the
 split down, and say so on PR #1.**
 
-Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron-Games). Everything below is on `main`; PR #1 (the contract) is merged.
+Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron-Games). Everything below is on `main`.
+
+---
+
+## 0. State at handover, the night of 2026-09-06 — READ THIS FIRST
+
+Don is stepping back; Wu'barrk and you watch GitHub and carry on. Sections 1–11 were written the morning
+of the same day; where they disagree with this section, this section wins.
+
+**Merged to `main`, all by PR, in this order:**
+
+| PR | What | Proof |
+|---|---|---|
+| #1 | Track A1, the contract: `Wire`, `MarketSnapshot`, `VisitSnapshot`, `Deal`/`DealResult`/`DealInbox`, `DemoMarket`, `CargoRpc` + demo transport, `ICargoTerminal` | 231 checks |
+| #2 | Track B (yours): SharedUI + ServerSync vendored, the gitignore that hid `Libs/` fixed, plugin to net48, harness to net8.0 | builds both sides |
+| #3 | P2 market core: `Market` (curve, purse, drift, settlement, sidecar rows), `Scheduler`, `VisitClock`; `DemoMarket` over the real Market | 714 checks, 28 mutations |
+| #5 | P3: comfort report, the vanilla event `valkyries_cargo`, `VisitDirector` on the pure Scheduler, `cargo visit`/`dismiss` admin-gated by vanilla's list | headless: 13 patches, event registered, day 1800 s from EnvMan, rolls |
+| #6 | P6: deal wire on each peer's own ZRpc, owed ledger, world sidecar `valkyriescargo_{uid}.dat`, restart-mid-visit resume, `cargo stock`/`deal`/`claim`/`reset`/`save` | headless: file written on first boot, 76 rows loaded on restart; 852 checks |
+
+**Open: PR #4, `b/ingvar-body` (yours).** It adds `models/ingvar.glb` and three PNGs and edits `.gitignore` to
+allow them. WORKSPLIT §4 says no binaries in the repo, and #2 had just ignored `models/`. Don has NOT
+decided; do not merge it as it stands without him. Two ways out: keep the GLB and previews outside the
+repo (the Unity project folder, a release asset, or Wu'barrk's drive) and merge the README, the clip
+list and the two scripts; or the two owners change the rule in WORKSPLIT §4 first.
+
+**What is proven, and only headless** (a dedicated server with this DLL alone): boot line with 13
+patches; `event 'valkyries_cargo' registered`; `director up ... day 1800 s (EnvMan.m_dayLengthSec)`;
+`roll: held: a random event is active` against a foreign event and `roll: no eligible player: nobody
+online` on an empty server; the sidecar written beside the world on first boot and read back on restart.
+**Nothing has been seen from a client yet.** CLAUDE.md "What to verify in-game" items 2–16 are the list:
+client boot, version wall, config lock, prefab dumps, the comfort report in `cargo status`, `cargo visit`
+with the banner and the pilot's line, the clock pausing, the timer ending a visit, dismiss, a non-admin
+refused, a deal through `cargo deal buy Iron 2` with the price moving on every machine, a redelivery after
+a disconnect, the sidecar after deals, a resumed visit after a restart, the refusals. **Whoever boots a
+client first does those and pastes the exact lines into CLAUDE.md "Status."** Fast-test config:
+`EventCheckIntervalMinutes = 1`, `DaytimeOnly = false`; the server's adminlist decides `cargo visit`.
+
+**What is left** (WORKSPLIT §0; the formal split was never written, §1 is still the proposal):
+- **P7 the terminal (yours):** the theme and the focus helper are vendored; `CargoRpc` is real now: on a
+  world join the transport installs itself, `cargo terminal demo` still works through `UseDemo(true)`.
+  `cargo deal buy|sell` is a working reference of the whole path without a terminal. What the terminal
+  must know is in WORKSPLIT §2 (the rules block and "what the market-core review says"); the short form:
+  send `row.Buy` as `UnitPriceSeen` for a wanted line and `row.Sell` for an offered one; `CoinsOffered`
+  is the coins on the table (count × unit for a buy); snapshots are values, re-read `CargoRpc.Market` after
+  every `MarketChanged`; SOLD is `Stock == 0`; only `price_changed` carries `NewMarketState`; write the
+  inventory only inside `onAnswer` when `Ok`, through `Client/DealApplier` (`CanApply` first, it is the
+  one inventory writer); `CargoRpc.EndSession` drops your subscribers at logout, re-subscribe per session;
+  `CargoRpc.Open/Close(visitId)` tell the server a terminal is open; `Lines.cs` holds the words.
+- **P8 the body (yours):** PR #4, once the binaries question is settled; DESIGN §11 is the contract.
+- **P4 the authored flight and P5 the merchant:** Track A's, but Don is away. Whoever gets to them
+  first, by PR; DESIGN 3.2 and 3.3 hold the decided mechanics (server authors both ZDOs with owner = pilot;
+  the bird starts inside the pilot's active block, ~90 m out; `Valkyrie.Awake` prefix skips vanilla for
+  our object only; carry by pin, `InIntro` postfix; immortal; Shift+E twice; the Odin vanish). One client
+  plus the server proves most of it; a second client 60 m away proves the shared visuals.
+- **P9 release:** Don, the store account.
+
+**Decisions recorded as PROPOSED in DESIGN §8 that the two owners should confirm** (nothing in code
+blocks on them): flat pricing per deal (the whole quantity at the price on screen); visit and delivery
+ids `salt-visit-seq`; cooldowns persisted as remaining seconds; forced visits ignore cooldowns;
+reconfirm versus teardown on a price tick; where bundles get built.
+
+**Engine facts learned tonight that change how you build** (bodies read, CLAUDE.md "Engine facts"):
+vanilla SAVES the running random event with the world and restores it on load, so a restart mid-visit
+resumes; the game day is 1800 s from the live `EnvMan` (the compiled default is 1200); a `RandomEvent`
+needs an EMPTY camera-shake curve or a dedicated server dereferences a null `GameCamera`; vanilla's
+inventory counts and removes by the item's shared "$item_..." name, never the prefab name.
+
+**Process, unchanged:** branches `b/<topic>`, PRs into `main`, `dotnet run --project
+tests/CoreTests/CoreTests.csproj` green before every PR (852 now), `main` always building and booting
+headless, verified facts into CLAUDE.md Status with the exact log line, no binaries, "not ours" files
+replaced from upstream never edited, contract files change only by a PR the other side commented on.
 
 ---
 
@@ -62,11 +132,12 @@ or DESIGN §0). Do not reason from a member's name.
 | ServerSync compiled in (`Libs/ServerSync.cs`, MIT-0) | armed: `ModRequired`, minimum version = current |
 | Config surface (`Server.*` synced+locked, `Client.*` local) | bound; parsed catalogue re-parses on change |
 | `cargo status | version | prefab <name>` console | built |
-| Catalogue parser, 72 defaults checked against the item table | 27 tests |
-| **Contract** (PR #1): `Wire`, `MarketSnapshot`, `VisitSnapshot`, `Deal`/`DealResult`/`DealInbox`, `DemoMarket`, `CargoRpc` + demo transport, `ICargoTerminal` | built; **231 tests**; reviewed, no blockers |
-| Headless boot on the CairnTest dedicated server | **seen** 2026-09-06 15:23: loaded line, ServerSync RPC registered, `role: dedicated server` |
-| Client boot, version wall, config lock, prefab dumps | not yet seen (needs a screen) |
-| Scheduler, event, flight, merchant, terminal, market pricing, persistence, deal wire | **not built** |
+| Catalogue parser, 72 defaults checked against the item table | tests |
+| **Contract** (PR #1) | built; reviewed, no blockers |
+| **Market core** (PR #3), **eligibility + event** (PR #5), **deal wire + persistence** (PR #6) | built; **852 checks**; see §0 for the proofs |
+| Headless boot on a dedicated server | **seen** (see §0) |
+| Client boot, version wall, config lock, prefab dumps, and every client-side proof | not yet seen (needs a screen; CLAUDE.md items 2–16) |
+| Flight (P4), merchant (P5), terminal (P7), body (P8), release (P9) | **not built** |
 
 ## 5. What Wu'barrk's side uniquely has
 
@@ -107,7 +178,7 @@ or DESIGN §0). Do not reason from a member's name.
   open, on death, and when `Visit.Phase` becomes `Leaving`. Release the cursor request on close and on
   logout (`UIFocus`; the cursor-leak lesson in Wu'barrk's BarrkUI §6).
 
-## 8. Your first job: divide the packages
+## 8. Your first job: divide the packages (superseded by §0: the split was never written; take P7 and P8, and P4/P5 if you get there first)
 
 `docs/WORKSPLIT.md` §0 is the neutral list (P1 done; P2 market core; P3 comfort+event; P4 flight;
 P5 merchant; P6 deal wire+persistence; P7 terminal; P8 body; P9 release). Constraints that are real:
@@ -141,16 +212,19 @@ once agreed); a need there is a PR comment or an issue. Contract files (`Core/Wi
 
 1. Tear-down versus reconfirm on a price tick (reconfirm is in, provisional; `PriceChangePolicy` config).
 2. Where bundles get built (Wu'barrk's box has the right Editor).
-3. Whether the rigged body arrives with clips or we plan on Mixamo.
-4. Vendored copies of SharedUI with headers, or a submodule.
+3. Whether the rigged body arrives with clips or we plan on Mixamo (PR #4 says rigged and animated).
+4. ~~Vendored copies of SharedUI with headers, or a submodule~~ vendored, PR #2.
+5. **Binaries in the repo** (PR #4 versus WORKSPLIT §4).
+6. The five PROPOSED rows in DESIGN §8 (see §0).
 
 ## 11. Commands
 
 ```
 tools\fetch-libs.ps1                                   # Windows: libs\ from the Steam install
 dotnet build ValkyriesCargo\ValkyriesCargo.csproj
-dotnet run --project tests\CoreTests\CoreTests.csproj --nologo    # 231 tests, no game
+dotnet run --project tests\CoreTests\CoreTests.csproj --nologo    # 852 checks, no game (net8.0)
 tools\package.ps1                                      # store zip in dist\
 ```
 On Linux, `libs/` is a symlink to `libs-Tools` with the names listed in `HANDOFF-WUBARRK.md` §2.
-In game: `cargo status`, `cargo version`, `cargo prefab Valkyrie|Dverger|odin|Haldor`.
+In game: `cargo status | version | prefab <name> | stock [prefab] | deal buy|sell <prefab> [count] | claim`;
+admin: `cargo visit [player] | dismiss | reset | save`.
