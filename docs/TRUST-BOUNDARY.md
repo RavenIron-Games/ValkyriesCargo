@@ -37,11 +37,11 @@ and no key bound directly on `cfg` except the locking one:
 
 | Path | Keys | What it does |
 |---|---|---|
-| `S(cfg, "Server", …)` (`ModConfig.cs:252`) | the other **28** `Server.*` keys | `cfg.Bind` then `Sync.AddConfigEntry(e)`; `SynchronizedConfig` stays `true` |
+| `S(cfg, "Server", …)` (`ModConfig.cs:252`) | the other **29** `Server.*` keys (28 at the audit: `PriceChangePolicy` gone, `FairMarketAct` and `BarrkBotExport` new in PR #22) | `cfg.Bind` then `Sync.AddConfigEntry(e)`; `SynchronizedConfig` stays `true` |
 | `cfg.Bind` + `Sync.AddLockingConfigEntry` (`ModConfig.cs:88`–`90`) | `LockConfiguration` | `AddLockingConfigEntry` itself calls `AddConfigEntry` (`ServerSync.cs:215`), so this key is **in the sync and locked like the rest**, and is additionally the entry whose value decides the lock |
 | `C(cfg, "Client", …)` (`ModConfig.cs:263`) | the **4** `Client.*` keys | `cfg.Bind` then `Sync.AddConfigEntry(e).SynchronizedConfig = false` |
 
-Verified key by key against the binder: all 29 `Server.*` entries are in the ConfigSync and all 4 `Client.*`
+Verified key by key against the binder (re-checked after PR #22): all 30 `Server.*` entries are in the ConfigSync and all 4 `Client.*`
 are excluded from it. **No `Server.*` key is bound another way**, and no `Client.*` key leaks into a package —
 `SynchronizedConfig = false` is checked in three places: the `SettingChanged` broadcast lambda
 (`ServerSync.cs:197`), `ReadConfigsFromPackage`'s map (`:482`) and `ConfigsToPackage`'s list (`:992`).
