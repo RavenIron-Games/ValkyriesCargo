@@ -38,6 +38,13 @@ namespace RavenIron.ValkyriesCargo.Core
             public bool CallOut;
             /// <summary>He should be walking toward the player this tick.</summary>
             public bool Follow;
+            /// <summary>
+            /// This tick's change to trading is the 20 s FALLBACK, not an arrival: he called out from
+            /// wherever he stood. Set here rather than re-derived by the caller because the caller
+            /// would have to match on `Why` or re-compare the distance, and both drift away from this
+            /// method the moment anyone edits it. `CargoMerchant` writes its walk diagnosis off this.
+            /// </summary>
+            public bool TimedOut;
             public string Why;
 
             public override string ToString() =>
@@ -85,7 +92,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 if (distance <= approachDistance)
                     return new Step { State = 2, Changed = true, CallOut = true, Why = "reached the player" };
                 if (timeInState >= ApproachTimeoutSeconds)
-                    return new Step { State = 2, Changed = true, CallOut = true, Why = "gave up walking after " + Wire.Float(ApproachTimeoutSeconds) + " s" };
+                    return new Step { State = 2, Changed = true, CallOut = true, TimedOut = true, Why = "gave up walking after " + Wire.Float(ApproachTimeoutSeconds) + " s" };
                 return new Step { State = 1, Follow = true, Why = "approaching" };
             }
 
