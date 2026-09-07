@@ -133,6 +133,51 @@ not its build output. Since only one machine could bake, that looked like a rele
 overriding.
 
 It is not. `tools/package.ps1` already prints loudly when a package is shipping the stand-in body, so
-the silent-failure case the rule appears to create does not exist. And as of 2026-09-07 the bake runs
-on both machines (`tools/setup-ingvar-unity.sh` is the Linux twin of the `.ps1`), so the constraint
-costs one command before packaging. **The owner's rule stands. Bake, then package.**
+the silent-failure case the rule appears to create does not exist. **The owner's rule stands. Bake,
+then package.**
+
+**Amended the same day, and the amendment matters.** The paragraph above originally rested on "the
+bake runs on both machines", because `tools/setup-ingvar-unity.sh` is the Linux twin of the `.ps1`.
+The owner then decided the bake is **this machine's alone** — Track A does not install Unity
+(`docs/TODO.md`, "Decided 2026-09-07 (owner)"). So the constraint is no longer one command before
+packaging on either side; it is a **handover**, and without one every rebuild on Track A's machine
+silently loses Ingvar, because the only copy over there is the one inside the tracked DLL.
+
+That does not revive the override — the bundle still does not belong in git — it just means the
+ignore rule now needs a delivery route beside it. The route is a **release asset**:
+`Assets/valkyriescargo_kit` is attached to `v0.1.0-rc1` and to every release after a re-bake. Verify
+it is the bundle actually in the shipped DLL rather than whatever is on disk; they can differ, and a
+good bake with a stale copy ships the old asset with no change in DLL size.
+
+## 8. Four Wants raised from base 2 to base 3
+
+**2026-09-07. Overrides four rows of `docs/CATALOGUE.md` section 3, and the table's own reasoning
+with them.**
+
+`Market.PaysFor` floors what he pays at one coin (`max(1, ...)`). That floor swallows the entire
+price curve for any row with a base of 1 or 2: eleven rows paid a single coin at every stock level,
+so scarcity moved the number on screen and never moved the coins. `docs/ECONOMY-SIM.md` finding 3.
+
+For seven of the eleven that is the joke and it stays. Wood, stone, resin, coal and flint **should**
+be near-worthless; a merchant who pays real money for firewood is a worse merchant.
+
+The other four were not that. **`RoundLog`, `FineWood`, `Feathers` and `LeatherScraps`** are gated
+behind a bronze axe, a hunt, or a boar, and the catalogue's own recipe counts say what they are worth
+to a player: core wood 15 recipes, fine wood 31, feathers 21, leather scraps 32 — against firewood's
+55, but firewood is what you get by walking into a forest. They sat at base 2 and paid **exactly what
+firewood pays**, which is the one thing the recipe column says they are not.
+
+All four are now **base 3**: 2 coins at target, 1 when flooded. That is the smallest change that buys
+back the three things the floor had taken — a price that moves at all, a visible distinction from
+firewood, and a stack of fifty worth 100 coins instead of 50. Target and max are untouched, so the
+supply curve is exactly the one the catalogue already argued for.
+
+**What this does not do:** it does not touch the other seven, and it does not touch a single Ware.
+Nothing here interacts with the Fair Market Act (section 2) — that clamps the buy-back multiplier
+on rows he *sells*, and he sells none of these.
+
+`docs/CATALOGUE.md` was stale on this in two places until today — the four table rows and the copy of
+the shipped default string underneath them both still said 2. Both are corrected, and the rest of the
+document was then checked against `Catalogue.DefaultLine` mechanically rather than by eye — every one
+of the 72 entries and all 72 table rows agree with the code as of this commit. Nothing enforces that
+going forward; it is a document, and it drifts the moment a number moves without one.
