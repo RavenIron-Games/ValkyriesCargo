@@ -93,6 +93,21 @@ first file rotated to `.bak`. Earlier the same boot printed `roll: no eligible p
 empty-server path, live). Not yet seen: a deal over the wire, a redelivery, a resumed visit; all need a client
 (items 13-16).
 
+**P7 the Cargo Terminal, 2026-09-06 (branch `a/p7-terminal`).** `Client/Terminal/CargoTerminal.cs` is the IMGUI
+window on Wu'barrk's vendored gilt theme (`SharedUI.GiltFrameTheme` + `UIFocus`): the title with the countdown,
+purse and pay mode, HIS WARES (icon, name, stock/target, price, trend) and YOUR GOODS HE WANTS (icon, name, what
+you carry, his shelf, what he pays), the staging tray with the flat "you pay" line, Confirm / Clear / Fill from my
+goods / Send him off (twice), and his words in the footer. `Client/Terminal/TrayModel.cs` (pure, 74 checks) is
+the tray: staging clamped to stock, room and what you carry, the prices copied from the snapshot and amber where
+they moved, Validate in the server's order, Build at the price on screen NOW, AutoFill for barter, the answer
+handling (Ok empties, price_changed goes amber against the new market, refusals keep the tray). The one OnGUI is
+`CargoTick.OnGUI`; the tokens are raised from `CargoTick.Update`, never from OnGUI (the theme's gotcha 3);
+the window id carries the mod's name. Panel rules: Escape, Use, Tab, M, the inventory or map open, the player
+dead, more than 5 m from the merchant, the visit over or leaving. `cargo terminal demo` opens it on the in-process
+market with no server; `cargo terminal open` on the running visit before P5 gives it a merchant. The inventory is
+written only through `DealApplier` inside the answer. Off-game: builds clean (net48), 926 checks, seven tray
+mutations caught. **Not yet seen on a screen**: the window itself (item 17).
+
 ---
 
 ## Commands
@@ -119,7 +134,7 @@ dedicated test servers live under `C:\Users\donfr\ValheimServers\` (CairnTest on
 minimal one; the runbook is `RagnaroksWrath\docs\HANDOFF.md`). Valheim locks the DLL while running.
 
 Console today: `cargo status | version | prefab <name> | stock [prefab] | deal buy|sell <prefab> [count] | claim |
-visit [player] | dismiss | reset | save`. `visit`, `dismiss`, `reset` and `save` are
+terminal demo|open|close | visit [player] | dismiss | reset | save`. `visit`, `dismiss`, `reset` and `save` are
 admin verbs: on a server or listen host they run in place; from a client they ride `vc_admin` to the server,
 where the public `ZNet.IsAdmin` (RavenEye's `AdminGate` shape, fail closed) decides and `vc_reply` prints the
 answer in the caller's console. `deal` is the terminal's deal without the terminal: it builds the same `Deal`,
@@ -151,6 +166,8 @@ ValkyriesCargo/
   Net/CargoTransport.cs      client end (the real ICargoTransport), LocalTransport (listen host), Deliveries
   Client/DealApplier.cs      the ONLY inventory writer for a deal: CanApply, Apply, by shared item name
   Client/InboxStore.cs       the applied delivery ids on disk (config folder)
+  Client/Terminal/CargoTerminal.cs   the window: ICargoTerminal on the gilt theme, drawn from the one OnGUI
+  Client/Terminal/TrayModel.cs       PURE: the staging tray, Validate/Build/AutoFill/Answer
   Server/VisitDirector.cs    where the world runs: gather ZDOs -> Scheduler -> event -> VisitState/MarketState
   Server/CargoEvent.cs       the vanilla RandomEvent `valkyries_cargo`: definition, registration, start, remaining
   Server/AdminGate.cs        vanilla's ZNet.IsAdmin(hostName), fail closed (RavenEye's shape)
@@ -171,7 +188,7 @@ Planned (design section 3; names are final, files do not exist yet):
 
 ```
   Server/Spawner.cs
-  Client/CargoFlight.cs Client/CargoMerchant.cs Client/Terminal/*.cs
+  Client/CargoFlight.cs Client/CargoMerchant.cs Client/BodyLoader.cs
   Patches/Patch_Valkyrie_Awake.cs Patch_Humanoid_Awake.cs
   Patches/Patch_Character_InIntro.cs Patch_Character_Damage.cs
   Libs/SharedUI/GiltFrameTheme.cs Libs/SharedUI/UIFocus.cs   (Wu'barrk's VikingOS, MIT, not yet received)
@@ -319,6 +336,19 @@ P6, the wire, with a visit running (`cargo visit` first):
     `visit #1 RESUMED after a restart` and the countdown continues.
 16. **Refusals:** `cargo deal buy BlackCore 3` answers `sold_out`; a buy with fewer coins than the price is
     stopped on the client before sending; a stale visit id is `stale_visit`.
+
+P7, the terminal (a client, no server needed for the first item):
+17. **`cargo terminal demo`** (from the main menu or in a world): the gilt window opens centred with the cursor
+    free; 18 wares on the left with icons and prices, 72 rows on the right; clicking a ware stages it (Shift 5,
+    Ctrl 20, right-click takes back); "you pay" is count x price; Confirm deal answers with one of his three buy
+    lines and the price on that row moves; a second Confirm on the same line comes back "The wind shifted..."
+    with the line amber, and Confirm new price goes through; Escape closes it and the cursor locks again; the log
+    shows `terminal opened: visit #1 (demo)` and `terminal closed: escape`.
+18. **On a real visit** (`cargo visit`, then `cargo terminal open`): the countdown matches the server's; a buy
+    changes the inventory by exactly the deal and the server log shows the deal; the same row's price moved on
+    every machine; a sell of goods you carry pays coins; Fill from my goods covers a ware with the dearest goods
+    first; Send him off twice ends the visit (`ended: dismissed by <name>`); Tab and M close it; walking away
+    closes it only once P5 gives it a merchant.
 
 ---
 

@@ -70,6 +70,11 @@
       <HintPath>$(LibsDir)\assembly_utils_publicized.dll</HintPath>
       <Private>false</Private>
     </Reference>
+    <!-- assembly_guiutils, the STOCK dll: Localization for the terminal's item names. The publicized copy in the game folder lacks the Localization types (2026-09-06); public members are all we use. -->
+    <Reference Include="assembly_guiutils">
+      <HintPath>$(LibsDir)\assembly_guiutils.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
 
     <Reference Include="UnityEngine">
       <HintPath>$(LibsDir)\UnityEngine.dll</HintPath>

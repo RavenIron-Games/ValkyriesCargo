@@ -57,6 +57,9 @@ namespace RavenIron.ValkyriesCargo
             // A plain MonoBehaviour driven from Update - deliberately NOT a coroutine.
             gameObject.AddComponent<CargoTick>();
 
+            // The Cargo Terminal exists only where a player can be drawn; the merchant (P5) opens it through ICargoTerminal.
+            if (HasRenderer) Client.Terminal.CargoTerminal.Install();
+
             // Proof of life. A silent success and a silent no-op are indistinguishable from
             // outside the game, so this line exists before there is anything to report.
             Log.LogInfo(

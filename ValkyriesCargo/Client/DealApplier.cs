@@ -55,21 +55,33 @@ namespace RavenIron.ValkyriesCargo.Client
         {
             string why = CanApply(r);
             if (why != null) { ValkyriesCargo.Log.LogWarning("deal apply refused: " + why); return false; }
-            Inventory inv = Player.m_localPlayer.GetInventory();
+            Player p = Player.m_localPlayer;
+            Inventory inv = p != null ? p.GetInventory() : null;
+            if (inv == null) { ValkyriesCargo.Log.LogWarning("deal apply refused: no_player"); return false; }
+
+            // Removals first, remembered, so a failure on the way in can put them back.
+            var removed = new System.Collections.Generic.List<DealLine>();
             bool ok = true;
             try
             {
-                foreach (DealLine line in r.ItemsToRemove) inv.RemoveItem(SharedName(line.Prefab), line.Count);
-                if (r.CoinsDelta < 0) inv.RemoveItem(SharedName(CoinsPrefab), -r.CoinsDelta);
+                foreach (DealLine line in r.ItemsToRemove) { inv.RemoveItem(SharedName(line.Prefab), line.Count); removed.Add(line); }
+                if (r.CoinsDelta < 0) { inv.RemoveItem(SharedName(CoinsPrefab), -r.CoinsDelta); removed.Add(new DealLine { Prefab = CoinsPrefab, Count = -r.CoinsDelta }); }
                 foreach (DealLine line in r.ItemsToAdd) ok &= AddStacks(inv, Prefab(line.Prefab), line.Count);
                 if (r.CoinsDelta > 0) ok &= AddStacks(inv, Prefab(CoinsPrefab), r.CoinsDelta);
             }
             catch (Exception ex)
             {
                 ValkyriesCargo.Log.LogError("deal apply threw: " + ex);
-                return false;
+                ok = false;
             }
-            if (!ok) ValkyriesCargo.Log.LogWarning("deal apply: not every line landed (delivery " + r.DeliveryId + ")");
+            if (!ok)
+            {
+                // The pre-check makes this rare; when it happens, the pack goes back to what it was, and the
+                // server still owes the delivery (it is not acked without an applied result).
+                int restored = 0;
+                try { foreach (DealLine line in removed) if (AddStacks(inv, Prefab(line.Prefab), line.Count)) restored++; } catch { }
+                ValkyriesCargo.Log.LogWarning("deal apply: not every line landed (delivery " + r.DeliveryId + "); " + restored + " of " + removed.Count + " removal(s) put back");
+            }
             return ok;
         }
 
