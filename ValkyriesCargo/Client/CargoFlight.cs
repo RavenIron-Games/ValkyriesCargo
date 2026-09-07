@@ -230,6 +230,16 @@ namespace RavenIron.ValkyriesCargo.Client
                     npc.Set(Spawner.CarrierKey, ZDOID.None);
                     npc.Set(Spawner.StateHash, MerchantState.Approaching);
                 }
+                else
+                {
+                    // Spawner.Merchant is server-side state, so on a client the scan above is the
+                    // only lookup, and a miss used to be silent. He stays pinned until this bird is
+                    // gone and then lands on his own (MerchantPlan: carried -> landed once the
+                    // carrier no longer resolves), so the visit survives; but the walk-up starts
+                    // from wherever the bird left him, and the log must say so.
+                    ValkyriesCargo.Log.LogWarning("cargo flight #" + _visitId + ": the drop found no merchant naming this bird as his carrier " +
+                        "among " + Character.GetAllCharacters().Count + " instanced characters; he stays carried until the bird is gone");
+                }
             }
             catch (Exception ex)
             {
