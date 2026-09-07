@@ -77,6 +77,12 @@ Don merges everything; nothing below asks you to merge.
    clause in `Market.Pays`: a Ware he sells is bought back at par at most. The config fix is the multiplier down to
    1.4, which flattens the scarcity signal. Say which; it goes into DESIGN section 8 and one of us builds it.
 
+7. **Night close, 2026-09-07 (Don asleep; his Claude carries the merges):** PR #15 is under an Opus
+   adversarial review and merges when its findings are answered on the PR; issue #16's rename is Don's,
+   after #15 and P11 land; P10a is yours after P5; the knowledge base is at `docs/knowledge-base/` (add
+   `VALHEIM-API-REFERENCE`); three PRs of Don's (P10a tooling, P10b, P11) arrive overnight, read them in the
+   morning. `docs/HANDOFF-CLAUDE.md` section 0 is the full state.
+
 ## 1. Where things are
 
 | Read first | What it is |

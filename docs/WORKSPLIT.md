@@ -17,12 +17,12 @@
 | P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | **Don**: code done, off-game proven; screen proof pending | P1, P6 (merged), SharedUI (vendored, PR #2) | design 3.4; §2 below is the whole contract |
 | P8 | Body: rig, clips, bundle on Unity 6000.0.61f1 (**Wu'barrk**, PR #4 merged; the BAKE is still to do); `Client/BodyLoader.cs` + the clip driver (**Don**: code done, off-game proven; screen proof pending) | split | model (in) | design §11; `models/SETUP-FOR-CLAUDE.md` for the bake. The bundle needs NO AnimatorController: the loader plays the clips by name |
 | P9 | Release: README truth pass, package, Hexium name check, store upload | **Don** | all | the RavenIronStudios store account |
-| P10 | Version resilience: (a) steamcmd shadow copies of the live and playtest builds, client and server, decompiled and diffed against our baseline; (b) boot-time version detect, per-fact probes, degrade-don't-throw | **Don**, end to end (owner, 2026-09-07) | — (P10a is independent; 11d waits on P5) | `docs/P10-P11-FOR-DON.md`; baseline is 0.221.12 / net 36 / player 43 / world 37 |
+| P10 | Version resilience: (a) steamcmd shadow copies of the live and playtest builds, client and server, decompiled and diffed against our baseline; (b) boot-time version detect, per-fact probes, degrade-don't-throw | (a) **Wu'barrk**, after P5 (owner, 2026-09-07: the tooling and the first sweeps came from Don's side the same night; the client fetches and every recurring sweep are his, on his rig with his login); (b) **Don** | — (P10a is independent; 11d waits on P5) | `docs/P10-P11-FOR-DON.md`; baseline is 0.221.12 / net 36 / player 43 / world 37 |
 | P11 | Pre-1.0 shakedown: full default-config pass, the server-authority and ServerSync audit, embedded assets end to end, and an Opus audit of every game call P4 and P5 introduced | **Don**, end to end (owner, 2026-09-07) | P5 (for 11d only) | same doc; house rule 5 — a clean build proves nothing about member access |
 
 P4 → P5 is a chain on Wu'barrk's side; P7 and the loader run in parallel on Don's; the bake is independent.
-P10 and P11 are Don's alone and neither blocks 0.1.0; P10a wants doing sooner rather than later, because a
-baseline captured after a playtest push is worth much less than one captured before it.
+P10b and P11 are Don's; P10a is Wu'barrk's after P5 (decided 2026-09-07), built on the tooling and the first sweeps
+from Don's side. Neither package blocks 0.1.0. The baseline was captured before 1.0 (2026-09-09), which was the point.
 The client-side proofs of what is merged (CLAUDE.md "What to verify in-game", items 2–16) belong to whoever
 boots a client first, and go into CLAUDE.md Status with the exact lines.
 
