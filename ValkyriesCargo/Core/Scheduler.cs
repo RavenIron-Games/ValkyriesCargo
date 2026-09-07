@@ -310,5 +310,35 @@ namespace RavenIron.ValkyriesCargo.Core
         }
 
         private static bool Finite(double v) => !double.IsNaN(v) && !double.IsInfinity(v);
+
+        /// <summary>
+        /// The candidate nearest to (x, z), or null when there is nobody to pick. Pure, and here
+        /// rather than in the director because of the guard on the last line of the loop.
+        ///
+        /// It is used to answer "who typed this?" when our event turns up without us having started
+        /// it: vanilla's `event` console command passes the CALLER'S OWN position, so the nearest
+        /// player to where the event was placed is the admin who ran it.
+        ///
+        /// **A non-finite coordinate is refused rather than compared**, the same lesson as
+        /// `FlightPlan.DropAccepted`: every comparison against NaN is false, so a natural
+        /// "is this one closer?" test silently keeps whichever candidate it saw first and a forged
+        /// or corrupt position wins by never losing. Player coordinates arrive off a ZDO that a
+        /// client owns and writes.
+        /// </summary>
+        public static Candidate NearestTo(IList<Candidate> who, float x, float z)
+        {
+            if (who == null || !Finite(x) || !Finite(z)) return null;
+            Candidate best = null;
+            double bestSq = 0.0;
+            for (int i = 0; i < who.Count; i++)
+            {
+                Candidate c = who[i];
+                if (c == null || !c.Alive || !Finite(c.X) || !Finite(c.Z)) continue;
+                double dx = c.X - x, dz = c.Z - z;
+                double sq = dx * dx + dz * dz;
+                if (best == null || sq < bestSq) { best = c; bestSq = sq; }
+            }
+            return best;
+        }
     }
 }

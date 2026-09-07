@@ -196,9 +196,36 @@ namespace RavenIron.ValkyriesCargo.Server
                 }
                 else if (ours && _pendingSessionRow == null)
                 {
-                    // Our event runs with no session and no saved row to adopt it from: a leftover. End it, once, loudly.
-                    if (!_orphanLogged) { _orphanLogged = true; ValkyriesCargo.Log.LogWarning("event '" + CargoEvent.Name + "' is running with no visit session and no saved session row; ending it"); }
-                    res.ResetRandomEvent();
+                    // Our event is running and we did not start it. Until 2026-09-07 this branch called
+                    // `ResetRandomEvent` and the event died inside a second, which is why the VANILLA
+                    // console command looked broken: `event valkyries_cargo` is a legal way to start a
+                    // visit -- our event is registered in `RandEventSystem.m_events` on every machine, so
+                    // the command finds it and tab-completes it -- and the visit it started was killed by
+                    // us before anyone saw anything. The only trace was a warning about a "leftover".
+                    //
+                    // So adopt it instead. Vanilla's `event` command passes the CALLER's own position
+                    // (`Player.m_localPlayer.transform.position`), which makes the nearest player to the
+                    // event the admin who typed it.
+                    //
+                    // Eligibility is deliberately NOT re-checked. `event` is cheat-gated and
+                    // `onlyServer`, so the caller has already said what they want with more authority
+                    // than `cargo visit` needs; refusing here would be the old bug wearing a new coat.
+                    // The roll's gates exist to decide when a visit is a nice surprise, not to argue
+                    // with an admin who asked for one.
+                    Candidate host = Scheduler.NearestTo(Gather(), current.m_pos.x, current.m_pos.z);
+                    if (host != null)
+                    {
+                        ValkyriesCargo.Log.LogInfo("event '" + CargoEvent.Name + "' started outside the director (the vanilla `event` console command, or another mod); adopting it onto " + host + " and authoring the visit");
+                        _orphanLogged = false;
+                        Begin(host, worldTime);
+                    }
+                    else
+                    {
+                        // Nobody to give it to: an empty server, or every candidate refused. Now it
+                        // really is a leftover, and the old behaviour is the right one.
+                        if (!_orphanLogged) { _orphanLogged = true; ValkyriesCargo.Log.LogWarning("event '" + CargoEvent.Name + "' is running with nobody to receive it (no live candidate near " + Wire.Float(current.m_pos.x) + ", " + Wire.Float(current.m_pos.z) + "); ending it"); }
+                        res.ResetRandomEvent();
+                    }
                 }
                 else if (_pendingSessionRow == null)
                 {
