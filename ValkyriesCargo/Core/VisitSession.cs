@@ -137,6 +137,26 @@ namespace RavenIron.ValkyriesCargo.Core
         /// next tick) and the warning is not counted as given. Returns the VisitState to publish, or null
         /// (with a problem) when the row does not parse.
         /// </summary>
+        /// <summary>
+        /// The visit id inside a saved `session` row, WITHOUT adopting it: 0 when there is no row or
+        /// it does not parse. The boot-time merchant sweep needs this and cannot use `VisitId`,
+        /// because a restored row is only adopted later, on a tick, once the engine has brought its
+        /// random event back - so at boot `Active` is false and `VisitId` is 0 even when a visit is
+        /// about to resume. Sweeping on that 0 destroys the merchant of the visit about to resume.
+        /// </summary>
+        public static int VisitIdOf(string sessionRow)
+        {
+            if (string.IsNullOrEmpty(sessionRow)) return 0;
+            // No TrimEnd, unlike `Resume`: only f[0] and f[1] are read here, and a row written on
+            // Windows carries its stray CR in the LAST field, where it cannot reach either of them.
+            string[] f = sessionRow.Split('\t');
+            if (f.Length != 12 || f[0] != "session") return 0;
+            int visitId;
+            // `>= 1` is not decoration: a row claiming 0 or a negative id must never come back as a
+            // visit to spare, or the sweep keeps a merchant that belongs to nothing.
+            return Wire.TryInt(f[1], out visitId) && visitId >= 1 ? visitId : 0;
+        }
+
         public string Resume(string sessionRow, double nowWorldTime, List<string> problems)
         {
             if (string.IsNullOrEmpty(sessionRow)) { Wire.Report(problems, "session: empty row"); return null; }

@@ -85,7 +85,12 @@ namespace RavenIron.ValkyriesCargo.Server
             // P5, design 3.7: the merchant is the persistent half of the pair, so a server that stopped
             // mid-visit brings him back with the world. Put away anyone who is not the visit we just
             // adopted, and clear any restored carry link -- a ZDOID does not survive a world read.
-            string swept = Spawner.Sweep(d._session != null && d._session.Active ? d._session.VisitId : 0);
+            // The id to KEEP. A restored row is adopted later, on a tick, once the engine brings its
+            // event back - so at boot `_session` is not Active yet and its VisitId is 0. Sweeping on
+            // that 0 would destroy the merchant of the visit about to resume.
+            int keep = d._session != null && d._session.Active ? d._session.VisitId
+                                                               : VisitSession.VisitIdOf(d._pendingSessionRow);
+            string swept = Spawner.Sweep(keep);
             if (swept != null) ValkyriesCargo.Log.LogInfo(swept);
 
             ValkyriesCargo.Log.LogInfo("director up: salt " + salt + ", day " + Wire.Double(day) + " s (" + (fromEngine ? "EnvMan.m_dayLengthSec" : "ASSUMED, no EnvMan") +
@@ -200,6 +205,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 {
                     ValkyriesCargo.Log.LogWarning("saved session row did not parse (" + string.Join("; ", problems.ToArray()) + "); ending the restored event");
                     RandEventSystem.instance.ResetRandomEvent();
+                    SweepAfterGivingUp("the saved row did not parse");
                     return;
                 }
                 Publish(state);
@@ -214,6 +220,19 @@ namespace RavenIron.ValkyriesCargo.Server
             ValkyriesCargo.Log.LogInfo("saved session row not adopted: the engine did not restore event '" + CargoEvent.Name + "' within " + AdoptWindowSeconds + " s; that visit ended with the restart");
             _pendingSessionRow = null;
             _dirty = true;
+            SweepAfterGivingUp("the engine never restored the event");
+        }
+
+        /// <summary>
+        /// The boot sweep SPARED a merchant because a saved visit was waiting to be adopted. Adoption
+        /// has now failed, so that visit is over and he is stranded - persistent, in the world save,
+        /// with nothing left to belong to. This is the second half of the boot sweep and it only runs
+        /// on the path where the first half deliberately held its hand.
+        /// </summary>
+        private void SweepAfterGivingUp(string why)
+        {
+            string swept = Spawner.Sweep(0);
+            if (swept != null) ValkyriesCargo.Log.LogInfo(swept + " (" + why + ")");
         }
 
         /// <summary>`cargo visit`: force a roll for one player, cooldowns ignored (Scheduler.Force). Returns the decision in words.</summary>

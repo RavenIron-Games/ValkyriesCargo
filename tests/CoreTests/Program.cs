@@ -3047,6 +3047,34 @@ namespace ValkyriesCargo.Tests
             Check(!MerchantPlan.ShouldPin(0, carrierResolved: false),
                   "state 0 with a carrier id that resolves to nothing (a restart renumbered it): do NOT pin");
             Check(!MerchantPlan.ShouldPin(1, carrierResolved: true), "and never pin once he is on his feet");
+
+            Section("VisitSession.VisitIdOf: the boot sweep's peek (PR #15's review)");
+
+            // The bug this exists to stop: at boot a restored row is NOT adopted yet, so the session
+            // is inactive and its VisitId is 0. A sweep on that 0 destroys the merchant of the visit
+            // that is about to resume.
+            var vsPeek = new VisitSession();
+            vsPeek.Begin(41, 700L, "Pilot", 5f, 6f, 7f, 1.0, 300f, 800, 12345);
+            string savedRow = vsPeek.EncodeSessionRow();
+            Check(VisitSession.VisitIdOf(savedRow) == 41,
+                  "the visit id is readable from a saved session row without adopting it");
+
+            var fresh = new VisitSession();
+            Check(!fresh.Active && fresh.VisitId == 0,
+                  "and a session that has not adopted that row yet still reads Active=false, VisitId=0 (which is the trap)");
+
+            Check(VisitSession.VisitIdOf(null) == 0, "no row: 0");
+            Check(VisitSession.VisitIdOf("") == 0, "empty row: 0");
+            Check(VisitSession.VisitIdOf("notasession\t41") == 0, "a row that is not a session row: 0");
+            Check(VisitSession.VisitIdOf("session\t41\ttoofewfields") == 0, "a truncated session row: 0");
+            Check(VisitSession.VisitIdOf(savedRow.Replace("session\t41", "session\tzzz")) == 0,
+                  "a session row whose id does not parse: 0");
+            Check(VisitSession.VisitIdOf(savedRow.Replace("session\t41", "session\t0")) == 0,
+                  "a session row claiming visit 0: 0, so it can never be mistaken for a live visit");
+            Check(VisitSession.VisitIdOf(savedRow.Replace("session\t41", "session\t-5")) == 0,
+                  "and a NEGATIVE id is 0 too (the id-0 case above passes with or without the guard, so it proves nothing alone)");
+            Check(VisitSession.VisitIdOf(savedRow + "\r") == 41, "a row with a trailing CR still parses (Windows sidecar)");
+
         }
     }
 
