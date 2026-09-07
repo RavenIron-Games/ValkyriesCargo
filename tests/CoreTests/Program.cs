@@ -3747,7 +3747,7 @@ namespace ValkyriesCargo.Tests
             Equal(ProbeState.Failed, p.Find(EngineProbes.Body).State, "the first answer stands");
             Equal("AssetBundle.LoadFromStream(Stream) is gone", p.Find(EngineProbes.Body).Message, "message and all");
             Equal(1, p.Problems.Count, "and the refusal is reported, never silent");
-            Check(p.Problems[0].Contains("already failed"), "saying what it was already");
+            Check(p.Problems.Count > 0 && p.Problems[0].Contains("already failed"), "saying what it was already");
             Check(!p.Record(EngineProbes.ServerRefPin, true, "swept"), "nothing may promote a not-probeable fact to a pass");
             Equal(ProbeState.NotProbeable, p.Find(EngineProbes.ServerRefPin).State, "it stays not probeable");
             Check(!p.Record("no such probe", true, "hello"), "an answer for an unregistered probe is dropped");
