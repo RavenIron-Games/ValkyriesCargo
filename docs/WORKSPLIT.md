@@ -14,7 +14,7 @@
 | P3 | Comfort report + event registration + `cargo visit`; headless proof | code done, headless-proven; client proof pending | P2 | a client on an admin-listed account |
 | P4 | Authored flight: server creates the bird, pilot flies it; two-client proof | 1–2 days | P3 | needs two clients on one machine (Don has two accounts) |
 | P5 | Merchant: carry pin, `InIntro`, follow, callout, immortal, dismissal, Odin vanish, restart sweep | 2 days | P4 | as P4 |
-| P6 | Deal wire server side: direct ZRpc, owed ledger, persistence (Cairn pattern) | 1–2 days | P1, P2 | anyone |
+| P6 | Deal wire server side: direct ZRpc, owed ledger, persistence (Cairn pattern) | code done, headless-proven (sidecar round trip); client proof pending | P1, P2 | — |
 | P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | 2–3 days | P1, SharedUI files | Wu'barrk: it is his theme and his focus helper |
 | P8 | Body: retopo, rig, clips, animator contract, bundle on Unity 6000.0.61f1, loader | open-ended, after 0.1 | model | Wu'barrk: his model, his Editor version |
 | P9 | Release: README truth pass, package, Hexium name check, store upload | half a day | all | Don: the RavenIronStudios store account |

@@ -33,6 +33,8 @@
     <Compile Include="..\..\ValkyriesCargo\Core\VisitClock.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\VisitSession.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Lines.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\Sidecar.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\OwedLedger.cs" />
     <Compile Include="..\..\ValkyriesCargo\Net\CargoRpc.cs" />
   </ItemGroup>
 

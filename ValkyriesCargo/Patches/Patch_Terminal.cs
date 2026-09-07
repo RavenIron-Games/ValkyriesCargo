@@ -32,7 +32,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             try
             {
                 new Terminal.ConsoleCommand("cargo",
-                    "Valkyrie's Cargo: status | version | prefab <name> | visit [player] | dismiss", Run);
+                    "Valkyrie's Cargo: status | version | prefab <name> | stock [prefab] | deal buy|sell <prefab> [count] | claim | visit [player] | dismiss | reset | save", Run);
             }
             catch (Exception ex)
             {
@@ -52,6 +52,11 @@ namespace RavenIron.ValkyriesCargo.Patches
                     case "prefab":  Prefab(args); return;
                     case "visit":   Admin(args, "visit", args.Args.Length > 2 ? args.Args[2] : ""); return;
                     case "dismiss": Admin(args, "dismiss", ""); return;
+                    case "reset":   Admin(args, "reset", ""); return;
+                    case "save":    Admin(args, "save", ""); return;
+                    case "stock":   Stock(args, args.Args.Length > 2 ? args.Args[2] : ""); return;
+                    case "deal":    DealCommand(args); return;
+                    case "claim":   Claim(args); return;
                     default:        Help(args); return;
                 }
             }
@@ -67,8 +72,14 @@ namespace RavenIron.ValkyriesCargo.Patches
             Say(args, "cargo status          - role, config authority, catalogue, the director, the engine numbers the design depends on");
             Say(args, "cargo version         - this build and the ServerSync gate");
             Say(args, "cargo prefab <name>   - components, children and effect lists of a game prefab (Valkyrie, Dverger, odin, Haldor)");
+            Say(args, "cargo stock [prefab]  - his shelf as this machine last heard it: stock/target, what you pay, what he pays, trend");
+            Say(args, "cargo deal buy <prefab> [count]   - buy from him at the price on the shelf (a plain deal, no terminal)");
+            Say(args, "cargo deal sell <prefab> [count]  - sell to him at what he pays");
+            Say(args, "cargo claim           - ask the server for deliveries it still owes you");
             Say(args, "cargo visit [player]  - ADMIN: force a visit for yourself (or the named player), cooldowns ignored, the other gates kept");
             Say(args, "cargo dismiss         - ADMIN: end the running visit now");
+            Say(args, "cargo reset           - ADMIN: forget every cooldown");
+            Say(args, "cargo save            - ADMIN: write the world sidecar now");
         }
 
         private static void Version(Terminal.ConsoleEventArgs args)
@@ -91,6 +102,75 @@ namespace RavenIron.ValkyriesCargo.Patches
                 return;
             }
             Say(args, AdminRpc.Send(verb, arg));
+        }
+
+        /// <summary>The shelf as this machine last heard it through MarketState; the same rows the terminal renders.</summary>
+        private static void Stock(Terminal.ConsoleEventArgs args, string prefab)
+        {
+            MarketSnapshot m = CargoRpc.Market;
+            if (m.Count == 0) { Say(args, "cargo: no market state heard yet (no visit has started, or no world)"); return; }
+            Say(args, "market for visit #" + m.VisitId + ", purse " + m.Purse + " coins; " + m.Count + " rows" + (prefab.Length > 0 ? "" : " (first 24; name one for its line)"));
+            int shown = 0;
+            foreach (MarketRow r in m.Rows)
+            {
+                if (prefab.Length > 0 && !string.Equals(r.Prefab, prefab, StringComparison.OrdinalIgnoreCase)) continue;
+                if (prefab.Length == 0 && shown++ >= 24) break;
+                Say(args, "  " + r.Prefab + " (" + r.Kind + "): " + r.Stock + "/" + r.Target + " max " + r.Max + (r.Stock == 0 ? " SOLD" : "") +
+                          (r.Kind == EntryKind.Ware ? ", you pay " + r.Buy : "") + ", he pays " + r.Sell + ", trend " + (r.Trend > 0 ? "up" : r.Trend < 0 ? "down" : "flat"));
+            }
+            if (prefab.Length > 0 && m.Find(prefab) == null) Say(args, "  no row named '" + prefab + "'");
+        }
+
+        /// <summary>A plain deal from the console, so the wire can be proven before the terminal exists: builds the Deal the terminal would.</summary>
+        private static void DealCommand(Terminal.ConsoleEventArgs args)
+        {
+            string kind = args.Args.Length > 2 ? args.Args[2].ToLowerInvariant() : "";
+            string prefab = args.Args.Length > 3 ? args.Args[3] : "";
+            int count = 1;
+            if (args.Args.Length > 4 && (!int.TryParse(args.Args[4], out count) || count < 1)) { Say(args, "cargo deal: count must be 1 or more"); return; }
+            if ((kind != "buy" && kind != "sell") || prefab.Length == 0) { Say(args, "cargo deal buy|sell <prefab> [count]"); return; }
+            if (!CargoRpc.Ready) { Say(args, "cargo: no transport (join a world; the wire registers on connect)"); return; }
+            VisitSnapshot v = CargoRpc.Visit;
+            if (!v.Active) { Say(args, "cargo: no visit is running (cargo status)"); return; }
+            MarketRow row = CargoRpc.Market.Find(prefab);
+            if (row == null) { Say(args, "cargo: he has no row named '" + prefab + "' (cargo stock)"); return; }
+            Player p = Player.m_localPlayer;
+            if (p == null) { Say(args, "cargo: no local player"); return; }
+
+            var deal = new Deal { VisitId = v.VisitId, Nonce = Deal.NewNonce() };
+            if (kind == "buy")
+            {
+                if (row.Kind != EntryKind.Ware) { Say(args, "cargo: he only buys " + prefab + ", he does not sell it"); return; }
+                deal.Wanted = new DealLine { Prefab = row.Prefab, Count = count, UnitPriceSeen = row.Buy };
+                deal.CoinsOffered = count * row.Buy;
+                int have = DealApplier.Count(p.GetInventory(), DealApplier.CoinsPrefab);
+                if (have < deal.CoinsOffered) { Say(args, "cargo: that is " + deal.CoinsOffered + " coins and you carry " + have); return; }
+            }
+            else
+            {
+                deal.Offered.Add(new DealLine { Prefab = row.Prefab, Count = count, UnitPriceSeen = row.Sell });
+                int have = DealApplier.Count(p.GetInventory(), row.Prefab);
+                if (have < count) { Say(args, "cargo: you carry " + have + " " + row.Prefab); return; }
+            }
+            Say(args, "cargo: sending " + kind + " " + count + " " + row.Prefab + " at " + (kind == "buy" ? row.Buy : row.Sell) + " each (nonce " + Wire.Long(deal.Nonce) + ")");
+            CargoRpc.Send(deal, r =>
+            {
+                if (r.Ok)
+                {
+                    bool applied = DealApplier.Apply(r);
+                    Say(args, "cargo: DONE " + r.DeliveryId + ": " + DealApplier.Describe(r) + (applied ? "" : " (NOT applied to the inventory; see the log)"));
+                }
+                else if (r.Reason == DealReason.PriceChanged) Say(args, "cargo: the price moved while you looked; cargo stock " + row.Prefab + " and try again");
+                else Say(args, "cargo: refused: " + r.Reason);
+            });
+        }
+
+        private static void Claim(Terminal.ConsoleEventArgs args)
+        {
+            var t = CargoTick.Transport as CargoTransport;
+            if (t == null) { Say(args, "cargo: no server socket here" + (ZNet.instance != null && ZNet.instance.IsServer() ? " (a listen host is paid in-process at login)" : "")); return; }
+            t.ClaimAgain();
+            Say(args, "cargo: asked the server for anything it still owes you; deliveries print in the log and the HUD");
         }
 
         private static void Status(Terminal.ConsoleEventArgs args)
@@ -118,7 +198,10 @@ namespace RavenIron.ValkyriesCargo.Patches
                       ", market " + CargoRpc.Market.Count + " rows, purse " + CargoRpc.Market.Purse +
                       (CargoRpc.LastMarketProblems.Count + CargoRpc.LastVisitProblems.Count > 0
                           ? ", " + (CargoRpc.LastMarketProblems.Count + CargoRpc.LastVisitProblems.Count) + " parse problem(s)" : ""));
-            Say(args, "  transport: " + (CargoRpc.IsDemo ? "DEMO (in-process)" : CargoRpc.Ready ? "server socket" : "none until the deal wire (P6)") +
+            var ct = CargoTick.Transport as CargoTransport;
+            Say(args, "  transport: " + (CargoRpc.IsDemo ? "DEMO (in-process)" : CargoTick.Transport is LocalTransport ? "in-process (listen host)" : ct != null
+                          ? "server socket" + (ct.Ready ? "" : " (not connected)") + ", sent " + ct.Sent + ", answered " + ct.Answered + ", pending " + ct.Pending + ", unsolicited " + ct.Unsolicited + (ct.Claimed ? ", claimed" : ", not claimed yet")
+                          : "none (no world)") +
                       ", inbox " + CargoRpc.Inbox.Count + " applied deliver" + (CargoRpc.Inbox.Count == 1 ? "y" : "ies") +
                       ", terminal " + (Client.Terminal.CargoTerminalHost.Instance != null ? "registered" : "not built yet (Track B)") +
                       ", routed RPCs " + (AdminRpc.Registered ? "registered" : "not registered"));
@@ -173,7 +256,13 @@ namespace RavenIron.ValkyriesCargo.Patches
                     ? "#" + s.VisitId + " " + s.Phase + ", pilot " + s.PilotName + " (uid " + Wire.Long(s.PilotUid) + "), " + s.Clock.FormatRemaining(world) +
                       " left" + (s.Clock.Warned ? ", one-minute warning given" : "") + ", " + s.Republishes + " clock republish(es)"
                     : "none" + (s.LastVisitId > 0 ? "; last #" + s.LastVisitId + " ended: " + s.LastEndReason + ", takings " + d.LastTakings + " coins" : "")) +
-                    "; purse " + d.Market.Purse + ", visit ids next " + d.Market.NextVisitId + " (not persisted until P6)");
+                    "; purse " + d.Market.Purse + ", next visit #" + d.Market.NextVisitId + (d.Session.Resumed ? " (resumed after a restart)" : ""));
+                Say(args, "  wire: " + DealWire.Registered + " peer socket(s), " + DealWire.OpenTerminals + " terminal(s) open, " + DealWire.Deals + " deal(s), " +
+                          DealWire.Redeliveries + " redeliver" + (DealWire.Redeliveries == 1 ? "y" : "ies") + "; owed ledger " + d.Ledger.Count + " row(s)");
+                Say(args, "  sidecar: " + (d.Store != null && d.Store.Path != null
+                    ? System.IO.Path.GetFileName(d.Store.Path) + ", " + d.Loaded + " row(s) loaded, " + d.Store.Saves + " save(s)" + (d.Store.Failures > 0 ? ", " + d.Store.Failures + " FAILED" : "") +
+                      (d.Dirty ? ", changes pending (cadence " + F(VisitDirector.SaveCadenceSeconds, "0") + " s)" : ", clean")
+                    : "NONE: " + (d.Store != null ? d.Store.Detail : "no store")));
                 IReadOnlyList<Candidate> cs = d.Candidates;
                 Say(args, "  candidates (" + cs.Count + "): " + (cs.Count == 0 ? "nobody online" : ""));
                 for (int i = 0; i < cs.Count && i < 12; i++) Say(args, "    " + d.Describe(cs[i], now));

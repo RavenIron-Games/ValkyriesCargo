@@ -72,6 +72,27 @@ only on change, so a quiet log after that line is the loop holding, not the loop
 report in `cargo status`, a forced visit, the banner, the timer ending a visit; all need a client (see "What to
 verify in-game"). CairnTest was in use by the owner for another mod at the time and was not touched.
 
+**P6 deal wire and persistence, 2026-09-06 (branch `a/p6-deal-wire`).** `Net/DealWire.cs` registers `vc_open`,
+`vc_close`, `vc_deal`, `vc_ack`, `vc_claim`, `vc_dismiss` on EACH peer's own ZRpc as it connects and answers
+`vc_dealt` on the same socket; `Net/CargoTransport.cs` is the client end (the real `ICargoTransport` behind
+`CargoRpc`), `LocalTransport` the listen host's in-process one, `Deliveries` the redelivery path;
+`Client/DealApplier.cs` is the ONLY code that writes an inventory for a deal (removals first, then additions,
+by the item's shared name); `Client/InboxStore.cs` keeps the applied delivery ids in the config folder.
+`Core/OwedLedger.cs` (pure) is the server's memory of deliveries not yet acked, keyed by platform id;
+`Core/Sidecar.cs` (pure) is the world file's format; `Server/MarketStore.cs` moves it to disk with Cairn's
+discipline (.tmp, .bak, .corrupt). The director loads the sidecar when it is built, writes it on a 30 s cadence
+while dirty and at visit start, visit end, session end and shutdown, and ADOPTS a saved visit whose event the
+engine restored (vanilla saves the running random event with the world). Console: `cargo stock [prefab]`,
+`cargo deal buy|sell <prefab> [count]`, `cargo claim`; admin `cargo reset`, `cargo save`. 852 off-game checks.
+
+**HEADLESS VERIFIED 2026-09-06 19:25 on StormTest (plugins cleared to this DLL alone, 1 plugin to load)**:
+first boot `director up: ... next visit #1, ...; sidecar valkyriescargo_4690126.dat (fresh world)` and the file
+appeared in `saves\worlds_local` at once: 78 lines, `format 1`, 72 `stock` rows, `purse 800`, `purseStart 0`,
+`visit 0`, `seq 0`. Restart: `director up: ... sidecar valkyriescargo_4690126.dat (76 rows loaded)` and the
+first file rotated to `.bak`. Earlier the same boot printed `roll: no eligible player: nobody online` (the
+empty-server path, live). Not yet seen: a deal over the wire, a redelivery, a resumed visit; all need a client
+(items 13-16).
+
 ---
 
 ## Commands
@@ -97,10 +118,12 @@ The owner's client runs through Gale (`%APPDATA%\com.kesomannen.gale\valheim\pro
 dedicated test servers live under `C:\Users\donfr\ValheimServers\` (CairnTest on port 2466 is the
 minimal one; the runbook is `RagnaroksWrath\docs\HANDOFF.md`). Valheim locks the DLL while running.
 
-Console today: `cargo status | version | prefab <name> | visit [player] | dismiss`. `visit` and `dismiss` are
+Console today: `cargo status | version | prefab <name> | stock [prefab] | deal buy|sell <prefab> [count] | claim |
+visit [player] | dismiss | reset | save`. `visit`, `dismiss`, `reset` and `save` are
 admin verbs: on a server or listen host they run in place; from a client they ride `vc_admin` to the server,
 where the public `ZNet.IsAdmin` (RavenEye's `AdminGate` shape, fail closed) decides and `vc_reply` prints the
-answer in the caller's console. Planned: `cargo stock | reset`.
+answer in the caller's console. `deal` is the terminal's deal without the terminal: it builds the same `Deal`,
+sends it through `CargoRpc` and applies the answer through `DealApplier`.
 
 ---
 
@@ -121,6 +144,13 @@ ValkyriesCargo/
   Core/DemoMarket.cs         PURE: the real Market behind `cargo terminal demo`, plus Tick and Advance
   Core/VisitSession.cs       PURE: the server's visit record; the clock-mirror retarget rule (design 3.7)
   Core/Lines.cs              PURE: Ingvar's words (design 7); indexes cross the wire, never text
+  Core/Sidecar.cs            PURE: the world file's format; routes rows to market, scheduler, session, ledger
+  Core/OwedLedger.cs         PURE: deliveries the server still owes, by platform id, until acked
+  Server/MarketStore.cs      the sidecar on disk: valkyriescargo_{worldUid}.dat, .tmp/.bak/.corrupt
+  Net/DealWire.cs            server end: vc_open/close/deal/ack/claim/dismiss on each peer's ZRpc; vc_dealt back
+  Net/CargoTransport.cs      client end (the real ICargoTransport), LocalTransport (listen host), Deliveries
+  Client/DealApplier.cs      the ONLY inventory writer for a deal: CanApply, Apply, by shared item name
+  Client/InboxStore.cs       the applied delivery ids on disk (config folder)
   Server/VisitDirector.cs    where the world runs: gather ZDOs -> Scheduler -> event -> VisitState/MarketState
   Server/CargoEvent.cs       the vanilla RandomEvent `valkyries_cargo`: definition, registration, start, remaining
   Server/AdminGate.cs        vanilla's ZNet.IsAdmin(hostName), fail closed (RavenEye's shape)
@@ -140,7 +170,7 @@ docs/                        DESIGN, TLDR, CATALOGUE, REVIEW-v5, data/items tabl
 Planned (design section 3; names are final, files do not exist yet):
 
 ```
-  Server/Spawner.cs Server/MarketStore.cs Net/CargoTransport.cs (the real ICargoTransport)
+  Server/Spawner.cs
   Client/CargoFlight.cs Client/CargoMerchant.cs Client/Terminal/*.cs
   Patches/Patch_Valkyrie_Awake.cs Patch_Humanoid_Awake.cs
   Patches/Patch_Character_InIntro.cs Patch_Character_Damage.cs
@@ -228,6 +258,15 @@ owner overwrites next frame).
   client inside the range makes it the active event and shows `m_startMessage` once. `m_random = false`
   keeps it out of the random pool. `m_cameraShakeCurve` must be EMPTY: with keys, `Update` calls
   `GameCamera.instance.AddShake`, null on a dedicated server.
+- **Vanilla SAVES the running random event with the world** (`RandEventSystem.PrepareSave/SaveAsync/Load`:
+  name, time, position) and restores it on load through `SetRandomEventByName`, so a restart mid-visit brings
+  the event back; the director adopts it from the sidecar's `session` row within 15 s, else lets it go.
+- **Direct peer RPC**: `ZRpc.Register<T>(name, Action<ZRpc,T>)` replaces by name (safe to repeat),
+  `ZRpc.Invoke(name, params)`, `ZNet.GetServerRPC()` (client, one per connection), `ZNet.GetPeers()` with
+  `peer.m_rpc` (server); the peer's platform id is `peer.m_socket.GetHostName()`.
+- **Inventory** counts and removes by the item's SHARED name (`ItemDrop.m_itemData.m_shared.m_name`, a
+  "$item_..." token), never the prefab name; `Inventory.AddItem(GameObject, amount)` caps one call at a
+  stack; `CanAddItem(GameObject, stack)` is the pre-check; `ObjectDB.GetItemPrefab(name)` resolves a prefab.
 - `Player.m_comfortLevel` is private and computed locally every 2 s (`SE_Rested.CalculateComfortLevel`);
   `Player.GetComfortLevel()` is public. `Player.GetPlayerName()`, `Character.GetSEMan()`,
   `SEMan.HaveStatusEffect(int)`, `SEMan.s_statusEffectRested` are public. A character ZDO carries
@@ -265,6 +304,21 @@ P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormT
 11. **`cargo dismiss`** ends it early with `ended: admin <name>`; a non-admin's `cargo visit` is answered
     `not an admin` and the server log says `refused vc_admin visit from <name>`.
 12. **The gates:** a client that is not rested is refused `forced: <name> not eligible: not rested; online: ...`.
+
+P6, the wire, with a visit running (`cargo visit` first):
+13. **A deal:** `cargo stock Iron` shows his shelf; `cargo deal buy Iron 2` prints `sending`, then
+    `DONE w...-1-1: +2 Iron, -N coins`; the inventory changed by exactly that; the server log shows
+    `deal w...-1-1 with <name>: sold 2 Iron at N, coins -2N to the player; purse ...`; `cargo stock Iron`
+    shows stock 18 and a higher price on EVERY machine. `cargo deal sell Wood 10` the other way.
+14. **The ledger:** `cargo status` on the server shows `owed ledger 0 row(s)` after the ack arrives; log out
+    the instant after a deal's answer (before the ack), log back in: the server log shows
+    `vc_claim from <name>: redelivered 1 owed deal(s)` and the client shows `delivery ... applied` or, if the
+    inbox already had it, nothing twice.
+15. **The sidecar after deals:** the server's file carries the changed `stock` rows, `purse`, `visit 1`,
+    `seq N`, the `session` row while the visit runs, `cool` rows after it; a restart mid-visit prints
+    `visit #1 RESUMED after a restart` and the countdown continues.
+16. **Refusals:** `cargo deal buy BlackCore 3` answers `sold_out`; a buy with fewer coins than the price is
+    stopped on the client before sending; a stale visit id is `stale_visit`.
 
 ---
 

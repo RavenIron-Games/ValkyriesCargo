@@ -331,8 +331,9 @@ audio; it is not the summon horn.
 
 ### 3.7 Restart, orphans, edges
 
-- **Boot sweep**: `GetAllZDOsWithPrefabIterative(BodyPrefab)` for `vc_ingvar`; if vanilla restored our event and the sidecar
-  `visit` row matches the visitId, rebuild `VisitState` and resume the remaining time; else reclaim. Never an orphan.
+- **Boot sweep**: the sidecar's `session` row is adopted when vanilla brings the event back (it saves the running
+  event: name, time, position) and dropped after 15 s otherwise; P5 adds `GetAllZDOsWithPrefabIterative(BodyPrefab)`
+  for `vc_ingvar`: rebuild or reclaim. Never an orphan.
 - **Pilot disconnects mid-flight**: the bird's ZDO is non-persistent and owner-less → vanilla drops it; the merchant's ZDO
   is persistent and gets adopted by whichever client's block holds it; none within 30 s → server reclaims, visit ends.
 - **Pilot disconnects mid-visit**: the merchant is adopted by a nearer client; the visit continues.
@@ -494,7 +495,7 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Where market state lives | ServerSync custom values + sidecar save; never on the merchant ZDO | locked by the engine |
 | **Trade UI** | **A terminal of our own**, opened from our `Interactable`; `StoreGui` untouched | **locked (owner, 2026-09-06)** |
 | Terminal toolkit | IMGUI on VikingOS's `GiltFrameTheme` + `UIFocus`, vendored shared source (MIT); no runtime dependency on VikingOS | locked (owner: "we have VikingOS to use") |
-| Delivery semantics | At-least-once `vc_dealt` with a client inbox of applied delivery ids; server owed ledger claimed at login (VikingOS's escrow rule, ported) | proposed |
+| Delivery semantics | At-least-once `vc_dealt` with a client inbox of applied delivery ids; server owed ledger by platform id, claimed at login (VikingOS's escrow rule, ported) | built (P6) |
 | Price-change policy | Reconfirm; Teardown behind `PriceChangePolicy` | provisional (owner unsure) |
 | Deals | Direct `ZRpc`, server-validated, nonce ring, `expected` prices, `MarketState` after | locked |
 | Departure | The Odin vanish, `Odin.m_despawn` by the effect rule; horn as extra audio only | locked by the brief |
@@ -503,7 +504,7 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | 0.1 body | `Dverger`, tamed, following, immortal; custom body later behind the contract | locked for 0.1 |
 | Runtime material edits | Not in 0.1 (no custom body). When the body comes: bake the finished material into the bundle; no runtime `SetTexture` on a creature material | proposed |
 | Lifespan / dismissal | 300 s event clock; Shift+E twice; any visitor | locked / proposed |
-| Restart mid-visit | Resume the remaining time | proposed |
+| Restart mid-visit | Resume: vanilla saves the running event with the world; the director adopts it from the sidecar's `session` row within 15 s of boot, else the visit is over | built (P6) |
 | Deal pricing | The whole quantity at the price on screen when confirmed; stock moves after. A bulk deal beats a drip-feed, bounded by his purse and his stock | proposed (review 2026-09-06) |
 | Visit and delivery ids | Visit ids monotonic and persisted; `deliveryId = salt-visit-seq`, the world's salt (`demo` for the demo), seq persisted | proposed (review 2026-09-06) |
 | Cooldown persistence | Saved as remaining seconds, rebased at load | proposed (review 2026-09-06) |
