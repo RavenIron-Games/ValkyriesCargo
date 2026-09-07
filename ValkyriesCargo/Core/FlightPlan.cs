@@ -185,6 +185,32 @@ namespace RavenIron.ValkyriesCargo.Core
             return Math.Abs(atY - authoredY) <= DropToleranceY;
         }
 
+        // ---- the patch gate (decision 9, docs/DECISIONS-WUBARRK.md §9; F3) -------------------------
+
+        /// <summary>
+        /// Should a bird actually be authored? Two independent gates, both must hold: the geometry fit
+        /// (`planOk`, `Plan.Ok`) AND `Patch_Valkyrie_Awake` applied (`patchApplied`,
+        /// `Patching.Ledger.IsApplied`). Without that patch, vanilla `Valkyrie.Awake` runs on our bird
+        /// on every machine -- `m_instance = this`, then it reads `Player.m_localPlayer.transform.position`
+        /// with no null check and teleports whichever player is local -- so the FLIGHT switches itself
+        /// off rather than the mod: Ingvar still lands, straight on the ground at the drop point, the
+        /// same path a flight with no room in the block already uses.
+        /// </summary>
+        public static bool AuthorBird(bool planOk, bool patchApplied) => planOk && patchApplied;
+
+        /// <summary>
+        /// The reason to log when the patch gate, specifically, is what vetoed the bird -- null in
+        /// every other case, so `Spawner.Author` never blends this with its own "no room in the block"
+        /// message (a room failure is reported regardless of the patch, and takes precedence: if there
+        /// is nowhere to fly a bird in the first place, that is the honest reason, not this one).
+        /// `applied`/`expected` are `PatchLedger.Applied`/`.Expected` passed as plain ints, so this
+        /// stays engine-free and every combination is provable off-game.
+        /// </summary>
+        public static string PatchGateProblem(bool planOk, bool patchApplied, int applied, int expected)
+            => planOk && !patchApplied
+                ? "Patch_Valkyrie_Awake did not apply (patches " + applied + "/" + expected + ")"
+                : null;
+
         // ---- the plan ------------------------------------------------------------------------------
 
         /// <summary>

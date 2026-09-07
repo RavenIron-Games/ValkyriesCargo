@@ -3267,6 +3267,33 @@ namespace ValkyriesCargo.Tests
             Check(none.Ok || Math.Abs(none.DescentY - (30f + FlightPlan.DropAltitude)) < 0.01f,
                   "and parks its descent waypoint at drop height, so nothing reads a 120 m altitude off a flight that is not flown");
 
+            Section("FlightPlan: the patch gate (decision 9, docs/DECISIONS-WUBARRK.md §9; F3, coordinator PR #36)");
+
+            // AuthorBird: both gates must hold. Room but no patch, or the patch but no room, are both
+            // "no bird" -- only "room AND patch" actually authors one. Without Patch_Valkyrie_Awake,
+            // vanilla Valkyrie.Awake runs on our bird and teleports the local player into the sky, so
+            // the flight -- not the mod -- has to switch itself off.
+            Check(FlightPlan.AuthorBird(true, true), "room and the patch applied: author the bird");
+            Check(!FlightPlan.AuthorBird(true, false),
+                  "room but Patch_Valkyrie_Awake did NOT apply: no bird -- vanilla Awake would fling the player");
+            Check(!FlightPlan.AuthorBird(false, true), "the patch applied but there is no room: still no bird");
+            Check(!FlightPlan.AuthorBird(false, false), "neither: no bird");
+
+            // PatchGateProblem only fires when the room WAS there and the patch specifically is what is
+            // missing. Every other combination is null, so Spawner.Author never blends this with its
+            // own "no room in the block" message -- a room failure is the reason to report, and it
+            // takes precedence over a patch gate that never even got the chance to matter.
+            Check(FlightPlan.PatchGateProblem(true, true, 17, 17) == null, "room and the patch applied: nothing to report");
+            Check(FlightPlan.PatchGateProblem(false, false, 17, 17) == null,
+                  "no room at all: the room failure is the reason, not this one, so this stays quiet");
+            Check(FlightPlan.PatchGateProblem(false, true, 17, 17) == null, "no room, patch fine: still nothing to report from here");
+
+            string patchProblem = FlightPlan.PatchGateProblem(true, false, 16, 17);
+            Check(patchProblem == "Patch_Valkyrie_Awake did not apply (patches 16/17)",
+                  $"room was there and the patch specifically is what vetoed it: named and counted (got \"{patchProblem}\")");
+            Check(FlightPlan.PatchGateProblem(true, false, 0, 17) == "Patch_Valkyrie_Awake did not apply (patches 0/17)",
+                  "and the counts pass straight through, even at the extreme (every patch failed)");
+
             Section("FlightPlan: the drop the pilot reports is bounded by the drop the server authored");
 
             // The bird's ZDO is owned by the PILOT, so `VCargo_target` is a value a client writes. Before
