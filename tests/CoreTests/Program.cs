@@ -2963,6 +2963,50 @@ namespace ValkyriesCargo.Tests
             Check(!double.IsNaN(none.Bearing), "a declined plan still carries a readable bearing");
             Check(none.Ok || Math.Abs(none.DescentY - (30f + FlightPlan.DropAltitude)) < 0.01f,
                   "and parks its descent waypoint at drop height, so nothing reads a 120 m altitude off a flight that is not flown");
+
+            Section("FlightPlan: the drop the pilot reports is bounded by the drop the server authored");
+
+            // The bird's ZDO is owned by the PILOT, so `vc_target` is a value a client writes. Before
+            // this bound, `Spawner.Tick` handed it to the visit untouched: a modified client could put
+            // the drop point -- and, with P5, Ingvar himself -- anywhere in the world. P11's authority
+            // audit found it; this is the check that stands between that key and the world.
+            const float ax = 120f, ay = 40f, az = -80f;
+
+            // The honest case, and the ONLY thing a legitimate client does: CargoFlight.Drop writes the
+            // authored point back with its y replaced by the terrain height under it.
+            Check(FlightPlan.DropAccepted(ax, ay - 18f, az, ax, ay, az),
+                  "the authored point with the ground height in its y is accepted");
+            Check(FlightPlan.DropAccepted(ax, ay, az, ax, ay, az),
+                  "and so is the authored point unchanged");
+
+            // The exploit itself.
+            Check(!FlightPlan.DropAccepted(5000f, ay, 5000f, ax, ay, az),
+                  "a drop on the other side of the world is refused");
+            Check(!FlightPlan.DropAccepted(ax + 20f, ay, az, ax, ay, az),
+                  "and so is one 20 m away, which is enough to put him through a wall");
+
+            // Each half of the bound proves itself: move only in XZ, then only in y.
+            Check(!FlightPlan.DropAccepted(ax, ay, az + FlightPlan.DropToleranceXZ + 0.5f, ax, ay, az),
+                  "just outside the horizontal tolerance is refused (the XZ half is live)");
+            Check(FlightPlan.DropAccepted(ax, ay, az + FlightPlan.DropToleranceXZ - 0.5f, ax, ay, az),
+                  "just inside it is accepted");
+            Check(!FlightPlan.DropAccepted(ax, ay + FlightPlan.DropToleranceY + 1f, az, ax, ay, az),
+                  "a drop 65 m above the authored altitude is refused (the vertical half is live)");
+            Check(FlightPlan.DropAccepted(ax, ay - FlightPlan.DropToleranceY + 1f, az, ax, ay, az),
+                  "63 m below it -- a real mountainside -- is accepted");
+
+            // The tolerance is a RADIUS, not a box: 6 m on each axis is 8.49 m away.
+            Check(!FlightPlan.DropAccepted(ax + 6f, ay, az + 6f, ax, ay, az),
+                  "6 m on each axis is 8.49 m out and refused: the horizontal bound is a circle, not a square");
+
+            // A float is three keystrokes to forge, and every comparison against NaN is false, so the
+            // natural spelling of this check (`d > tolerance`) ACCEPTS a NaN and writes it into the
+            // session row, the wire and the sidecar.
+            Check(!FlightPlan.DropAccepted(float.NaN, ay, az, ax, ay, az), "a NaN x is refused");
+            Check(!FlightPlan.DropAccepted(ax, float.NaN, az, ax, ay, az), "a NaN y is refused");
+            Check(!FlightPlan.DropAccepted(ax, ay, float.NaN, ax, ay, az), "a NaN z is refused");
+            Check(!FlightPlan.DropAccepted(float.PositiveInfinity, ay, az, ax, ay, az), "an infinite x is refused");
+            Check(!FlightPlan.DropAccepted(ax, float.NegativeInfinity, az, ax, ay, az), "an infinite y is refused");
         }
     }
 

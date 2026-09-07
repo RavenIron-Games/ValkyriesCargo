@@ -64,6 +64,23 @@ namespace RavenIron.ValkyriesCargo.Core
         /// </summary>
         public const float MaxDescentFraction = 0.75f;
 
+        /// <summary>
+        /// How far the drop point the PILOT reports may sit from the one the server authored, in the
+        /// horizontal plane. The honest delta is ZERO: `CargoFlight.Drop` writes back the very
+        /// `vc_target` it was given, replacing only its y with the ground height. So this is float
+        /// noise plus a wide margin, not a policy -- it is a bound on a lie, not a tolerance for
+        /// legitimate drift (P11's authority audit, `docs/TRUST-BOUNDARY.md`).
+        /// </summary>
+        public const float DropToleranceXZ = 8f;
+
+        /// <summary>
+        /// The same bound on the vertical, which DOES legitimately move: the authored y is the pilot's
+        /// own altitude plus `DropAltitude`, and what comes back is the terrain height under the drop
+        /// point, which on a mountainside is a long way from either. Wide on purpose; the XZ bound is
+        /// the one doing the work.
+        /// </summary>
+        public const float DropToleranceY = 64f;
+
         // ---- zones ---------------------------------------------------------------------------------
 
         /// <summary>`ZoneSystem.GetZone`: floor((v + zoneSize/2) / zoneSize), on one axis.</summary>
@@ -149,6 +166,23 @@ namespace RavenIron.ValkyriesCargo.Core
         {
             float dx = ax - bx, dz = az - bz;
             return (float)Math.Sqrt(dx * dx + dz * dz);
+        }
+
+        /// <summary>
+        /// Is the drop point the pilot's bird reports close enough to the one the server authored to
+        /// be believed? The bird's ZDO is OWNED BY THE PILOT, so `vc_target` is a value a client may
+        /// write to anything at any moment, and `Spawner.Tick` hands it straight to the visit -- with
+        /// P5, to where Ingvar stands. This is the only check between that key and the world.
+        ///
+        /// Written as `!(d &lt;= tolerance)` rather than `d &gt; tolerance` so that a NaN REFUSES instead of
+        /// passing: every comparison against NaN is false, so the natural spelling accepts a NaN drop
+        /// and writes it into the session row and the sidecar. A float is three keystrokes to forge.
+        /// </summary>
+        public static bool DropAccepted(float atX, float atY, float atZ,
+                                        float authoredX, float authoredY, float authoredZ)
+        {
+            if (!(Dist(atX, atZ, authoredX, authoredZ) <= DropToleranceXZ)) return false;
+            return Math.Abs(atY - authoredY) <= DropToleranceY;
         }
 
         // ---- the plan ------------------------------------------------------------------------------

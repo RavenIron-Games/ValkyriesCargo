@@ -79,8 +79,19 @@ namespace RavenIron.ValkyriesCargo.Server
         public static bool Dropped { get; private set; }
         public static string LastProblem { get; private set; } = "";
 
+        /// <summary>
+        /// The drop point the server AUTHORED, kept so that the one the pilot reports can be checked
+        /// against it. The bird is owned by the pilot (`SetOwner(pilotUid)` below), so `vc_target` is a
+        /// client-writable value, and `Tick` used to hand it to the visit unexamined -- the one place in
+        /// the mod where a client's ZDO write moved server state with no bound on it at all (P11's
+        /// authority audit, `docs/TRUST-BOUNDARY.md`). Not persisted: it lives exactly as long as the
+        /// flight does, and a visit restored after a restart is already Dropped.
+        /// </summary>
+        public static Vector3 AuthoredDrop { get; private set; }
+
         private static float _orphanWaited;
         private static int _throws;
+        private static int _liars;
 
         public static bool Active => VisitId != 0;
 
@@ -165,6 +176,7 @@ namespace RavenIron.ValkyriesCargo.Server
 
                 Bird = bird != null ? bird.m_uid : ZDOID.None;
                 Merchant = npc != null ? npc.m_uid : ZDOID.None;
+                AuthoredDrop = drop;                   // even with no flight: it is where he starts
                 VisitId = visitId;
                 Dropped = !plan.Ok;
                 _orphanWaited = 0f;
@@ -216,7 +228,20 @@ namespace RavenIron.ValkyriesCargo.Server
                     if (!bird.GetBool(DroppedHash, false)) return null;
 
                     Dropped = true;
-                    Vector3 at = bird.GetVec3(TargetHash, Vector3.zero);
+                    // The pilot owns this key and may have written anything into it. Fall back to the
+                    // authored point rather than Vector3.zero -- a missing key is a bird that never got
+                    // its plan, not a drop at the world origin -- and refuse a value that has moved.
+                    Vector3 at = bird.GetVec3(TargetHash, AuthoredDrop);
+                    if (!FlightPlan.DropAccepted(at.x, at.y, at.z, AuthoredDrop.x, AuthoredDrop.y, AuthoredDrop.z))
+                    {
+                        if (_liars++ < 3)
+                            ValkyriesCargo.Log.LogWarning("visit #" + session.VisitId + ": the pilot reported a drop at (" +
+                                                          Wire.Float(at.x) + ", " + Wire.Float(at.y) + ", " + Wire.Float(at.z) +
+                                                          "), too far from the authored (" + Wire.Float(AuthoredDrop.x) + ", " +
+                                                          Wire.Float(AuthoredDrop.y) + ", " + Wire.Float(AuthoredDrop.z) +
+                                                          "); keeping the authored point");
+                        at = AuthoredDrop;
+                    }
                     string s = session.SetDrop(at.x, at.y, at.z);
                     string p = session.SetPhase(VisitPhase.Dropped);
                     publish = p ?? s;
@@ -248,6 +273,7 @@ namespace RavenIron.ValkyriesCargo.Server
             Merchant = ZDOID.None;
             VisitId = 0;
             Dropped = false;
+            AuthoredDrop = Vector3.zero;
             _orphanWaited = 0f;
         }
 
