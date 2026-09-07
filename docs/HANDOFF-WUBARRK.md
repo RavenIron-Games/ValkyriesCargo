@@ -1,9 +1,56 @@
-# Handoff for Wu'barrk — Valkyrie's Cargo, 2026-09-06
+# Handoff for Wu'barrk — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 night
 
 The repo is scaffolded, builds clean, tests pass, and boots headless on a dedicated server. This is
 what it is, what of yours is already in it, what we need from you, and exactly where each thing goes.
 
-## 0. Where things stand, 2026-09-07 after the rc1 merge
+## 0. Where things stand, 2026-09-07 night, after the first six visits
+
+**Your list is `docs/TODO.md` section 2**; when this file and that one disagree, TODO wins. This morning's
+state is kept below as history.
+
+`main` is at ae17eb1 with one docs PR open: 0 warnings, **1701 checks**, twenty-five PRs merged today (#24 to
+#48, all in `CHANGELOG.md` "Since 0.1.0-rc1"). **The rc1 tag still carries the F1 blocker and must not reach a
+tester**; rc2 is the next cut, from main, on the owner's word, and it replaces your rc1 note (issue #23).
+`Assets/valkyriescargo_kit` is attached to the rc1 release, so Don's builds carry Ingvar now.
+
+**Six visits flew today on Don's Windows client against StormTest**, twenty deals, no exception. Ingvar landed in
+his own body every time, within a second of the simulation; the terminal opened on him; the prices, the Fair
+Market Act, the drift and the purse carry all matched the design to the coin; a relog mid-visit handed him to the
+new client still trading; the export wrote its trader and visit rows. The record is
+`docs/proofs/2026-09-07-stormtest-session.md`. Not yet watched: whether she lets go over the drop point, the
+vanish, the callout bubble, the hover prompt, and the six merged fixes that nothing in six visits exercised
+(`docs/AUDIT-STORMTEST-2026-09-07.md` §5 says what would, one line each).
+
+**The walk-up, and what the audit found (`docs/AUDIT-STORMTEST-2026-09-07.md`, read §0):**
+1. **He reached Don on every visit — but never on the first attempt.** The first approach after the drop gives
+   up with `budget scaled from 0 m at entry`, 6/6: the drop writes his state onto the ZDO, `ResolveCarrier` copies
+   it straight into `_state`, and that path skips the reset `Decide` does, so F5's scaled budget has never run on
+   a machine. On visits 4–6 the give-up came a minute or two late with him far from the pilot, which the code
+   alone does not explain; the diff in §1.4 adds the one log line that settles it. **This is yours, and the owner
+   is talking to you about it.** The diff is written; nobody on Don's side touches your files before that talk.
+2. **The visit-end sweep reports a stranded merchant at every end.** The reclaim works; `DestroyZDO` only queues,
+   and the sweep runs in the same call. §2: sweep one tick later. Yours too, same talk.
+3. **The cooldown key and two wording lines** were Don's and are built (PR #48).
+4. **Your merged fixes against the logs (§5):** F7 and N1 confirmed on a machine; F5 and F4 contradicted (items 1
+   and 2); F1, F2, F6, F8, F9, F11 never exercised. `docs/TODO.md` §2 still says F5 fixed the walk-up cause.
+
+**Valheim 1.0 on 2026-09-09.** Steam already has a `default_pre1_0` branch on both apps ("Last stable build
+before 1.0", today's builds), so the 0.221.12 baseline stays fetchable after 1.0 lands and a server can pin
+itself there if the mod needs a day. No 1.0 build is downloadable yet. The probe registry was run tonight
+against the previous stable build (0.221.4) and reported every version number as moved with all 18 probes
+still resolving (`docs/ENGINE-PROBES.md` §8 item 4). **When 1.0 lands, Don's side fetches it and runs the
+probe tool against it within the hour** and tells you which probes moved; the comparative decompile against the
+244-row surface is still yours.
+
+**Decided today by the owner:** no JSON library after all (`Core/Json.cs`; decision 3 reversed), the DLL
+untracked (release assets), the catalogue verbs, the two drift knobs (Wares never, Wants three days), ghost mode,
+the load-bearing set. **Still his, not ours:** the client-asserted comfort numbers, reconfirm versus teardown.
+
+**From you, in order:** the walk-up and the sweep once you and the owner have spoken; your TODO §2 brought up
+to date; the animator parameter names and item 23 on your server; the three rc1 things in issue #23 close with
+rc2.
+
+### The morning of 2026-09-07, after the rc1 merge (history)
 
 **Your list now lives in `docs/TODO.md` section 2.** That file is the tracker — three tracks, one per owner,
 each editing only its own section — and it is cut from `main` at 8453b65. Everything below in this section is
