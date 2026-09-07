@@ -85,27 +85,20 @@ step 4).
 
 - [x] ~~F11, decided by the owner 2026-09-07: ghost mode.~~ **Taken by Track A** (owner, the same evening:
       Wu'barrk is loaded with F2–F10) — PR #37; see section 3. Nothing of Track B's is touched.
-
-- [ ] **The P4/P5 audit's findings (`docs/AUDIT-P4P5-2026-09-07.md`, issue #29).** **F1 DONE** — PR #30
-      merged 2026-09-07: `Core/Immortality.RunOriginal`, pure, seven checks, the exact rc1 line restored as
-      a mutation fails three of them. The release notes on `v0.1.0-rc1` now open with a do-not-install
-      warning, because the tag still carries F1. **F2–F10 in flight 2026-09-07**, split by FILE so four
-      branches cannot collide: `b/f4-resume-vanish` (F4 + F3's server half: `Spawner.cs`,
-      `VisitDirector.cs`), `b/merchant-audit` (F3's merchant half, F5, F9, F10: `CargoMerchant.cs`,
-      `MerchantPlan.cs`, `Lines.cs`), `b/patches-hover-dot` (F2, F6: `Patches/Patch_Character_*`),
-      `b/flight-floor-initzdo` (F7, F8, N1 if cheap: `CargoFlight.cs`, `FlightPlan.cs`, the two Awake
-      patches). Each lands as a draft PR, is reviewed and re-verified by the coordinator, then marked ready.
-      **F11 is a decision, not a fix** (a tamed Ingvar is a legal target for every hostile; faction-only
-      vs tamed-and-aggro-magnet) — the owner's call, on §1's plate.
+- [ ] **The P4/P5 audit's findings (`docs/AUDIT-P4P5-2026-09-07.md`, issue #29).** End of day 2026-09-07:
+      **F1 merged** (#30). **F2 + F6 merged** (#38). **F4 + F3's server half + decision 9's `Spawner` half:
+      PR #39, ready.** **F7 + F8 + N1: PR #41, ready, merges after #39** (it carries the resolution of a
+      `FlightPlan.cs` conflict with #39; both additions kept). **F3's merchant half + F5 + F9 + F10: PR #42,
+      ready.** **F11: Don's, merged** (#37, ghost mode). Each PR was re-verified by the coordinator in a fresh
+      worktree — build, harness at the claimed count, one mutation re-run by hand — and the three open ones
+      were trial-merged together on `main`: clean, 1571 checks. Ticks when #39/#41/#42 merge.
 - [x] **Hand over the bundle, every bake.** DONE 2026-09-07: `Assets/valkyriescargo_kit` attached to
       `v0.1.0-rc1`, byte-identical to the embedded copy (PR #27's note). Every re-bake: a new asset.
-- [ ] **The walk-up.** In the one live visit he `gave up walking after 20 s` and called out from the drop
-      point (issue #23, release note). *Part done, PR #25 merged 2026-09-07:* the Dverger's AI consume list
-      (Coins on it) emptied so he no longer walks to a coin stack and eats it, and the timeout now logs a
-      diagnosis. *Being fixed:* the cause is the audit's F5 (a flat 20 s budget, and "arrived" and "no
-      path" being the same `MoveTo` return) — a distance-scaled budget and a stall detector, in
-      `b/merchant-audit`. *Still needed after it merges:* one run, and the `the walk-up did not finish` /
-      stuck line pasted here.
+- [ ] **The walk-up.** PR #25 merged (the coin-eating consume list; the timeout logs a diagnosis). **The cause
+      is fixed in PR #42 (F5):** a budget scaled from the distance at entry (`Clamp(d/1.5, 20, 90)`), a 1 s
+      progress window feeding a 3 s stall detector that is a DIFFERENT outcome (`Stuck`) from the timeout, and
+      the leash fires once per visit. Proven against the model, not the world. *What closes it:* one forced
+      visit after #42 merges, and the `the walk-up did not finish` / `stuck` line pasted here.
 - [ ] **Valheim 1.0 lands 2026-09-09.** P10a is his: fetch the 1.0 client and server
       (`tools/fetch-builds.sh`), decompile, `diff-engine` against the 244-row `docs/ENGINE-SURFACE.md`,
       update `docs/ENGINE-BASELINE.md`, check in the report under `docs/engine-sweeps/`, and report
@@ -117,29 +110,27 @@ step 4).
 - [ ] **Item 23, the export, live:** a visit on his dedicated server, `barrkbot_cargo_*.json` landing under
       `BepInEx/config/ValkyriesCargo/` once a minute, the log line pasted into `BARRKBOT_CONTRACT.md`
       ("shape-verified, not yet live-verified"), and BarrkBOT's scanner picking the files up.
-- [ ] **Truth pass on his files.** *First half done, PR #27 merged 2026-09-07:* the base 2 → 3 reason is
-      decision 8 in `docs/DECISIONS-WUBARRK.md`, and `docs/CATALOGUE.md` matches the code entry by entry.
-      *Second half in PR #33 (open):* `README.md`, `CHANGELOG.md`, `models/README.md` — plus #24's config
-      corrections (the five client-read keys and the two ranges), applied only once #24 was on main so
-      the README never contradicted the shipped descriptions. Ticks when #33 merges.
+- [x] **Truth pass on his files.** PR #27 (decision 8, CATALOGUE checked entry by entry) and PR #33 (README,
+      CHANGELOG, models/README, plus #24's five client-read keys and two ranges) both merged 2026-09-07.
 - [x] **Close issue #16.** Closed 2026-09-07 on the rename shipped in #22, verified on `main`.
-- [ ] **The load-bearing set (issue #31, PR #35), delegated by the owner 2026-09-07.** Which patches'
-      failure to apply should REFUSE the mod rather than degrade it. As merged: `Core/PatchLedger.IsLoadBearing`
-      says yes for the `ServerSync` namespace only (the version gate, the RPC registration, the config lock).
-      Leave it and say so, or widen it: a PR against that predicate and its `PatchLedgerTests` checks, the
-      reason in `docs/DECISIONS-WUBARRK.md` and CLAUDE.md house rule 3. *(Restored 2026-09-07: the
-      coordinator's section rewrite dropped this item minutes after it was added. Answer in progress.)*
-- [ ] **`event valkyries_cargo` from the vanilla console** (owner request 2026-09-07). PR #34 (open): the
-      director used to kill any run of our event it had not started; it now adopts it onto the player
-      nearest the event — vanilla passes the caller's own position — and authors the visit. Known and
-      not widened: `event` is `onlyServer` in vanilla (server console or listen host; `cargo visit` stays
-      the client route), and `stopevent` ends the visit reporting `timer` rather than the true reason.
+- [x] **The load-bearing set (issue #31), delegated by the owner.** Decision 9, PR #36 merged: the refuse set
+      stays ServerSync only; `PatchLedger.IsApplied(name)` is the middle tier a feature gates itself on. The
+      flight's half — no bird without `Patch_Valkyrie_Awake`, Ingvar on the ground, one loud line — is in
+      PR #39.
+- [x] **`event valkyries_cargo` from the vanilla console** (owner request). PR #34 merged 2026-09-07: the
+      director adopts a console-started event onto the nearest player instead of killing it. Left as-is on
+      purpose: `event` is `onlyServer` in vanilla (`cargo visit` stays the client route), and `stopevent` ends
+      the visit reporting `timer` rather than the true reason — small, separate.
 - [x] ~~Pending Don's decision: stop tracking the DLL.~~ Decided and done on Track A 2026-09-07 (section 3).
       Yours after it: `docs/DECISIONS-WUBARRK.md` §7's "the bake runs on both machines" premise and §3 want a
       one-line "overridden by the owner 2026-09-07" each, and `BARRKBOT_CONTRACT.md` no longer needs to name
       Newtonsoft as a requirement (its "shape-verified against Newtonsoft" history can stay).
 - [x] ~~Pending Don's decision: replace the Newtonsoft call with a pure writer.~~ Decided and done on Track A
       2026-09-07 (section 3): `Core/Json.cs`. Item 23 (the files landing live) is unchanged and still yours.
+- [ ] **Record the reversal of decision 3.** The owner's PR #40 drops the JsonDotNET dependency for a pure
+      `Core/Json.cs` (byte-identical to Newtonsoft over 4,028 comparisons). Decision 3 in
+      `docs/DECISIONS-WUBARRK.md` says the opposite; once #40 merges it must say it was overridden by the
+      owner and why, not go quietly stale. Docs only, ours.
 
 Not his: the two-client items (cannot run on his side); Don's three branches (rebased here).
 
