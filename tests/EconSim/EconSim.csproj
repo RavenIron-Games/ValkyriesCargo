@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!-- Same shape as tests\CoreTests: a console app on a modern runtime, compiling the
+         SHIPPING Core sources. RollForward keeps it running when the SDK moves on. -->
+    <TargetFramework>net8.0</TargetFramework>
+    <RollForward>LatestMajor</RollForward>
+    <OutputType>Exe</OutputType>
+    <Nullable>disable</Nullable>
+    <AssemblyName>EconSim</AssemblyName>
+    <RootNamespace>ValkyriesCargo.EconSim</RootNamespace>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- Every number in the report is formatted with InvariantCulture; this makes a machine
+         with a comma decimal separator produce the same bytes anyway. -->
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="Harness.cs" />
+    <Compile Include="Scenarios.cs" />
+    <Compile Include="Checks.cs" />
+    <Compile Include="Stubs.cs" />
+
+    <!--
+      THE SHIPPING SOURCE, not a copy (the CoreTests rule). A simulation of a market we
+      re-implemented would measure our re-implementation. These five files are the whole
+      pure market; none of them names a Unity or BepInEx type, so no stub is needed.
+    -->
+    <Compile Include="..\..\ValkyriesCargo\Core\Catalogue.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\Wire.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\MarketSnapshot.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\Deal.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\Market.cs" />
+  </ItemGroup>
+
+</Project>
