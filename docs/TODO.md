@@ -169,6 +169,16 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       six wrong-signature mutations each a FAILED line from it. `docs/ENGINE-PROBES.md` §7–§9. **Item 24's boot
       half DONE 2026-09-07 10:40 on StormTest**: `probes 18/18 ok, 7 not probeable` and `patches 18/18 applied` in the
       real boot log, under Mono. Still open: `cargo engine` read on a client, and the moved-version direction.
+- [x] **The StormTest session, 2026-09-07 10:39–11:38** (Don's Windows client, PR #46's build; record:
+      `docs/proofs/2026-09-07-stormtest-session.md` + the log excerpt). Six visits, 20 deals over the wire, no
+      exception from the mod. DONE: items 8, 12, 13, 18, 24 (both sides), 26 (all but "waits"); the log halves of
+      7, 9, 10, 11, 15, 16, 17, 21, 23; plus the Fair Market Act, both drift knobs, the carry on gross coins and a
+      relog mid-visit, all to the coin. **Found: D1** the first approach after the drop never starts cleanly (6/6;
+      `ResolveCarrier`'s ZDO-driven state change skips `Decide`'s entry reset, and the drop's ZDO write lands at the
+      drop, late, or never); **D2** the per-player cooldown keyed on the session uid (three `cool` rows for one player
+      after two relogs); **D3** the deferred reclaim at visit end is not reclaiming (the sweep is). Fixes on the
+      owner's word; D1/D3 are Track B's files. Still to run: 3, 5, 14, 22, 25; the client-console halves need a
+      screenshot or the server window.
 - [ ] **The two owner decisions of 2026-09-07, built here (PR open on the owner's word):** the JSON
       dependency swapped for `Core/Json.cs` (writer only; compact and indented output shaped like
       Newtonsoft's so the rollover's part boundaries and BarrkBOT's files do not move; the `<Reference>`,
