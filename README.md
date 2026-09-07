@@ -5,11 +5,15 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: 0.1.0, first playable.** The plugin boots on a client and a dedicated server, the
+> **Status: `v0.1.0-rc1`, first playable.** PR #22 merged the flight, the merchant, the Cargo Terminal,
+> Ingvar's own body and the BarrkBOT export; the tag is cut, the store zip is built, and the upload is
+> deliberately held back (see Status). The plugin boots on a client and a dedicated server, the
 > director runs, the market persists, and Ingvar's own body loads out of the bundle. A full visit is
 > proven off-game across 1301 checks and a nine-scenario economy simulation, and is still being proven
-> in-game -- `docs/PROOF-CLIENT.md` is the runbook and CLAUDE.md lists what remains. This file is the
-> developer's README; the store page is `HexiumDist/README.md`.
+> in-game: one live visit has landed Ingvar in his own body, but no run has yet watched the walk-up
+> finish, the terminal open, a trade settle or the vanish. `docs/PROOF-CLIENT.md` is the runbook and
+> CLAUDE.md lists what remains. This file is the developer's README; the store page is
+> `HexiumDist/README.md`.
 
 ---
 
@@ -19,33 +23,33 @@ five minutes at prices that move with what the world sells him, then vanishes li
 base, the server may send Ingvar the Far-Travelled your way: a Valkyrie will fly in with him in her
 talons, drop him beside your hearth, and he will walk up and call out. Everyone nearby will see all
 of it. Never on command: the visit is a roll every 25 minutes at 25%, and a summon horn is a later,
-earned feature. The roll, the eligibility gates and the five-minute event are built and run today;
-the bird and the man are not (see Status).
+earned feature. The roll, the eligibility gates, the event, the flight and the merchant are all built
+now, and have flown and landed together once, live: Ingvar arrived in his own body, stopped short of
+your hearth and called out from where he stood (see Status).
 
 **The trade.** Press E on him for the Cargo Terminal: his wares on one side, the goods he wants on
 the other, a staging tray in between. He carries a live stock of 72 catalogue entries — 18 he sells
 and buys back, 54 he only buys — that persists per world. Buy him out and the price climbs; flood
 him and he pays less; a game day later it has drifted back. He pays coins, or takes your goods in
-barter at his live buy price, and he arrives with a purse of 800 coins, so nobody can dump a
+barter at his live buy price, and he arrives with a purse of 1500 coins, so nobody can dump a
 warehouse on him. If a price moves while you are staging, the line turns amber and you confirm once
 more; nothing leaves your inventory until the server has answered. The market, the wire and the
 window are all built; the window has never been drawn on a screen.
 
 **The departure.** Five minutes, or Shift+E twice to send him off. He speaks a farewell and vanishes
-in Odin's own effect. Not built.
+in Odin's own effect. Built (`Client/CargoMerchant.cs`); not yet watched on a screen.
 
 ## What it will not do
 
-No horn item in 0.1. No custom body yet: the loader is built, but until the bundle is baked and embedded a Dverger stands in for Ingvar. No
-patch on the vanilla trader or store — the terminal is our own window, opened from our own interact
-handler. Nothing happens on command except an admin's `cargo visit`.
+No horn item in 0.1. No patch on the vanilla trader or store — the terminal is our own window, opened
+from our own interact handler. Nothing happens on command except an admin's `cargo visit`.
 
 ---
 
 ## Status
 
-Truth pass against `main` at commit `7ac0dc0`, 2026-09-06. The log lines below are the ones recorded
-in `CLAUDE.md` "Status" by whoever saw them.
+Truth pass against `main` at commit `8453b65` (PR #22 merged, `v0.1.0-rc1` tagged), 2026-09-07. The
+log lines below are the ones recorded in `CLAUDE.md` "Status" by whoever saw them.
 
 ### Built and proven headless, on a dedicated server
 
@@ -87,48 +91,56 @@ lines, `format 1`, 72 `stock` rows, `purse 800`, `purseStart 0`, `visit 0`, `seq
 to `.bak`. The same boot also printed `roll: no eligible player: nobody online` — the empty-server
 path, live.
 
-Off the game entirely: **1034 checks** in `tests\CoreTests`, which compiles the shipping sources
-themselves — the whole of `Core\`, plus `Net\CargoRpc.cs`, the terminal's tray model and the body's blend model — against
-stubs, never a copy. Mutation-proven (28 mutations on the market core, seven more on the terminal's tray
-model, five on the body's blend model; each fails without its fix).
+Off the game entirely: **1301 checks** in `tests\CoreTests`, which compiles the shipping sources
+themselves — the whole of `Core\` (the market, the scheduler, the flight plan, the merchant's state
+machine, the body's blend model and the BarrkBOT export among them), plus `Net\CargoRpc.cs` and the
+terminal's tray model — against stubs, never a copy. Mutation-proven throughout: every fix in this
+history has a test recorded to fail without it.
 
-### Built, and never seen on a screen
+### Built, and mostly still unseen
 
-Every one of these compiles, and none of it has been run with a renderer attached. A clean build
-proves nothing about a game member.
+Most of this compiles and has never been run with a renderer attached. A few items below have now
+been run once, live, on a listen host; one run proves far less than a repeatable one, and none of
+these is repeatable yet. A clean build proves nothing about a game member either way.
 
 - **The Cargo Terminal** — the IMGUI window itself: the two panes, the icons, the staging tray, the
   amber price line, Confirm, Fill from my goods, Send him off. `cargo terminal demo` draws it on an
-  in-process market with no server and no merchant; nobody has run that command yet.
-- **The client boot line** (`renderer=True`), the ServerSync version wall, the config lock on a
-  connected client, and the `cargo prefab` dumps.
-- **The comfort report**: `Client\ComfortReporter.cs` writing `VCargo_rested` / `VCargo_comfort` on the local
-  player's own ZDO, and those numbers appearing in the server's candidate list.
+  in-process market with no server and no merchant; nobody has run that command yet, and the one live
+  visit below ended before anyone pressed E on Ingvar to open it the real way.
+- **The client boot line** (`renderer=True`) and `cargo status` answering on a client have both been
+  seen once, on a listen host, 2026-09-07. Still not seen: the ServerSync version wall, the config
+  lock on a client that is not also the host, and the `cargo prefab` dumps.
+- **The comfort report**: `Client\ComfortReporter.cs` writing `VCargo_rested` / `VCargo_comfort` has
+  been seen once in a client's own `cargo status`. Not yet confirmed: those same numbers appearing
+  side by side in the server's candidate list.
 - **A forced visit**: `cargo visit`, the pilot's private line, the centre banner, the countdown, the
   clock pausing when everyone walks out of range, the timer ending the visit, `cargo dismiss`, and a
   non-admin being refused.
 - **A deal over the wire**: `cargo deal buy Iron 2` moving an inventory and a price on every machine,
   a redelivery after a disconnect, a visit resumed after a mid-visit restart, and each refusal
   reason.
-- **The body loader**: `cargo body` reporting the embedded bundle, and `cargo body preview` standing
-  Ingvar in front of the player. Needs a baked bundle, and none exists yet.
-- **The flight** (`Server/Spawner.cs`, `Client/CargoFlight.cs`, `Patches/Patch_Valkyrie_Awake.cs`, Wu'barrk's
-  P4): the server authors the Valkyrie for the pilot's client to fly, straight in from about 90 m out and 120 m
-  up over about 17 s. Simulated by both owners; never flown. Until the merchant exists it carries nothing.
+- **The body loader**: `cargo body` and `cargo body preview` have both been run and watched. Five
+  real bake defects were found this way and are fixed at the source (a stray sphere, an unlinked
+  albedo, a bind-pose bounding box that lied about the up-axis, Valheim's refusal to light Unity's
+  `Standard` shader, and a donor material's emission glow left behind) — the full account is
+  `docs/knowledge-base/SKINNED-CHARACTER-BUNDLE-FACTS.md`. Ingvar now stands textured, upright and
+  correctly lit in preview. Not yet seen: how he reads in daylight (the only preview run was at
+  night) and the walk and one-shot clips playing.
+- **The flight** (`Server/Spawner.cs`, `Client/CargoFlight.cs`, `Patches/Patch_Valkyrie_Awake.cs`,
+  Wu'barrk's P4): the server authors the Valkyrie for the pilot's client to fly, straight in from
+  about 90 m out and 120 m up over about 17 s, and now carries the merchant (P5). Flown once, live —
+  Ingvar landed in his own body — and not yet watched from two screens at once.
 
-The full numbered list is `CLAUDE.md`, "What to verify in-game", items 2 to 20. Whoever boots a
-client first works that list and pastes the exact lines back into `CLAUDE.md`.
+The full numbered list is `CLAUDE.md`, "What to verify in-game", items 2 to 23 (P4's flight and the
+BarrkBOT export each added their own beyond the original 20). A client has since booted and run one
+visit; `docs/PROOF-CLIENT.md` is the runbook for the rest of the list, and each proof gets pasted back
+into `CLAUDE.md` as it happens.
 
-### Not built
-
-- **The merchant** (`Client/CargoMerchant.cs` and its patches): the carry in the talons, the landing,
-  the walk, the callout, immortality, Shift+E dismissal, the Odin vanish, the restart sweep.
-- **The custom body**: the source art is in `models\` and the loader (`Client/BodyLoader.cs`, with
-  `cargo body preview` as its proof) is in this build; the baked asset bundle is not, so the Dverger
-  stands in.
-
-So today a visit starts an event and a market with nobody standing in your yard. That is why the
-status line says not yet playable.
+So today a visit puts Ingvar himself in the yard, flown in and landed in his own body — proven once,
+live, on a listen host. He stopped short of the walk-up and called out instead, and nobody has yet
+watched one visit's whole loop, glide to vanish, in a single sitting. That is why the tag is
+`v0.1.0-rc1` and not yet a store upload: `docs/RELEASE.md` step 5 holds the upload back until that
+loop is seen.
 
 ---
 
@@ -143,7 +155,9 @@ On a Gale-managed client the plugin folder is
 `%APPDATA%\com.kesomannen.gale\valheim\profiles\<profile>\BepInEx\plugins\`, not the Steam folder.
 
 Requires [BepInExPack Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/)
-and nothing else. No Jotunn.
+and, since the BarrkBOT export, `ValheimModding-JsonDotNET-13.0.4` (Newtonsoft.Json, compiled against
+at build time for `Server/BarrkBotExport.cs`; both are in `manifest.json`'s dependency list, so a
+package manager resolves it the same way it resolves BepInEx). No Jotunn.
 
 Built against the assemblies of the Valheim install of 2026-09-06 (0.221.x); that install's
 `UnityPlayer.dll` reports **Unity 6000.0.61f1**, which is the Editor version any asset bundle for
@@ -175,24 +189,25 @@ itself is what arms the lock.
 | `PlayerCooldownMinutes` | `60` | 0-1440 | Real minutes before the same player can be chosen again; stamped at dispatch. |
 | `CooldownRadius` | `60` | 0-500 | Metres: a base on cooldown blocks its neighbours within this radius. |
 | `MerchantLifespanSeconds` | `300` | 30-1800 | How long Ingvar stays, as the vanilla random event's duration. |
-| `ApproachDistance` | `3.5` | 1-10 | Metres from the pilot at which he stops walking. |
-| `BodyPrefab` | `Dverger` | | The creature prefab that plays Ingvar until the custom body exists. Must have a `Humanoid`, a `MonsterAI` and an `Animator`. |
-| `CustomBody` | `true` | | Put Ingvar's own body on the `BodyPrefab` clone from the AssetBundle embedded in this DLL. `false` keeps the Dverger stand-in visible, and so does a build with no bundle embedded (`cargo body` says which). This is the switch, not `BodyPrefab`. |
-| `FlightStartDistance` | `90` | 24-200 | Metres from the pilot where the Valkyrie appears; clamped at runtime into the pilot's active zone block. |
-| `FlightStartAltitude` | `120` | 30-500 | Altitude of the Valkyrie's start point, metres above the drop. |
+| `ApproachDistance` | `3.5` | 1-10 | Metres from the player at which he stops walking up. Read on the **client that owns the merchant**, synced from the server. |
+| `BodyPrefab` | `Dverger` | | The engine creature prefab the merchant is **cloned from, for good** — `Character`, `MonsterAI` and the collider all come from it, whatever body is drawn on top. Must have a `Humanoid`, a `MonsterAI` and an `Animator`. This is not the custom-body switch; that is `CustomBody`. |
+| `CustomBody` | `true` | | Put Ingvar's own body on the `BodyPrefab` clone from the AssetBundle embedded in this DLL. `false` keeps the Dverger stand-in visible, and so does a build with no bundle embedded (`cargo body` says which). This is the switch, not `BodyPrefab`. Read on the **client**, synced from the server; a dedicated server never reads it. |
+| `FlightStartDistance` | `90` | 30-200 | Metres from the pilot where the Valkyrie appears; shrunk at runtime, 12 m at a time, until the start fits inside the pilot's active zone block. The floor is `FlightPlan.MinimumStartDistance` (30 m) — below that the bird would appear on top of the player. |
+| `FlightStartAltitude` | `120` | 30-400 | Altitude of the Valkyrie's start point, metres above the drop. |
 | `FlightDescentDistance` | `50` | 10-200 | Metres out at which the descent leg begins. |
-| `FlightSpeed` | `8` | 2-40 | Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. |
-| `FlightTurnRate` | `45` | 5-360 | Degrees a second the Valkyrie may turn, overriding the prefab's own. |
+| `FlightSpeed` | `8` | 2-40 | Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. Read on the **client that owns the bird**, synced from the server; the server never reads it. |
+| `FlightTurnRate` | `45` | 5-360 | Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the **client that owns the bird**, synced from the server. |
 | `Catalogue` | 72 entries | | What Ingvar sells and buys: `Prefab:BasePrice:TargetStock:MaxStock:Kind` entries separated by commas; `Kind` is `Ware` (sells and buys back) or `Want` (buys only). The default is 18 wares and 54 wants; every number's reason is in `docs/CATALOGUE.md`. An unknown prefab name is dropped with one log line and the rest still loads. |
 | `PriceElasticity` | `0.35` | 0.05-1.5 | Exponent of (target / stock) in the price; higher is steeper. |
 | `MinPriceMultiplier` | `0.4` | 0.05-1 | Floor on the price multiplier when he is flooded. |
 | `MaxPriceMultiplier` | `3` | 1-10 | Ceiling on the price multiplier when he is out. |
 | `SpreadBuy` | `0.7` | 0.1-1 | What he pays as a fraction of what he charges for the same item. |
+| `FairMarketAct` | `true` | | Caps what he pays to buy back a Ware at par (base × `SpreadBuy`), so a high `MaxPriceMultiplier` can never turn buying him out and selling straight back into free coins. |
 | `StockHalfLifeGameDays` | `1` | 0.1-30 | Between visits his stock drifts back toward target with this half-life, in world days. |
-| `PurseCoins` | `800` | 0-100000 | Coins he arrives with. |
+| `PurseCoins` | `1500` | 0-100000 | Coins he arrives with. |
 | `PurseCarryPercent` | `50` | 0-100 | Percent of last visit's takings added to the next purse, capped at three purses. |
-| `EnableBarter` | `true` | | Allow paying with goods he wants, valued at his live buy price. |
-| `PriceChangePolicy` | `Reconfirm` | `Reconfirm` \| `Teardown` | `Reconfirm`: a staged deal whose price moved turns amber and needs one more click. `Teardown`: every open tray is cleared on any price change. |
+| `EnableBarter` | `true` | | Allow paying with goods he wants, valued at his live buy price. `false` hides the terminal's Barter button; the server settles a barter deal either way. Read on the **client**, synced from the server. |
+| `BarrkBotExport` | `true` | | Write `barrkbot_cargo_market.json`, `barrkbot_cargo_traders.json` and `barrkbot_cargo_visits.json` under `BepInEx/config/ValkyriesCargo/` for BarrkBOT to read, refreshed about once a minute; the world sidecar is still the source of truth. |
 
 ### `[Client]`
 
@@ -218,7 +233,7 @@ Prefix `cargo`. Console commands are not config: `LockConfiguration` does not to
 | `cargo deal buy\|sell <prefab> [count]` | A deal without the terminal: builds the same `Deal`, sends it over the same wire, applies the same answer. The reference path. |
 | `cargo claim` | Ask the server for any delivery it still owes you. |
 | `cargo terminal demo` | Open the Cargo Terminal on the in-process demo market: **no server, no world and no merchant needed**. This is the way to see the window. |
-| `cargo terminal open` | Open it on a running visit, with no merchant to stand beside (until the merchant exists). `cargo terminal close` closes it. |
+| `cargo terminal open` | Open it on the running visit as a console shortcut; it does not attach the merchant object even though the merchant now exists — pressing E on Ingvar himself is the real path. `cargo terminal close` closes it. |
 | `cargo visit [player]` | **Admin.** Force a visit for yourself, or for the named player. Cooldowns are ignored; every other gate is kept. |
 | `cargo dismiss` | **Admin.** End the running visit now. |
 | `cargo reset` | **Admin.** Forget every cooldown. |
@@ -241,6 +256,8 @@ the answer comes back on `VCargo_reply` and prints in the caller's console.
   `docs/data/items-valheim-2026-07-31.tsv`.
 - `docs/WORKSPLIT.md` — who owns what, and the frozen contract between the two tracks.
 - `docs/RELEASE.md` — how a release is cut.
+- `docs/PROOF-CLIENT.md` — the in-game verification runbook: the order, the exact command for each
+  item, and the log line the code writes.
 - `CLAUDE.md` — the engineering notes: engine facts read from the decompiled assembly, house style,
   the status lines quoted above, and the in-game verification list.
 - `PLAN.md` — the original plan; `docs/DESIGN.md` is authoritative where the two differ.

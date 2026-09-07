@@ -14,7 +14,8 @@ trade -- has been proven off-game across 1301 checks and in a nine-scenario econ
 still being proven in-game; the runbook is `docs/PROOF-CLIENT.md` and what remains is listed in
 CLAUDE.md's "what to verify in-game". Treat 0.1.0 as a first playable, not as a settled one.
 
-Entries are in build order.
+Entries are in build order, except the three sections directly below: 0.1.0's newest work, added
+after the rest of this log was written.
 
 ### Phase 4-5 — the flight and the merchant
 
@@ -31,6 +32,13 @@ Entries are in build order.
   as well, which the natural spelling of the check would have accepted.
 - `Client/CargoMerchant.cs` carries Ingvar under the talons, walks him up, calls out, keeps him peaceful
   and immortal for the visit, and vanishes him with Odin's own effect.
+- **The merchant used to fail its own setup, silently.** `MonsterAI.MakeTame()` opens with
+  `m_character.SetTamed(true)`, and `BaseAI.m_character` is not assigned until `BaseAI.Awake` -- which
+  has not run yet when our `Humanoid.Awake` postfix adds the component and calls it. Vanilla threw, and
+  the catch already in `Awake` turned that into `enabled = false`: every merchant this mod ever
+  authored, before the fix, stood inert with nothing driving it. Found on the first in-game visit,
+  2026-09-07; the fix skips `MakeTame()` on that first, Awake-time call and lets the next `Reassert`
+  (0.5 s later, once `BaseAI.Awake` has actually run) make it instead.
 
 ### Phase 8 — Ingvar's body
 
@@ -171,9 +179,10 @@ Entries are in build order.
   descent waypoint on the line carrying the glide altitude, and `TurningRadius` / `Reachable` so the harness refuses
   any waypoint a pursuer at the shipped speed and turn rate cannot reach.
 - `Server\Spawner.cs`: the bird's ZDO authored whole and owned by the pilot (`VCargo_cargo`, `VCargo_target`, `VCargo_turn`,
-  `VCargo_dropped`); the merchant not authored until P5 (`MerchantEnabled`); both reclaimed on any visit end.
-  `Patches\Patch_Valkyrie_Awake.cs`: vanilla `Awake` skipped for our bird only. `Client\CargoFlight.cs`: the owner
-  flies vanilla's own maths and writes the velocity key so every other screen sees a glide.
+  `VCargo_dropped`); `MerchantEnabled` held the merchant back when this PR merged, until P5 landed -- it
+  authors both now, and both are reclaimed on any visit end. `Patches\Patch_Valkyrie_Awake.cs`: vanilla
+  `Awake` skipped for our bird only. `Client\CargoFlight.cs`: the owner flies vanilla's own maths and
+  writes the velocity key so every other screen sees a glide.
 - New `Server.FlightSpeed` (8) and `Server.FlightTurnRate` (45): ours, synced, not the prefab's 20 and 20, whose
   57 m turning circle is wider than the whole approach.
 - Reviewed on the PR with a simulation of the flight; all four findings taken and reproduced by both sides. Not
@@ -216,15 +225,25 @@ runs, and `renderer=False` in every boot line.
   `purseStart 0`, `visit 0`, `seq 0`; after a restart, `sidecar valkyriescargo_4690126.dat (76 rows
   loaded)` with the first file rotated to `.bak`. Also `roll: no eligible player: nobody online`.
 
-**Not yet seen on a screen.** `CLAUDE.md` "What to verify in-game" items 2 to 20, none of them done:
-the client boot line, the version wall, the config lock, the `cargo prefab` dumps, the runtime
-`m_activeArea`, the comfort report in `cargo status`, `cargo visit` with the banner and the pilot's
-line, the clock pausing and resuming, the timer ending a visit, `cargo dismiss`, a non-admin
-refused, an ineligible player refused, a deal over the wire with the price moving on every machine,
-the owed ledger and a redelivery after a disconnect, the sidecar after deals, a visit resumed after
-a mid-visit restart, the refusal reasons, `cargo terminal demo`, the terminal on a real visit, and the body (`cargo body`, `cargo body preview`) once a
-bundle is baked.
+**A client has since run.** 2026-09-07, listen host (client and server on one machine), across two
+sessions: the client boot line and `cargo status`'s numbers (the runtime `m_activeArea`, the
+catalogue, the comfort report, the day length off a client's own `EnvMan`) are no longer headless
+claims, and a saved visit resumed after a restart and later ended on its timer. Ingvar's own body
+loaded on a real merchant, and the five bake defects noted in "Phase 8" above were all seen fixed.
+The same run found a real defect, now fixed: the merchant's own `MakeTame()` call threw on `Awake`
+(see "Phase 4-5" above), so every merchant before the fix stood inert. Ingvar himself gave up walking
+after 20 s and called out from where he stood rather than finishing the walk-up -- the designed
+fallback, not the outcome anyone wants.
 
-**Not in this release yet.** The authored flight (P4) is in review on another branch and has no entry
-here; the merchant (P5) and the baked bundle are not started. See
-`docs/DESIGN.md` section 9 for the order and `docs/WORKSPLIT.md` for who owns what.
+**Still not seen on a screen.** The rest of `CLAUDE.md`'s "What to verify in-game": the version wall,
+the config lock, the `cargo prefab` dumps, `cargo visit`'s banner and the pilot's line, the clock
+pausing and resuming across the 96 m rule, `cargo dismiss`, a non-admin refused, an ineligible player
+refused, a deal over the wire with the price moving on every machine, the owed ledger and a
+redelivery after a disconnect, the sidecar after deals, the refusal reasons, `cargo terminal demo`,
+the terminal on a real visit, the flight's glide and drop, Ingvar in daylight and his walk and
+one-shot clips, and the BarrkBOT files landing on a dedicated server.
+
+**Everything is in this release now.** The authored flight (P4), the merchant (P5) and the baked,
+embedded bundle merged together (PR #22); see "Phase 4-5" and "Phase 8" above. `v0.1.0-rc1` is
+tagged as a prerelease -- the store upload has deliberately not happened. See `docs/DESIGN.md`
+section 9 for the order and `docs/WORKSPLIT.md` for who owns what.
