@@ -47,11 +47,6 @@ Write-Host "Valheim: $ValheimPath" -ForegroundColor Cyan
 $managed    = Join-Path $ValheimPath "valheim_Data\Managed"
 $publicized = Join-Path $managed "publicized_assemblies"
 $bepinex    = Join-Path $ValheimPath "BepInEx\core"
-# Sibling of this repo, not part of the game install: the workspace's shared third-party DLL cache
-# (docs/knowledge-base's source, and where Fatty/TortalPortal/BlightedHeart already point their own
-# Newtonsoft.Json reference). Not fatal if absent here - the generic copy loop below just lists
-# Newtonsoft.Json.dll as missing, same as any other file this machine does not have yet.
-$libsTools  = Join-Path $PSScriptRoot "..\..\libs-Tools"
 $libs       = Join-Path $PSScriptRoot "..\libs"
 
 New-Item -ItemType Directory -Force -Path $libs | Out-Null
@@ -101,10 +96,8 @@ $sets = @(
     @{ Path = $bepinex; Files = @(
         "BepInEx.dll",
         "0Harmony.dll"
-    )},
-    @{ Path = $libsTools; Files = @(
-        "Newtonsoft.Json.dll"   # Server/BarrkBotExport.cs; runtime copy comes from the Thunderstore dependency ValheimModding-JsonDotNET, never shipped beside this plugin (docs/DECISIONS-WUBARRK.md #3)
     )}
+    # No third-party DLLs: the BarrkBOT export writes JSON through the pure Core\Json.cs (owner, 2026-09-07).
 )
 
 $copied = 0

@@ -4,7 +4,6 @@
     "website_url": "https://ravenirongames.com/",
     "description": "A Valkyrie air-drops Ingvar the Far-Travelled, a red-bearded dwarven merchant, beside your hearth when rested. Buy & sell wares at dynamic supply-and-demand prices before he vanishes like Odin. Server-synced.",
     "dependencies": [
-        "denikson-BepInExPack_Valheim-5.4.2333",
-        "ValheimModding-JsonDotNET-13.0.4"
+        "denikson-BepInExPack_Valheim-5.4.2333"
     ]
 }

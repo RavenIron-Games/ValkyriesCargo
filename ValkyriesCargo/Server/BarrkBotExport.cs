@@ -4,7 +4,6 @@ using System.Globalization;
 using System.IO;
 using System.Text;
 using BepInEx;
-using Newtonsoft.Json;
 using RavenIron.ValkyriesCargo.Config;
 using RavenIron.ValkyriesCargo.Core;
 
@@ -250,7 +249,9 @@ namespace RavenIron.ValkyriesCargo.Server
             var widths = new List<int>(rows.Count);
             foreach (KeyValuePair<string, object> row in rows)
             {
-                string rendered = JsonConvert.SerializeObject(new Dictionary<string, object> { [row.Key] = row.Value });
+                // Core/Json.cs (the owner's decision 2026-09-07: no JSON library, no runtime dependency);
+                // its compact form is shaped like Newtonsoft's, so the widths and the part boundaries stand.
+                string rendered = Json.Write(new Dictionary<string, object> { [row.Key] = row.Value });
                 widths.Add(rendered.Length);
             }
 
@@ -282,7 +283,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 doc[collectionKey] = collDoc;
 
                 string fileName = p == 0 ? baseName + ".json" : baseName + "_" + (p + 1).ToString(CultureInfo.InvariantCulture) + ".json";
-                Save(System.IO.Path.Combine(dir, fileName), JsonConvert.SerializeObject(doc, Formatting.Indented));
+                Save(System.IO.Path.Combine(dir, fileName), Json.Write(doc, indented: true));
             }
 
             CleanupStaleParts(dir, baseName, partOf);
