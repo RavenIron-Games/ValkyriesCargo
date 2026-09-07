@@ -161,8 +161,8 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       rows go into P10b's registry after PR #28 merges.
 - [x] **Download the bundle asset** from the v0.1.0-rc1 release into this machine's ignored `Assets/`.
       DONE 2026-09-07 (owner's word): 3,845,930 bytes; a build here is 4,181,504 bytes with Ingvar in it.
-- [ ] **The audit's probe rows into P10b's registry** (`docs/AUDIT-P4P5-2026-09-07.md` §2). BUILT, PR #46
-      open 2026-09-07 (merge on the word): 19 → 25 facts, 15 → 18 probed at boot, 4 → 7 bodies registered as
+- [x] **The audit's probe rows into P10b's registry** (`docs/AUDIT-P4P5-2026-09-07.md` §2). BUILT, PR #46
+      MERGED 2026-09-07 (b8f3f78): 19 → 25 facts, 15 → 18 probed at boot, 4 → 7 bodies registered as
       not probeable; three new probes (`znetview`, `interfaces`, `console`), the rest folded into the existing
       ones; 1697 checks; **every probe resolved against the REAL `assembly_valheim.dll` 0.221.12 offline**
       (a scratchpad tool loads the built DLL and calls `EngineCheck.Run()`: `probes 18/18 ok, 7 not probeable`),
@@ -179,7 +179,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       after two relogs); **D3** the deferred reclaim at visit end is not reclaiming (the sweep is). Fixes on the
       owner's word; D1/D3 are Track B's files. Still to run: 3, 5, 14, 22, 25; the client-console halves need a
       screenshot or the server window.
-- [ ] **The two owner decisions of 2026-09-07, built here (PR open on the owner's word):** the JSON
+- [x] **The two owner decisions of 2026-09-07, built here (PR #40 merged):** the JSON
       dependency swapped for `Core/Json.cs` (writer only; compact and indented output shaped like
       Newtonsoft's so the rollover's part boundaries and BarrkBOT's files do not move; the `<Reference>`,
       the `libs` check, the `fetch-libs` copy and the manifest entry removed), and the built DLL untracked
@@ -206,15 +206,15 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       deliberately failing patch in a scratch build printing its name rather than killing the mod.
 - [x] ~~Owner's decision: widen the load-bearing set or leave it.~~ **Delegated to Wu'barrk 2026-09-07**
       (owner: "more his alley"); moved to section 2.
-- [ ] **The catalogue verbs and the hot swap** (owner, 2026-09-07; PR open on the word): `Catalogue.Compose /
+- [x] **The catalogue verbs and the hot swap** (owner, 2026-09-07; PR #44 merged): `Catalogue.Compose /
       Upsert / Remove / Without` and `Market.WithCatalogue`, pure, 55 checks (1605 → 1660), three mutations
       caught; `ModConfig.CatalogueVersion`; the director rebuilds the shelf as soon as no visit is running and
       drops prefabs the game has no item for, at boot and on every edit; `cargo catalogue list|add|remove|reset`,
-      the admin half through `VCargo_admin`; `cargo status` says when a change waits. **Not yet seen on a
-      machine**: CLAUDE.md verify item 26 (StormTest, from an admin client).
-- [ ] **The two drift knobs** (owner, 2026-09-07; one PR after #44, on the same branch line): `MarketRules.WareHalfLifeGameDays`
+      the admin half through `VCargo_admin`; `cargo status` says when a change waits. **SEEN 2026-09-07 on
+      StormTest** from Don's admin client: item 26 all but the add-during-a-visit answer (the session item above).
+- [x] **The two drift knobs** (owner, 2026-09-07; PR #45 merged): `MarketRules.WareHalfLifeGameDays`
       0 / `WantHalfLifeGameDays` 3 replace `HalfLifeGameDays`; `Relax` per kind, 0 = never; `Sanitize` 0–365 for
       both; `Server.WareHalfLifeGameDays` / `Server.WantHalfLifeGameDays` replace `Server.StockHalfLifeGameDays`;
       the demo market keeps a one-day half-life on both kinds so its walk still moves; EconSim scenario 10 is
       the sweep and `docs/ECONOMY-SIM.md` is regenerated; harness checks for the shipped knobs and the clamps.
-      **Not yet seen on a machine**: a Ware bought out on StormTest still empty at the next visit.
+      **SEEN 2026-09-07 on StormTest**: five Wares bought out in visit 3 still at 0 when visit 4 opened; Wood 326 → 322 in the gap.
