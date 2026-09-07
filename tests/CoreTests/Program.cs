@@ -3118,7 +3118,7 @@ namespace ValkyriesCargo.Tests
 
             Section("FlightPlan: the drop the pilot reports is bounded by the drop the server authored");
 
-            // The bird's ZDO is owned by the PILOT, so `vc_target` is a value a client writes. Before
+            // The bird's ZDO is owned by the PILOT, so `VCargo_target` is a value a client writes. Before
             // this bound, `Spawner.Tick` handed it to the visit untouched: a modified client could put
             // the drop point -- and, with P5, Ingvar himself -- anywhere in the world. P11's authority
             // audit found it; this is the check that stands between that key and the world.

@@ -331,18 +331,6 @@ namespace RavenIron.ValkyriesCargo.Client
             for (int s = 0; s < mesh.subMeshCount; s++) Triangles += (int)(mesh.GetIndexCount(s) / 3);
         }
 
-        /// <summary>The axis-aligned box of `box` after `q`: all eight corners through the rotation.</summary>
-        private static Bounds Rotated(Bounds box, Quaternion q)
-        {
-            Vector3 c = box.center, e = box.extents;
-            Bounds outBox = new Bounds(q * c, Vector3.zero);
-            for (int i = 0; i < 8; i++)
-                outBox.Encapsulate(q * (c + new Vector3((i & 1) == 0 ? -e.x : e.x,
-                                                        (i & 2) == 0 ? -e.y : e.y,
-                                                        (i & 4) == 0 ? -e.z : e.z)));
-            return outBox;
-        }
-
         /// <summary>
         /// Two things the bake got wrong that cannot be fixed in the bake, done once on the instance.
         ///
@@ -564,7 +552,7 @@ namespace RavenIron.ValkyriesCargo.Client
                 IngvarBody body = go.AddComponent<IngvarBody>();
                 body.Bind(c);
                 ValkyriesCargo.Log.LogInfo(
-                    "body: Ingvar attached to '" + c.name + "' at local y " + GroundOffset.ToString("0.###") +
+                    "body: Ingvar attached to '" + c.name + "' at local y " + lift.ToString("0.###") +
                     "; " + stray + " stray renderer(s) in the bundle switched off; " + hidden + " stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, " +
                     "CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)");
                 return body;

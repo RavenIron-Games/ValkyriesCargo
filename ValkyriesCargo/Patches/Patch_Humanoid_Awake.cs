@@ -8,7 +8,10 @@ namespace RavenIron.ValkyriesCargo.Patches
     /// <summary>
     /// Design 3.3: a body whose ZDO carries `VCargo_ingvar` becomes Ingvar. A POSTFIX at default
     /// priority, not a prefix - vanilla `Humanoid.Awake` must run in full, because it is what caches
-    /// the Rigidbody and the collider and hands out `m_defaultItems`, and `CargoMerchant` needs all
+    /// the Rigidbody and the collider, and `Humanoid.Awake` takes `m_visEquipment` and `m_seed`.
+    /// It does NOT hand out `m_defaultItems`: `GiveDefaultItems()` is called from `Humanoid.Start`, for
+    /// non-players, so a postfix here runs BEFORE the crossbow arrives and not after (decompile-checked
+    /// 2026-09-07; an earlier comment claimed otherwise). `CargoMerchant` needs all
     /// of that to exist before it strips the crossbow back off him.
     ///
     /// Every machine. The server never instantiates anything of ours (see `Spawner`'s header), so in

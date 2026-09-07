@@ -128,21 +128,20 @@ public static class IngvarBundleBuilder
                                         // is the classic route to a 100x character
 
         // ---- LANDMINE 6 -------------------------------------------------------------------
-        // The source is authored Z-UP: `char1`'s mesh bounds put the 1.36 m height on Z and only
-        // 0.49 m on Y, so the model lies on its back and every bounds-derived number is measured
-        // off the wrong axis. The first bake reported a 0.244 m "ground offset" for a character
-        // 1.36 m tall for exactly this reason, and in-game he was flat (2026-09-07).
+        // `sharedMesh.bounds` on a SKINNED mesh is BIND-POSE data and it lies about the up-axis: this
+        // model's box puts its 1.36 m height on Z and only 0.49 m on Y. The BONES are converted, so he
+        // stands upright in game -- but every bounds-derived number is measured off an axis that was
+        // never his up, which is where a "0.244 m ground offset" for a 1.36 m character came from. It
+        // was half his WIDTH.
         //
-        // `mi.bakeAxisConversion = true` was tried here and DOES NOT FIX IT: the FBX header
-        // declares Y-up while the geometry is Z-up, so Unity has nothing to convert and only
-        // flipped the sign (centre z 0.68 -> -0.68, extents unchanged). Re-adding it will not
-        // help; do not spend the round trip.
+        // Do not try to fix it here. `ModelImporter.bakeAxisConversion` was tried and only flipped the
+        // sign (the FBX header claims Y-up while the geometry does not, so there is nothing to convert),
+        // and a Blender re-export with `axis_up='Y'` changed nothing either. Both tried 2026-09-07; the
+        // round trip is fifteen minutes and it has already been spent twice.
         //
-        // The correction therefore lives in `Client/BodyLoader.cs`, which rotates the body on
-        // attach and measures the offset off the corrected axis. The proper fix is a re-export
-        // with Blender's "-Y forward, Z up" settings -- but the raw Meshy source is not in this
-        // repo and the generation expires 2026-09-09, so load-side is where it can actually be
-        // done.
+        // Nothing rotates the body. `Client/BodyLoader.cs` measures the POSED mesh instead
+        // (`SkinnedMeshRenderer.BakeMesh`), which is the only measurement that does not come back
+        // through that box, and sets `updateWhenOffscreen` because Unity culls by it too.
 
         var takes = mi.defaultClipAnimations;
         for (int i = 0; i < takes.Length; i++)

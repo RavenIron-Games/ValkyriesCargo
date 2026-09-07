@@ -90,11 +90,11 @@ ZDO.GetOwner | assembly_valheim | call | VisitDirector.Gather; the owner id is t
 ZDO.GetPosition | assembly_valheim | call | VisitDirector.Gather
 ZDO.IsValid | assembly_valheim | call | Spawner.Tick, Reclaim, CargoFlight.Drop
 ZDO.Set | assembly_valheim | call | all overloads: int, bool, Vector3, ZDOID; ComfortReporter, Spawner, CargoFlight
-ZDO.GetInt | assembly_valheim | call | vc_cargo, vc_comfort, baseValue
-ZDO.GetBool | assembly_valheim | call | vc_dropped, vc_rested, dead
-ZDO.GetVec3 | assembly_valheim | call | vc_target, vc_turn
+ZDO.GetInt | assembly_valheim | call | VCargo_cargo, VCargo_comfort, baseValue
+ZDO.GetBool | assembly_valheim | call | VCargo_dropped, VCargo_rested, dead
+ZDO.GetVec3 | assembly_valheim | call | VCargo_target, VCargo_turn
 ZDO.GetString | assembly_valheim | call | playerName
-ZDO.GetZDOID | assembly_valheim | call | vc_carrier, in CargoFlight.FindMerchantByCarrier
+ZDO.GetZDOID | assembly_valheim | call | VCargo_carrier, in CargoFlight.FindMerchantByCarrier
 ZDO.GetHashZDOID | assembly_valheim | call | Spawner.CarrierKey: the two-int key pair a ZDOID is stored as
 ZDOID.None | assembly_valheim | call | Spawner, CargoFlight
 ZDOID.IsNone | assembly_valheim | call | Spawner.Tick, Reclaim
@@ -137,7 +137,7 @@ ZNetPeer.m_socket | assembly_valheim | call | AdminGate and DealWire.KeyFor
 ZNetPeer.m_playerName | assembly_valheim | call | DealWire.Who, AdminRpc.OnRequest
 ISocket.GetHostName | assembly_valheim | call | the platform id: the owed ledger's key, and the admin check's
 ZRpc.Register | assembly_valheim | call | DealWire and CargoTransport; replaces by name, so repeating is safe
-ZRpc.Invoke | assembly_valheim | call | vc_deal, vc_ack, vc_claim, vc_dismiss, vc_dealt
+ZRpc.Invoke | assembly_valheim | call | VCargo_deal, VCargo_ack, VCargo_claim, VCargo_dismiss, VCargo_dealt
 ZRpc.IsConnected | assembly_valheim | call | CargoTransport.Ready
 ZRpc.HandlePackage | assembly_valheim | patch-vendored | ServerSync
 ZRpc.Serialize | assembly_valheim | call | ServerSync
@@ -146,7 +146,7 @@ ZRpc.m_socket | assembly_valheim | reflect-vendored | ServerSync swaps in a buff
 ZRpc.m_functions | assembly_valheim | reflect-vendored | ServerSync replays buffered calls
 ZRpc.GetSocket | assembly_valheim | call | ServerSync
 ZRoutedRpc.instance | assembly_valheim | call | AdminRpc; NULL for the whole of plugin Awake and re-created per world
-ZRoutedRpc.Register | assembly_valheim | call | AdminRpc.EnsureRegistered: vc_admin, vc_reply
+ZRoutedRpc.Register | assembly_valheim | call | AdminRpc.EnsureRegistered: VCargo_admin, VCargo_reply
 ZRoutedRpc.InvokeRoutedRPC | assembly_valheim | call | AdminRpc.Send and the reply
 ZRoutedRpc.Everybody | assembly_valheim | call | ServerSync
 ZRoutedRpc.m_peers | assembly_valheim | reflect-vendored | ServerSync broadcasts config to every peer
@@ -227,7 +227,7 @@ RandomEvent.Update | assembly_valheim | fact | THE clock rule, the other half: m
 RandomEvent.OnActivate | assembly_valheim | fact | shows m_startMessage once, on a client inside the range
 RandomEvent.OnDeactivate | assembly_valheim | fact | shows m_endMessage when the event ended while active
 Heightmap.Biome | assembly_valheim | type | RandomEvent.m_biome = Heightmap.Biome.All
-Valkyrie.Awake | assembly_valheim | patch | our prefix skips vanilla for a bird carrying vc_cargo
+Valkyrie.Awake | assembly_valheim | patch | our prefix skips vanilla for a bird carrying VCargo_cargo
 Valkyrie.m_instance | assembly_valheim | fact | assigned on line 1 of Awake, BEFORE the owner guard: the reason the patch is a skip
 Valkyrie.DropPlayer | assembly_valheim | fact | Game.SkipIntro calls it on m_instance and it un-intros Player.m_localPlayer unguarded
 Valkyrie.UpdateValkyrie | assembly_valheim | fact | the flight maths Client/CargoFlight.cs keeps: 25 m look-ahead, banked turn, 0.5 m arrival
@@ -260,7 +260,7 @@ Character.SetTamed | assembly_valheim | call | CargoMerchant.Reassert; public, b
 Character.InIntro | assembly_valheim | patch | our postfix (Patch_Character_InIntro): __result = true while CargoMerchant.Pinned; the one caller (UpdateMotion, off CustomFixedUpdate) zeroes the Rigidbody's velocity every step while true - not immunity, just no fall accumulating under the carry pin
 Character.Damage | assembly_valheim | fact | NOT where damage happens: public, runs on the ATTACKER's machine, FindWeakSpotIndex + InvokeRPC("RPC_Damage", hit) and nothing else; see Character.RPC_Damage and CLAUDE.md's "Two corrections"
 Character.RPC_Damage | assembly_valheim | patch | private; our prefix (Patch_Character_Damage, Priority.Low, __runOriginal) cancels it for the merchant HERE, not on Damage - the victim-side choke point every hit passes through
-Humanoid.Awake | assembly_valheim | patch | our postfix (Patch_Humanoid_Awake) adds CargoMerchant when the ZDO carries vc_ingvar; runs after m_visEquipment and m_seed are set up here - NOT after GiveDefaultItems, which this method does not call (see Humanoid.Start)
+Humanoid.Awake | assembly_valheim | patch | our postfix (Patch_Humanoid_Awake) adds CargoMerchant when the ZDO carries VCargo_ingvar; runs after m_visEquipment and m_seed are set up here - NOT after GiveDefaultItems, which this method does not call (see Humanoid.Start)
 Humanoid.Start | assembly_valheim | fact | calls GiveDefaultItems() for non-players only - the Dverger's crossbow is equipped HERE, not in Awake; CargoMerchant.Reassert's staggered re-apply (0.5s/1s/3s, then every 5s), not patch ordering, is what strips it back off
 Humanoid.UnequipAllItems | assembly_valheim | call | CargoMerchant.Reassert: strips every equip slot (incl. the crossbow Start just gave him), triggerEquipEffects false
 MonsterAI.MakeTame | assembly_valheim | call | CargoMerchant.Reassert; calls Character.SetTamed(true) (async, see above), SetAlerted(false), clears both target fields

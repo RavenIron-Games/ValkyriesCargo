@@ -385,11 +385,16 @@ namespace RavenIron.ValkyriesCargo.Server
             _lastCoined = _market.Coined;
             int id = _session.VisitId;
             string pilot = _session.PilotName;
-            // World seconds are real seconds here (VisitSession's own doc comment: the event's m_time is
-            // real time, paused only while nobody is near), so this is the visit's own exact duration, not
-            // an approximation; the wall-clock started_at/ended_at BarrkBOT gets are derived from it rather
-            // than tracked separately (see barrkbot_cargo_visits.json's own notes for the one place that costs).
-            double duration = _session.Clock != null ? Math.Max(0.0, worldTime - _session.Clock.StartWorldTime) : 0.0;
+            // The visit's duration comes from the EVENT CLOCK, not from world time. World time is
+            // `ZNet.GetTimeSeconds()`, and `EnvMan.SkipToMorning` drives it forward to the next morning
+            // when players sleep -- so a 300 s visit slept through would read as a thousand and more, and
+            // the `started_at` derived from it would land before the visit began. It also keeps running
+            // while the event is paused with nobody within 96 m, which the clock deliberately does not.
+            // `Sync` retargets the clock's end from the event's own remaining seconds, so this is elapsed
+            // event time: 300 at the timer, less on a dismiss. Found by review, 2026-09-07.
+            double duration = _session.Clock != null
+                ? Math.Max(0.0, CargoEvent.Lifespan() - _session.Clock.Remaining(worldTime))
+                : 0.0;
             DateTime endedUtc = DateTime.UtcNow;
             _visitHistory.Record(id, pilot, endedUtc.AddSeconds(-duration), endedUtc, duration, _lastTakings, reason);
             Spawner.Clear();          // a bird still in the air when the visit ends is reclaimed and destroyed (P4)

@@ -309,8 +309,12 @@ Planned (design section 3; names are final, files do not exist yet):
    (`Client/IngvarBody.cs`; `Client/CargoFlight.cs` when it lands). The rule is about timers that outlive their object.
 3. **Cosmetics off the gameplay path.** Every patch body is its own try/catch, logging at most three
    times.
-4. **Never patch `EnvMan`. Never touch materials, textures or shaders.** Reading `EnvMan.IsDay()` is
-   fine; the material work for the custom body happens at build time in the bundle, not at runtime.
+4. **Never patch `EnvMan`. Never touch materials, textures or shaders** — with one exception, written
+   down 2026-09-07 the way rule 2's was. Reading `EnvMan.IsDay()` is fine. `Client/BodyLoader.cs` builds
+   ONE material at runtime: a COPY of the stand-in's own, with our albedo in it. It has to be at runtime
+   and cannot be done in the bundle, because a bundle baked in the Editor carries Unity's `Standard` and
+   Valheim does not light `Standard` at all. Nothing vanilla is mutated — the donor material is read and
+   never written — and the exception is exactly that one copy. `docs/knowledge-base/SKINNED-CHARACTER-BUNDLE-FACTS.md` §4.
 5. **Publicized assemblies are COMPILE-TIME ONLY.** Our files name no private member. Private fields
    reach patches only by `___injection`; private methods are patched, never called. `Libs/ServerSync.cs`
    reflects into a few; that is its file.
@@ -555,22 +559,35 @@ problem(s)`, `30 events registered, ours=yes`, `config: this side is the source 
 `my report: rested=no, comfort=1, written 2 s ago` (ComfortReporter is live), and `day length 1800 s` read off a
 CLIENT's EnvMan for the first time. Item 2 and item 6 are DONE.
 
-**Item 19 passed but for the bake; item 20 FAILED, and found three real defects.** `cargo body` reported
-`source embedded - loaded`, `bundle open, prefab 'ingvar' found`, `clips (6 of 6 wanted): Hello 3.75s, Idle 10.00s,
-Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s` (exactly the bake's numbers) and `bones=24 (24 expected)`. **The
-`StandaloneWindows64` bundle loads on a LINUX client** -- that question is settled. But: `tris=31192 (31112
-expected)` and `ground offset 0.244 m ... NOT near 0`. `cargo body preview` then stood up a **pure white ellipsoid
-with Ingvar inside it**. Dumping the FBX from the Editor named all three:
+**Item 19 passed but for the bake; item 20 found three real defects, and all three are now fixed AND SEEN
+fixed.** `cargo body` reported `source embedded - loaded`, `bundle open, prefab 'ingvar' found`, `clips (6 of 6
+wanted): Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s` (exactly the bake's numbers)
+and `bones=24 (24 expected)`. **The `StandaloneWindows64` bundle loads on a LINUX client** -- that question is
+settled. `cargo body preview` then stood up a **pure white ellipsoid with Ingvar inside it**. Dumping the FBX from
+the Editor named all three:
 
-- **a stray `Icosphere`, 80 triangles** -- exactly the 31192-31112 -- with its own material. The white blob.
-- **`mats=[Material_1/Standard/tex=NONE]`**: the albedo ships in the bundle and nothing references it. Pure white.
-- **`char1` bounds `Extents(0.47, 0.24, 0.68)`**: the 1.36 m height is on **Z**. The source is Z-up and the FBX
-  header says otherwise, so he imports lying down and the "0.244 m ground offset" was half his WIDTH.
+- **a stray `Icosphere`** -- a 2 m sphere, unparented, no material, 80 triangles, which is exactly the
+  31192-against-31112 the runtime reported. The white blob. **Fixed at source**: deleted in a Blender re-export.
+- **`mats=[Material_1/Standard/tex=NONE]`**: the albedo shipped in the bundle and nothing referenced it, so every
+  surface drew white. **Fixed at source**: the image datablock is renamed `ingvar_albedo`, which is the name
+  Unity's material import resolves against the PNG beside the model.
+- **`char1` bounds `Extents(0.47, 0.24, 0.68)`**: the height is on **Z**. The BONES are converted so he stands
+  upright, but `sharedMesh.bounds` is bind-pose data that axis conversion never touches, so every bounds-derived
+  number lies -- the "0.244 m ground offset" was half his WIDTH. **Not fixable in the bake**: both
+  `bakeAxisConversion` and a Blender re-export with `axis_up='Y'` were tried and change nothing. `BodyLoader`
+  measures the POSED mesh (`BakeMesh`) instead and sets `updateWhenOffscreen`, because Unity culls by that box too.
 
-All three are fixed in `Client/BodyLoader.cs` (rotation on attach, the offset measured through that same rotation,
-the stray renderer switched off, the albedo bound by hand) and **none of the three fixes has been seen on a screen
-yet** -- item 20 is still open. `ModelImporter.bakeAxisConversion` was tried at the bake and does nothing; the
-builder now says so, so nobody spends that round trip again.
+Then two more that only a screen could find: a bundle baked in the Editor carries Unity's `Standard` and **Valheim
+does not light it** (a lit head on a flat black body), and swapping only the shader is not enough because
+`material.shader = x` keeps only the properties matching BY NAME. He now wears a COPY of the stand-in's own
+material (`DvergerBody`, `Custom/Creature`) with our albedo in it -- which made him glow blue head to foot, because
+the Dverger's glow is an emission colour gated by a mask, and clearing the donor's maps without the colour lights
+everything the mask held back.
+
+**Seen fixed on a screen, 2026-09-07**: the blob, the white, the black body and the blue glow are all gone and
+Ingvar stands textured and upright with his feet on the ground. Not yet seen: how he reads in daylight -- the last
+run was at midnight -- and the walk and one-shot clips. Item 20 stays open on those.
+
 
 P8, the body (a client with the baked bundle embedded; **the bundle exists as of 2026-09-07** -- baked on
 Wu'barrk's Linux box in Unity 6000.0.61f1, 3,826,415 bytes, and the Debug DLL grows 273,408 -> 4,100,096
@@ -579,8 +596,10 @@ LINUX client needs a Linux bake through `BodyLoader`'s loose-file path to run th
 19. **`cargo body`** says `source embedded ('ValkyriesCargo.valkyriescargo_kit')`, `bundle open`, `prefab 'ingvar'
     found`, six clips with the lengths Unity reported at the bake (`Walk 4.17s, Idle 10.00s, Talk 5.13s,
     Hello 3.75s, Shrug 1.96s, Nod 1.25s`; models/README.md's earlier row was one 24 fps frame longer on
-    four of them, corrected 2026-09-07), `SkinnedMeshRenderer=yes, bones=24, tris=31112`, and a **ground offset within a few
-    millimetres of 0** — anything else and the bake, not the loader, is what to look at (the console prints it as two
+    four of them, corrected 2026-09-07), `SkinnedMeshRenderer=yes, bones=24, tris=31112`, and a **bind-pose ground offset of about
+    0.244 m, which is CORRECT for this asset and is not used to place him** — it is measured off a box whose
+    axes are wrong, reported because a bake that comes out sideways shows up there first. The number that must be
+    near 0 is `cargo body preview`'s `lifted N m ... measured on the posed mesh` (the console prints it as two
     lines: `body: source embedded - ...` then `resource: 'ValkyriesCargo.valkyriescargo_kit' inside this DLL ...`). On a dedicated server the
     same verb answers `source none - client only; not loaded here` and says nothing about appearance.
 20. **`cargo body preview`** stands Ingvar 2.5 m in front of the player, facing them, feet ON the ground (not

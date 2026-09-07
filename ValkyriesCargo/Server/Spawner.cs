@@ -80,7 +80,7 @@ namespace RavenIron.ValkyriesCargo.Server
 
         /// <summary>
         /// The drop point the server AUTHORED, kept so that the one the pilot reports can be checked
-        /// against it. The bird is owned by the pilot (`SetOwner(pilotUid)` below), so `vc_target` is a
+        /// against it. The bird is owned by the pilot (`SetOwner(pilotUid)` below), so `VCargo_target` is a
         /// client-writable value, and `Tick` used to hand it to the visit unexamined -- the one place in
         /// the mod where a client's ZDO write moved server state with no bound on it at all (P11's
         /// authority audit, `docs/TRUST-BOUNDARY.md`). Not persisted: it lives exactly as long as the

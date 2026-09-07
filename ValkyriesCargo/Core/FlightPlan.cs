@@ -67,7 +67,7 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>
         /// How far the drop point the PILOT reports may sit from the one the server authored, in the
         /// horizontal plane. The honest delta is ZERO: `CargoFlight.Drop` writes back the very
-        /// `vc_target` it was given, replacing only its y with the ground height. So this is float
+        /// `VCargo_target` it was given, replacing only its y with the ground height. So this is float
         /// noise plus a wide margin, not a policy -- it is a bound on a lie, not a tolerance for
         /// legitimate drift (P11's authority audit, `docs/TRUST-BOUNDARY.md`).
         /// </summary>
@@ -170,7 +170,7 @@ namespace RavenIron.ValkyriesCargo.Core
 
         /// <summary>
         /// Is the drop point the pilot's bird reports close enough to the one the server authored to
-        /// be believed? The bird's ZDO is OWNED BY THE PILOT, so `vc_target` is a value a client may
+        /// be believed? The bird's ZDO is OWNED BY THE PILOT, so `VCargo_target` is a value a client may
         /// write to anything at any moment, and `Spawner.Tick` hands it straight to the visit -- with
         /// P5, to where Ingvar stands. This is the only check between that key and the world.
         ///

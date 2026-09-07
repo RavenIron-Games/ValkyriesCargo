@@ -364,8 +364,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                 Say(args, "  rig: SkinnedMeshRenderer=" + (BodyLoader.HasSkinnedMesh ? "yes" : "NO") +
                           ", bones=" + BodyLoader.BoneCount + " (24 expected), tris=" + BodyLoader.Triangles + " (31112 expected); " +
                           BodyLoader.BoundsWords() + "; ground offset " + F(BodyLoader.GroundOffset, "0.###") +
-                          " m, derived from the meshes" + (Math.Abs(BodyLoader.GroundOffset) > BodyLoader.GroundOffsetWarnAt
-                              ? " - NOT near 0, and his origin is meant to be at his feet" : " (0 expected: his origin is at his feet)"));
+                          " m (the BIND-POSE box, an observation only -- the posed-mesh lift is what places him; see `cargo body preview`)");
 
             IngvarBody p = BodyLoader.Preview;
             Say(args, "  preview: " + (p == null ? "none (cargo body preview)"

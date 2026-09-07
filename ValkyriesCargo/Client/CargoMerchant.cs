@@ -21,7 +21,10 @@ namespace RavenIron.ValkyriesCargo.Client
     /// THREE THINGS HERE WERE LEARNED FROM OTHER MODS IN THIS WORKSPACE RATHER THAN FROM THE DECOMPILE
     /// (`libs-Tools\IMPLEMENTATIONS\DvergrAllies.md`; see CLAUDE.md's knowledge-base section):
     ///
-    /// 1. **The setup is re-applied, not applied once.** `Humanoid.Awake` calls `GiveDefaultItems()`,
+    /// 1. **The setup is re-applied, not applied once.** `Humanoid.Start` calls `GiveDefaultItems()` --
+        /// `Awake` does NOT, so our postfix on Awake runs BEFORE the crossbow is handed out, not after
+        /// (decompile-checked 2026-09-07; the earlier comment here had it backwards, and the staggered
+        /// re-apply is what makes it work anyway rather than the ordering),
     ///    and the shipped `Dverger` prefab's default items are `DvergerArbalest`, `Dverger_melee` and
     ///    a crossbow suit - measured, not guessed. Other systems re-give and re-alert after our Awake,
     ///    and ZDO sync can revert a flag mid-session. DvergrAllies re-asserts at staggered delays and
@@ -138,7 +141,16 @@ namespace RavenIron.ValkyriesCargo.Client
             {
                 // What makes vanilla treat him as a player ally for aggro and targeting.
                 _character.m_faction = Character.Faction.Players;
-                _character.SetTamed(true);          // fires an RPC; do NOT read IsTamed() after it
+
+                // `Character.SetTamed` opens with `m_nview.IsValid()` on the CHARACTER's own ZNetView,
+                // which is not ours and is not necessarily assigned yet: this component is added from a
+                // `Humanoid.Awake` postfix, and on the first call it threw a NullReferenceException that
+                // Mono reported against THIS method because SetTamed is small enough to inline. Seen on
+                // the first in-game visit, 2026-09-07. Nothing is lost by skipping it: `Reassert` runs
+                // again at 0.5 s, 1 s, 3 s and then every 5 s for exactly this class of reason.
+                ZNetView his = _character.GetComponent<ZNetView>();
+                if (his != null && his.IsValid())
+                    _character.SetTamed(true);      // fires an RPC; do NOT read IsTamed() after it
             }
             if (_ai != null)
             {
