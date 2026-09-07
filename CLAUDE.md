@@ -376,8 +376,11 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
 - **`ZRoutedRpc.instance` is null for the whole of plugin `Awake`** and is re-created on every world
   join; register routed handlers per session, direct `ZRpc` handlers on peer connect.
 - `EnvMan.IsDay()` is static. `Character.m_collider` is a `CapsuleCollider`. `Odin.m_despawn` and
-  `Odin.m_ttl` are public; 300 is the field initialiser, and the value on the `odin` prefab is UNCHECKED (PR #8
-  reports 60 from the prefab). `cargo prefab odin` decides it.
+  `Odin.m_ttl` are public, and **`m_ttl` on the shipped `odin` prefab is 60, not the 300 the field initialiser
+  says** (read off the prefab in the headless sandbox, PR #8; the earlier "UNCHECKED" here was stale). Nothing of
+  ours turns on it: the departure borrows the `m_despawn` EffectList and never the `Odin` COMPONENT, and the 300 s
+  our clock quotes is the event's `m_duration`, which was never Odin's timer. `cargo prefab odin` confirms it on a
+  live client (item 5).
 - **The flight** (read from the prefab and the decompile by Wu'barrk, PR #8): the shipped `Valkyrie` says speed 20,
   turn rate 20 and drop height 10 (compiled defaults 10, 5, 10); at 20 m/s and 20 deg/s the turning circle is 57 m,
   wider than the whole 76 m run, so ours flies at the synced `FlightSpeed` 8 / `FlightTurnRate` 45. `ZSyncTransform`'s

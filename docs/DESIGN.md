@@ -327,8 +327,9 @@ server (routed, object-targeted; an index into our table, never text). `Chat.ins
 **Departure (locked: the Odin vanish).** Triggers: the event's 300 s timer (server tick sees `GetCurrentRandomEvent()` no
 longer ours; polled, never edge-triggered), `vc_dismiss` (server calls `ResetRandomEvent()`), or `cargo dismiss`. Then:
 `VisitState.phase = leaving` (terminals close); server → routed object RPC `vc_vanish`: farewell line, then
-**`Odin.m_despawn` by the effect rule** (the public `EffectList` on the `odin` prefab; `Odin.m_ttl` is the same 300 s our
-clock quotes); after 1.5 s the server reclaims `SetOwner(session) + DestroyZDO` (Undertow's pattern); persist;
+**`Odin.m_despawn` by the effect rule** (the public `EffectList` on the `odin` prefab, borrowed; the `Odin`
+COMPONENT is never added, and its `m_ttl` on the shipped prefab is 60, not the 300 the field initialiser says --
+our 300 is the event's `m_duration` and never was his); after 1.5 s the server reclaims `SetOwner(session) + DestroyZDO` (Undertow's pattern); persist;
 `VisitState = none`; `cargo status` says `ended: timer | dismissed by <name> | admin`. A horn may sound too, as departure
 audio; it is not the summon horn.
 
@@ -437,7 +438,7 @@ EventCheckIntervalMinutes    25
 EventChancePercent           25
 PlayerCooldownMinutes        60
 CooldownRadius               60
-MerchantLifespanSeconds      300       = RandomEvent.m_duration = Odin.m_ttl
+MerchantLifespanSeconds      300       = RandomEvent.m_duration (NOT Odin.m_ttl: the prefab says 60)
 ApproachDistance             3.5
 BodyPrefab                   Dverger   the ENGINE prefab the merchant is cloned from (Character, MonsterAI, collider)
 CustomBody                   true      put Ingvar's own body on that clone, from the bundle embedded in the DLL;
