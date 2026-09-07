@@ -27,6 +27,9 @@ refuters disagreed with the auditors, the refuter's reading is the one here, and
 
 ## 1. D1 — the first approach after the drop
 
+> **Built by Track B as PR #50, merged 2026-09-07 16:17**, the diff in §1.4 plus a warning on the drop's silent
+> miss. §2's D3 likewise, PR #51. Neither seen on a machine yet.
+
 ### 1.1 What is certain (code, high confidence, upheld by the refuters)
 
 `CargoMerchant` has two ways into `Approaching` and only one of them does the bookkeeping.

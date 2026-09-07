@@ -89,7 +89,8 @@ dispatch point (60 m, 3600 s), and all six dispatches were within 2 m of each ot
 today; the hole opens for a player who relogs and rolls from a second base. Key on `ZDOVars.s_playerID` (per
 character; the platform id is per human but lives on the peer, not the ZDO) — audit §3, with the probe rows.
 
-**D3 — the deferred reclaim DOES reclaim; the sweep double-counts it.** Every visit end logs `restart sweep: 1
+**D3 — the deferred reclaim DOES reclaim; the sweep double-counts it** (fixed the same evening by Track B's PR
+#51; D1 by PR #50). Every visit end logged `restart sweep: 1
 stranded merchant(s) destroyed` about 2 s later (two director ticks, `VanishGraceSeconds`; the 6 s first written
 here was a read-time — our lines carry no timestamps). The first explanation (`DestroyZDO` a no-op for a non-owner)
 was wrong: `SetOwner` is synchronous and the reclaim works. `ZDOMan.DestroyZDO` only QUEUES the id; the ZDO leaves

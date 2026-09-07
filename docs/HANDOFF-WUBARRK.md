@@ -26,10 +26,12 @@ vanish, the callout bubble, the hover prompt, and the six merged fixes that noth
    up with `budget scaled from 0 m at entry`, 6/6: the drop writes his state onto the ZDO, `ResolveCarrier` copies
    it straight into `_state`, and that path skips the reset `Decide` does, so F5's scaled budget has never run on
    a machine. On visits 4–6 the give-up came a minute or two late with him far from the pilot, which the code
-   alone does not explain; the diff in §1.4 adds the one log line that settles it. **This is yours, and the owner
-   is talking to you about it.** The diff is written; nobody on Don's side touches your files before that talk.
+   alone does not explain; the diff in §1.4 adds the one log line that settles it. **Built by you as PR #50 and
+   merged the same evening.** The next visit says whether the first approach reaches; the `via the ZDO` line
+   answers the late give-ups (they came ≥38 s and ≥20 s after the drops by the client log's own timestamps).
 2. **The visit-end sweep reports a stranded merchant at every end.** The reclaim works; `DestroyZDO` only queues,
-   and the sweep runs in the same call. §2: sweep one tick later. Yours too, same talk.
+   and the sweep runs in the same call. §2: sweep one tick later. **Built by you as PR #51 and merged**; a clean
+   end now prints `merchant and bird reclaimed …` and no sweep line at all.
 3. **The cooldown key and two wording lines** were Don's and are built (PR #48).
 4. **Your merged fixes against the logs (§5):** F7 and N1 confirmed on a machine; F5 and F4 contradicted (items 1
    and 2); F1, F2, F6, F8, F9, F11 never exercised. `docs/TODO.md` §2 still says F5 fixed the walk-up cause.
@@ -46,9 +48,9 @@ probe tool against it within the hour** and tells you which probes moved; the co
 untracked (release assets), the catalogue verbs, the two drift knobs (Wares never, Wants three days), ghost mode,
 the load-bearing set. **Still his, not ours:** the client-asserted comfort numbers, reconfirm versus teardown.
 
-**From you, in order:** the walk-up and the sweep once you and the owner have spoken; your TODO §2 brought up
-to date; the animator parameter names and item 23 on your server; the three rc1 things in issue #23 close with
-rc2.
+**From you, in order:** ~~the walk-up, the sweep, your TODO §2~~ done (#50, #51, #52, merged 16:17); the animator
+parameter names and item 23 on your server; the three rc1 things in issue #23 close with rc2; and one author name
+on your commits (today's came as `t`, `trial` and one merge authored as the model).
 
 ### The morning of 2026-09-07, after the rc1 merge (history)
 

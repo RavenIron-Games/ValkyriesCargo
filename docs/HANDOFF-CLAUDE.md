@@ -49,8 +49,13 @@ and one refuter per finding; read §0 first):
 - **The eleven merged fixes against the logs (§5):** F7 and N1 confirmed on a machine, F5 and F4 contradicted (the
   two above), the rest not exercised. Your `docs/TODO.md` §2 still says F5 fixed the walk-up cause; it did not.
 
-**D1 and D3 are in your files.** The owner is talking to Wu'barrk about who builds them; nothing on Don's side
-touches them before that is settled. The diffs are against `161743b` and still apply.
+**D1 and D3 are built, by your side: PRs #50 and #51, merged 16:17 the same day** — the audit's diffs word for
+word plus your warning on the drop's silent miss and the elapsed-clock wording; #52 corrected your tracker
+section. Main `84de90a` carries them with D2/D4 and the body half-turn (#53). **None of the four has been seen on
+a machine yet.** Your comment on #50 reads the evening's two visits as a controlled experiment (the ZDO-entered
+first approach fails, the leash-entered second reaches) and predicts a first-approach arrival on the fixed build;
+the reply on it corrects one timing claim — the give-ups came ≥38 s and ≥20 s after the drops by the client log's
+own timestamps, not 3–5 s — so §1.3's second regime is still open and your new log line is what settles it.
 
 **The engine work, for your 1.0 track.** The probe registry (`docs/ENGINE-PROBES.md`) holds 25 named facts, 18
 probed at boot; both halves of item 24 are done — the boot on StormTest, and, tonight, the moved-version
@@ -76,9 +81,10 @@ mutate-and-restore cycle (a `git checkout --` wiped an uncommitted edit today), 
 drift knobs, ghost mode, the load-bearing set. Still open, the owner's and nobody else's (`docs/TODO.md` §1):
 the client asserting its own rested/comfort numbers, and reconfirm versus teardown on a price tick.
 
-**What Don's side wants from yours, in order:** D1 and D3 once the two owners have spoken; your `docs/TODO.md`
-§2 brought up to date (the audit item's PRs are all merged; the walk-up item's claim corrected); the animator
-parameter names and item 23 on your server, still yours; issue #23 (your rc1 note) closes when rc2 replaces rc1.
+**What Don's side wants from yours, in order:** ~~D1 and D3; your `docs/TODO.md` §2~~ done (#50, #51, #52); the
+animator parameter names and item 23 on your server, still yours; issue #23 (your rc1 note) closes when rc2
+replaces rc1; and your commits under one author name — today's arrived as `t <t@l>`, `trial <trial@local>` and one
+merge authored as the model, which is what blame and the release notes will show.
 
 ### The morning of 2026-09-07, after the rc1 merge (history)
 

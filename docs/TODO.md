@@ -220,7 +220,8 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       double-counts — defer it one tick); D2 upheld and narrowed (the base cooldown masked it; key on `s_playerID`
       with two probe rows); D4a/b wording; the eleven merged fixes tabled against the logs (2 confirmed, 2
       contradicted, 6 never exercised); Steam's new `default_pre1_0` branch for P10a. Proposed diffs only, his
-      files untouched; fixes on the owner's word. **Corrections applied to the proofs record**: the sweep trails the
+      files untouched; **D1 and D3 then BUILT by Track B himself the same evening (#50, #51, merged 16:17; #52 his
+      tracker)**, D2/D4 by Track A (#48). **Corrections applied to the proofs record**: the sweep trails the
       end by ~2 s not 6, five flight times not six, `moved 597.9 m in 20 s` is not a speed.
 - [x] **D2 + D4 built** (owner: "do ours and merge", 2026-09-07 evening; PR #48): `Candidate.PlayerId` /
       `CooldownKey` on `ZDOVars.s_playerID` with `Uid` as the fallback, keyed through `StampCooldown`, the bucket and
