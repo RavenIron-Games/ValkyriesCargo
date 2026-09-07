@@ -3,6 +3,71 @@
 The repo is scaffolded, builds clean, tests pass, and boots headless on a dedicated server. This is
 what it is, what of yours is already in it, what we need from you, and exactly where each thing goes.
 
+## 0. The evening of 2026-09-07: your list, in order
+
+Where main is: P1, P2, P3, P6 and P7 merged; the P8 loader and the P9 release pass are being reviewed
+and land tonight; three more branches follow them (a client proof runbook with deploy scripts, an
+economy simulation, a decompile audit of the never-run client paths). Your PR #8 has a review on it.
+Don merges everything; nothing below asks you to merge.
+
+1. **PR #8: answer the review and push the fix.** Four findings, all on the flight, all from simulating
+   `Fly` with the prefab's real speed 20 and turn rate 20 (a 57 m turning circle):
+   - the turn-in point sits inside that circle, so the bird never reaches it and orbits until
+     `MaxFlightSeconds`; straight in works (drop at 3.8 s), or a turn rate of our own (60 deg/s works);
+   - `CargoFlight.Awake` rebuilds a different turn-in from the one `FlightPlan` planned (other distance,
+     other side, no block clamp): write `vc_turn` beside `vc_target`, or delete the swing on both sides;
+   - `DescentY = StartY`, so the drop fires about 105 m up; give the turn-in a descent altitude and/or
+     the bird a speed of our own (8 m/s from 120 m reaches 14 m in 20 s, which is also the 15-20 s
+     design 3.2 wanted the sky to hold);
+   - every visit authors a persistent vanilla Dverger until P5 exists: gate the merchant in `Author`
+     behind P5, or have `Clear()` destroy him. Until P5 lands, the merged DLL must not go on a live server.
+   Your two questions are answered on the PR: the three `VisitDirector` seams stay as they are, and
+   `FlightPlan` stays in `Core/`. Say on the PR when the branch is ready.
+
+2. **Before you bake: the bundle contract moved under you tonight (P8 loader), in your favour.**
+   - The bake needs **no AnimatorController and no ZSyncAnimation entries**. The loader plays the six
+     clips by name (`Walk`, `Idle`, `Talk`, `Hello`, `Shrug`, `Nod`) through a `PlayableGraph`; design
+     11.4 is rewritten to say so. `tools/unity/IngvarBundleBuilder.cs` as it stands produces exactly
+     what is needed.
+   - Two one-line corrections to `models/README.md`, yours to make: section 6's
+     `using (Stream s) { LoadFromStream(s); }` disposes a stream that `AssetBundle.LoadFromStream` reads
+     lazily (the loader holds it open in a static); section 2's "set `BodyPrefab` to Ingvar" is wrong for
+     the code as built: `BodyPrefab` stays the engine prefab your `Spawner` writes into the ZDO, and the
+     new `Server.CustomBody` (synced and locked, default true) is the switch.
+   - The clip sub-assets must come through under the six take names. On a client `cargo body` prints
+     each clip found or MISSING with its length, `SkinnedMeshRenderer`, bones (expect 24), triangles
+     (expect 31112) and the ground offset (expect about 0). That is the gate for a first bake, beside
+     the 64 KB rule in `models/SETUP-FOR-CLAUDE.md`.
+   Then `tools/setup-ingvar-unity.ps1`, the Editor menu or the CLI line in SETUP section 5, and `-Embed`
+   copies it to `Assets\valkyriescargo_kit` (gitignored; the csproj embeds it when the file exists). Get
+   the file to Don outside git: a release asset on the repo, or a direct transfer. `cargo body preview`
+   on any client then stands him up with no merchant and no server.
+
+3. **P5: the seams exist now.**
+   - `CargoTerminalHost.Instance.Open(merchant, visitId)` opens the Cargo Terminal (`ICargoTerminal`).
+   - `BodyLoader.Attach(Character)` returns an `IngvarBody`, or null when the stand-in stays (no bundle,
+     `CustomBody` false, a dedicated server). Call it from `CargoMerchant.Awake`, on every machine.
+     `IngvarBody.Greet() / Talk() / Shrug() / Nod()` fire the one-shots and return false when refused
+     (the same gesture already playing). Idle and Walk need nothing from you: they follow the body's
+     own movement.
+   - `vc_dismiss` is on the wire; `VisitSession`'s phases and `SetDrop` are the director's; `vc_state`,
+     `vc_carrier` and `vc_seed` are your `Spawner`'s keys.
+   The rest is design 3.3: the carry pin and `InIntro`, the drop handoff, follow and callout, immortal,
+   dismissal, the Odin vanish, the restart sweep.
+
+4. **One screen proof that takes two minutes and needs no server: item 17.** Build main, put the DLL in
+   your client's `BepInEx\plugins\`, and from the main menu run `cargo terminal demo`. Nobody has seen
+   the window yet and you have the client. Paste `terminal opened: visit #1 (demo)`,
+   `terminal closed: escape` and what you saw into `CLAUDE.md` Status. If it draws wrong, that is the
+   first bug of the evening and it is Don's. In a world, `cargo prefab odin` settles `m_ttl` (your 60
+   against the compiled 300); paste that line too.
+
+5. **Incoming tonight, to read and not act on:** the P8+P9 PR (the loader's `Attach` and `IngvarBody`
+   are the seam you code against; README is rewritten as a truth pass), then the runbook
+   (`docs/PROOF-CLIENT.md` with `tools/deploy-test.ps1`, `tail-log.ps1`, `set-test-config.ps1`), the
+   economy simulation (`docs/ECONOMY-SIM.md`) and the client audit (`docs/CLIENT-AUDIT.md`). The runbook
+   is the checklist for your two-client evening once P5 stands.
+
 ## 1. Where things are
 
 | Read first | What it is |

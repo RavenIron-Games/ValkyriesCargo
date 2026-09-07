@@ -25,6 +25,12 @@ Thumbs.db
 # Release zips
 dist/
 
+# The baked AssetBundle. It is a BUILD INPUT that ships INSIDE the DLL as an embedded resource
+# (models\SETUP-FOR-CLAUDE.md section 3), never in git: WORKSPLIT section 4 allows exactly two
+# binaries in this repo and they are the body's source art, not its build output.
+# tools\setup-ingvar-unity.ps1 -Embed puts the bundle here; rebuild it, do not commit it.
+/Assets/
+
 # Corrupt files (test outputs, etc)
 *.corrupt
 

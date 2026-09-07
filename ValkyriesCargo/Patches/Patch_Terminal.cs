@@ -33,7 +33,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             try
             {
                 new Terminal.ConsoleCommand("cargo",
-                    "Valkyrie's Cargo: status | version | prefab <name> | stock [prefab] | deal buy|sell <prefab> [count] | claim | terminal demo|open|close | visit [player] | dismiss | reset | save", Run);
+                    "Valkyrie's Cargo: status | version | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] | deal buy|sell <prefab> [count] | claim | terminal demo|open|close | visit [player] | dismiss | reset | save", Run);
             }
             catch (Exception ex)
             {
@@ -51,6 +51,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                     case "status":  Status(args); return;
                     case "version": Version(args); return;
                     case "prefab":  Prefab(args); return;
+                    case "body":    Body(args); return;
                     case "visit":   Admin(args, "visit", args.Args.Length > 2 ? args.Args[2] : ""); return;
                     case "dismiss": Admin(args, "dismiss", ""); return;
                     case "reset":   Admin(args, "reset", ""); return;
@@ -74,6 +75,11 @@ namespace RavenIron.ValkyriesCargo.Patches
             Say(args, "cargo status          - role, config authority, catalogue, the director, the engine numbers the design depends on");
             Say(args, "cargo version         - this build and the ServerSync gate");
             Say(args, "cargo prefab <name>   - components, children and effect lists of a game prefab (Valkyrie, Dverger, odin, Haldor)");
+            Say(args, "cargo body            - Ingvar's body: where the bundle came from, the six clips and their lengths, the rig, the derived ground offset");
+            Say(args, "cargo body preview    - stand him 2.5 m in front of you, facing you: no ZDO, nothing networked, nobody else sees him");
+            Say(args, "cargo body walk       - make the preview walk on the spot (a simulated speed; toggles off again)");
+            Say(args, "cargo body clip <Hello|Talk|Shrug|Nod>  - fire that one-shot on the preview");
+            Say(args, "cargo body clear      - take the preview away");
             Say(args, "cargo stock [prefab]  - his shelf as this machine last heard it: stock/target, what you pay, what he pays, trend");
             Say(args, "cargo deal buy <prefab> [count]   - buy from him at the price on the shelf (a plain deal, no terminal)");
             Say(args, "cargo deal sell <prefab> [count]  - sell to him at what he pays");
@@ -235,6 +241,9 @@ namespace RavenIron.ValkyriesCargo.Patches
                       ", terminal " + (CargoTerminal.Instance != null ? (CargoTerminal.Instance.IsOpen ? "OPEN" + (CargoTerminal.Instance.IsDemo ? " (demo)" : "") : "closed" + (CargoTerminal.Instance.LastCloseReason.Length > 0 ? " (last: " + CargoTerminal.Instance.LastCloseReason + ")" : "")) : "none (no renderer)") +
                       ", routed RPCs " + (AdminRpc.Registered ? "registered" : "not registered"));
 
+            BodyLoader.Load();
+            Say(args, "  " + BodyLoader.StatusLine() + " (cargo body for the whole of it)");
+
             if (ZNet.instance == null) { Say(args, "  no world loaded."); return; }
 
             ZoneSystem zs = ZoneSystem.instance;
@@ -300,6 +309,113 @@ namespace RavenIron.ValkyriesCargo.Patches
             {
                 Say(args, "  director: not created yet (waiting for the event system and the scene)");
             }
+        }
+
+        /// <summary>
+        /// Ingvar's body (P8). `cargo body` answers on a dedicated server too, honestly; the rest need a
+        /// renderer and a world. The preview is a plain local GameObject - no ZDO, no ZNetView, nothing
+        /// networked - so the body can be looked at long before P5 exists to carry it.
+        /// </summary>
+        private static void Body(Terminal.ConsoleEventArgs args)
+        {
+            string what = args.Args.Length > 2 ? args.Args[2].ToLowerInvariant() : "";
+            switch (what)
+            {
+                case "":        BodyReport(args); return;
+                case "preview": BodyPreview(args); return;
+                case "walk":    BodyWalk(args); return;
+                case "clip":    BodyClipVerb(args, args.Args.Length > 3 ? args.Args[3] : ""); return;
+                case "clear":
+                    Say(args, BodyLoader.ClearPreview() ? "cargo: the preview is gone" : "cargo: there was no preview");
+                    return;
+                default:
+                    Say(args, "cargo body [preview | walk | clip <Hello|Talk|Shrug|Nod> | clear]");
+                    return;
+            }
+        }
+
+        private static void BodyReport(Terminal.ConsoleEventArgs args)
+        {
+            BodyLoader.Load();
+            Say(args, "body: source " + BodyLoader.Source.ToString().ToLowerInvariant() + " - " + BodyLoader.Detail);
+            if (BodyLoader.Source == BodySource.Embedded)
+                Say(args, "  resource: '" + BodyLoader.ResourceName + "' inside this DLL, which is what makes every player's Ingvar the same one");
+            else if (BodyLoader.Source == BodySource.File)
+                Say(args, "  file: " + BodyLoader.FilePath + " - a LOCAL file, NOT the copy other players have; embed it before it ships");
+
+            Say(args, "  bundle " + (BodyLoader.BundleLoaded ? "open" : "not open") +
+                      ", prefab '" + BodyLoader.PrefabName + "' " + (BodyLoader.PrefabFound ? "found" : "not found") +
+                      ", CustomBody=" + ModConfig.CustomBody.Value + " (false keeps the " + ModConfig.BodyPrefab.Value + " stand-in)" +
+                      ", renderer=" + (ValkyriesCargo.HasRenderer ? "yes" : "no"));
+
+            Say(args, "  clips (" + BodyLoader.Clips.Count + " of " + BodyMotion.ClipCount + " wanted): " + BodyLoader.ClipList());
+            for (int i = 0; i < BodyMotion.ClipCount; i++)
+            {
+                string want = BodyMotion.ClipName((BodyClip)i);
+                if (BodyLoader.PrefabFound && BodyLoader.Clip(want) == null)
+                    Say(args, "    MISSING '" + want + "': it plays at weight 0 and the rest carry on");
+            }
+
+            if (BodyLoader.PrefabFound)
+                Say(args, "  rig: SkinnedMeshRenderer=" + (BodyLoader.HasSkinnedMesh ? "yes" : "NO") +
+                          ", bones=" + BodyLoader.BoneCount + " (24 expected), tris=" + BodyLoader.Triangles + " (31112 expected); " +
+                          BodyLoader.BoundsWords() + "; ground offset " + F(BodyLoader.GroundOffset, "0.###") +
+                          " m, derived from the meshes" + (Math.Abs(BodyLoader.GroundOffset) > BodyLoader.GroundOffsetWarnAt
+                              ? " - NOT near 0, and his origin is meant to be at his feet" : " (0 expected: his origin is at his feet)"));
+
+            IngvarBody p = BodyLoader.Preview;
+            Say(args, "  preview: " + (p == null ? "none (cargo body preview)"
+                : "up, graph " + (p.GraphLive ? "live" : "DEAD") + ", " + p.ClipsBound + " clip(s) bound, speed " +
+                  F(p.Speed, "0.00") + " m/s" + (float.IsNaN(p.SimulatedSpeed) ? "" : " (SIMULATED " + F(p.SimulatedSpeed, "0.0") + ")") +
+                  ", blend " + F(p.WalkBlend, "0.00") + " toward " + (p.Walking ? "Walk" : "Idle") +
+                  ", one-shot " + (p.CurrentClip == BodyClip.None ? "none" : BodyMotion.ClipName(p.CurrentClip))));
+        }
+
+        private static void BodyPreview(Terminal.ConsoleEventArgs args)
+        {
+            if (!ValkyriesCargo.HasRenderer) { Say(args, "cargo: nothing to draw here (no renderer)"); return; }
+            BodyLoader.Load();
+            if (!BodyLoader.PrefabFound) { Say(args, "cargo: no body to show - " + BodyLoader.Detail); return; }
+            Player me = Player.m_localPlayer;
+            if (me == null) { Say(args, "cargo: no local player to stand in front of"); return; }
+
+            Vector3 facing = me.transform.forward;
+            facing.y = 0f;
+            if (facing.sqrMagnitude < 0.0001f) facing = Vector3.forward;
+            facing.Normalize();
+
+            Vector3 spot = me.transform.position + facing * 2.5f;
+            ZoneSystem zs = ZoneSystem.instance;
+            if (zs != null && zs.GetGroundHeight(spot, out float ground)) spot.y = ground;
+
+            // Face the player, not away from him.
+            IngvarBody body = BodyLoader.StartPreview(spot, Quaternion.LookRotation(-facing, Vector3.up));
+            if (body == null) { Say(args, "cargo: the preview could not be built; see the log"); return; }
+            Say(args, "cargo: Ingvar is standing 2.5 m in front of you at y " + F(spot.y, "0.##") +
+                      " (ground offset " + F(BodyLoader.GroundOffset, "0.###") + " m), " + body.ClipsBound + " clip(s) bound, graph " +
+                      (body.GraphLive ? "live" : "DEAD") + ". Nothing about him is networked. `cargo body walk`, `cargo body clip Hello`, `cargo body clear`.");
+        }
+
+        private static void BodyWalk(Terminal.ConsoleEventArgs args)
+        {
+            IngvarBody p = BodyLoader.Preview;
+            if (p == null) { Say(args, "cargo: no preview (cargo body preview)"); return; }
+            bool on = float.IsNaN(p.SimulatedSpeed);
+            p.SimulatedSpeed = on ? 1f : float.NaN;
+            Say(args, on ? "cargo: walking on the spot at a simulated 1.0 m/s; the blend crosses over " +
+                           F(BodyMotion.CrossfadeSeconds, "0.00") + " s"
+                         : "cargo: back to his real speed, which for a body that does not move is zero");
+        }
+
+        private static void BodyClipVerb(Terminal.ConsoleEventArgs args, string name)
+        {
+            IngvarBody p = BodyLoader.Preview;
+            if (p == null) { Say(args, "cargo: no preview (cargo body preview)"); return; }
+            BodyClip clip = BodyMotion.ByName(name);
+            if (!BodyMotion.IsOneShot(clip)) { Say(args, "cargo body clip <Hello|Talk|Shrug|Nod>"); return; }
+            if (!p.Fire(clip)) { Say(args, "cargo: '" + BodyMotion.ClipName(clip) + "' is already playing, or the bundle does not carry it"); return; }
+            Say(args, "cargo: " + BodyMotion.ClipName(clip) + " - blends in over " + F(BodyMotion.OneShotBlendSeconds, "0.00") +
+                      " s, hands back at " + F(BodyMotion.HandBackFraction * 100f, "0") + "% of its length");
         }
 
         /// <summary>
