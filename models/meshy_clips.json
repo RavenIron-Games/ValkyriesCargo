@@ -1,0 +1,27 @@
+{
+  "30": {
+    "name": "casual_walk",
+    "id": "01a07970-2055-71dc-97cb-0ba37a0e231f",
+    "done": true
+  },
+  "56": {
+    "name": "stand_and_chat",
+    "id": "01a07970-2404-7592-9b01-fd207777b48b",
+    "done": true
+  },
+  "314": {
+    "name": "talk_hand_open",
+    "id": "01a07970-269c-7325-9ef9-251bc618c7b6",
+    "done": true
+  },
+  "415": {
+    "name": "happy_sway_idle",
+    "id": "01a07970-2917-76ec-a5cd-bfbb9f6b5a24",
+    "done": true
+  },
+  "317": {
+    "name": "shrug",
+    "id": "01a07970-2ba8-7515-83e1-6981b8db6ffa",
+    "done": true
+  }
+}

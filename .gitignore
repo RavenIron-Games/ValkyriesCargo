@@ -28,6 +28,16 @@ dist/
 # Corrupt files (test outputs, etc)
 *.corrupt
 
-# Source art and Meshy exports. WORKSPLIT §4: no binaries in the repo - the bundle ships
-# beside the DLL in the package, the GLB/FBX live outside it. models\ is 343 MB locally.
-models/
+# Source art. WORKSPLIT §4 allows exactly two binaries in the repo - models\ingvar.fbx and
+# models\ingvar_albedo.png, the body's build inputs. Everything below is Meshy's raw per-clip
+# output: six files, each carrying a duplicate copy of the mesh AND 22 MB of the same textures,
+# 343 MB for six views of one dwarf. tools\build_ingvar.py regenerates all of it.
+models/ingvar.glb
+models/10ktridwarf.glb
+models/dwarf_*.glb
+models/dwarf_*.fbx
+models/ingvar_*.glb
+models/ingvar_*.fbx
+models/preview/*_[0-9][0-9].png
+models/preview/row_*.png
+models/preview/nod/nod_[0-9][0-9].png

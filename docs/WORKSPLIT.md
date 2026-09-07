@@ -174,7 +174,14 @@ Where they meet: A6 + B4 = the first real deal on CairnTest. Plan for it as a sh
   green before every PR; small commits with a one-line why.
 - `main` always builds and boots headless. Whoever breaks it fixes it.
 - Contract changes: a PR touching a §2 file needs a comment from the other track before merge.
-- No binaries in the repo (the bundle ships beside the DLL in the package; the GLB lives in the Unity folder).
+- No binaries in the repo, with **one named exception**: the body's source art, `models/ingvar.fbx`
+  (4.3 MB) and `models/ingvar_albedo.png` (6.6 MB). Everything else stays out — the built bundle ships
+  beside the DLL in the package, and Meshy's raw per-clip output (343 MB, six files each carrying a
+  duplicate mesh and 22 MB of the same textures) is gitignored.
+  **Decided by Wu'barrk, 2026-09-06**, answering the question Don raised on PR #4. The reasoning: the
+  body is a hand-made asset with no other home, Don is away, and a build input nobody can fetch is worse
+  than 11 MB in git. If the second owner disagrees, the fallback is a GitHub release asset — the two
+  files move, `tools/setup-ingvar-unity.ps1` gains a download step, and nothing else changes.
 - Verified facts go into `CLAUDE.md` "Status" with the date and the exact log line, by whoever saw it.
 - "Not ours" files (`Libs/**`) are replaced from upstream, never edited.
 
