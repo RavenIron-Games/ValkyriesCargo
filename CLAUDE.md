@@ -215,10 +215,11 @@ exact-budget boundary, the ranking exclusions, the coins/items accounting, oldes
 ordering, and the ordering guarantee itself — each proven to fail without its fix, real mutation output kept
 in the PR). A standalone run of the real `Core/BarrkExport.cs` + `Core/BarrkRollover.cs` against Newtonsoft.Json
 (outside CoreTests, which stays dependency-free) produced real, well-formed sample output for both a fresh
-server and a populated one. **Not yet seen anywhere real**: nobody has installed this DLL on a dedicated
-server and watched `barrkbot_cargo_*.json` land on disk, and BarrkBOT itself has never read one of these
-files — shape-verified, not live-verified (the authoritative contract's own distinction). See "What to verify
-in-game" item 23.
+server and a populated one. **Seen on a dedicated server 2026-09-07 10:41 (StormTest, PR #46's build)**: all seven
+files landed 60 s after `director up`, valid JSON, 72 market rows across the five parts, `generated_at` moving
+every cycle with nobody online — item 23's server half. BarrkBOT itself has still never read one of these files,
+and no deal row or visit row has been seen in them: shape-verified and file-verified, not yet consumer-verified
+(the authoritative contract's own distinction). See "What to verify in-game" item 23.
 
 **P5 the merchant and the 0.1.0 integration, Wu'barrk, 2026-09-07 (PR #22, merged; `v0.1.0-rc1` tagged).**
 `Client/CargoMerchant.cs` on `Core/MerchantPlan.cs` (pure): the carry pin, the drop handoff, follow, the callout,
@@ -236,23 +237,28 @@ the build this DLL was compiled against as constants — 0.221.12, network 36, p
 build ids — and the comparison against the four numbers actually running; the numbers are copied rather than
 referenced because vanilla's `Version` type is `internal` and its three numbers are `const`, so a direct
 reference would be inlined at OUR compile time and answer "same build" on every Valheim ever released.
-`Core/EngineProbes.cs` (PURE) is the registry: 19 named engine facts, ranked worst-first by how much SILENCE a
-break would come with, each with what it looks at and what turns itself off; four are method BODIES and are
+`Core/EngineProbes.cs` (PURE) is the registry: 25 named engine facts (the P11d audit's 53 rows folded in on
+2026-09-07, PR #46), ranked worst-first by how much SILENCE a
+break would come with, each with what it looks at and what turns itself off; seven are method BODIES and are
 registered as **not probeable**, which `cargo engine` says out loud rather than implying a pass. A probe is a
 veto and never a permit — a fact that has not run, could not be probed, or was never registered answers YES, so
 a bug in the registry can never be the thing that turns the mod off. `EngineCheck.cs` is the one file that
 touches a game type: every probe is a PAIR (a catching `Probe*` and a `[MethodImpl(NoInlining)]` `Check*`),
 because Mono resolves a member access when the CALLER is JIT-compiled and a try/catch in the same method never
 runs. It is the mod's ONE named exception to "our files name no private member": `ZSyncTransform.m_velocityCached`,
-`BaseAI.m_character`, `Character.RPC_Damage` and `RandEventSystem.Awake` are named in strings, handed to
-reflection, and never called. It runs from plugin `Awake` AFTER the config binds and BEFORE `PatchAll`. Two
+`BaseAI.m_character`, `Character.RPC_Damage`, `RandEventSystem.Awake`, `Humanoid.Awake`, `ZNetView.Awake`,
+`Terminal.InitTerminal` and `BaseAI.Follow` / `MoveTo` are named in strings, handed to reflection, and never called. It runs from plugin `Awake` AFTER the config binds and BEFORE `PatchAll`. Two
 features consult their probe and degrade rather than throw (`Server/CargoEvent.cs` refuses to register or start
 the event; `Client/BodyLoader.cs` keeps the stand-in), and `Server/MarketStore.cs` REFUSES a sidecar written by
 a newer build — held, never `.corrupt`, nothing saved over it, because that is somebody's market and not a
 corrupt file. The gap `docs/P10B-PROBE-GAP.md` found is fixed: the probe asked for the public
 `Character.Damage` while the immortality patches the private `Character.RPC_Damage(long, HitData)`. Off-game:
-builds clean (0 warnings), 1423 checks. **Never seen on a machine that has a game under it**: no probe has
-resolved a real member, so a false failure is possible until item 24 is run. The document is
+builds clean (0 warnings), 1697 checks after PR #46. **SEEN ON A MACHINE 2026-09-07 10:40 on StormTest** (dedicated,
+0.221.12, PR #46's build): the boot log carries
+`built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable.`
+and then `patches 18/18 applied ... engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not
+probeable` in the loaded line — every probe resolved its real member under Mono, no FALSE failure, no `registry:`
+line (item 24's boot half; the moved-version direction is still open). The document is
 `docs/ENGINE-PROBES.md`; the baseline it is dated against is `docs/ENGINE-BASELINE.md` (P10a).
 
 ---
@@ -697,17 +703,38 @@ Still not seen end to end: the glide itself, the drop, the walk-up completing (h
 from where he stood, which is the designed fallback, not a success), the terminal on a real visit, a trade, and the
 vanish. The two-client items cannot be run here at all.
 
+## STORMTEST SESSION, 2026-09-07 10:39–11:38 (Don's Windows client on the dedicated server, six visits)
+
+**The first session with the owner's client on a dedicated server, on PR #46's build. Six visits, 20 deals over the
+wire, no exception from the mod on either side.** The record, with every line, is `docs/proofs/2026-09-07-stormtest-session.md`
+and the log excerpt beside it; the per-item lines are pasted into the list below. In one screen: a NATURAL roll
+started visit 1 (`roll: visit: Nomadtest at (…); 1 eligible, 1 ticket(s)`); every flight dropped within a second of
+the simulation (16.0–17.0 s); Ingvar wore his own body every time; **the walk-up finished on every visit** — never on
+the first attempt (defect D1 below), always after the trading leash; the terminal opened ON the merchant and settled
+sells, buys and barter; the price curve, the Fair Market Act, both drift knobs and the carry on gross coins all
+matched the design to the coin; a relog mid-visit handed the persistent merchant to the new client in his trading
+state; the export gained the trader's row and the visit's row on the next cycle; the catalogue verbs ran live.
+
+**Defects found (docs/proofs/…, "Defects"):** **D1** the first approach after the drop never starts cleanly (6/6):
+`gave up walking after 20 s … budget scaled from 0 m at entry` — the ZDO-driven state change in
+`CargoMerchant.ResolveCarrier` skips `Decide`'s entry reset, and the drop's ZDO write lands at the drop, late, or
+never, so the bird's handoff is part of it; **D2** the per-player cooldown is keyed on the session uid (three `cool`
+rows for one player after two relogs), so a relog clears it; **D3** the deferred reclaim at visit end is not
+reclaiming — `restart sweep: 1 stranded merchant(s) destroyed` 6 s after every end means the sweep did the work.
+Fixes on the owner's word; D1 and D3 are in Wu'barrk's files.
+
 ## What to verify in-game
 
 **An item is proven by its own pasted log line and a date, and by nothing else.** Done so far: **item 1**
 (2026-09-06, headless, in Status); **items 2 and 6** (the first client run, 2026-09-07, below); **item 19**
 (the same day, once the bundle existed); **item 20 in part** — he stands textured, upright, feet on the ground,
-and `body=Ingvar` on a live merchant, while daylight and the walk and one-shot clips are still open.
-**Never run: items 3, 4, 5, 7 to 18, 21, 22 and 23.** Wu'barrk's one live visit (INTEGRATED IN-GAME RUN, above)
-produced the server-log half of item 10 (`visit #1 ended: timer; takings 0 coins`) and of item 15
-(`visit #2 RESUMED after a restart`, the countdown continuing) — and is a pass for NEITHER, because neither
-item's client half was seen (the banner and `cargo status` for 10; the sidecar's changed `stock` rows after
-deals for 15, and no deal has ever been made).
+and `body=Ingvar` on a live merchant, while daylight and the walk and one-shot clips are still open;
+**the StormTest session of 2026-09-07 10:39–11:38** (the section above): items **8, 12, 13, 18 and 24 DONE**, item
+**26 all but the add-during-a-visit answer**, and the log halves of **7, 9, 10, 11, 15, 16, 17, 21 and 23** — the
+client console's answers (banners, `cargo status`, `cargo stock`) were not read, because a client's console does not
+log. **Never run: items 3, 5, 14, 22 and 25**, item 4's local-edit half, item 11's non-admin half, item 16's
+`sold_out`/`stale_visit`, and item 23's switch and BarrkBOT reading. Wu'barrk's earlier visit (INTEGRATED IN-GAME
+RUN, above) had shown the server-log half of item 15's restart-mid-visit; that half is still his.
 **The runbook is `docs/PROOF-CLIENT.md`**: the order, the exact
 command for each, the line the code writes, and `tools/deploy-test.ps1` / `tail-log.ps1` / `set-test-config.ps1`.
 Deploy the **rc1 release DLL**: it is the only build that carries Ingvar on a machine without the bundle asset.
@@ -729,22 +756,42 @@ section (c) lists what only a screen can settle.
    is registered (StormTest log: 20 events) but a client-side `cargo status` has not yet said so.
 
 P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormTest):
-7. **The report:** `cargo status` on the client shows `my report: rested=..., comfort=..., written N s ago`; the
+7. **The report** — server half 2026-09-07 (StormTest): the roll reasons name the client's report the moment it
+   connects, `roll: no eligible player: 1 not rested`, later `1 comfort < 4` and `1 on cooldown`; the client's own
+   `my report:` line not read. As written: `cargo status` on the client shows `my report: rested=..., comfort=..., written N s ago`; the
    SAME numbers appear in the server's `candidates:` line (a listen host shows both at once).
-8. **`cargo visit`** from the client: the console prints `asked the server`, then the server's answer
+8. **`cargo visit`** — **DONE 2026-09-07 11:05 (StormTest)**: `admin Nomadtest (-794915846): cargo visit` →
+   `roll: forced visit: Nomadtest at (-51.59098, 57.8753242); 1 eligible, 1 ticket(s)` → `visit #2 begins: pilot
+   Nomadtest (uid -794915846) at (…), 300 s, purse 800, seed 1707749962`, and on the client `server answered:
+   cargo visit Nomadtest: forced visit: …`. A NATURAL roll had already started visit 1 at 11:00
+   (`roll: visit: Nomadtest at (…); 1 eligible, 1 ticket(s)`). The banner and `cargo status` not read. As
+   written: from the client: the console prints `asked the server`, then the server's answer
    (`cargo visit <name>: forced visit: <name> at (x, z); ...`); the server log shows `visit #1 begins`; the pilot
    sees "Wings beat in the upper skies..." and, once inside 96 m of where they stood, the centre banner
    "Valkyrie's Cargo has landed"; `cargo status` shows `visit: #1 Flying, pilot <name>, 04:5x left`.
-9. **The clock:** walk more than 96 m away for a minute, come back: the countdown resumed where it paused and
+9. **The clock** — pause half 2026-09-07: `visit #3 ended: … 8 clock republish(es)` after the pilot quit and
+   rejoined mid-visit (the visit outlived its own end time by the pause), `visit #5 … 11 clock republish(es)`; the
+   sleep half not run. As written: walk more than 96 m away for a minute, come back: the countdown resumed where it paused and
    the server log counted a clock republish; sleep through a night mid-visit: the countdown did not jump.
-10. **The end:** after 300 s the server log shows `visit #1 ended: timer; takings 0 coins`, the banner
+10. **The end** — server half 2026-09-07 11:05: `visit #1 ended: timer; takings 0 coins, purse 800, 0 clock
+    republish(es), 0 owed deliveries` (and visit 6 the same at 11:36); the banner and `cargo status` not read. As
+    written: after 300 s the server log shows `visit #1 ended: timer; takings 0 coins`, the banner
     "Ingvar has gone back to the mist" shows, `cargo status` shows `visit: none; last #1 ended: timer`.
-11. **`cargo dismiss`** ends it early with `ended: admin <name>`; a non-admin's `cargo visit` is answered
+11. **`cargo dismiss`** — admin half **DONE 2026-09-07**: `visit #2 ended: admin Nomadtest; takings 0 coins, …`,
+    `visit #4 ended: admin Nomadtest`, client `server answered: cargo: visit #4 dismissed (admin Nomadtest)`; the
+    non-admin half needs a second account. As written: ends it early with `ended: admin <name>`; a non-admin's `cargo visit` is answered
     `not an admin` and the server log says `refused VCargo_admin visit from <name>`.
-12. **The gates:** a client that is not rested is refused `forced: <name> not eligible: not rested; online: ...`.
+12. **The gates** — **DONE 2026-09-07 11:17**: `roll: forced: Nomadtest not eligible: not rested; online: 1 not
+    rested` and, at 11:19, `… not eligible: comfort < 4; online: 1 comfort < 4`, each echoed to the client as
+    `server answered: cargo visit Nomadtest: forced: …`. As written: a client that is not rested is refused `forced: <name> not eligible: not rested; online: ...`.
 
 P6, the wire, with a visit running (`cargo visit` first):
-13. **A deal:** `cargo stock Iron` shows his shelf; `cargo deal buy Iron 2` prints `sending`, then
+13. **A deal** — **DONE 2026-09-07 11:11, through the terminal** (the `cargo deal` console form not used): server
+    `deal w4790ce-3-1 with Nomadtest: bought 126 Wood at 1, coins +126 to the player; purse 674`, client `terminal
+    deal on visit #3: ok w4790ce-3-1 -126 Wood, +126 coins`; the buy side `deal w4790ce-3-4 … sold 1 FlametalNew
+    at 110, coins -110 to the player; purse 754` then `sold 5 FlametalNew at 117` — the curve moved 110 → 117 =
+    110 × (6/5)^0.35 after one unit left the shelf, black metal 60 → 76 after five, flametal 162 with two left, all
+    to the coin. `cargo stock` on every machine not read. As written: `cargo stock Iron` shows his shelf; `cargo deal buy Iron 2` prints `sending`, then
     `DONE w...-1-1: +2 Iron, -N coins`; the inventory changed by exactly that; the server log shows
     `deal w...-1-1 with <name>: sold 2 Iron at N, coins -2N to the player; purse ...`; `cargo stock Iron`
     shows stock 18 and a higher price on EVERY machine. `cargo deal sell Wood 10` the other way.
@@ -752,20 +799,33 @@ P6, the wire, with a visit running (`cargo visit` first):
     the instant after a deal's answer (before the ack), log back in: the server log shows
     `VCargo_claim from <name>: redelivered 1 owed deal(s)` and the client shows `delivery ... applied` or, if the
     inbox already had it, nothing twice.
-15. **The sidecar after deals:** the server's file carries the changed `stock` rows, `purse`, `visit 1`,
+15. **The sidecar after deals** — rows half **DONE 2026-09-07 11:11:14** (StormTest): `stock	Wood	326	…`,
+    `purse	644`, `visit	3`, `seq	3`, `session	3	860278520	Nomadtest	-63.29	78.61	52.57	…	800	1030376462	Dropped`
+    while visit 3 ran, and `cool` rows after every visit (three of them for ONE player by the end — defect D2).
+    The restart-mid-visit half was Wu'barrk's run and is still his. As written: the server's file carries the changed `stock` rows, `purse`, `visit 1`,
     `seq N`, the `session` row while the visit runs, `cool` rows after it; a restart mid-visit prints
     `visit #1 RESUMED after a restart` and the countdown continues.
-16. **Refusals:** `cargo deal buy BlackCore 3` answers `sold_out`; a buy with fewer coins than the price is
+16. **Refusals** — purse half 2026-09-07 11:21: `deal refused for Nomadtest: purse_empty` twice, then `deal
+    refused for Nomadtest: purse_empty; further refusals are counted, not logged`, the client `terminal deal on
+    visit #5: purse_empty` each time; `sold_out` and `stale_visit` not seen. As written: `cargo deal buy BlackCore 3` answers `sold_out`; a buy with fewer coins than the price is
     stopped on the client before sending; a stale visit id is `stale_visit`.
 
 P7, the terminal (a client, no server needed for the first item):
-17. **`cargo terminal demo`** (from the main menu or in a world): the gilt window opens centred with the cursor
+17. **`cargo terminal demo`** — log half 2026-09-07 10:59 (in a world, Windows client): `terminal opened: visit #1
+    (demo)`, `terminal deal on visit #1: ok demo-1-1 +1 Honey, -2 coins`, `ok demo-1-2 +49 Honey, -98 coins`,
+    `terminal closed: inventory`; the window itself not yet described by the owner. As written (from the main menu or in a world): the gilt window opens centred with the cursor
     free; 18 wares on the left with icons and prices, 72 rows on the right (the 54 wants and the 18 wares he buys back); clicking a ware stages it (Shift 5,
     Ctrl 20, right-click takes back); "you pay" is count x price; Confirm deal answers with one of his three buy
     lines and the price on that row moves; a second Confirm on the same line comes back "The wind shifted..."
     with the line amber, and Confirm new price goes through; Escape closes it and the cursor locks again; the log
     shows `terminal opened: visit #1 (demo)` and `terminal closed: escape`.
-18. **On a real visit** (`cargo visit`, then `cargo terminal open`): the countdown matches the server's; a buy
+18. **On a real visit** — **DONE 2026-09-07 11:10–11:24, opened ON the merchant through Use** (never `cargo terminal
+    open`): `terminal opened: visit #3 on Dverger(Clone)`, `terminal closed: use`, sells (item 13), buys, barter
+    `ok w4790ce-5-3 +50 Honey, -12 Silver, +236 coins` and `ok w4790ce-5-4 +15 Ruby, -10 BlackMetal, -50 Honey, -2
+    FlametalNew, +24 coins` (which drained the purse to exactly 0 and was accepted), `terminal closed: escape`, and
+    `terminal closed: sent him off` with the server's `VCargo_dismiss from Nomadtest: visit #5 dismissed (dismissed by
+    Nomadtest)` and `visit #5 ended: dismissed by Nomadtest; takings 124 coins, purse 924, 11 clock republish(es)`.
+    Tab, M and the 5 m walk-away not seen. As written (`cargo visit`, then `cargo terminal open`): the countdown matches the server's; a buy
     changes the inventory by exactly the deal and the server log shows the deal; the same row's price moved on
     every machine; a sell of goods you carry pays coins; Fill from my goods covers a ware with the dearest goods
     first; Send him off twice ends the visit (`ended: dismissed by <name>`); Tab and M close it; walking more than
@@ -839,7 +899,13 @@ LINUX client needs a Linux bake through `BodyLoader`'s loose-file path to run th
 P4, the flight (Wu'barrk's two-client proof; a visit on a server, the pilot's client watching the sky):
 21. **The bird**: at `cargo visit` the server log shows `visit #N: flight authored: start (...) at ..., descent (...)
     at ... (N m short), drop (...) at ..., straight in 90 m out; bird <id>, Dverger <id>, both owned by the pilot`
-    (that line HAS been seen, in the integrated run above; the rest of this item has not);
+    (that line HAS been seen, in the integrated run above); **log half DONE 2026-09-07 (six flights on Don's
+    client)**: `cargo flight #1: flying from (8.9, 198.0, -9.0) via (-8.1, 161.2, 9.5) to (-41.9, 78.0, 46.4),
+    75.186 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)` then `cargo flight #1: dropped at (-41.89201,
+    80.3773346, 46.3858681) after 16.60019 s`, the six drops at 16.60 / 16.96 / 16.02 / 16.02 / 16.72 s against a
+    simulated ~16.8; visits 4 and 5 took the shrink path (`straight in 78 m out`, `49.5 m short`), never seen
+    before; the bird's departure logs `ground unknown at (…) (the zone has likely not finished generating); the
+    altitude is left alone` (F7's path, live). The glide ON SCREEN and the second client are still unreported;
     the pilot's log shows `cargo flight #N: flying from ... via ... to
     ..., 76.5 m out at 8 m/s, turning 45 deg/s (radius 10.2 m)`; a Valkyrie appears about 90 m out and 120 m up,
     glides straight in over about 17 s, and `dropped at (...) after N s` prints near 12 m above the drop point; then
@@ -850,7 +916,20 @@ P4, the flight (Wu'barrk's two-client proof; a visit on a server, the pilot's cl
     the bird (`spawner: ...` lines, no orphan in the world); a real intro Valkyrie (a new character) is untouched.
 
 The BarrkBOT export (`BARRKBOT_CONTRACT.md`), on a dedicated server, `Server.BarrkBotExport` at its default on:
-23. **The files land**: within `VisitDirector.ExportCadenceSeconds` (60 s) of `director up`, `BepInEx/config/ValkyriesCargo/`
+23. **The files land** — **DONE 2026-09-07 10:41 on StormTest, the server half** (dedicated, PR #46's build, nobody
+    online). `director up` at 10:40:11 local; at 10:41:11, exactly `ExportCadenceSeconds` later, the folder
+    `BepInEx\config\ValkyriesCargo\` (which had never existed on that machine) held `barrkbot_cargo_market.json`
+    through `_5` (5,928 / 5,937 / 5,935 / 5,937 / 5,158 bytes; `part N/5`; 15+15+15+15+12 = 72 market rows),
+    `barrkbot_cargo_traders.json` (1,277 bytes, an empty map) and `barrkbot_cargo_visits.json` (889 bytes), all
+    seven parsing as JSON, every `generated_at` reading `2026-09-07T17:41:11.206Z`; at 10:42:11 every file's
+    `generated_at` read `2026-09-07T17:42:11.225Z` — moving each cycle with nobody online. **The deal row and the
+    visit row, 11:06 and 11:11 the same day**: on the cycle AFTER visit 1 ended, `barrkbot_cargo_visits.json` carried
+    `"1":{"pilot":"Nomadtest","started_at":"2026-09-07T18:00:15.244Z","ended_at":"2026-09-07T18:05:15.244Z","duration_seconds":300,"takings_coins":0,"ended_reason":"timer"}`;
+    on the cycle after the first three deals (18:11:00–12Z), `barrkbot_cargo_traders.json` carried
+    `{"76561198392625778":{"name":"Nomadtest","coins_spent":0,"coins_earned":156,"deals_settled":3,"items_bought":0,"items_sold":156}}`
+    keyed on the platform id, and the market file's Wood read 326. Still open: `Server.BarrkBotExport = false`
+    stopping the files, and BarrkBOT reading them. The item as
+    written: within `VisitDirector.ExportCadenceSeconds` (60 s) of `director up`, `BepInEx/config/ValkyriesCargo/`
     holds `barrkbot_cargo_market.json` through `_5` (the shipped catalogue's measured part count), `barrkbot_cargo_traders.json`
     and `barrkbot_cargo_visits.json`, each valid JSON with a `generated_at` that keeps moving every cycle even with
     nobody online. A deal (`cargo deal buy ...`) makes the buyer's row appear in `barrkbot_cargo_traders.json` on the
@@ -860,10 +939,16 @@ The BarrkBOT export (`BARRKBOT_CONTRACT.md`), on a dedicated server, `Server.Bar
     server's `BepInEx/config`, answers a real question from the live files within its own 60 s sweep.
 
 P10b, the engine probes (any boot, client or server, no visit needed):
-24. **The probes resolve**: the boot line carries `built against Valheim 0.221.12 (network 36, player 43, world 37;
-    ...); running same build 0.221.12 (net 36, player 43, world 37); probes 15/15 ok, 4 not probeable.` on an
-    unmodified install, and `cargo engine` lists all 19 facts worst-rank-first with no `FAILED` among them and no
-    `registry:` line. **This is the one thing about P10b a clean build cannot prove**: every probe is a reflection
+24. **The probes resolve** — **DONE 2026-09-07 10:40 on StormTest, the boot half** (dedicated, stock 0.221.12, PR #46's
+    build): `BepInEx\LogOutput.log` shows `built against Valheim 0.221.12 (network 36, player 43, world 37; Steam
+    build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43,
+    world 37); probes 18/18 ok, 7 not probeable.` and the loaded line `patches 18/18 applied, catalogue=72 entries,
+    engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable`, with no `FAILED`
+    and no `registry:` line. `cargo engine`'s 25-line listing has not been read on a client, and the other direction
+    (below) has not been run. The item as written: the boot line carries `built against Valheim 0.221.12 (network 36,
+    player 43, world 37; ...); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not
+    probeable.` on an unmodified install, and `cargo engine` lists all 25 facts worst-rank-first with no `FAILED`
+    among them and no `registry:` line. **This is the one thing about P10b a clean build cannot prove**: every probe is a reflection
     lookup against a member this mod has never resolved at runtime, so a typo or a wrong overload shows up as a
     FALSE failure that disables a working feature. Any `FAILED` line on a stock 0.221.12 is a bug in
     `EngineCheck.cs`, not in Valheim. Then the other direction, once: install on a machine whose Valheim has moved
@@ -875,7 +960,16 @@ Ghost mode (F11; the owner's decision 2026-09-07), a visit running, any client:
     no enemy health bar appears over him, and he never swings at anything; the player is fought exactly as
     before. `cargo status` lists `Patch_BaseAI_IsEnemy` among the applied patches. With no visit running,
     hostiles behave exactly as vanilla (the prefix is one int compare there).
-26. **The shelf changes without a restart** (2026-09-07): on StormTest with no visit running, `cargo catalogue
+26. **The shelf changes without a restart** — **DONE 2026-09-07 11:07–11:28 but for the add-during-a-visit answer**:
+    `admin Nomadtest (-794915846): cargo catalogue add Ruby:40:15:45:Ware` → `catalogue applied: 72 entries; 72
+    kept, 0 added, 0 dropped; purse 800, next visit #3`, and `com.raveniron.valkyriescargo.cfg` on the server
+    rewritten with `Ruby:40:15:45:Ware`; the same add again → `the line is already exactly that, nothing changed`;
+    `Nonsense` → `catalogue add refused: this game has no prefab named 'Nonsense' (names are exact, and case
+    matters)`; `Boar` → `'Boar' is a prefab but not an item (no ItemDrop), so it could never be delivered`;
+    `cargo catalogue reset` → `catalogue reset to the shipped catalogue (docs/CATALOGUE.md); catalogue applied: 72
+    entries; 72 kept, 0 added, 0 dropped; purse 924, next visit #6`, the client logging `Received 1 configs and 0
+    custom values from the server` a moment later — the push that moves `cargo stock` on every machine. `cargo
+    stock Ruby` and `cargo status` on the client not read. As written: on StormTest with no visit running, `cargo catalogue
     add Ruby:40:15:45:Ware` from an admin client answers `cargo: catalogue updated Ruby: base 40, target 15,
     max 45, Ware (was base 29, target 15, max 45, Ware); catalogue applied: 72 entries; 72 kept, 0 added,
     0 dropped; purse …, next visit #…`, the server log carries the same `catalogue applied:` line, `cargo stock

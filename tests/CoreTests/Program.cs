@@ -4417,7 +4417,7 @@ namespace ValkyriesCargo.Tests
             var p = new EngineProbes();
 
             // ---- the shape of the registry ----
-            Equal(19, p.All.Count, "nineteen engine facts are registered");
+            Equal(25, p.All.Count, "twenty-five engine facts are registered");
             var names = new HashSet<string>();
             bool unique = true, ordered = true;
             int last = 0;
@@ -4443,6 +4443,34 @@ namespace ValkyriesCargo.Tests
             Equal(6, p.Find(EngineProbes.Merchant).Rank, "and the rest of the merchant's surface");
             Check(p.Find("no such probe") == null, "an unregistered name simply is not there");
 
+            // The audit's rows (docs/AUDIT-P4P5-2026-09-07.md section 2), folded in on 2026-09-07: three
+            // probes and three body facts, each at the rank of the surface it belongs to.
+            Equal(2, p.Find(EngineProbes.ZNetViewApi).Rank, "rank 2 too: the ZNetView surface the prefab patches read inside Awake");
+            Equal(2, p.Find(EngineProbes.ZdoBodies).Rank, "and the ZDO bodies the authoring rests on");
+            Equal(6, p.Find(EngineProbes.Interfaces).Rank, "rank 6: the two vanilla interfaces CargoMerchant implements");
+            Equal(6, p.Find(EngineProbes.DamagePath).Rank, "the damage, death and taming bodies");
+            Equal(6, p.Find(EngineProbes.AiBodies).Rank, "and the AI bodies the walk-up rides");
+            Equal(14, p.Find(EngineProbes.ConsoleApi).Rank, "the console is last: its failure is already logged by name");
+            Check(p.Find(EngineProbes.ZdoBodies).State == ProbeState.NotProbeable &&
+                  p.Find(EngineProbes.DamagePath).State == ProbeState.NotProbeable &&
+                  p.Find(EngineProbes.AiBodies).State == ProbeState.NotProbeable,
+                  "the three new body facts are registered as not probeable, never as something that can pass");
+            Check(p.Find(EngineProbes.ZNetViewApi).State == ProbeState.NotRun &&
+                  p.Find(EngineProbes.Interfaces).State == ProbeState.NotRun &&
+                  p.Find(EngineProbes.ConsoleApi).State == ProbeState.NotRun,
+                  "and the three new probes start not-run, like every other");
+            string inter = p.Find(EngineProbes.Interfaces).What;
+            Check(inter.Contains("Interact(Humanoid, bool, bool)") && inter.Contains("UseItem") && inter.Contains("GetHoverText()") && inter.Contains("GetHoverName()"),
+                  "the interface probe names the four members CargoMerchant implements");
+            Check(inter.Contains("no fifth"), "and says that a fifth is the failure");
+            Check(p.Find(EngineProbes.CharacterAi).What.Contains("ApplyDamage") && p.Find(EngineProbes.CharacterAi).Degrades.Contains("ApplyDamage"),
+                  "the Character probe stands for the second immortality choke point, ApplyDamage (F6)");
+            Check(p.Find(EngineProbes.CharacterAi).What.Contains("GetHoverText"), "and for the hover patch's targets (F2)");
+            Check(p.Find(EngineProbes.ZdoAuthoring).What.Contains("GetAllZDOsWithPrefabIterative"), "the ZDO probe stands for the restart sweep's one walk");
+            Check(p.Find(EngineProbes.ZNetViewApi).What.Contains("m_initZDO"), "the ZNetView probe stands for the ZDO a patch reads inside Awake (F8)");
+            Check(p.Find(EngineProbes.ZoneMaths).What.Contains("GetGroundHeight(Vector3, out float)"), "the zone probe names the out-bool overload, the one that can say 'no terrain' (F7)");
+            Check(p.Find(EngineProbes.ConsoleApi).Degrades.Contains("no status"), "and the console probe says what a player loses: cargo status itself");
+
             // The probe gap (docs/P10B-PROBE-GAP.md): the immortality patches the PRIVATE
             // Character.RPC_Damage, never the public Character.Damage, and the probe's own words are
             // what `cargo engine` prints, so they have to say the same thing the check asks for.
@@ -4456,12 +4484,12 @@ namespace ValkyriesCargo.Tests
 
             // ---- nothing has run: everything is permitted ----
             Equal(0, p.Run, "nothing has run");
-            Equal(4, p.NotProbeable, "four facts are method BODIES and cannot be probed cheaply");
+            Equal(7, p.NotProbeable, "seven facts are method BODIES and cannot be probed cheaply");
             Check(p.Ok(EngineProbes.RandEvent), "a probe that has not run says YES");
             Check(p.Ok(EngineProbes.EventClock), "a not-probeable fact says YES");
             Check(p.Ok("no such probe"), "and so does a name nobody registered: a missing probe must NEVER disable a feature");
             Equal("", p.Reason(EngineProbes.RandEvent), "a probe that has not failed has no reason to give");
-            Equal("probes not run, 4 not probeable", p.Encode(), "and the status line says exactly that");
+            Equal("probes not run, 7 not probeable", p.Encode(), "and the status line says exactly that");
             Equal(EngineProbes.SweepNote, p.Find(EngineProbes.ServerRefPin).Message,
                   "each not-probeable fact carries the sweep note verbatim, so cargo status never implies a pass");
 
@@ -4495,12 +4523,12 @@ namespace ValkyriesCargo.Tests
             Equal(4, p.Problems.Count, "each of the four refusals is on the record");
 
             // ---- the words ----
-            Equal("probes 1/2 ok, 4 not probeable, FAILED: body", p.Encode(), "the status line names the failures");
+            Equal("probes 1/2 ok, 7 not probeable, FAILED: body", p.Encode(), "the status line names the failures");
             Check(p.Record(EngineProbes.ZdoAuthoring, false, "ZDO.Persistent has no setter"), "a second, worse failure");
-            Equal("probes 1/3 ok, 4 not probeable, FAILED: zdo_authoring, body", p.Encode(),
+            Equal("probes 1/3 ok, 7 not probeable, FAILED: zdo_authoring, body", p.Encode(),
                   "and the failures are listed worst rank FIRST, whatever order they were recorded in");
             Equal("zdo_authoring", p.Failed[0].Name, "the Failed list is in rank order too");
-            Equal(19, p.Report().Count, "cargo engine prints one line per registered fact");
+            Equal(25, p.Report().Count, "cargo engine prints one line per registered fact");
             Check(p.Report()[0].StartsWith("[1] randevent: PASSED"), "worst first, with the rank, the name and the state");
             Check(p.Report()[0].Contains("; checks ") && p.Report()[0].Contains("; on failure "),
                   "and each line says what it looked at and what turns itself off");

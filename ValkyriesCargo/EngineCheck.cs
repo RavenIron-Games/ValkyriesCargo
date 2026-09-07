@@ -65,12 +65,14 @@ namespace RavenIron.ValkyriesCargo
 
             ProbeRandEvent();
             ProbeZdoAuthoring();
+            ProbeZNetView();
             ProbeZoneMaths();
             ProbeVelocityCache();
             ProbeValkyrie();
             ProbeCharacter();
             ProbeMerchantAwake();
             ProbeMerchant();
+            ProbeInterfaces();
             ProbeInventory();
             ProbeComfort();
             ProbeDayLength();
@@ -78,6 +80,7 @@ namespace RavenIron.ValkyriesCargo
             ProbeRpc();
             ProbeLocalisation();
             ProbeBody();
+            ProbeConsole();
 
             EngineProbes p = Probes;
             IList<EngineProbe> failed = p.Failed;
@@ -206,7 +209,8 @@ namespace RavenIron.ValkyriesCargo
             NeedField(ev, "m_forceMusic", typeof(string), true, bad);
             NeedField(ev, "m_forceEnvironment", typeof(string), true, bad);
             NeedField(ev, "m_biome", typeof(Heightmap.Biome), true, bad);
-            return 21;
+            NeedEnumValue(typeof(Heightmap.Biome), "All", bad);            // the definition is not biome-gated
+            return 22;
         }
 
         private static void ProbeZdoAuthoring()
@@ -219,6 +223,15 @@ namespace RavenIron.ValkyriesCargo
             Record(EngineProbes.ZdoAuthoring, looked, bad);
         }
 
+        /// <summary>
+        /// Authoring a ZDO, and every key written to or read off one. The `Set`/`Get` overloads are asked
+        /// for BY THE SIGNATURE OUR CALL SITES COMPILED TO: `zdo.Set(hash, 3)` binds vanilla's
+        /// `Set(int, int, bool okForNotOwner = false)`, so the three-parameter form is the one a rename
+        /// would take away, and `Set(int, int)` on its own does not exist. `GetAllZDOsWithPrefabIterative`
+        /// takes its index BY REF, and that is part of the signature too: the restart sweep is the one
+        /// walk that finds every merchant-shaped ZDO, and a parameter change there makes `Spawner.Sweep`
+        /// a silent no-op that lets merchants accumulate forever (the audit's own words, P11d §2).
+        /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static int CheckZdoAuthoring(List<string> bad)
         {
@@ -226,17 +239,73 @@ namespace RavenIron.ValkyriesCargo
             NeedSettableProperty(zdo, "Persistent", typeof(bool), bad);
             NeedSettableProperty(zdo, "Distant", typeof(bool), bad);
             NeedSettableProperty(zdo, "Type", typeof(ZDO.ObjectType), bad);
+            NeedField(zdo, "m_uid", typeof(ZDOID), true, bad);                 // the carry link's value, and Spawner.Bird/Merchant
             NeedMethod(zdo, "SetPrefab", new[] { typeof(int) }, bad);
             NeedMethod(zdo, "SetOwner", new[] { typeof(long) }, bad);
             NeedMethod(zdo, "SetPosition", new[] { typeof(Vector3) }, bad);
             NeedMethod(zdo, "SetRotation", new[] { typeof(Quaternion) }, bad);
+            NeedMethod(zdo, "GetPosition", Type.EmptyTypes, bad);              // Gather, and the sweep's AuthoredDrop
+            NeedMethod(zdo, "GetOwner", Type.EmptyTypes, bad);                 // Gather: a candidate's peer uid
+            // The keys. Every VCargo_ key on the bird, the merchant and a player's own ZDO goes through
+            // exactly these overloads (Spawner, CargoFlight, CargoMerchant, ComfortReporter, VisitDirector).
+            NeedMethod(zdo, "Set", new[] { typeof(int), typeof(int), typeof(bool) }, bad);
+            NeedMethod(zdo, "Set", new[] { typeof(int), typeof(bool) }, bad);
+            NeedMethod(zdo, "Set", new[] { typeof(int), typeof(Vector3) }, bad);
+            NeedMethod(zdo, "Set", new[] { typeof(KeyValuePair<int, int>), typeof(ZDOID) }, bad);
+            NeedMethod(zdo, "GetInt", new[] { typeof(int), typeof(int) }, bad);
+            NeedMethod(zdo, "GetBool", new[] { typeof(int), typeof(bool) }, bad);
+            NeedMethod(zdo, "GetVec3", new[] { typeof(int), typeof(Vector3) }, bad);
+            NeedMethod(zdo, "GetString", new[] { typeof(int), typeof(string) }, bad);
             NeedMethod(zdo, "GetHashZDOID", new[] { typeof(string) }, bad);
-            NeedMethod(typeof(ZDOMan), "CreateNewZDO", new[] { typeof(Vector3), typeof(int) }, bad);
-            NeedMethod(typeof(ZDOMan), "DestroyZDO", new[] { typeof(ZDO) }, bad);
-            NeedMethod(typeof(ZDOMan), "GetSessionID", Type.EmptyTypes, bad);
+            NeedField(typeof(ZDOID), "None", typeof(ZDOID), true, bad);        // the cleared carry link
+            NeedMethod(typeof(ZDOID), "IsNone", Type.EmptyTypes, bad);
+            Type man = typeof(ZDOMan);
+            NeedProperty(man, "instance", man, bad);
+            NeedMethod(man, "CreateNewZDO", new[] { typeof(Vector3), typeof(int) }, bad);
+            NeedMethod(man, "DestroyZDO", new[] { typeof(ZDO) }, bad);
+            NeedMethod(man, "GetSessionID", Type.EmptyTypes, bad);
+            NeedMethod(man, "GetAllZDOsWithPrefabIterative", new[] { typeof(string), typeof(List<ZDO>), typeof(int).MakeByRefType() }, bad);
             NeedMethod(typeof(ZNetScene), "HasPrefab", new[] { typeof(int) }, bad);
-            NeedMethod(typeof(ZNetView), "GetZDO", Type.EmptyTypes, bad);
-            return 13;
+            NeedMethod(typeof(ZNetScene), "GetPrefab", new[] { typeof(int) }, bad);
+            return 30;
+        }
+
+        private static void ProbeZNetView()
+        {
+            var bad = new List<string>();
+            int looked;
+            // The JIT compiles CheckZNetView's body when THIS call reaches it - inside this try, never before it.
+            try { looked = CheckZNetView(bad); }
+            catch (Exception ex) { Threw(EngineProbes.ZNetViewApi, ex); return; }
+            Record(EngineProbes.ZNetViewApi, looked, bad);
+        }
+
+        /// <summary>
+        /// The ZNetView surface. `m_initZDO` is how the two prefab patches read a ZDO's keys INSIDE the
+        /// first `Awake`, before `GetZDO()` can answer (the audit's F8): without it neither
+        /// `Patch_Valkyrie_Awake` nor `Patch_Humanoid_Awake` can tell our object from a vanilla one, and
+        /// every bird and every merchant is silently vanilla's. `Awake` itself is named because its BODY
+        /// is a registered fact (`znetview_awake`, not probeable) and the method going missing would be
+        /// the loud half of that. `Everybody` is asked for BY VALUE: `InvokeRPC(Everybody, ...)` reaches
+        /// the `targetPeerID == 0L` branch that runs the handler locally before routing, which is why the
+        /// owner's own screen gets the callout exactly once (`CargoMerchant`, F3).
+        /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static int CheckZNetView(List<string> bad)
+        {
+            Type nv = typeof(ZNetView);
+            NeedField(nv, "m_initZDO", typeof(ZDO), true, bad);
+            NeedMethod(nv, "Awake", Type.EmptyTypes, bad);                    // private; the body is znetview_awake
+            NeedMethod(nv, "GetZDO", Type.EmptyTypes, bad);
+            NeedMethod(nv, "IsValid", Type.EmptyTypes, bad);
+            NeedMethod(nv, "IsOwner", Type.EmptyTypes, bad);                  // every ownership gate in CargoFlight and CargoMerchant
+            NeedMethod(nv, "Destroy", Type.EmptyTypes, bad);                  // the bird leaving
+            NeedMethod(nv, "Register", new[] { typeof(string), typeof(Action<long>) }, bad);     // Keys.Vanish
+            NeedGenericMethod(nv, "Register", 1, 2, bad);                                        // Keys.Say (Register<int>)
+            NeedMethod(nv, "InvokeRPC", new[] { typeof(long), typeof(string), typeof(object[]) }, bad);
+            NeedLongValue(nv, "Everybody", 0L, bad);
+            NeedProperty(typeof(ZNetScene), "instance", typeof(ZNetScene), bad);
+            return 11;
         }
 
         private static void ProbeZoneMaths()
@@ -258,12 +327,17 @@ namespace RavenIron.ValkyriesCargo
             NeedMethod(typeof(ZNetScene), "InActiveArea", new[] { typeof(Vector2i), typeof(Vector2i) }, bad);
             NeedMethod(typeof(ZNetScene), "InActiveArea", new[] { typeof(Vector2i), typeof(Vector2i), typeof(int) }, bad);
             Type zs = typeof(ZoneSystem);
+            NeedProperty(zs, "instance", zs, bad);
             NeedMethod(zs, "GetZone", new[] { typeof(Vector3) }, bad);
+            // The `out bool` overload, on purpose: the float one silently returns its input Y when no
+            // heightmap is loaded (knowledge base), which is the audit's F7. Both the flight floor and
+            // the drop's ground refinement use this one and treat false as "no terrain".
+            NeedMethod(zs, "GetGroundHeight", new[] { typeof(Vector3), typeof(float).MakeByRefType() }, bad);
             NeedField(zs, "m_zoneSize", typeof(float), true, bad);
             NeedField(zs, "m_activeArea", typeof(int), true, bad);
             NeedField(zs, "m_activeDistantArea", typeof(int), true, bad);
             NeedField(zs, "m_waterLevel", typeof(float), true, bad);
-            return 8;
+            return 10;
         }
 
         private static void ProbeVelocityCache()
@@ -343,12 +417,31 @@ namespace RavenIron.ValkyriesCargo
             // sender, HitData hit)`, assembly_valheim 0.221.12 decompiled line 8700. `Anywhere` already
             // includes NonPublic, so the name and the signature are the whole change.
             NeedMethod(c, "RPC_Damage", new[] { typeof(long), typeof(HitData) }, bad);
+            // The SECOND immortality choke point (the audit's F6, fixed in PR #38): damage over time -
+            // burning, poison, smoke - is applied by the status effect straight through `ApplyDamage`
+            // and never passes `RPC_Damage`. `Patch_Character_ApplyDamage` names the four-parameter
+            // overload explicitly, so that is the one probed. Decompiled line 8816.
+            NeedMethod(c, "ApplyDamage", new[] { typeof(HitData), typeof(bool), typeof(bool), typeof(HitData.DamageModifier) }, bad);
+            // The hover patch's two targets (the audit's F2, fixed in PR #37): `Character` is itself a
+            // `Hoverable`, so vanilla's lookup finds ITS implementation and our own is never asked -
+            // the postfixes on these two are the only way the prompt is ours.
+            NeedMethod(c, "GetHoverText", Type.EmptyTypes, bad);
+            NeedMethod(c, "GetHoverName", Type.EmptyTypes, bad);
+            NeedInterface(c, typeof(Hoverable), bad);
+            // `Player` OVERRIDES `InIntro`. `Patch_Character_InIntro` postfixes the base, and a postfix
+            // on a virtual runs for every override too; if the override ever went away nothing here
+            // would change - but if Character.InIntro stopped being virtual the patch would stop
+            // reaching the merchant, and the override is the cheap witness that it still is.
+            NeedOverride(typeof(Player), "InIntro", bad);
+            NeedMethod(c, "IsTamed", Type.EmptyTypes, bad);                  // the diagnostic line; never read after SetTamed
+            NeedField(typeof(ZDOVars), "s_tamed", typeof(int), true, bad);   // what SetTamed replicates through (F10)
+            NeedHash(typeof(ZDOVars), "s_tamed", "tamed", bad);
             NeedMethod(typeof(MonsterAI), "MakeTame", Type.EmptyTypes, bad);
             NeedMethod(typeof(BaseAI), "IsEnemy", new[] { typeof(Character) }, bad);
             // The STATIC overload is what `Patch_BaseAI_IsEnemy` patches (ghost mode, F11): every targeting
             // path, hit filter and the enemy HUD go through it. Decompiled line 4994.
             NeedMethod(typeof(BaseAI), "IsEnemy", new[] { typeof(Character), typeof(Character) }, bad);
-            return 7;
+            return 15;
         }
 
         private static void ProbeMerchantAwake()
@@ -422,11 +515,19 @@ namespace RavenIron.ValkyriesCargo
 
             Type ai = typeof(BaseAI);
             NeedMethod(typeof(MonsterAI), "SetFollowTarget", new[] { typeof(GameObject) }, bad);
+            NeedMethod(typeof(MonsterAI), "GetFollowTarget", Type.EmptyTypes, bad);   // the walk-up's diagnosis line (F5)
+            // The chain the walk-up rides once SetFollowTarget is set: UpdateAI's follow branch calls
+            // the PROTECTED `Follow`, which calls the PROTECTED `MoveTo`. Named here (strings, to
+            // reflection, never called) under the same exception as `BaseAI.m_character`; their BODIES -
+            // Follow's 3 m stop, MoveTo answering true on a failed path - are `ai_bodies`, not probeable.
+            NeedMethod(ai, "Follow", new[] { typeof(GameObject), typeof(float) }, bad);
+            NeedMethod(ai, "MoveTo", new[] { typeof(float), typeof(Vector3), typeof(float), typeof(bool) }, bad);
             NeedMethod(ai, "SetPatrolPoint", Type.EmptyTypes, bad);
             NeedField(ai, "m_aggravatable", typeof(bool), true, bad);
             NeedField(ai, "m_passiveAggresive", typeof(bool), true, bad);   // vanilla's spelling, kept
             NeedField(typeof(MonsterAI), "m_alertRange", typeof(float), true, bad);
             NeedField(ai, "m_randomMoveRange", typeof(float), true, bad);
+            NeedType(typeof(NpcTalk), bad);                                   // the chatter CargoMerchant switches off
 
             NeedMethod(typeof(Player), "GetClosestPlayer", new[] { typeof(Vector3), typeof(float) }, bad);
             NeedMethod(typeof(ZNetScene), "FindInstance", new[] { typeof(ZDOID) }, bad);
@@ -440,7 +541,41 @@ namespace RavenIron.ValkyriesCargo
             NeedField(typeof(Odin), "m_despawn", typeof(EffectList), true, bad);
             NeedMethod(typeof(EffectList), "Create",
                        new[] { typeof(Vector3), typeof(Quaternion), typeof(Transform), typeof(float), typeof(int) }, bad);
-            return 18;
+            return 22;
+        }
+
+        private static void ProbeInterfaces()
+        {
+            var bad = new List<string>();
+            int looked;
+            // The JIT compiles CheckInterfaces's body when THIS call reaches it - inside this try, never before it.
+            try { looked = CheckInterfaces(bad); }
+            catch (Exception ex) { Threw(EngineProbes.Interfaces, ex); return; }
+            Record(EngineProbes.Interfaces, looked, bad);
+        }
+
+        /// <summary>
+        /// The two vanilla interfaces `CargoMerchant` implements, member for member, and their COUNT.
+        /// This is the one probe where "more" is a failure: a member ADDED to `Interactable` or
+        /// `Hoverable` leaves our class not implementing it whole, and the runtime answers that with a
+        /// `TypeLoadException` the first time anything touches `CargoMerchant` - which is
+        /// `Patch_BaseAI_IsEnemy`'s `GetComponent` on every targeting decision, the hover postfix on
+        /// every look, and `Patch_Humanoid_Awake` on every character that spawns. Each catches and
+        /// logs three times, then goes quiet, and the merchant simply never exists. The audit's last
+        /// two rows (P11d §2), and the quietest failure on the list.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static int CheckInterfaces(List<string> bad)
+        {
+            Type inter = typeof(Interactable);
+            NeedMethod(inter, "Interact", new[] { typeof(Humanoid), typeof(bool), typeof(bool) }, bad);
+            NeedMethod(inter, "UseItem", new[] { typeof(Humanoid), typeof(ItemDrop.ItemData) }, bad);
+            NeedInterfaceShape(inter, 2, bad);
+            Type hover = typeof(Hoverable);
+            NeedMethod(hover, "GetHoverText", Type.EmptyTypes, bad);
+            NeedMethod(hover, "GetHoverName", Type.EmptyTypes, bad);
+            NeedInterfaceShape(hover, 2, bad);
+            return 6;
         }
 
         private static void ProbeInventory()
@@ -494,7 +629,8 @@ namespace RavenIron.ValkyriesCargo
             NeedField(typeof(ZDOVars), "s_playerName", typeof(int), true, bad);
             NeedHash(typeof(ZDOVars), "s_playerName", "playerName", bad);
             NeedMethod(typeof(ZNet), "GetAllCharacterZDOS", Type.EmptyTypes, bad);
-            return 12;
+            NeedField(typeof(Player), "m_localPlayer", typeof(Player), true, bad);   // whose ZDO the report is written on
+            return 13;
         }
 
         private static void ProbeDayLength()
@@ -557,13 +693,19 @@ namespace RavenIron.ValkyriesCargo
             NeedGenericMethod(rpc, "Register", 1, 2, bad);      // ZRpc.Register<T>(name, Action<ZRpc,T>)
             NeedGenericMethod(rpc, "Register", 2, 2, bad);      // and the two-argument form the router uses
             NeedMethod(rpc, "Invoke", new[] { typeof(string), typeof(object[]) }, bad);
+            NeedProperty(typeof(ZNet), "instance", typeof(ZNet), bad);
+            NeedMethod(typeof(ZNet), "IsServer", Type.EmptyTypes, bad);       // the role, decided at runtime (CargoTick)
             NeedMethod(typeof(ZNet), "GetServerRPC", Type.EmptyTypes, bad);
             NeedMethod(typeof(ZNet), "GetPeers", Type.EmptyTypes, bad);
             NeedField(typeof(ZNetPeer), "m_rpc", rpc, true, bad);
+            NeedField(typeof(ZNetPeer), "m_socket", typeof(ISocket), true, bad);   // the platform id the ledgers key on
+            NeedMethod(typeof(ISocket), "GetHostName", Type.EmptyTypes, bad);
+            NeedProperty(typeof(ZRoutedRpc), "instance", typeof(ZRoutedRpc), bad);
             NeedGenericMethod(typeof(ZRoutedRpc), "Register", 1, 2, bad);
             NeedGenericMethod(typeof(ZRoutedRpc), "Register", 2, 2, bad);
             NeedMethod(typeof(ZRoutedRpc), "InvokeRoutedRPC", new[] { typeof(long), typeof(string), typeof(object[]) }, bad);
-            return 9;
+            NeedLongValue(typeof(ZRoutedRpc), "Everybody", 0L, bad);         // Spawner sends Keys.Vanish to it
+            return 15;
         }
 
         private static void ProbeLocalisation()
@@ -582,7 +724,14 @@ namespace RavenIron.ValkyriesCargo
             Type loc = typeof(Localization);
             NeedProperty(loc, "instance", loc, bad);
             NeedMethod(loc, "Localize", new[] { typeof(string) }, bad);
-            return 2;
+            // The two banners: the pilot's dispatch (CargoTick) and a delivery's receipt (CargoTransport).
+            // `ShowMessage`'s three optional parameters are part of the signature our call compiled to.
+            Type hud = typeof(MessageHud);
+            NeedProperty(hud, "instance", hud, bad);
+            NeedMethod(hud, "ShowMessage", new[] { typeof(MessageHud.MessageType), typeof(string), typeof(int), typeof(Sprite), typeof(bool) }, bad);
+            NeedEnumValue(typeof(MessageHud.MessageType), "Center", bad);
+            NeedEnumValue(typeof(MessageHud.MessageType), "TopLeft", bad);
+            return 6;
         }
 
         private static void ProbeBody()
@@ -629,6 +778,40 @@ namespace RavenIron.ValkyriesCargo
             NeedSettableProperty(typeof(Renderer), "sharedMaterials", typeof(Material[]), bad);
             NeedProperty(typeof(Renderer), "sharedMaterial", typeof(Material), bad);
             return 16;
+        }
+
+        private static void ProbeConsole()
+        {
+            var bad = new List<string>();
+            int looked;
+            // The JIT compiles CheckConsole's body when THIS call reaches it - inside this try, never before it.
+            try { looked = CheckConsole(bad); }
+            catch (Exception ex) { Threw(EngineProbes.ConsoleApi, ex); return; }
+            Record(EngineProbes.ConsoleApi, looked, bad);
+        }
+
+        /// <summary>
+        /// The `cargo` console: the instrument every other item on the verify list is read through.
+        /// `Terminal.InitTerminal` is PRIVATE and `Patch_Terminal_Cargo` names it in a string, the same
+        /// class of silence as `RPC_Damage` - though this one is the least silent probe on the list,
+        /// because the registration is inside its own try/catch and says "registration failed" by
+        /// name. The `ConsoleCommand` constructor is asked for as OUR call compiled it: three arguments
+        /// typed, nine optional ones filled in at our compile time, so an added or removed optional is
+        /// a `MissingMethodException` at the call and not a recompile.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static int CheckConsole(List<string> bad)
+        {
+            Type term = typeof(Terminal);
+            NeedMethod(term, "InitTerminal", Type.EmptyTypes, bad);
+            NeedConstructor(typeof(Terminal.ConsoleCommand),
+                            new[] { typeof(string), typeof(string), typeof(Terminal.ConsoleEvent), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(bool),
+                                    typeof(Terminal.ConsoleOptionsFetcher), typeof(bool), typeof(bool), typeof(bool) }, bad);
+            Type args = typeof(Terminal.ConsoleEventArgs);
+            NeedField(args, "Args", typeof(string[]), true, bad);
+            NeedField(args, "Context", term, true, bad);
+            NeedMethod(term, "AddString", new[] { typeof(string) }, bad);     // every answer the console prints
+            return 5;
         }
 
         // ---- recording -------------------------------------------------------------------------------
@@ -707,12 +890,38 @@ namespace RavenIron.ValkyriesCargo
                 bad.Add(t.Name + "." + name + " is " + Wire.Int((int)v) + ", not the hash of \"" + key + "\" (" + Wire.Int(want) + ")");
         }
 
+        /// <summary>
+        /// A method by name and EXACT parameter types. Not `Type.GetMethod(name, flags, null, types, null)`:
+        /// that goes through the default binder, which widens primitives the way a call site would -
+        /// `int` to `long`, `int` to `float` - so asking it for a `ZDO.Set(int, int)` that does not exist
+        /// came back with `Set(int, long)` and the probe said PASSED. Found by the second mutation pass
+        /// (docs/ENGINE-PROBES.md §7): a probe that widens is a probe that can lie about the very thing
+        /// it exists to catch, a moved parameter type. Identity on every parameter, or it is gone.
+        /// </summary>
         private static void NeedMethod(Type t, string name, Type[] args, List<string> bad)
         {
-            MethodInfo m = null;
-            try { m = t.GetMethod(name, Anywhere, null, args ?? Type.EmptyTypes, null); }
-            catch (AmbiguousMatchException) { return; }             // more than one match is still a match
-            if (m == null) bad.Add(t.Name + "." + name + "(" + Names(args) + ") is gone");
+            if (FindExact(t, name, args ?? Type.EmptyTypes) == null)
+                bad.Add(t.Name + "." + name + "(" + Names(args) + ") is gone");
+        }
+
+        /// <summary>The first method of that name whose parameter types are these, by identity; null when there is none. Two exact matches (a `new` member hiding a base one) are still a match.</summary>
+        private static MethodInfo FindExact(Type t, string name, Type[] args)
+        {
+            MethodInfo[] all = t.GetMethods(Anywhere);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i].Name != name) continue;
+                if (SameTypes(all[i].GetParameters(), args)) return all[i];
+            }
+            return null;
+        }
+
+        private static bool SameTypes(ParameterInfo[] ps, Type[] args)
+        {
+            if (ps.Length != args.Length) return false;
+            for (int i = 0; i < ps.Length; i++)
+                if (ps[i].ParameterType != args[i]) return false;   // identity: a byref, an array, a nested type each compare as themselves
+            return true;
         }
 
         /// <summary>A generic method by name, generic arity and parameter count - `GetMethod` cannot ask for one by argument types.</summary>
@@ -728,13 +937,14 @@ namespace RavenIron.ValkyriesCargo
             bad.Add(t.Name + "." + name + "<" + Wire.Int(genericArgs) + ">(" + Wire.Int(paramCount) + " args) is gone");
         }
 
-        /// <summary>A constructor by argument types. `new Material(donor)` is a call like any other and can go the same way.</summary>
+        /// <summary>A constructor by EXACT argument types (the same reasoning as NeedMethod). `new Material(donor)` is a call like any other and can go the same way.</summary>
         private static void NeedConstructor(Type t, Type[] args, List<string> bad)
         {
-            ConstructorInfo c = null;
-            try { c = t.GetConstructor(Anywhere, null, args ?? Type.EmptyTypes, null); }
-            catch (AmbiguousMatchException) { return; }             // more than one match is still a match
-            if (c == null) bad.Add("new " + t.Name + "(" + Names(args) + ") is gone");
+            Type[] want = args ?? Type.EmptyTypes;
+            ConstructorInfo[] all = t.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            for (int i = 0; i < all.Length; i++)
+                if (SameTypes(all[i].GetParameters(), want)) return;
+            bad.Add("new " + t.Name + "(" + Names(args) + ") is gone");
         }
 
         /// <summary>
@@ -748,6 +958,68 @@ namespace RavenIron.ValkyriesCargo
             try { there = t.IsEnum && Enum.IsDefined(t, name); }
             catch { there = false; }
             if (!there) bad.Add(t.Name + "." + name + " is gone");
+        }
+
+        /// <summary>
+        /// A `static` (or `const`) field really holds the value the code assumes. `Everybody` is the one:
+        /// the "handle it locally first" branch is keyed on the literal 0L, and a renumbered constant
+        /// would route the callout to nobody without a compile error anywhere.
+        /// </summary>
+        private static void NeedLongValue(Type t, string name, long want, List<string> bad)
+        {
+            FieldInfo f = GetField(t, name);
+            if (f == null) { bad.Add(t.Name + "." + name + " is gone"); return; }
+            object v;
+            try { v = f.IsLiteral ? f.GetRawConstantValue() : f.GetValue(null); }
+            catch (Exception ex) { bad.Add(t.Name + "." + name + " could not be read (" + ex.GetType().Name + ")"); return; }
+            if (!(v is long)) { bad.Add(t.Name + "." + name + " holds no long"); return; }
+            if ((long)v != want)
+                bad.Add(t.Name + "." + name + " is " + ((long)v).ToString(CultureInfo.InvariantCulture) + ", not " + want.ToString(CultureInfo.InvariantCulture));
+        }
+
+        /// <summary>A type still declares its OWN body for a virtual member; the base's is not an answer here.</summary>
+        private static void NeedOverride(Type t, string name, List<string> bad)
+        {
+            MethodInfo m = null;
+            try
+            {
+                m = t.GetMethod(name, BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly,
+                                null, Type.EmptyTypes, null);
+            }
+            catch (AmbiguousMatchException) { return; }             // more than one is still an override
+            if (m == null) bad.Add(t.Name + " no longer overrides " + name + "()");
+        }
+
+        /// <summary>A type still implements an interface (by identity, not by name).</summary>
+        private static void NeedInterface(Type t, Type iface, List<string> bad)
+        {
+            bool there;
+            try { there = Array.IndexOf(t.GetInterfaces(), iface) >= 0; }
+            catch { there = false; }
+            if (!there) bad.Add(t.Name + " no longer implements " + iface.Name);
+        }
+
+        /// <summary>
+        /// An interface has EXACTLY this many members. The one place "more" is a failure: our class
+        /// implements the interface whole or the runtime refuses to load it at all (see CheckInterfaces).
+        /// </summary>
+        private static void NeedInterfaceShape(Type iface, int members, List<string> bad)
+        {
+            int n;
+            try { n = iface.GetMethods(BindingFlags.Public | BindingFlags.Instance).Length; }
+            catch { bad.Add(iface.Name + "'s members could not be read"); return; }
+            if (n != members)
+                bad.Add(iface.Name + " has " + Wire.Int(n) + " member(s), not " + Wire.Int(members) + ": CargoMerchant no longer implements it whole");
+        }
+
+        /// <summary>
+        /// A type is still there. The whole check is the `typeof` at the call site: a missing type is a
+        /// `TypeLoadException` while the Check* is being JIT-compiled, caught by its Probe*. Nothing to
+        /// look at once it resolved.
+        /// </summary>
+        private static void NeedType(Type t, List<string> bad)
+        {
+            if (t == null) bad.Add("a type resolved to null");
         }
 
         private static void NeedProperty(Type t, string name, Type expected, List<string> bad)
