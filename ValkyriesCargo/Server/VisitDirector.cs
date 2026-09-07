@@ -55,6 +55,10 @@ namespace RavenIron.ValkyriesCargo.Server
         /// <summary>F3's grace period: the visit id `End` sent Keys.Vanish for and is waiting to reclaim. 0 = nothing pending.</summary>
         private int _pendingVanishVisitId;
         private double _pendingClearAt;
+        /// <summary>The visit whose departure finished last tick; its sweep runs THIS tick, after
+        /// ZDOMan.Update has actually removed what Clear destroyed (DestroyZDO only queues; D3,
+        /// docs/AUDIT-STORMTEST-2026-09-07.md §2). 0 = nothing pending.</summary>
+        private int _pendingSweepFor;
         private float _adoptWaited;
         private bool _orphanLogged;
         private bool _dirty;
@@ -127,7 +131,7 @@ namespace RavenIron.ValkyriesCargo.Server
             // that 0 would destroy the merchant of the visit about to resume.
             int keep = d._session != null && d._session.Active ? d._session.VisitId
                                                                : VisitSession.VisitIdOf(d._pendingSessionRow);
-            string swept = Spawner.Sweep(keep);
+            string swept = Spawner.Sweep(keep, "boot");
             if (swept != null) ValkyriesCargo.Log.LogInfo(swept);
 
             ValkyriesCargo.Log.LogInfo("director up: salt " + salt + ", day " + Wire.Double(day) + " s (" + (fromEngine ? "EnvMan.m_dayLengthSec" : "ASSUMED, no EnvMan") +
@@ -179,6 +183,22 @@ namespace RavenIron.ValkyriesCargo.Server
 
                 // A changed Server.Catalogue (2026-09-07), by whatever route it arrived: applied here, between visits.
                 if (ModConfig.CatalogueVersion != _catalogueVersion) SwapCatalogue(worldTime);
+
+                // D3 (docs/AUDIT-STORMTEST-2026-09-07.md §2): a visit that finished its departure LAST
+                // tick gets its sweep THIS tick, once ZDOMan.Update has actually removed what Clear
+                // destroyed (DestroyZDO only queues the removal). This drain runs first, above the
+                // _pendingClearAt handling below, so a FinishDeparture call further down THIS tick
+                // (the immediate branch in End, or the grace-period branch right below) sets
+                // _pendingSweepFor for NEXT tick to find, never this one -- the whole point of the
+                // deferral is that it cannot drain in the same call that set it.
+                if (_pendingSweepFor != 0)
+                {
+                    int endedId = _pendingSweepFor;
+                    _pendingSweepFor = 0;
+                    int liveNow = _session.Active ? _session.VisitId : 0;
+                    string swept = Spawner.Sweep(liveNow, "after visit #" + endedId);
+                    if (swept != null) ValkyriesCargo.Log.LogInfo(swept);
+                }
 
                 // F3's grace period (Spawner.VanishGraceSeconds after End sent Keys.Vanish): independent
                 // of everything below, on purpose, so a RandEventSystem hiccup or "no visit active" never
@@ -336,7 +356,7 @@ namespace RavenIron.ValkyriesCargo.Server
         /// </summary>
         private void SweepAfterGivingUp(string why)
         {
-            string swept = Spawner.Sweep(0);
+            string swept = Spawner.Sweep(0, "boot, after giving up on the carry");
             if (swept != null) ValkyriesCargo.Log.LogInfo(swept + " (" + why + ")");
         }
 
@@ -526,20 +546,29 @@ namespace RavenIron.ValkyriesCargo.Server
         }
 
         /// <summary>
-        /// F3's backstop and F4's belt-and-braces sweep (audit Task 1b), fired together: whether
-        /// `Spawner.Clear()` runs right now (nothing was bound at `End`) or after the grace period
-        /// (`Tick`, above), the same two steps happen in the same order. `ClearIfStillOurs` only
-        /// reclaims if nothing has re-authored a NEW visit's bird and merchant since `endedVisitId`
-        /// was the one ending; the sweep afterward is the audit's own backstop, run against whatever
-        /// visit is actually live now (0 if none) rather than a stale guess -- it destroys every OTHER
-        /// merchant ZDO tagged `VCargo_ingvar`, however it got there, while sparing a new visit's own.
+        /// F3's backstop, fired whether `Spawner.Clear()` runs right now (nothing was bound at `End`)
+        /// or after the grace period (`Tick`, above). `ClearIfStillOurs` only reclaims if nothing has
+        /// re-authored a NEW visit's bird and merchant since `endedVisitId` was the one ending.
+        ///
+        /// D3 (docs/AUDIT-STORMTEST-2026-09-07.md §2): the belt-and-braces sweep used to run HERE, in
+        /// the same synchronous call as the reclaim. `Spawner.Reclaim` calls `ZDOMan.DestroyZDO`, which
+        /// in 0.221.12 only adds the id to `m_destroySendList` -- actual removal from the sector and id
+        /// tables happens in `HandleDestroyedZDO`, reached from `SendDestroyed` on the NEXT
+        /// `ZDOMan.Update`. So a sweep run right here always found the merchant this call just
+        /// destroyed still in the table, still tagged `VCargo_ingvar`, and reported him as stranded --
+        /// `restart sweep: 1 stranded merchant(s) destroyed` at every one of StormTest's six visit
+        /// ends, 2026-09-07, none of them a restart. The reclaim itself was never wrong. The sweep now
+        /// waits one director tick (`_pendingSweepFor`, drained at the top of `Tick`), by which time
+        /// `ZDOMan.Update` has actually removed what `Clear` destroyed, so a sweep line after this
+        /// point means something really was left behind.
         /// </summary>
         private void FinishDeparture(int endedVisitId)
         {
-            Spawner.ClearIfStillOurs(endedVisitId);
-            int liveNow = _session.Active ? _session.VisitId : 0;
-            string swept = Spawner.Sweep(liveNow);
-            if (swept != null) ValkyriesCargo.Log.LogInfo(swept);
+            bool reclaimed = Spawner.ClearIfStillOurs(endedVisitId);
+            ValkyriesCargo.Log.LogInfo("visit #" + endedVisitId + ": " + (reclaimed
+                ? "merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)"
+                : "nothing bound to reclaim"));
+            _pendingSweepFor = endedVisitId;
         }
 
         // ---- publish and persist ---------------------------------------------------------------------
