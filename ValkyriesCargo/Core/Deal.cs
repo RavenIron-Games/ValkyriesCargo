@@ -214,6 +214,18 @@ namespace RavenIron.ValkyriesCargo.Core
             return true;
         }
 
+        /// <summary>
+        /// Take an id back out. CargoRpc.Send marks a delivery applied BEFORE the caller writes the pack, so
+        /// when the pack refuses it the mark is a lie: without this the next redelivery of the same id is
+        /// acked as a duplicate and the goods are gone for good. False if the id was not there.
+        /// </summary>
+        public bool Forget(string deliveryId)
+        {
+            if (string.IsNullOrEmpty(deliveryId) || !_index.Remove(deliveryId)) return false;
+            _order.Remove(deliveryId);
+            return true;
+        }
+
         public IReadOnlyList<string> Ids => _order;
 
         public string Encode() => Wire.Join(Wire.Item, _order);

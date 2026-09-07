@@ -100,7 +100,12 @@ namespace RavenIron.ValkyriesCargo.Net
                     _pending.Remove(r.Nonce);
                     Answered++;
                     cb(r);
-                    if (r.Ok) { InboxStore.Save(CargoRpc.Inbox); AckNow(r.DeliveryId); }
+                    // The caller applies inside cb. Ack (and persist the inbox) ONLY for what the pack
+                    // actually took: the ack clears the server's owed row, so acking a delivery the
+                    // inventory refused loses it for good, and persisting the inbox id would make the
+                    // redelivery a duplicate. This is the discipline Deliveries.Handle already keeps.
+                    if (r.Ok && DealApplier.LastApplied == r.DeliveryId) { InboxStore.Save(CargoRpc.Inbox); AckNow(r.DeliveryId); }
+                    else if (r.Ok) CargoRpc.Inbox.Forget(r.DeliveryId);   // Send marked it before the pack refused; the redelivery must apply, not ack
                     return;
                 }
                 Unsolicited++;
@@ -147,7 +152,9 @@ namespace RavenIron.ValkyriesCargo.Net
             if (d == null) { onAnswer(DealResult.Refuse(deal.Nonce, DealReason.NotConnected)); return; }
             DealResult r = d.Settle(deal, _key, Player.m_localPlayer != null ? Player.m_localPlayer.GetPlayerName() : "host");
             onAnswer(r);
-            if (r.Ok) { InboxStore.Save(CargoRpc.Inbox); d.Ack(_key, r.DeliveryId); }
+            // Same rule as the remote path: the ledger keeps what the pack refused.
+            if (r.Ok && DealApplier.LastApplied == r.DeliveryId) { InboxStore.Save(CargoRpc.Inbox); d.Ack(_key, r.DeliveryId); }
+            else if (r.Ok) CargoRpc.Inbox.Forget(r.DeliveryId);
         }
 
         /// <summary>The host's owed rows are applied in-process at session start, the way a claim would.</summary>

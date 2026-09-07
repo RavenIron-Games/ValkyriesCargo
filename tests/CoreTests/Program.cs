@@ -576,6 +576,13 @@ namespace ValkyriesCargo.Tests
             Check(inbox.AlreadyApplied("d1"), "AlreadyApplied true for existing id");
             Check(!inbox.AlreadyApplied("d2"), "AlreadyApplied false for new id");
 
+            // Forget: a delivery the pack refused after Send had already marked it must be applicable again
+            Check(inbox.Forget("d1"), "Forget returns true for a marked id");
+            Check(!inbox.AlreadyApplied("d1"), "AlreadyApplied false after Forget");
+            Check(inbox.MarkApplied("d1"), "MarkApplied true again after Forget");
+            Check(!inbox.Forget("nope") && !inbox.Forget(""), "Forget false for an unknown or empty id");
+            Check(inbox.Count == 1 && inbox.Ids[0] == "d1", "Forget keeps order and count consistent");
+
             // Capacity 3 evicts oldest
             inbox = new DealInbox(3);
             Check(inbox.MarkApplied("d1"), "Add d1");

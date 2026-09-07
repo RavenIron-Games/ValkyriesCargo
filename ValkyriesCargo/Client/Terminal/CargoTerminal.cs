@@ -39,6 +39,10 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         private readonly Dictionary<string, string> _names = new Dictionary<string, string>(StringComparer.Ordinal);
         private readonly Dictionary<string, Sprite> _icons = new Dictionary<string, Sprite>(StringComparer.Ordinal);
         private GameObject _merchant;
+        /// <summary>Opened standing by a merchant. `_merchant != null` cannot answer this: Unity's operator
+        /// reads a DESTROYED object as null, so a merchant despawned mid-trade would silently turn the 5 m
+        /// rule off instead of closing the window. `cargo terminal open` opens with no merchant on purpose.</summary>
+        private bool _hasMerchant;
         private int _visitId;
         private bool _demo;
         private float _openedAt;
@@ -72,6 +76,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         private void OpenInternal(GameObject merchant, int visitId, bool demo)
         {
             _merchant = merchant;
+            _hasMerchant = merchant != null;
             _visitId = visitId;
             _demo = demo;
             _openedAt = Time.time;
@@ -104,6 +109,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         {
             Close("session ended");
             _merchant = null;
+            _hasMerchant = false;
             _counts.Clear();
         }
 
@@ -117,17 +123,31 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
                 UIFocus.SetWantsCursor(WindowId, true);
                 UIFocus.SetBlocksGameInput(WindowId, true);
 
-                if (Input.GetKeyDown(KeyCode.Escape)) { Close("escape"); return; }
+                // ZInput, not UnityEngine.Input: this build reads every key through ZInput's new-Input-System
+                // wrapper (Menu.Update 307/364, FejdStartup 1702, InventoryGui 396, Minimap 616) and reads no
+                // legacy Input anywhere, so whether the legacy manager is even enabled is not a thing to bet
+                // the one way out of this window on. ZInput is null-safe and is initialised in FejdStartup.Awake
+                // (314), so this works at the main menu too, which is where `cargo terminal demo` has to work.
+                if (ZInput.GetKeyDown(KeyCode.Escape)) { Close("escape"); return; }
+                // Every relayed button is stood down with ResetButtonStatus. Closing releases the
+                // BlocksGameInput token in the same frame, and MonoBehaviour Update order is undefined:
+                // InventoryGui.Update and Minimap.Update both open on `!Chat.HasFocus()` plus a still-
+                // pressed ZInput button, so without this Tab closes the terminal AND opens the inventory,
+                // M closes it AND opens the map. (UIFocus's own header prescribes this for a token holder.)
                 if (ZInput.GetButtonDown("Use")) { ZInput.ResetButtonStatus("Use"); Close("use"); return; }
-                if (ZInput.GetButtonDown("Inventory")) { Close("inventory"); return; }
-                if (ZInput.GetButtonDown("Map")) { Close("map"); return; }
-                if (InventoryGui.IsVisible() || Minimap.IsOpen()) { Close("inventory or map open"); return; }
+                if (ZInput.GetButtonDown("Inventory")) { ZInput.ResetButtonStatus("Inventory"); Close("inventory"); return; }
+                if (ZInput.GetButtonDown("Map")) { ZInput.ResetButtonStatus("Map"); Close("map"); return; }
+                if (InventoryGui.IsVisible() || Minimap.IsOpen() || Menu.IsVisible()) { Close("a vanilla screen opened"); return; }
 
                 Player p = Player.m_localPlayer;
                 if (!_demo)
                 {
                     if (p == null || p.IsDead()) { Close("player gone"); return; }
-                    if (_merchant != null && Vector3.Distance(p.transform.position, _merchant.transform.position) > CloseDistance) { Close("too far"); return; }
+                    if (_hasMerchant)
+                    {
+                        if (_merchant == null) { Close("he is gone"); return; }
+                        if (Vector3.Distance(p.transform.position, _merchant.transform.position) > CloseDistance) { Close("too far"); return; }
+                    }
                     VisitSnapshot v = CargoRpc.Visit;
                     if (!v.Active || v.VisitId != _visitId) { Close("visit over"); return; }
                     if (v.Phase == VisitPhase.Leaving) { Close("he is leaving"); return; }
