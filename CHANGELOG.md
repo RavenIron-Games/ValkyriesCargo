@@ -117,6 +117,20 @@ merchant are not built, and the custom body has its loader but no baked bundle.*
   at `Assets\valkyriescargo_kit` grew the DLL by exactly its size and appeared as the resource
   `ValkyriesCargo.valkyriescargo_kit`.
 
+### P4 — the authored flight (PR #8, Wu'barrk)
+
+- `Core\FlightPlan.cs` (pure, 39 checks): the flight inside the pilot's active block, a straight approach with the
+  descent waypoint on the line carrying the glide altitude, and `TurningRadius` / `Reachable` so the harness refuses
+  any waypoint a pursuer at the shipped speed and turn rate cannot reach.
+- `Server\Spawner.cs`: the bird's ZDO authored whole and owned by the pilot (`vc_cargo`, `vc_target`, `vc_turn`,
+  `vc_dropped`); the merchant not authored until P5 (`MerchantEnabled`); both reclaimed on any visit end.
+  `Patches\Patch_Valkyrie_Awake.cs`: vanilla `Awake` skipped for our bird only. `Client\CargoFlight.cs`: the owner
+  flies vanilla's own maths and writes the velocity key so every other screen sees a glide.
+- New `Server.FlightSpeed` (8) and `Server.FlightTurnRate` (45): ours, synced, not the prefab's 20 and 20, whose
+  57 m turning circle is wider than the whole approach.
+- Reviewed on the PR with a simulation of the flight; all four findings taken and reproduced by both sides. Not
+  flown. **1078 off-game checks.**
+
 ### After P8: the audit, the runbook and the simulation (PRs #10, #11, #12)
 
 - **The client-path audit** (`docs\CLIENT-AUDIT.md`): 57 engine members on the never-run client paths checked

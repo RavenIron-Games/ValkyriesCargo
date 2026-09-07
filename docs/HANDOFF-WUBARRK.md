@@ -10,7 +10,9 @@ and land tonight; three more branches follow them (a client proof runbook with d
 economy simulation, a decompile audit of the never-run client paths). Your PR #8 has a review on it.
 Don merges everything; nothing below asks you to merge.
 
-1. **PR #8: answer the review and push the fix.** Four findings, all on the flight, all from simulating
+1. ~~**PR #8: answer the review and push the fix.**~~ DONE 2026-09-07: answered 05:09, verified on Don's side
+   (1078 checks with main merged; the flight table reproduced), merged as 1884fcd. The rest of this item is history.
+   Originally: Four findings, all on the flight, all from simulating
    `Fly` with the prefab's real speed 20 and turn rate 20 (a 57 m turning circle):
    - the turn-in point sits inside that circle, so the bird never reaches it and orbits until
      `MaxFlightSeconds`; straight in works (drop at 3.8 s), or a turn rate of our own (60 deg/s works);

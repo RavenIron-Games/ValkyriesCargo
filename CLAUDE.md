@@ -25,8 +25,8 @@ and the model: `docs/REVIEW-v5-2026-09-06.md`.
 (`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right layout).** What exists: the plugin entry, ServerSync
 vendored and armed, the config surface bound and locked, the `cargo` console, the catalogue with 72 defaults, the
 market and the scheduler, the event and the director, the deal wire, the world sidecar, the Cargo Terminal and the
-body loader. Nothing flies or walks: the flight is in review (PR #8), the merchant is not started, and no bundle is
-baked, so a visit runs with nobody standing in it. The paragraphs below are the history, each with the lines seen.
+body loader. The flight is built (PR #8, merged 2026-09-07) and not yet flown; the merchant is not started, and
+no bundle is baked, so a visit authors a bird and nothing for it to carry. 1078/1078 checks. The paragraphs below are the history, each with the lines seen.
 
 **HEADLESS VERIFIED 2026-09-06 15:23 on CairnTest (dedicated, port 2466, world CairnTest, alongside
 Cairn.dll and RavenEye.dll):** within 20 s of launch the BepInEx log showed, in order,
@@ -142,6 +142,23 @@ mutations caught between the two; a 131,072-byte stand-in dropped at `Assets\val
 embedded as `ValkyriesCargo.valkyriescargo_kit` and grew the DLL by exactly that much. **Not yet seen on a screen**:
 the body itself (items 19 and 20) — there is no baked bundle on this machine and nothing here has drawn a pixel.
 
+**P4 the authored flight, Wu'barrk, 2026-09-07 (PR #8, merged 1884fcd).** `Core/FlightPlan.cs` (pure, 39 checks) plans
+the flight inside the pilot's active block: a STRAIGHT approach along the seeded bearing, shrunk by 12 m steps until the
+start fits with an 8 m margin, turned a quarter at a time when a bearing has no room; the descent waypoint ON the
+line carrying the glide altitude, capped at three quarters of the run; `TurningRadius(v, w)` and `Reachable(...)`
+assert every waypoint is flyable at the shipped speed and turn rate (a pure pursuer cannot reach a point inside its own
+turning circle; the review's finding, kept as code). `Server/Spawner.cs` authors the bird's ZDO (`Valkyrie` prefab,
+`SetPrefab` explicitly because `CreateNewZDO` does not, non-persistent, owned by the PILOT, keys `vc_cargo`,
+`vc_target`, `vc_turn`, `vc_dropped`), watches `vc_dropped` once a second for the director, and reclaims bird and
+merchant on `Clear`; `MerchantEnabled = false` until P5, so nothing but a bird is authored and the merged DLL is safe
+on a live server. `Patches/Patch_Valkyrie_Awake.cs` (prefix, `Priority.Low`, `__runOriginal`) skips vanilla `Awake`
+for a bird carrying `vc_cargo` (vanilla takes `m_instance` before its owner guard and teleports `Player.m_localPlayer`)
+and adds `Client/CargoFlight.cs`, which flies vanilla's own `UpdateValkyrie` maths on the owner only, writes
+`ZDOVars.s_velHash` so every other screen dead-reckons a glide, and reads speed and turn rate from the new synced
+`Server.FlightSpeed` (8) and `Server.FlightTurnRate` (45), never the prefab's. Off-game: the geometry simulated by
+both sides (a 90 m start at 8 m/s drops at 11.7 m after 16.8 s; a 30 m start at 16.8 m after 13.6 s). **Not yet
+flown**: items 21 and 22.
+
 ---
 
 ## Commands
@@ -206,6 +223,10 @@ ValkyriesCargo/
   Core/BodyMotion.cs         PURE: Ingvar's six clip weights: hysteresis, crossfade, the one-shot envelope
   Client/BodyLoader.cs       the embedded bundle, once; the body swapped onto the merchant, additively
   Client/IngvarBody.cs       the driver: a PlayableGraph over the six clips; speed from displacement
+  Core/FlightPlan.cs         PURE: the flight inside the active block; TurningRadius/Reachable (Wu'barrk, P4)
+  Server/Spawner.cs          authors the bird (and, from P5, the merchant) owned by the pilot; watches vc_dropped (Wu'barrk)
+  Client/CargoFlight.cs      the owner flies the bird from vc_target/vc_turn; writes s_velHash for the watchers (Wu'barrk)
+  Patches/Patch_Valkyrie_Awake.cs   prefix, Priority.Low: skips vanilla Awake for our bird only (the named exception)
   Server/VisitDirector.cs    where the world runs: gather ZDOs -> Scheduler -> event -> VisitState/MarketState
   Server/CargoEvent.cs       the vanilla RandomEvent `valkyries_cargo`: definition, registration, start, remaining
   Server/AdminGate.cs        vanilla's ZNet.IsAdmin(hostName), fail closed (RavenEye's shape)
@@ -228,9 +249,8 @@ models/                      Ingvar's source art (ingvar.fbx + ingvar_albedo.png
 Planned (design section 3; names are final, files do not exist yet):
 
 ```
-  Server/Spawner.cs
-  Client/CargoFlight.cs Client/CargoMerchant.cs
-  Patches/Patch_Valkyrie_Awake.cs Patch_Humanoid_Awake.cs
+  Client/CargoMerchant.cs
+  Patches/Patch_Humanoid_Awake.cs
   Patches/Patch_Character_InIntro.cs Patch_Character_Damage.cs
 ```
 
@@ -309,6 +329,12 @@ owner overwrites next frame).
 - `EnvMan.IsDay()` is static. `Character.m_collider` is a `CapsuleCollider`. `Odin.m_despawn` and
   `Odin.m_ttl` are public; 300 is the field initialiser, and the value on the `odin` prefab is UNCHECKED (PR #8
   reports 60 from the prefab). `cargo prefab odin` decides it.
+- **The flight** (read from the prefab and the decompile by Wu'barrk, PR #8): the shipped `Valkyrie` says speed 20,
+  turn rate 20 and drop height 10 (compiled defaults 10, 5, 10); at 20 m/s and 20 deg/s the turning circle is 57 m,
+  wider than the whole 76 m run, so ours flies at the synced `FlightSpeed` 8 / `FlightTurnRate` 45. `ZSyncTransform`'s
+  non-owner path dead-reckons along `ZDOVars.s_velHash` (capped at 2 s) and `OwnerSync` writes that key only when the
+  velocity changes from its cache, so the owner's own write survives. A dedicated server pins its reference position
+  to (1000000, 0, 1000000) every fixed frame and instantiates nothing of ours.
 - **The game day is 1800 s** (`EnvMan.instance.m_dayLengthSec`, public, read live on StormTest 2026-09-06;
   the COMPILED default is 1200, the scene overrides it). The market's drift counts this number, never a constant.
 - **The vanilla random event**: `RandEventSystem.SetRandomEvent` is private; `SetRandomEventByName`,
@@ -416,6 +442,18 @@ P8, the body (a client with a baked bundle embedded; none exists yet):
     `cargo body clear` takes him away and `cargo status` goes back to `preview: none`. Then on a merchant (P5):
     the Dverger and his crossbow are gone, Ingvar walks when the agent walks, `cargo prefab` shows the same
     component set as before the swap, and nothing in the log says a vanilla system lost its animator.
+
+P4, the flight (Wu'barrk's two-client proof; a visit on a server, the pilot's client watching the sky):
+21. **The bird**: at `cargo visit` the server log shows `visit #N: flight authored: start (...) at ..., descent (...)
+    at ... (N m short), drop (...) at ..., straight in 90 m out; bird <id>, owned by the pilot; NO MERCHANT (P5 is
+    not in yet, so nothing is authored to carry)`; the pilot's log shows `cargo flight #N: flying from ... via ... to
+    ..., 76.5 m out at 8 m/s, turning 45 deg/s (radius 10.2 m)`; a Valkyrie appears about 90 m out and 120 m up,
+    glides straight in over about 17 s, and `dropped at (...) after N s` prints near 12 m above the drop point; then
+    it turns and leaves. A second client nearby sees the same glide, not a stutter (`s_velHash`).
+22. **The edges**: `cargo status` on a client shows the `flight:` line with the runtime `m_activeArea`; the pilot
+    walking out of their own zone block makes the bird vanish and, within 5 s, the server log says `the bird's ZDO is
+    gone and the merchant was never dropped; the visit continues on the ground`; `cargo dismiss` mid-flight reclaims
+    the bird (`spawner: ...` lines, no orphan in the world); a real intro Valkyrie (a new character) is untouched.
 
 ---
 

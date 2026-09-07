@@ -113,14 +113,15 @@ proves nothing about a game member.
   reason.
 - **The body loader**: `cargo body` reporting the embedded bundle, and `cargo body preview` standing
   Ingvar in front of the player. Needs a baked bundle, and none exists yet.
+- **The flight** (`Server/Spawner.cs`, `Client/CargoFlight.cs`, `Patches/Patch_Valkyrie_Awake.cs`, Wu'barrk's
+  P4): the server authors the Valkyrie for the pilot's client to fly, straight in from about 90 m out and 120 m
+  up over about 17 s. Simulated by both owners; never flown. Until the merchant exists it carries nothing.
 
 The full numbered list is `CLAUDE.md`, "What to verify in-game", items 2 to 20. Whoever boots a
 client first works that list and pastes the exact lines back into `CLAUDE.md`.
 
 ### Not built
 
-- **The flight** (`Server/Spawner.cs`, `Client/CargoFlight.cs`, `Patches/Patch_Valkyrie_Awake.cs`) —
-  in review as pull request #8, not merged, not run in a game.
 - **The merchant** (`Client/CargoMerchant.cs` and its patches): the carry in the talons, the landing,
   the walk, the callout, immortality, Shift+E dismissal, the Odin vanish, the restart sweep.
 - **The custom body**: the source art is in `models\` and the loader (`Client/BodyLoader.cs`, with
@@ -181,6 +182,8 @@ itself is what arms the lock.
 | `FlightStartDistance` | `90` | 24-200 | Metres from the pilot where the Valkyrie appears; clamped at runtime into the pilot's active zone block. |
 | `FlightStartAltitude` | `120` | 30-500 | Altitude of the Valkyrie's start point, metres above the drop. |
 | `FlightDescentDistance` | `50` | 10-200 | Metres out at which the descent leg begins. |
+| `FlightSpeed` | `8` | 2-40 | Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. |
+| `FlightTurnRate` | `45` | 5-360 | Degrees a second the Valkyrie may turn, overriding the prefab's own. |
 | `Catalogue` | 72 entries | | What Ingvar sells and buys: `Prefab:BasePrice:TargetStock:MaxStock:Kind` entries separated by commas; `Kind` is `Ware` (sells and buys back) or `Want` (buys only). The default is 18 wares and 54 wants; every number's reason is in `docs/CATALOGUE.md`. An unknown prefab name is dropped with one log line and the rest still loads. |
 | `PriceElasticity` | `0.35` | 0.05-1.5 | Exponent of (target / stock) in the price; higher is steeper. |
 | `MinPriceMultiplier` | `0.4` | 0.05-1 | Floor on the price multiplier when he is flooded. |
