@@ -44,6 +44,11 @@
     <Compile Include="..\..\ValkyriesCargo\Core\BarrkExport.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\SidecarThenMirror.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\BodyMotion.cs" />
+    <!-- P10b: the compiled-in baseline and the probe registry. Both are pure by design - the game
+         side that reads the live numbers and touches the game types is ValkyriesCargo\EngineCheck.cs,
+         which this harness deliberately cannot see. -->
+    <Compile Include="..\..\ValkyriesCargo\Core\EngineBaseline.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\EngineProbes.cs" />
     <Compile Include="..\..\ValkyriesCargo\Client\Terminal\TrayModel.cs" />
     <Compile Include="..\..\ValkyriesCargo\Net\CargoRpc.cs" />
   </ItemGroup>
