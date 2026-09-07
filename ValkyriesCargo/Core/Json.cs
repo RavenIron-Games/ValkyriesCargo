@@ -49,7 +49,7 @@ namespace RavenIron.ValkyriesCargo.Core
             if (value is int i) { sb.Append(i.ToString(CultureInfo.InvariantCulture)); return; }
             if (value is long l) { sb.Append(l.ToString(CultureInfo.InvariantCulture)); return; }
             if (value is double d) { WriteDouble(sb, d); return; }
-            if (value is float f) { WriteDouble(sb, f); return; }
+            if (value is float f) { WriteSingle(sb, f); return; }
             if (value is decimal m) { sb.Append(m.ToString(CultureInfo.InvariantCulture)); return; }
             if (value is short || value is byte || value is sbyte || value is ushort || value is uint || value is ulong)
             {
@@ -114,6 +114,17 @@ namespace RavenIron.ValkyriesCargo.Core
             if (double.IsPositiveInfinity(d)) { sb.Append("\"Infinity\""); return; }
             if (double.IsNegativeInfinity(d)) { sb.Append("\"-Infinity\""); return; }
             string text = d.ToString("R", CultureInfo.InvariantCulture);
+            sb.Append(text);
+            if (IsWholeDigits(text)) sb.Append(".0");
+        }
+
+        /// <summary>A float is formatted as a float ("R" on the single), not through its double form, which is what Newtonsoft does too.</summary>
+        private static void WriteSingle(StringBuilder sb, float f)
+        {
+            if (float.IsNaN(f)) { sb.Append("\"NaN\""); return; }
+            if (float.IsPositiveInfinity(f)) { sb.Append("\"Infinity\""); return; }
+            if (float.IsNegativeInfinity(f)) { sb.Append("\"-Infinity\""); return; }
+            string text = f.ToString("R", CultureInfo.InvariantCulture);
             sb.Append(text);
             if (IsWholeDigits(text)) sb.Append(".0");
         }
