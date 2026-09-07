@@ -235,6 +235,9 @@ namespace RavenIron.ValkyriesCargo.Patches
             // P10b, and deliberately the SECOND line: if the game underneath moved, every number below
             // is suspect and this is the line that says so. `cargo engine` for the whole list.
             Say(args, "  " + EngineCheck.StatusLine() + (EngineProbes.Current.Failed.Count > 0 ? " (cargo engine)" : ""));
+            // Issue #31: the patches that did not APPLY, by name. A degraded mod says it is degraded here.
+            Say(args, "  " + Patching.Ledger.StatusLine());
+            foreach (string line in Patching.Ledger.Report()) Say(args, "    " + line);
             if (CargoEvent.Disabled)
                 Say(args, "  visit: DISABLED - the engine probe 'randevent' failed (" + CargoEvent.DisabledReason +
                           "); the event is not registered and no visit can start on this build");

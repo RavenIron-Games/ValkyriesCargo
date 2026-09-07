@@ -211,11 +211,14 @@ the picture is the proof.
 
 **Client log**, the line `ValkyriesCargo.Awake` writes:
 ```
-Valkyrie's Cargo v<version> loaded - renderer=True, patches=<n>, catalogue=72 entries, ServerSync version gate armed; role is decided when a world loads.
+Valkyrie's Cargo v<version> loaded - renderer=True, patches <n>/<n> applied, catalogue=72 entries, ServerSync version gate armed; role is decided when a world loads.
 ```
-Headless prints `patches=13` (ServerSync 9 + our `Terminal.InitTerminal` postfix + UIFocus 2 + our
-`RandEventSystem.Awake` prefix); the same targets exist on a client, so 13 is expected. **A different
-number is a fact, not an error — write it down.** If the catalogue had a bad entry the line gains
+Since issue #31 the number is patch CLASSES applied over patch classes found, not patched methods (the
+older records' `patches=13` counted methods: ServerSync 9 + `Terminal.InitTerminal` + UIFocus 2 +
+`RandEventSystem.Awake`). Both halves equal is the pass. **`patches 15/16 applied; FAILED: <name>; running
+degraded` is the mod telling you a patch did not take — a fact, not an error; write the name down** and
+`cargo status` prints the reason under it. `REFUSED to run` means ServerSync's version gate or config lock
+did not apply, and nothing else was started. If the catalogue had a bad entry the line gains
 `(<n> problem(s), see `cargo status`)`.
 
 **Console:** `cargo status` answers at all, first line
