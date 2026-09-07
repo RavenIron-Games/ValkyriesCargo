@@ -56,7 +56,15 @@ $GaleRoot = Join-Path $env:APPDATA 'com.kesomannen.gale\valheim\profiles'
 
 # The BepInEx log source tag: BepInPlugin's PluginName in ValkyriesCargo\ValkyriesCargo.cs
 # ("Valkyrie's Cargo"). Every line the mod writes is "[Level  :Valkyrie's Cargo] ...".
+#
+# The filter matches the NAME anywhere, not just in the tag, because the lines that decide
+# whether a client and a server may talk are written by ServerSync through Unity's own log,
+# under "[Info   : Unity Log]": "Sending Valkyrie's Cargo version X and minimum version Y to
+# the server.", "Received ... from the server.", "Disconnect: The client (...) doesn't have
+# the correct Valkyrie's Cargo version X" (Libs\ServerSync.cs, VersionCheck). Matching only
+# the source tag hides exactly the lines item 3 needs.
 $ModTag = "Valkyrie's Cargo"
+$ModGuid = 'com.raveniron.valkyriescargo'
 
 # --- which file ---------------------------------------------------------------------
 if ($Path) {
@@ -107,7 +115,8 @@ function Read-Shared {
 }
 
 $esc = [regex]::Escape($ModTag)
-$Filter = "(:$esc\])|(Loading \[$esc)|(Chainloader started)|(Load world)|(Exception)"
+$escGuid = [regex]::Escape($ModGuid)
+$Filter = "($esc)|($escGuid)|(Chainloader started)|(Load world)|(Exception)"
 
 # NOTE: never name a local $all here - PowerShell variables are case-insensitive and it
 # would silently overwrite the -All switch. Cost one run to find.
@@ -123,7 +132,7 @@ $boot = $fileLines[$start..($fileLines.Count - 1)]
 
 Write-Host "$logPath" -ForegroundColor Cyan
 Write-Host ("$what - {0} line(s) in the file, this boot starts at line {1}; showing {2}" -f `
-        $fileLines.Count, ($start + 1), $(if ($All) { 'every line' } else { "our lines, 'Chainloader started', 'Load world' and anything with 'Exception'" })) -ForegroundColor DarkGray
+        $fileLines.Count, ($start + 1), $(if ($All) { 'every line' } else { "anything naming the mod, 'Chainloader started', 'Load world' and anything with 'Exception'" })) -ForegroundColor DarkGray
 Write-Host ''
 
 $out = @()
