@@ -157,6 +157,20 @@ namespace RavenIron.ValkyriesCargo.Client
                 return;
             }
 
+            // P10b: the rank-13 probe resolved AssetBundle.LoadFromStream/LoadAsset<T>/LoadAllAssets<T>
+            // and the three PlayableGraph Create calls at boot. If any of them moved, everything below
+            // would throw on a path that runs while a merchant is being built - so it does not run, the
+            // Dverger stands in (which is a supported state, not a broken one), and `cargo body` and
+            // `cargo status` both say why.
+            if (!EngineProbes.Current.Ok(EngineProbes.Body))
+            {
+                Source = BodySource.None;
+                Detail = "the engine probe 'body' failed: " + EngineProbes.Current.Reason(EngineProbes.Body) +
+                         "; the " + (ModConfig.BodyPrefab != null ? ModConfig.BodyPrefab.Value : "Dverger") + " stand-in is kept";
+                ValkyriesCargo.Log.LogWarning("body: " + Detail + ". `cargo engine` has the detail.");
+                return;
+            }
+
             try
             {
                 OpenBundle();

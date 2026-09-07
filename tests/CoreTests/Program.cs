@@ -64,6 +64,8 @@ namespace ValkyriesCargo.Tests
             BarrkRolloverTests();
             BarrkExportTests();
             SidecarThenMirrorTests();
+            EngineBaselineTests();
+            EngineProbeTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
             return _failed == 0 ? 0 : 1;
@@ -3611,6 +3613,220 @@ namespace ValkyriesCargo.Tests
             Check(SidecarThenMirror.Run(() => true, () => throw new InvalidOperationException("x"), null), "a null onMirrorFailed still swallows the mirror's throw rather than propagating it");
             Check(!SidecarThenMirror.Run(null, () => { }), "a null primary is treated as failure, not a throw");
             Check(SidecarThenMirror.Run(() => true, null), "a null mirror is simply skipped");
+        }
+
+        // ---- P10b: the compiled-in baseline -----------------------------------------------------
+
+        private static void EngineBaselineTests()
+        {
+            Section("EngineBaseline: the build this DLL was written on (P10b)");
+
+            // The four numbers are the identity of a build. They were read off
+            // assembly_valheim.dll's `Version` type on 2026-09-06 and confirmed again for P10b.
+            Equal("0.221.12", EngineBaseline.GameVersion, "the baseline game version");
+            Equal(36, EngineBaseline.NetworkVersion, "the baseline network version");
+            Equal(43, EngineBaseline.PlayerVersion, "the baseline player version");
+            Equal(37, EngineBaseline.WorldVersion, "the baseline world version");
+            Equal(21981559, EngineBaseline.ClientBuildId, "the Steam build id of the client");
+            Equal(21981590, EngineBaseline.ServerBuildId, "and of the dedicated server");
+            Check(EngineBaseline.Describe().Contains("0.221.12") && EngineBaseline.Describe().Contains("21981590") &&
+                  EngineBaseline.Describe().Contains(EngineBaseline.ReadOn),
+                  "Describe names the version, both build ids and the date the bodies were read");
+
+            // ---- the version string, in every shape GameVersion.ToString() can hand us ----
+            int ma, mi, pa;
+            Check(EngineBaseline.TryParse("0.221.12", out ma, out mi, out pa) && ma == 0 && mi == 221 && pa == 12, "a plain three-part version parses");
+            Check(EngineBaseline.TryParse("0.221", out ma, out mi, out pa) && pa == 0, "a two-part version is patch 0 (vanilla drops a zero patch)");
+            Check(EngineBaseline.TryParse("0.222.rc3", out ma, out mi, out pa) && mi == 222 && pa == -3, "a release candidate parses to a NEGATIVE patch, the way vanilla stores it");
+            Check(EngineBaseline.TryParse("dw-0.221.12", out ma, out mi, out pa) && mi == 221 && pa == 12, "a platform prefix is stripped (GetVersionString hands one over)");
+            Check(EngineBaseline.TryParse("0.221.12\nabc123", out ma, out mi, out pa) && pa == 12, "and the mercurial hash on the second line is ignored");
+            Check(!EngineBaseline.TryParse("", out ma, out mi, out pa), "an empty string is a FAILURE, never a zero version");
+            Check(!EngineBaseline.TryParse(null, out ma, out mi, out pa), "and so is null");
+            Check(!EngineBaseline.TryParse("nonsense", out ma, out mi, out pa), "so is a word");
+            Check(!EngineBaseline.TryParse("0.221.12.4", out ma, out mi, out pa), "so is a fourth part");
+            Check(!EngineBaseline.TryParse("0.a.1", out ma, out mi, out pa), "so is a non-numeric minor");
+            Check(!EngineBaseline.TryParse("0.221.rc0", out ma, out mi, out pa), "and so is rc0, which is not a candidate for anything");
+
+            // ---- ordering ----
+            Equal(0, EngineBaseline.Order(0, 221, 12), "the baseline orders equal to itself");
+            Equal(1, EngineBaseline.Order(1, 0, 0), "a bigger major is newer");
+            Equal(-1, EngineBaseline.Order(0, 220, 99), "a smaller minor is older however big the patch");
+            Equal(1, EngineBaseline.Order(0, 222, 0), "a bigger minor is newer however small the patch");
+            Equal(1, EngineBaseline.Order(0, 221, 13), "a bigger patch is newer");
+            Equal(-1, EngineBaseline.Order(0, 221, 11), "a smaller patch is older");
+            Equal(-1, EngineBaseline.Order(0, 221, -1), "and a release candidate sorts BELOW its own release");
+
+            // ---- the verdicts, one per direction of movement ----
+            EngineComparison same = EngineBaseline.Compare("0.221.12", 36, 43, 37);
+            Check(same.Same, "the exact build is the same build");
+            Equal("same build 0.221.12 (net 36, player 43, world 37)", same.Verdict, "and says so in one line");
+            Check(!same.WireAtRisk && !same.SavesAtRisk, "with nothing at risk");
+
+            EngineComparison newer = EngineBaseline.Compare("0.222.1", 36, 43, 37);
+            Equal(VersionDrift.Newer, newer.Game, "a later game version reads as newer");
+            Equal("newer game version (0.222.1 vs 0.221.12)", newer.Verdict, "and names both");
+            Check(!newer.Same, "and is not the same build");
+
+            EngineComparison older = EngineBaseline.Compare("0.220.3", 36, 43, 37);
+            Equal(VersionDrift.Older, older.Game, "an earlier game version reads as older");
+            Equal("older game version (0.220.3 vs 0.221.12)", older.Verdict, "and names both");
+
+            EngineComparison unreadable = EngineBaseline.Compare("", 36, 43, 37);
+            Equal(VersionDrift.Unreadable, unreadable.Game, "an unreadable version is its own verdict");
+            Equal("game version unreadable ('' vs 0.221.12)", unreadable.Verdict, "which never reads as a match");
+            Check(!unreadable.Same, "and never counts as the same build");
+
+            // The dangerous one: the network version is the handshake and the packet layout.
+            EngineComparison net = EngineBaseline.Compare("0.221.12", 37, 43, 37);
+            Equal("network version moved (37 vs 36)", net.Verdict, "a moved network version is called out on its own");
+            Check(net.WireAtRisk, "and flags the wire");
+            Check(!net.SavesAtRisk, "without implicating the saves");
+
+            EngineComparison player = EngineBaseline.Compare("0.221.12", 36, 44, 37);
+            Equal("player version moved (44 vs 43)", player.Verdict, "a moved player version is its own line");
+            Check(player.SavesAtRisk && !player.WireAtRisk, "and flags the saves, not the wire");
+
+            EngineComparison world = EngineBaseline.Compare("0.221.12", 36, 43, 38);
+            Equal("world version moved (38 vs 37)", world.Verdict, "a moved world version is its own line");
+            Check(world.SavesAtRisk, "and flags the saves");
+
+            EngineComparison all = EngineBaseline.Compare("0.222.0", 37, 44, 38);
+            Equal("newer game version (0.222.0 vs 0.221.12); network version moved (37 vs 36); player version moved (44 vs 43); world version moved (38 vs 37)",
+                  all.Verdict, "everything moving reads game, network, player, world, in that order, every time");
+            Check(all.WireAtRisk && all.SavesAtRisk, "with both risks raised");
+
+            EngineComparison nulled = EngineBaseline.Compare(null, 36, 43, 37);
+            Equal(VersionDrift.Unreadable, nulled.Game, "a null version does not throw");
+            Equal("", nulled.ActualGame, "and is kept as an empty string");
+            Equal(all.Verdict, all.ToString(), "ToString is the verdict, so a comparison drops straight into a log line");
+        }
+
+        // ---- P10b: the probe registry -----------------------------------------------------------
+
+        private static void EngineProbeTests()
+        {
+            Section("EngineProbes: the registry, the once-only rule and the words (P10b)");
+
+            var p = new EngineProbes();
+
+            // ---- the shape of the registry ----
+            Equal(19, p.All.Count, "nineteen engine facts are registered");
+            var names = new HashSet<string>();
+            bool unique = true, ordered = true;
+            int last = 0;
+            foreach (EngineProbe e in p.All)
+            {
+                if (!names.Add(e.Name)) unique = false;
+                if (e.Rank < last) ordered = false;
+                last = e.Rank;
+                if (e.What.Length == 0 || e.Degrades.Length == 0) unique = false;
+            }
+            Check(unique, "every probe has a unique name, something it checks and something it degrades");
+            Check(ordered, "and they are declared worst-rank-first, so nothing has to sort them at print time");
+
+            // The brief's ranking, worst first. If these move, the ranking moved with them.
+            Equal(1, p.Find(EngineProbes.RandEvent).Rank, "rank 1 is the RandomEvent surface");
+            Equal(2, p.Find(EngineProbes.ZdoAuthoring).Rank, "rank 2 is ZDO authoring");
+            Equal(3, p.Find(EngineProbes.ZoneMaths).Rank, "rank 3 is InActiveArea and the zone maths");
+            Equal(4, p.Find(EngineProbes.VelocityCache).Rank, "rank 4 is the ZSyncTransform velocity cache");
+            Equal(5, p.Find(EngineProbes.ValkyrieFields).Rank, "rank 5 is the Valkyrie fields");
+            Equal(6, p.Find(EngineProbes.CharacterAi).Rank, "rank 6 is Character/MonsterAI, P5's surface");
+            Equal(6, p.Find(EngineProbes.MerchantAwake).Rank, "rank 6 too: what Patch_Humanoid_Awake patches");
+            Equal(6, p.Find(EngineProbes.AwakeOrder).Rank, "and the ordering inside those Awakes");
+            Equal(6, p.Find(EngineProbes.Merchant).Rank, "and the rest of the merchant's surface");
+            Check(p.Find("no such probe") == null, "an unregistered name simply is not there");
+
+            // The probe gap (docs/P10B-PROBE-GAP.md): the immortality patches the PRIVATE
+            // Character.RPC_Damage, never the public Character.Damage, and the probe's own words are
+            // what `cargo engine` prints, so they have to say the same thing the check asks for.
+            string ai = p.Find(EngineProbes.CharacterAi).What;
+            Check(ai.Contains("RPC_Damage"), "the Character probe stands for RPC_Damage, the member the immortality actually patches");
+            Check(!ai.Contains("/ Damage"), "and NOT for Character.Damage, a sender on the attacker's machine that nothing here depends on");
+            Check(p.Find(EngineProbes.CharacterAi).Degrades.Contains("mortal"),
+                  "and it says what P5 loses when it fails, rather than the old 'nothing today'");
+            Check(p.Find(EngineProbes.AwakeOrder).State == ProbeState.NotProbeable,
+                  "the Awake ORDER is a method body: registered, never probed, never implied to have passed");
+
+            // ---- nothing has run: everything is permitted ----
+            Equal(0, p.Run, "nothing has run");
+            Equal(4, p.NotProbeable, "four facts are method BODIES and cannot be probed cheaply");
+            Check(p.Ok(EngineProbes.RandEvent), "a probe that has not run says YES");
+            Check(p.Ok(EngineProbes.EventClock), "a not-probeable fact says YES");
+            Check(p.Ok("no such probe"), "and so does a name nobody registered: a missing probe must NEVER disable a feature");
+            Equal("", p.Reason(EngineProbes.RandEvent), "a probe that has not failed has no reason to give");
+            Equal("probes not run, 4 not probeable", p.Encode(), "and the status line says exactly that");
+            Equal(EngineProbes.SweepNote, p.Find(EngineProbes.ServerRefPin).Message,
+                  "each not-probeable fact carries the sweep note verbatim, so cargo status never implies a pass");
+
+            // ---- recording ----
+            Check(p.Record(EngineProbes.RandEvent, true, "20 member(s) as expected"), "a pass is recorded");
+            Equal(ProbeState.Passed, p.Find(EngineProbes.RandEvent).State, "and lands as Passed");
+            Equal(1, p.Run, "one probe has run");
+            Equal(1, p.Passed, "and it passed");
+            Check(p.Ok(EngineProbes.RandEvent), "so the event may still register");
+            Equal("", p.Reason(EngineProbes.RandEvent), "a passing probe gives no refusal reason");
+
+            Check(p.Record(EngineProbes.Body, false, "AssetBundle.LoadFromStream(Stream) is gone"), "a failure is recorded");
+            Equal(ProbeState.Failed, p.Find(EngineProbes.Body).State, "and lands as Failed");
+            Check(!p.Ok(EngineProbes.Body), "which is the ONLY thing that says no");
+            Equal("AssetBundle.LoadFromStream(Stream) is gone", p.Reason(EngineProbes.Body), "and the reason is the feature's one log line");
+            Equal(1, p.Failed.Count, "one failure");
+            Equal(2, p.Run, "two probes have run");
+            Equal(1, p.Passed, "one of them passed");
+
+            // ---- once only ----
+            Equal(0, p.Problems.Count, "nothing has gone wrong in the registry yet");
+            Check(!p.Record(EngineProbes.Body, true, "changed my mind"), "a second answer for the same probe is REFUSED");
+            Equal(ProbeState.Failed, p.Find(EngineProbes.Body).State, "the first answer stands");
+            Equal("AssetBundle.LoadFromStream(Stream) is gone", p.Find(EngineProbes.Body).Message, "message and all");
+            Equal(1, p.Problems.Count, "and the refusal is reported, never silent");
+            Check(p.Problems.Count > 0 && p.Problems[0].Contains("already failed"), "saying what it was already");
+            Check(!p.Record(EngineProbes.ServerRefPin, true, "swept"), "nothing may promote a not-probeable fact to a pass");
+            Equal(ProbeState.NotProbeable, p.Find(EngineProbes.ServerRefPin).State, "it stays not probeable");
+            Check(!p.Record("no such probe", true, "hello"), "an answer for an unregistered probe is dropped");
+            Check(!p.Record(null, false, ""), "and so is one with no name at all");
+            Equal(4, p.Problems.Count, "each of the four refusals is on the record");
+
+            // ---- the words ----
+            Equal("probes 1/2 ok, 4 not probeable, FAILED: body", p.Encode(), "the status line names the failures");
+            Check(p.Record(EngineProbes.ZdoAuthoring, false, "ZDO.Persistent has no setter"), "a second, worse failure");
+            Equal("probes 1/3 ok, 4 not probeable, FAILED: zdo_authoring, body", p.Encode(),
+                  "and the failures are listed worst rank FIRST, whatever order they were recorded in");
+            Equal("zdo_authoring", p.Failed[0].Name, "the Failed list is in rank order too");
+            Equal(19, p.Report().Count, "cargo engine prints one line per registered fact");
+            Check(p.Report()[0].StartsWith("[1] randevent: PASSED"), "worst first, with the rank, the name and the state");
+            Check(p.Report()[0].Contains("; checks ") && p.Report()[0].Contains("; on failure "),
+                  "and each line says what it looked at and what turns itself off");
+            Check(p.Report()[1].Contains(EngineProbes.SweepNote), "including the not-probeable ones, which say so honestly");
+
+            // ---- instances are independent, so the game's registry is never what a test recorded ----
+            var fresh = new EngineProbes();
+            Check(fresh.Ok(EngineProbes.Body), "a fresh registry knows nothing of another one's failures");
+            Equal(0, fresh.Run, "and has run nothing");
+            Check(!ReferenceEquals(fresh, EngineProbes.Current), "and is not the one the running mod uses");
+
+            // ---- the Sidecar half of "refuse rather than corrupt" ----
+            Section("Sidecar: a NEWER format is refused, not quarantined (P10b)");
+
+            Equal(1, Sidecar.PeekFormat("format\t1\nstock\tIron\t5\t0\n"), "the format line is peeked without parsing the rest");
+            Equal(2, Sidecar.PeekFormat("# a comment\nformat\t2\nsomething\tnew\n"), "past comments and blank lines");
+            Equal(0, Sidecar.PeekFormat("stock\tIron\t5\t0\n"), "a file with no format line peeks as 0");
+            Equal(0, Sidecar.PeekFormat(""), "and so does an empty one");
+            Equal(0, Sidecar.PeekFormat(null), "and null");
+            Equal(-1, Sidecar.PeekFormat("format\tx\n"), "a format line that does not parse is -1, which is not 'newer'");
+            Equal(1, Sidecar.PeekFormat("format\t1\nformat\t9\n"), "the FIRST format line decides");
+            Check(Sidecar.IsNewerFormat("format\t2\n"), "format 2 is newer than this build reads");
+            Check(!Sidecar.IsNewerFormat("format\t1\n"), "format 1 is not");
+            Check(!Sidecar.IsNewerFormat("format\tx\n"), "and neither is a broken one: that is corruption, not the future");
+            Check(!Sidecar.IsNewerFormat(""), "nor an empty file");
+
+            var probs = new List<string>();
+            Sidecar future = Sidecar.Split("format\t2\nstock\tIron\t5\t0\n", probs);
+            Check(future.FormatIsNewer && !future.FormatIsOlder && !future.FormatMatches, "a split file agrees: newer, not older, not a match");
+            Sidecar past = Sidecar.Split("format\t0\n", probs);
+            Check(past.FormatIsOlder && !past.FormatIsNewer, "and an older one the other way round");
+            Sidecar now = Sidecar.Split("format\t1\n", probs);
+            Check(!now.FormatIsNewer && !now.FormatIsOlder && now.FormatMatches, "and ours is neither");
         }
     }
 
