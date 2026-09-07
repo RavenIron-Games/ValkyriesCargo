@@ -99,6 +99,13 @@ namespace RavenIron.ValkyriesCargo.Core
             if (znet == null)
             {
                 if (_live) EndSession();
+                // `cargo terminal demo` must work from the MAIN MENU (CLAUDE.md item 17), where there is
+                // no ZNet. Everything the window needs per frame lives in its own tick: the panel rules
+                // (Escape), the cursor and input tokens, the demo purse `_coins` reads and the tray's
+                // price refresh. Ticked below the ZNet gate it never ran there, so the window opened and
+                // could not be closed with Escape and every Confirm was refused coins_short against a
+                // purse of zero.
+                if (ValkyriesCargo.HasRenderer && CargoTerminal.Instance != null) CargoTerminal.Instance.Tick(dt);
                 return;
             }
             _live = true;
