@@ -1466,6 +1466,46 @@ namespace ValkyriesCargo.Tests
 
         private static void SchedulerTests()
         {
+            Section("Scheduler.NearestTo — who typed `event valkyries_cargo`?");
+
+            // Vanilla's `event` console command passes the caller's OWN position, so the nearest
+            // player to where the event landed is the admin who ran it. Before 2026-09-07 the
+            // director killed a console-started visit inside a second; now it adopts it onto this
+            // candidate, so picking the wrong one hands a stranger's visit to somebody else.
+            var roster = new List<Candidate>
+            {
+                new Candidate { Uid = 1, Name = "Far",   X = 100f, Z = 0f },
+                new Candidate { Uid = 2, Name = "Close", X = 5f,   Z = 5f },
+                new Candidate { Uid = 3, Name = "Mid",   X = 30f,  Z = 0f },
+            };
+            Check(Scheduler.NearestTo(roster, 0f, 0f)?.Name == "Close", "the nearest candidate wins");
+            Check(Scheduler.NearestTo(roster, 99f, 0f)?.Name == "Far", "and 'nearest' is measured from the point asked about, not from the origin");
+            Check(Scheduler.NearestTo(new List<Candidate>(), 0f, 0f) == null, "nobody online: null, and the caller ends the event instead of adopting it");
+            Check(Scheduler.NearestTo(null, 0f, 0f) == null, "a null roster is null, not a throw out of the director's tick");
+
+            // The dead are not candidates for a visit authored onto them.
+            var dead = new List<Candidate>
+            {
+                new Candidate { Uid = 1, Name = "Corpse", X = 1f, Z = 1f, Alive = false },
+                new Candidate { Uid = 2, Name = "Alive",  X = 50f, Z = 50f },
+            };
+            Check(Scheduler.NearestTo(dead, 0f, 0f)?.Name == "Alive", "a dead player is skipped even when they are the closest body to the event");
+
+            // The FlightPlan.DropAccepted lesson, applied here: player coordinates come off a ZDO the
+            // CLIENT owns and writes. Every comparison against NaN is false, so a natural "is this one
+            // closer?" keeps whichever it saw first and a forged position wins by never losing.
+            var forged = new List<Candidate>
+            {
+                new Candidate { Uid = 1, Name = "Forged", X = float.NaN, Z = float.NaN },
+                new Candidate { Uid = 2, Name = "Real",   X = 400f, Z = 400f },
+            };
+            Check(Scheduler.NearestTo(forged, 0f, 0f)?.Name == "Real",
+                  "a NaN position is REFUSED, not compared: it cannot win by never losing");
+            Check(Scheduler.NearestTo(new List<Candidate> { new Candidate { Uid = 1, X = float.PositiveInfinity, Z = 0f } }, 0f, 0f) == null,
+                  "and an infinite one is refused too, leaving nobody rather than somebody at infinity");
+            Check(Scheduler.NearestTo(roster, float.NaN, 0f) == null,
+                  "a non-finite point to search from answers nobody, rather than an arbitrary candidate");
+
             Section("Scheduler");
 
             var one = new List<Candidate> { Player(1, "Sigrun", 0f, 0f) };
