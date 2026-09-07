@@ -125,11 +125,11 @@ namespace RavenIron.ValkyriesCargo.Config
             CustomBody = S(cfg, "Server", "CustomBody", true,
                 "Put Ingvar's own body on the BodyPrefab clone from the AssetBundle embedded in this DLL. False keeps the Dverger stand-in visible, and so does a build with no bundle embedded (`cargo body` says which). This is the switch, NOT BodyPrefab: BodyPrefab stays the engine prefab the merchant is cloned from, because Character, MonsterAI and the collider all come from it. Read on the CLIENT, synced from the server; a dedicated server never reads it.");
             FlightStartDistance = S(cfg, "Server", "FlightStartDistance", 90f,
-                "Metres from the pilot where the Valkyrie appears; clamped at runtime into the pilot's active zone block. Read on the SERVER.",
-                new AcceptableValueRange<float>(24f, 200f));
+                "Metres from the pilot where the Valkyrie appears; shrunk at runtime, 12 m at a time, until the start fits inside the pilot's active zone block. The floor is FlightPlan.MinimumStartDistance (30 m): below that the bird would appear on top of the player. Read on the SERVER.",
+                new AcceptableValueRange<float>(30f, 200f));
             FlightStartAltitude = S(cfg, "Server", "FlightStartAltitude", 120f,
                 "Altitude of the Valkyrie's start point, metres above the drop. Read on the SERVER.",
-                new AcceptableValueRange<float>(30f, 500f));
+                new AcceptableValueRange<float>(30f, 400f));
             FlightDescentDistance = S(cfg, "Server", "FlightDescentDistance", 50f,
                 "Metres out at which the descent leg begins. Read on the SERVER.",
                 new AcceptableValueRange<float>(10f, 200f));
