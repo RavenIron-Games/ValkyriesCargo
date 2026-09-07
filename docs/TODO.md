@@ -166,8 +166,9 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       not probeable; three new probes (`znetview`, `interfaces`, `console`), the rest folded into the existing
       ones; 1697 checks; **every probe resolved against the REAL `assembly_valheim.dll` 0.221.12 offline**
       (a scratchpad tool loads the built DLL and calls `EngineCheck.Run()`: `probes 18/18 ok, 7 not probeable`),
-      six wrong-signature mutations each a FAILED line from it. `docs/ENGINE-PROBES.md` §7–§9. Still open:
-      **item 24** on a real machine, now expecting `probes 18/18 ok, 7 not probeable`.
+      six wrong-signature mutations each a FAILED line from it. `docs/ENGINE-PROBES.md` §7–§9. **Item 24's boot
+      half DONE 2026-09-07 10:40 on StormTest**: `probes 18/18 ok, 7 not probeable` and `patches 18/18 applied` in the
+      real boot log, under Mono. Still open: `cargo engine` read on a client, and the moved-version direction.
 - [ ] **The two owner decisions of 2026-09-07, built here (PR open on the owner's word):** the JSON
       dependency swapped for `Core/Json.cs` (writer only; compact and indented output shaped like
       Newtonsoft's so the rollover's part boundaries and BarrkBOT's files do not move; the `<Reference>`,

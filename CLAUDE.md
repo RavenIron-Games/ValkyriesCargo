@@ -215,10 +215,11 @@ exact-budget boundary, the ranking exclusions, the coins/items accounting, oldes
 ordering, and the ordering guarantee itself — each proven to fail without its fix, real mutation output kept
 in the PR). A standalone run of the real `Core/BarrkExport.cs` + `Core/BarrkRollover.cs` against Newtonsoft.Json
 (outside CoreTests, which stays dependency-free) produced real, well-formed sample output for both a fresh
-server and a populated one. **Not yet seen anywhere real**: nobody has installed this DLL on a dedicated
-server and watched `barrkbot_cargo_*.json` land on disk, and BarrkBOT itself has never read one of these
-files — shape-verified, not live-verified (the authoritative contract's own distinction). See "What to verify
-in-game" item 23.
+server and a populated one. **Seen on a dedicated server 2026-09-07 10:41 (StormTest, PR #46's build)**: all seven
+files landed 60 s after `director up`, valid JSON, 72 market rows across the five parts, `generated_at` moving
+every cycle with nobody online — item 23's server half. BarrkBOT itself has still never read one of these files,
+and no deal row or visit row has been seen in them: shape-verified and file-verified, not yet consumer-verified
+(the authoritative contract's own distinction). See "What to verify in-game" item 23.
 
 **P5 the merchant and the 0.1.0 integration, Wu'barrk, 2026-09-07 (PR #22, merged; `v0.1.0-rc1` tagged).**
 `Client/CargoMerchant.cs` on `Core/MerchantPlan.cs` (pure): the carry pin, the drop handoff, follow, the callout,
@@ -252,8 +253,12 @@ the event; `Client/BodyLoader.cs` keeps the stand-in), and `Server/MarketStore.c
 a newer build — held, never `.corrupt`, nothing saved over it, because that is somebody's market and not a
 corrupt file. The gap `docs/P10B-PROBE-GAP.md` found is fixed: the probe asked for the public
 `Character.Damage` while the immortality patches the private `Character.RPC_Damage(long, HitData)`. Off-game:
-builds clean (0 warnings), 1423 checks. **Never seen on a machine that has a game under it**: no probe has
-resolved a real member, so a false failure is possible until item 24 is run. The document is
+builds clean (0 warnings), 1697 checks after PR #46. **SEEN ON A MACHINE 2026-09-07 10:40 on StormTest** (dedicated,
+0.221.12, PR #46's build): the boot log carries
+`built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable.`
+and then `patches 18/18 applied ... engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not
+probeable` in the loaded line — every probe resolved its real member under Mono, no FALSE failure, no `registry:`
+line (item 24's boot half; the moved-version direction is still open). The document is
 `docs/ENGINE-PROBES.md`; the baseline it is dated against is `docs/ENGINE-BASELINE.md` (P10a).
 
 ---
@@ -703,8 +708,10 @@ vanish. The two-client items cannot be run here at all.
 **An item is proven by its own pasted log line and a date, and by nothing else.** Done so far: **item 1**
 (2026-09-06, headless, in Status); **items 2 and 6** (the first client run, 2026-09-07, below); **item 19**
 (the same day, once the bundle existed); **item 20 in part** — he stands textured, upright, feet on the ground,
-and `body=Ingvar` on a live merchant, while daylight and the walk and one-shot clips are still open.
-**Never run: items 3, 4, 5, 7 to 18, 21, 22 and 23.** Wu'barrk's one live visit (INTEGRATED IN-GAME RUN, above)
+and `body=Ingvar` on a live merchant, while daylight and the walk and one-shot clips are still open;
+**item 23's server half and item 24's boot half** (StormTest, 2026-09-07 10:40–10:42, the lines are in each item).
+**Never run: items 3, 4, 5, 7 to 18, 21 and 22**, and item 23's other halves (a deal's row, a visit's row, the
+switch, BarrkBOT reading the files). Wu'barrk's one live visit (INTEGRATED IN-GAME RUN, above)
 produced the server-log half of item 10 (`visit #1 ended: timer; takings 0 coins`) and of item 15
 (`visit #2 RESUMED after a restart`, the countdown continuing) — and is a pass for NEITHER, because neither
 item's client half was seen (the banner and `cargo status` for 10; the sidecar's changed `stock` rows after
@@ -851,7 +858,15 @@ P4, the flight (Wu'barrk's two-client proof; a visit on a server, the pilot's cl
     the bird (`spawner: ...` lines, no orphan in the world); a real intro Valkyrie (a new character) is untouched.
 
 The BarrkBOT export (`BARRKBOT_CONTRACT.md`), on a dedicated server, `Server.BarrkBotExport` at its default on:
-23. **The files land**: within `VisitDirector.ExportCadenceSeconds` (60 s) of `director up`, `BepInEx/config/ValkyriesCargo/`
+23. **The files land** — **DONE 2026-09-07 10:41 on StormTest, the server half** (dedicated, PR #46's build, nobody
+    online). `director up` at 10:40:11 local; at 10:41:11, exactly `ExportCadenceSeconds` later, the folder
+    `BepInEx\config\ValkyriesCargo\` (which had never existed on that machine) held `barrkbot_cargo_market.json`
+    through `_5` (5,928 / 5,937 / 5,935 / 5,937 / 5,158 bytes; `part N/5`; 15+15+15+15+12 = 72 market rows),
+    `barrkbot_cargo_traders.json` (1,277 bytes, an empty map) and `barrkbot_cargo_visits.json` (889 bytes), all
+    seven parsing as JSON, every `generated_at` reading `2026-09-07T17:41:11.206Z`; at 10:42:11 every file's
+    `generated_at` read `2026-09-07T17:42:11.225Z` — moving each cycle with nobody online. Still open: a deal's
+    row, a visit's row, `Server.BarrkBotExport = false` stopping the files, and BarrkBOT reading them. The item as
+    written: within `VisitDirector.ExportCadenceSeconds` (60 s) of `director up`, `BepInEx/config/ValkyriesCargo/`
     holds `barrkbot_cargo_market.json` through `_5` (the shipped catalogue's measured part count), `barrkbot_cargo_traders.json`
     and `barrkbot_cargo_visits.json`, each valid JSON with a `generated_at` that keeps moving every cycle even with
     nobody online. A deal (`cargo deal buy ...`) makes the buyer's row appear in `barrkbot_cargo_traders.json` on the
@@ -861,10 +876,16 @@ The BarrkBOT export (`BARRKBOT_CONTRACT.md`), on a dedicated server, `Server.Bar
     server's `BepInEx/config`, answers a real question from the live files within its own 60 s sweep.
 
 P10b, the engine probes (any boot, client or server, no visit needed):
-24. **The probes resolve**: the boot line carries `built against Valheim 0.221.12 (network 36, player 43, world 37;
-    ...); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable.` on an
-    unmodified install, and `cargo engine` lists all 25 facts worst-rank-first with no `FAILED` among them and no
-    `registry:` line. **This is the one thing about P10b a clean build cannot prove**: every probe is a reflection
+24. **The probes resolve** — **DONE 2026-09-07 10:40 on StormTest, the boot half** (dedicated, stock 0.221.12, PR #46's
+    build): `BepInEx\LogOutput.log` shows `built against Valheim 0.221.12 (network 36, player 43, world 37; Steam
+    build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43,
+    world 37); probes 18/18 ok, 7 not probeable.` and the loaded line `patches 18/18 applied, catalogue=72 entries,
+    engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable`, with no `FAILED`
+    and no `registry:` line. `cargo engine`'s 25-line listing has not been read on a client, and the other direction
+    (below) has not been run. The item as written: the boot line carries `built against Valheim 0.221.12 (network 36,
+    player 43, world 37; ...); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not
+    probeable.` on an unmodified install, and `cargo engine` lists all 25 facts worst-rank-first with no `FAILED`
+    among them and no `registry:` line. **This is the one thing about P10b a clean build cannot prove**: every probe is a reflection
     lookup against a member this mod has never resolved at runtime, so a typo or a wrong overload shows up as a
     FALSE failure that disables a working feature. Any `FAILED` line on a stock 0.221.12 is a bug in
     `EngineCheck.cs`, not in Valheim. Then the other direction, once: install on a machine whose Valheim has moved

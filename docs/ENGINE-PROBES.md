@@ -355,10 +355,13 @@ and M2 fails as it should.
 
 ## 8. What is NOT proven
 
-**No probe in this package had resolved a real member until 2026-09-07, and none has yet resolved
-one inside the game.** The harness is `net8.0` and compiles the pure `Core` sources against stubs; it
-can no more load `assembly_valheim` than it can load Unity. Everything in `EngineCheck.cs` is
-therefore verified three ways, all offline:
+**No probe in this package had resolved a real member until 2026-09-07.** Since 10:40 that day it
+has, inside the game: StormTest (dedicated, stock 0.221.12, PR #46's build) booted with
+`probes 18/18 ok, 7 not probeable` in the log and `patches 18/18 applied` in the loaded line, no `FAILED`
+and no `registry:` line — the Mono JIT resolved every `Check*` the way the pair below was written for.
+That is item 24's boot half; `cargo engine` on a client and the moved-version direction remain. Before
+that boot, everything in `EngineCheck.cs` had been verified three ways, all offline — and they are still
+the checks that run before a boot does:
 
 1. against the decompiled real assembly, member by member, with the line numbers in §4;
 2. by a throwaway reflection tool built against the same `libs\` the mod compiles against, resolving
