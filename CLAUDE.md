@@ -310,6 +310,7 @@ shape another mod has already found the hard way.
 | `IMPLEMENTATIONS\WingsoftheValkyrie.md` | Flight movement and a multiplayer VFX state sync over custom ZDO fields — the same shape as `vc_state`. |
 | `IMPLEMENTATIONS\AwayFromHome.md`, `MistsofAvalor.md` | The bundle pipeline and the grave-relocation disaster. Already cited by `models\README.md`. |
 | `VALHEIM-API-REFERENCE\` | 13 files of decompiled API facts with line numbers. `09-DAMAGE-ZDO-MULTIPLAYER.md` is the ZDO and damage authority: who runs what, and a GOTCHAS list that is worth reading whole. |
+| `SKINNED-CHARACTER-BUNDLE-FACTS.md` | **P8's ground truth, written FROM this mod 2026-09-07.** The five ways a custom character out of an AssetBundle is silently wrong, each of which passes every gate a build script can check: the `Armature\|` clip prefix that breaks by-name lookup and the loop table together, stray source geometry that only shows as an 80-triangle discrepancy, `sharedMesh.bounds` being bind-pose data that lies about the up-axis, Unity's `Standard` shader that Valheim does not light, and a donor's emission colour left behind when its mask is cleared. Also the debug order that converges. |
 | `*-FACTS.md` | Per-topic findings: dedicated server, headless/empty server, ZDO wire limits, console routing, player identity, player attach. |
 
 ### Two corrections it forces on this repo
