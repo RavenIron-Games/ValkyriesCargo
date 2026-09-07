@@ -15,7 +15,8 @@ Three firsts for the family, each a recorded decision: ServerSync, a trade termi
 
 Design of record: `docs/DESIGN.md` (v3). One screen: `docs/TLDR.md`. Catalogue with every number's
 reason: `docs/CATALOGUE.md`. Plan and sibling-code map: `PLAN.md`. Review of the partner's v5 draft
-and the model: `docs/REVIEW-v5-2026-09-06.md`.
+and the model: `docs/REVIEW-v5-2026-09-06.md`. Track B's decision record, with the reasoning behind every
+row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ---
 
