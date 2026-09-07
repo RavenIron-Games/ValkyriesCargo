@@ -89,7 +89,9 @@ $sets = @(
         "UnityEngine.UI.dll",
         "Unity.TextMeshPro.dll",
         "UnityEngine.UIModule.dll",
-        "UnityEngine.AnimationModule.dll"
+        "UnityEngine.AnimationModule.dll",
+        "UnityEngine.AssetBundleModule.dll",   # AssetBundle: Ingvar's body, embedded in the DLL (Client\BodyLoader.cs)
+        "UnityEngine.DirectorModule.dll"       # not referenced today; UnityEngine.Playables.PlayableGraph turned out to live in CoreModule
     )},
     @{ Path = $bepinex; Files = @(
         "BepInEx.dll",
