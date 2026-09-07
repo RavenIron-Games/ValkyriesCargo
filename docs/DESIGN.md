@@ -493,7 +493,7 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Flight start | Inside the pilot's active block, ~90 m out, ~120 m up; never 500 m | locked by the engine |
 | Carry | Real merchant pinned to the talons on every machine; `InIntro` postfix on the owner; no IK | locked |
 | Where market state lives | ServerSync custom values + sidecar save; never on the merchant ZDO | locked by the engine |
-| **Trade UI** | **A terminal of our own**, opened from our `Interactable`; `StoreGui` untouched | **locked (owner, 2026-09-06)** |
+| **Trade UI** | **A terminal of our own**, opened from our `Interactable`; `StoreGui` untouched | **locked (owner, 2026-09-06); built (P7)** |
 | Terminal toolkit | IMGUI on VikingOS's `GiltFrameTheme` + `UIFocus`, vendored shared source (MIT); no runtime dependency on VikingOS | locked (owner: "we have VikingOS to use") |
 | Delivery semantics | At-least-once `vc_dealt` with a client inbox of applied delivery ids; server owed ledger by platform id, claimed at login (VikingOS's escrow rule, ported) | built (P6) |
 | Price-change policy | Reconfirm; Teardown behind `PriceChangePolicy` | provisional (owner unsure) |

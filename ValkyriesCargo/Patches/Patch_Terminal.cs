@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Text;
 using HarmonyLib;
 using RavenIron.ValkyriesCargo.Client;
+using RavenIron.ValkyriesCargo.Client.Terminal;
 using RavenIron.ValkyriesCargo.Config;
 using RavenIron.ValkyriesCargo.Core;
 using RavenIron.ValkyriesCargo.Net;
@@ -32,7 +33,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             try
             {
                 new Terminal.ConsoleCommand("cargo",
-                    "Valkyrie's Cargo: status | version | prefab <name> | stock [prefab] | deal buy|sell <prefab> [count] | claim | visit [player] | dismiss | reset | save", Run);
+                    "Valkyrie's Cargo: status | version | prefab <name> | stock [prefab] | deal buy|sell <prefab> [count] | claim | terminal demo|open|close | visit [player] | dismiss | reset | save", Run);
             }
             catch (Exception ex)
             {
@@ -57,6 +58,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                     case "stock":   Stock(args, args.Args.Length > 2 ? args.Args[2] : ""); return;
                     case "deal":    DealCommand(args); return;
                     case "claim":   Claim(args); return;
+                    case "terminal": TerminalCommand(args, args.Args.Length > 2 ? args.Args[2].ToLowerInvariant() : "demo"); return;
                     default:        Help(args); return;
                 }
             }
@@ -76,6 +78,8 @@ namespace RavenIron.ValkyriesCargo.Patches
             Say(args, "cargo deal buy <prefab> [count]   - buy from him at the price on the shelf (a plain deal, no terminal)");
             Say(args, "cargo deal sell <prefab> [count]  - sell to him at what he pays");
             Say(args, "cargo claim           - ask the server for deliveries it still owes you");
+            Say(args, "cargo terminal demo   - open the Cargo Terminal on the in-process demo market (no server, no merchant)");
+            Say(args, "cargo terminal open   - open it on the running visit without a merchant (before P5); close closes it");
             Say(args, "cargo visit [player]  - ADMIN: force a visit for yourself (or the named player), cooldowns ignored, the other gates kept");
             Say(args, "cargo dismiss         - ADMIN: end the running visit now");
             Say(args, "cargo reset           - ADMIN: forget every cooldown");
@@ -165,6 +169,31 @@ namespace RavenIron.ValkyriesCargo.Patches
             });
         }
 
+        private static void TerminalCommand(Terminal.ConsoleEventArgs args, string what)
+        {
+            CargoTerminal t = CargoTerminal.Instance;
+            if (t == null) { Say(args, "cargo: no terminal on this machine (no renderer)"); return; }
+            switch (what)
+            {
+                case "demo":
+                    t.OpenDemo();
+                    Say(args, "cargo: terminal opened on the demo market (visit #" + CargoRpc.Visit.VisitId + ", purse " + CargoRpc.Market.Purse + "); Escape closes it");
+                    return;
+                case "open":
+                    if (!CargoRpc.Visit.Active) { Say(args, "cargo: no visit is running (cargo visit first)"); return; }
+                    t.Open(null, CargoRpc.Visit.VisitId);
+                    Say(args, "cargo: terminal opened on visit #" + CargoRpc.Visit.VisitId + " with no merchant to stand by");
+                    return;
+                case "close":
+                    t.Close("console");
+                    Say(args, "cargo: terminal closed");
+                    return;
+                default:
+                    Say(args, "cargo terminal demo|open|close");
+                    return;
+            }
+        }
+
         private static void Claim(Terminal.ConsoleEventArgs args)
         {
             var t = CargoTick.Transport as CargoTransport;
@@ -203,7 +232,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                           ? "server socket" + (ct.Ready ? "" : " (not connected)") + ", sent " + ct.Sent + ", answered " + ct.Answered + ", pending " + ct.Pending + ", unsolicited " + ct.Unsolicited + (ct.Claimed ? ", claimed" : ", not claimed yet")
                           : "none (no world)") +
                       ", inbox " + CargoRpc.Inbox.Count + " applied deliver" + (CargoRpc.Inbox.Count == 1 ? "y" : "ies") +
-                      ", terminal " + (Client.Terminal.CargoTerminalHost.Instance != null ? "registered" : "not built yet (Track B)") +
+                      ", terminal " + (CargoTerminal.Instance != null ? (CargoTerminal.Instance.IsOpen ? "OPEN" + (CargoTerminal.Instance.IsDemo ? " (demo)" : "") : "closed" + (CargoTerminal.Instance.LastCloseReason.Length > 0 ? " (last: " + CargoTerminal.Instance.LastCloseReason + ")" : "")) : "none (no renderer)") +
                       ", routed RPCs " + (AdminRpc.Registered ? "registered" : "not registered"));
 
             if (ZNet.instance == null) { Say(args, "  no world loaded."); return; }

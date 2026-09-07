@@ -73,10 +73,10 @@ $sets = @(
         "assembly_utils_publicized.dll",
         "assembly_postprocessing_publicized.dll",
         "assembly_lux_publicized.dll",
-        "assembly_sunshafts_publicized.dll",
-        "assembly_guiutils_publicized.dll"
+        "assembly_sunshafts_publicized.dll"
     )},
     @{ Path = $managed; Files = @(
+        "assembly_guiutils.dll",   # STOCK, not publicized: the publicized copy lacks the Localization types; the terminal uses only public members
         "UnityEngine.dll",
         "UnityEngine.CoreModule.dll",
         "UnityEngine.PhysicsModule.dll",

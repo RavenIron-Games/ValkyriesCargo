@@ -14,7 +14,7 @@
 | P4 | Authored flight: server creates the bird, pilot flies it; two-client proof | **Wu'barrk** (owner, 2026-09-06 night) | P3 (merged) | design 3.2; reconcile the event start: P3 starts it at dispatch, 3.2 says at the drop (`vc_placed`); the clock follows whichever is chosen |
 | P5 | Merchant: carry pin, `InIntro`, follow, callout, immortal, dismissal, Odin vanish, restart sweep | **Wu'barrk** (with P4: the carry straddles both) | P4 | design 3.3, 3.6, 3.7; the Animator is his own (DESIGN §8) |
 | P6 | Deal wire server side: direct ZRpc, owed ledger, persistence (Cairn pattern) | code done, headless-proven (sidecar round trip); client proof pending | P1, P2 | — |
-| P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | **Don** | P1, P6 (merged), SharedUI (vendored, PR #2) | design 3.4; §2 below is the whole contract |
+| P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | **Don**: code done, off-game proven; screen proof pending | P1, P6 (merged), SharedUI (vendored, PR #2) | design 3.4; §2 below is the whole contract |
 | P8 | Body: rig, clips, bundle on Unity 6000.0.61f1 (**Wu'barrk**, PR #4 merged); `Client/BodyLoader.cs` + the Animator driver (**Don**, with P7) | split | model (in) | design §11; `models/SETUP-FOR-CLAUDE.md` for the bake |
 | P9 | Release: README truth pass, package, Hexium name check, store upload | **Don** | all | the RavenIronStudios store account |
 
@@ -151,11 +151,10 @@ What the market-core review (2026-09-06) says the terminal must know:
 
 **Track A (Don)**
 1. ~~Contract~~, ~~market core~~, ~~eligibility and event~~, ~~deal wire and persistence~~: merged (PRs #1, #3, #5, #6).
-2. P7: vendor check of `Libs/SharedUI`, then `cargo terminal demo` opens and closes on the demo snapshot; cursor
-   release on close and on logout.
-3. P7: panes, rows, stock and trend glyphs, staging tray, payment mode, countdown, dismiss; all against the demo.
-4. P7: the deal builder: stage → `Deal` → `CargoRpc.Send` → `DealApplier.Apply` on `Ok`; `price_changed` turns
-   the line amber. Proof: the same deal `cargo deal` already makes, now from the window, on a real server.
+2. ~~P7: vendor check, `cargo terminal demo` opens and closes~~ built (a/p7-terminal); screen proof pending.
+3. ~~P7: panes, rows, glyphs, tray, payment mode, countdown, dismiss~~ built.
+4. ~~P7: the deal builder~~ built: stage → `Deal` → `CargoRpc.Send` → `DealApplier.Apply` on `Ok`; `price_changed`
+   turns the line amber and Confirm accepts the new price. Proof on a real server pending (CLAUDE.md item 18).
 5. P8 (mod side): `Client/BodyLoader.cs` loads the embedded bundle, swaps the body under the same prefab clone,
    drives the Animator from velocity and phase; gated by `Server.BodyPrefab`.
 6. P9: README truth pass, CHANGELOG, package, Hexium name check, store upload. Adversarial review before.
