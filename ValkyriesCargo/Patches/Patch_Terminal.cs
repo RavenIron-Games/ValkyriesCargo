@@ -396,7 +396,9 @@ namespace RavenIron.ValkyriesCargo.Patches
             IngvarBody body = BodyLoader.StartPreview(spot, Quaternion.LookRotation(-facing, Vector3.up));
             if (body == null) { Say(args, "cargo: the preview could not be built; see the log"); return; }
             Say(args, "cargo: Ingvar is standing 2.5 m in front of you at y " + F(spot.y, "0.##") +
-                      " (ground offset " + F(BodyLoader.GroundOffset, "0.###") + " m), " + body.ClipsBound + " clip(s) bound, graph " +
+                      " (lifted " + F(BodyLoader.PreviewLift, "0.###") + " m off the ground point, measured on the posed mesh" +
+                      (BodyLoader.PreviewStrays > 0 ? "; " + BodyLoader.PreviewStrays + " stray renderer(s) in the bundle switched off" : "") +
+                      "), " + body.ClipsBound + " clip(s) bound, graph " +
                       (body.GraphLive ? "live" : "DEAD") + ". Nothing about him is networked. `cargo body walk`, `cargo body clip Hello`, `cargo body clear`.");
         }
 
