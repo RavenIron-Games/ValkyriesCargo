@@ -35,7 +35,10 @@ namespace RavenIron.ValkyriesCargo.Core
         /// The table `VCargo_say` indexes (design 3.6: an index crosses the wire, never text, so a line
         /// can be reworded in a patch without a protocol change and a hostile client cannot make
         /// Ingvar say anything he does not already know). Append only - an index that moves changes
-        /// what an old client hears.
+        /// what an old client hears. The seeded arrival lines live here too (F3, audit 2026-09-07), at
+        /// `Say.ArrivalBase` and up, so the SAME `RPC_Say(index)` handler that already carries the
+        /// reactions can carry the arrival callout - one wire index space for everything Ingvar says,
+        /// rather than the arrival line reaching every screen by a different mechanism than the rest.
         /// </summary>
         public static readonly string[] Says =
         {
@@ -47,6 +50,10 @@ namespace RavenIron.ValkyriesCargo.Core
             RefuseFull,     // 5
             RefusePurse,    // 6
             RefuseUnknown,  // 7
+            Arrival[0],     // 8  = Say.ArrivalBase
+            Arrival[1],     // 9
+            Arrival[2],     // 10
+            Arrival[3],     // 11
         };
 
         public static class Say
@@ -59,14 +66,31 @@ namespace RavenIron.ValkyriesCargo.Core
             public const int RefuseFull = 5;
             public const int RefusePurse = 6;
             public const int RefuseUnknown = 7;
+
+            /// <summary>The first of the `Arrival` lines: index `ArrivalBase + i` is `Arrival[i]`.</summary>
+            public const int ArrivalBase = 8;
         }
 
         /// <summary>One line by index, or empty for an index this build does not know.</summary>
         public static string Reaction(int index)
             => index >= 0 && index < Says.Length ? Says[index] : "";
 
+        /// <summary>
+        /// True for an index naming one of the seeded arrival lines (F3): the only ones `RPC_Say` plays
+        /// large and greets to, exactly as the old direct `ArrivalFor` call site used to.
+        /// </summary>
+        public static bool IsArrival(int index)
+            => index >= Say.ArrivalBase && index < Say.ArrivalBase + Arrival.Length;
+
         /// <summary>The arrival line a visit's seed picks; the same on every client.</summary>
         public static string ArrivalFor(int seed) => Pick(Arrival, seed);
+
+        /// <summary>
+        /// The SAME line as `ArrivalFor`, as a stable `Says` index instead of text - what actually
+        /// crosses the wire in `Keys.Say`'s payload (F3): design 7 keeps text off the wire even for the
+        /// one line whose pick depends on the seed, exactly like everything else here.
+        /// </summary>
+        public static int ArrivalIndexFor(int seed) => Say.ArrivalBase + PickIndex(Arrival.Length, seed);
 
         public static string BuyFor(long nonce) => Pick(Buy, (int)(nonce & 0x7fffffff));
         public static string SellFor(long nonce) => Pick(Sell, (int)(nonce & 0x7fffffff));
@@ -89,11 +113,14 @@ namespace RavenIron.ValkyriesCargo.Core
             }
         }
 
-        private static string Pick(string[] table, int seed)
+        private static string Pick(string[] table, int seed) => table[PickIndex(table.Length, seed)];
+
+        /// <summary>`seed % length`, folded back positive - a negative seed still lands inside the table.</summary>
+        private static int PickIndex(int length, int seed)
         {
-            int i = seed % table.Length;
-            if (i < 0) i += table.Length;
-            return table[i];
+            int i = seed % length;
+            if (i < 0) i += length;
+            return i;
         }
     }
 }
