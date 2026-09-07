@@ -3,6 +3,16 @@
 > **Status: DECIDED by the owners, the night of 2026-09-06.** Wu'barrk takes the creature pipeline
 > (P4 flight, P5 merchant, the bake half of P8); Don takes the terminal (P7), the loader half of P8 and
 > the release (P9). P1, P2, P3 and P6 are merged. Section 2, the contract, is code and is the seam.
+>
+> **Where it stands 2026-09-07:** **every package P1 to P12 is merged.** `main` builds clean at 1301 checks
+> and **`v0.1.0-rc1` is tagged**, with the store zip attached to the release and uploaded to no store — the
+> loop has to be seen end to end first (`docs/RELEASE.md` step 5). What is left is proof, not code, and the
+> live list is **`docs/TODO.md`**, which supersedes section 3's order of work below.
+>
+> **The bake is Wu'barrk's machine's** (owner, 2026-09-07). Don's side installs no Unity, so the bundle is
+> not a build input on his machine at all: **every bake reaches him as a release asset** on the tag it belongs
+> to. Until one is attached, the only copy of the baked bundle in git is inside the tracked
+> `HexiumDist/plugins/ValkyriesCargo.dll`, and any rebuild on Don's side ships without a body.
 
 ## 0. The work packages, with what each needs
 
@@ -19,6 +29,7 @@
 | P9 | Release: README truth pass, package, Hexium name check, store upload | **Don** | all | the RavenIronStudios store account |
 | P10 | Version resilience: (a) steamcmd shadow copies of the live and playtest builds, client and server, decompiled and diffed against our baseline; (b) boot-time version detect, per-fact probes, degrade-don't-throw | (a) **Wu'barrk**, after P5 (owner, 2026-09-07: the tooling and the first sweeps came from Don's side the same night; the client fetches and every recurring sweep are his, on his rig with his login); (b) **Don** | — (P10a is independent; 11d waits on P5) | `docs/P10-P11-FOR-DON.md`; baseline is 0.221.12 / net 36 / player 43 / world 37 |
 | P11 | Pre-1.0 shakedown: full default-config pass, the server-authority and ServerSync audit, embedded assets end to end, and an Opus audit of every game call P4 and P5 introduced | **Don**, end to end (owner, 2026-09-07) | P5 (for 11d only) | same doc; house rule 5 — a clean build proves nothing about member access |
+| P12 | BarrkBOT JSON export: three files under `BepInEx/config/ValkyriesCargo/` on a 60 s cadence, the v4 rollover and leaderboards, the sidecar-then-mirror ordering | **Wu'barrk** (PR #21, merged inside PR #22) | P6 | `BARRKBOT_CONTRACT.md`; it added the `ValheimModding-JsonDotNET` dependency, which is an OPEN owner decision (`docs/TODO.md` §1). Live proof is item 23, his |
 
 P4 → P5 is a chain on Wu'barrk's side; P7 and the loader run in parallel on Don's; the bake is independent.
 P10b and P11 are Don's; P10a is Wu'barrk's after P5 (decided 2026-09-07), built on the tooling and the first sweeps
@@ -187,7 +198,11 @@ a shared session on a server both can reach.
 - `main` always builds and boots headless. Whoever breaks it fixes it.
 - Contract changes: a PR touching a §2 file needs a comment from the other track before merge.
 - No binaries in the repo, with **one named exception**: the body's source art, `models/ingvar.fbx`
-  (4.3 MB) and `models/ingvar_albedo.png` (6.6 MB). Everything else stays out — the built bundle ships
+  (4.3 MB) and `models/ingvar_albedo.png` (6.6 MB). **This rule is currently overridden and the override is
+  an open owner decision** (`docs/TODO.md` §1, "The tracked DLL"): PR #22 committed
+  `HexiumDist/plugins/ValkyriesCargo.dll` (4.1 MB, rebuilt every package run), `HexiumDist/icon.png` and
+  963 KB of `media/`. The recommendation on the table is to stop tracking the DLL and publish payloads as
+  release assets; the blobs already in history stay either way. Everything else stays out — the built bundle ships
   beside the DLL in the package, and Meshy's raw per-clip output (343 MB, six files each carrying a
   duplicate mesh and 22 MB of the same textures) is gitignored.
   **Decided by Wu'barrk, 2026-09-06**, answering the question Don raised on PR #4. The reasoning: the

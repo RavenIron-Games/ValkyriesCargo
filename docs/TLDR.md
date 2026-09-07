@@ -14,7 +14,10 @@ speaks. Everyone nearby sees all of it.
 
 **What he does.** Buys and sells from a live stock that persists per world. Prices move with his stock in real time:
 buy him out and it costs more, flood him and he pays less, and it drifts back over a game day. He carries a purse of
-800 coins, so nobody can dump a warehouse on him. Coins or barter; barter is valued at his live buy price.
+1500 coins, so nobody can dump a warehouse on him. Coins or barter; barter is valued at his live buy price. **The Fair
+Market Act** (owner, 2026-09-07) is the one clamp on all of it: for a ware he also sells, his buy-back multiplier is
+capped at 1.0, so he never pays more than the target-stock rate. What he charges is untouched — an empty shelf still
+costs 3x going out — and a want he never sells back is never clamped.
 
 **Who decides what.** The server owns config (ServerSync, locked), the schedule, the event, the market, the clock, and
 whether the bird and merchant exist. The chosen client simulates motion. Every client renders. Your inventory stays
@@ -27,14 +30,25 @@ next login, never twice.
 
 **Departure.** Five-minute event clock, or Shift+E twice. Odin's own vanish effect, once, on every screen.
 
-**What ships in 0.1.** All of the above with the Dverger body. **Later:** the horn, Thorium's custom body, a barter
-basket, rare rotating stock, localisation.
+**What ships in 0.1.** All of the above, **with Ingvar's own body** — baked 2026-09-07, embedded in the DLL, riding
+on a Dverger clone whose renderers are switched off (`Server.CustomBody` puts the stand-in back). **Later:** the horn,
+a barter basket, rare rotating stock, localisation.
+
+**Where it is, 2026-09-07.** Every package is merged; `main` builds clean at 1301 off-game checks and **`v0.1.0-rc1`
+is tagged and uploaded to no store.** Exactly **one live visit has ever been run**, on Wu'barrk's client: Ingvar
+landed in his own body, then gave up walking after 20 s and called out from where he stood. The glide, the drop, the
+walk-up completing, the terminal on a real visit, a trade and the vanish have never been watched, and no two-client
+item has run. Seeing the loop once, end to end, is what gates the store. Tracker: `TODO.md`.
 
 **Settled facts.** Valheim runs on Unity 6000.0.61f1, so bundles are built with that Editor. ServerSync broadcasts on
-change only. Comfort never leaves the client, so the client reports it on its own ZDO. The delivered model is a statue
-and needs retopology, a rig and clips before it can walk.
+change only. Comfort never leaves the client, so the client reports it on its own ZDO. The model is rigged, baked and
+walking: six clips, 24 bones, played by name through a `PlayableGraph` with no AnimatorController in the bundle.
 
-**Still open.** Reconfirm versus tear-down on a price tick (reconfirm is in). Where bundles get built.
+**Still open.** Reconfirm versus tear-down on a price tick — only Reconfirm is built and the `PriceChangePolicy` knob
+is deleted, so the owner either closes it as final or asks for Teardown. Three more on the owner's desk (`TODO.md` §1):
+the JSON dependency the BarrkBOT export added, the built DLL tracked in git, and the client asserting its own
+rested/comfort numbers. Not open any more: where bundles get built — Wu'barrk's machine, and every bake reaches Don
+as a release asset.
 
 Full text: `DESIGN.md`. Decisions table: its section 8. What to verify in-game: section 10.
 
@@ -57,7 +71,8 @@ and mistlands parts; eight common trophies.
 
 **Stock.** Targets are two to four stacks for commons, half a stack for metals, a handful for rare goods; he refuses
 above three times target ("I've all the linen a man can carry"). Stock drifts back to target with a one-game-day
-half-life. Purse 800 plus half of last visit's takings.
+half-life. Purse 1500 plus half of the coins that came IN last visit (the gross, not the net — a visit where he
+sells as much as he buys still earns a carry), capped at a multiple of the base purse.
 
 **Where the numbers came from.** Wu'barrk's TheEye dump of every item field and all 365 recipes (2026-07-31). Every
 prefab name was checked against it; recipe demand ranked the wants (wood 55 recipes, deer hide 53, flametal 42, iron
