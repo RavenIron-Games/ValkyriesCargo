@@ -5,9 +5,11 @@ base at a random moment when you are rested and comfortable. He walks up, calls 
 from a live, persistent stock at supply-and-demand prices for five minutes, and vanishes the way Odin
 does. Every player sees the same visit; only the server owns the market.
 
-**Not** on command (the earned summon horn is a later feature), **not** a custom body in 0.1 (the
-Dverger stands in until Ingvar's bundle is baked and embedded; the model and the loader exist), **not** a patch on the vanilla store. The one UI
-it draws is its own trade terminal, opened from our own interact handler.
+**Not** on command (the earned summon horn is a later feature), **not** a patch on the vanilla store. The one UI
+it draws is its own trade terminal, opened from our own interact handler. 0.1 **does** carry his own body: the
+bundle was baked on 2026-09-07 and is embedded in the shipped DLL (PR #22). The Dverger clone stays the chassis
+under him — his mesh is ADDED to it and the stand-in's renderers are switched off — and `Server.CustomBody`
+(default true) puts the stand-in back.
 
 Sibling of Cairn, Undertow, FireFront, Ragnarok's Wrath and RavenEye, bound by the same house style.
 Three firsts for the family, each a recorded decision: ServerSync, a trade terminal of our own, and
@@ -22,12 +24,23 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ## Status
 
-**Main after P8 and P9, 2026-09-07. Builds clean (0 warnings), 1034/1034 off-game checks, packages
-(`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right layout).** What exists: the plugin entry, ServerSync
-vendored and armed, the config surface bound and locked, the `cargo` console, the catalogue with 72 defaults, the
-market and the scheduler, the event and the director, the deal wire, the world sidecar, the Cargo Terminal, the
-body loader and the BarrkBOT export. The flight is built (PR #8, merged 2026-09-07) and not yet flown; the merchant is not started, and
-the bundle is baked and embedded (2026-09-07), so a visit authors a bird and nothing for it to carry. 1190/1190 checks. The paragraphs below are the history, each with the lines seen.
+**Main after the 0.1.0 integration (PR #22) and the API-reference snapshot (PR #17), 2026-09-07. Builds clean
+(0 warnings), 1301/1301 off-game checks, packages (`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right
+layout); `v0.1.0-rc1` is tagged with the store zip attached to the release and uploaded to NO store.** Every
+package is now code: the plugin entry, ServerSync vendored and armed, the config surface bound and locked, the
+`cargo` console, the catalogue with 72 defaults, the market and the scheduler, the event and the director, the
+deal wire, the world sidecar, the Cargo Terminal, the body loader with Ingvar's baked bundle embedded, the
+authored flight (P4), the merchant (P5) and the BarrkBOT export (P12). Every ZDO key and RPC name is typed once,
+in `Core/Keys.cs`, under the `VCargo_` prefix (issue #16).
+
+**What that does NOT mean.** Exactly ONE live visit has been run, on Wu'barrk's client — see "INTEGRATED IN-GAME
+RUN" below for what it did and did not prove. The glide, the drop, the walk-up completing, the terminal on a real
+visit, a trade and the vanish have never been watched; no two-client item has run at all. And **a build on this
+machine carries no body**: `Assets/` is gitignored and the only copy of the baked bundle in git is inside the
+tracked `HexiumDist/plugins/ValkyriesCargo.dll`, so the rc1 release DLL is the only build here that has Ingvar
+in it until the bundle arrives as a release asset (`docs/TODO.md` §2, first item).
+
+The paragraphs below are the history, each with the lines seen.
 
 **HEADLESS VERIFIED 2026-09-06 15:23 on CairnTest (dedicated, port 2466, world CairnTest, alongside
 Cairn.dll and RavenEye.dll):** within 20 s of launch the BepInEx log showed, in order,
@@ -72,9 +85,11 @@ then `role: dedicated server`, `routed RPCs registered for this session: VCargo_
 (**the scene's day length IS 1800 s**: read from the live EnvMan, so the drift half-life is right), then one
 interval later `roll: held: a random event is active (a raid, a storm, or a visit)` (Ragnarok's Wrath had a storm
 running: the hold works against a real foreign event). No exception from us in the log. The roll reasons print
-only on change, so a quiet log after that line is the loop holding, not the loop dead. Not yet seen: a player's
-report in `cargo status`, a forced visit, the banner, the timer ending a visit; all need a client (see "What to
-verify in-game"). CairnTest was in use by the owner for another mod at the time and was not touched.
+only on change, so a quiet log after that line is the loop holding, not the loop dead. Not yet seen ON THAT DAY: a
+player's report in `cargo status`, a forced visit, the banner, the timer ending a visit; all need a client (see
+"What to verify in-game"). Since: the report and a forced visit on 2026-09-07 (the first client run and the
+integrated run below); **the banner has still never been seen.** CairnTest was in use by the owner for another mod
+at the time and was not touched.
 
 **P6 deal wire and persistence, 2026-09-06 (branch `a/p6-deal-wire`).** `Net/DealWire.cs` registers `VCargo_open`,
 `VCargo_close`, `VCargo_deal`, `VCargo_ack`, `VCargo_claim`, `VCargo_dismiss` on EACH peer's own ZRpc as it connects and answers
@@ -94,8 +109,9 @@ first boot `director up: ... next visit #1, ...; sidecar valkyriescargo_4690126.
 appeared in `saves\worlds_local` at once: 78 lines, `format 1`, 72 `stock` rows, `purse 800`, `purseStart 0`,
 `visit 0`, `seq 0`. Restart: `director up: ... sidecar valkyriescargo_4690126.dat (76 rows loaded)` and the
 first file rotated to `.bak`. Earlier the same boot printed `roll: no eligible player: nobody online` (the
-empty-server path, live). Not yet seen: a deal over the wire, a redelivery, a resumed visit; all need a client
-(items 13-16).
+empty-server path, live). Not yet seen ON THAT DAY: a deal over the wire, a redelivery, a resumed visit; all need
+a client (items 13-16). Since: a **resumed visit** off the sidecar, in the integrated run below. **A deal has still
+never crossed the wire in a game, and no redelivery has ever run.**
 
 **P7 the Cargo Terminal, 2026-09-06 (branch `a/p7-terminal`).** `Client/Terminal/CargoTerminal.cs` is the IMGUI
 window on Wu'barrk's vendored gilt theme (`SharedUI.GiltFrameTheme` + `UIFocus`): the title with the countdown,
@@ -140,8 +156,11 @@ preview | walk | clip <Hello|Talk|Shrug|Nod> | clear`, and one line in `cargo st
 0 warnings), 1034 checks (78 with the model, 30 more from the adversarial review: a one-shot over a moving crossfade,
 a replacement during the hand-back, a hitch through the blend-out, a clip shorter than the blend-in), nine model
 mutations caught between the two; a 131,072-byte stand-in dropped at `Assets\valkyriescargo_kit`
-embedded as `ValkyriesCargo.valkyriescargo_kit` and grew the DLL by exactly that much. **Not yet seen on a screen**:
-the body itself (items 19 and 20) — nothing here has drawn a pixel. **The bundle exists as of 2026-09-07**: baked
+embedded as `ValkyriesCargo.valkyriescargo_kit` and grew the DLL by exactly that much. **Seen on a screen
+2026-09-07** (Wu'barrk's client): item 19 whole, item 20 as far as a standing, textured, upright Ingvar with his
+feet on the ground, and `body=Ingvar` on a live merchant in the integrated run. Still not seen: how he reads in
+daylight, and the walk and one-shot clips on a merchant (item 20 stays open on those). **The bundle exists as of
+2026-09-07**: baked
 from `models/ingvar.fbx` in Unity 6000.0.61f1 on Wu'barrk's Linux box (`tools/setup-ingvar-unity.sh`, the twin of
 the .ps1), 3,826,415 bytes, 2 assets, `SkinnedMeshRenderer=True, bones=24, tris=31112`, six clips named `Hello,
 Idle, Nod, Shrug, Talk, Walk` with `Idle/Talk/Walk` looping; embedding it takes the Debug DLL from 273,408 to
@@ -161,8 +180,10 @@ for a bird carrying `VCargo_cargo` (vanilla takes `m_instance` before its owner 
 and adds `Client/CargoFlight.cs`, which flies vanilla's own `UpdateValkyrie` maths on the owner only, writes
 `ZDOVars.s_velHash` so every other screen dead-reckons a glide, and reads speed and turn rate from the new synced
 `Server.FlightSpeed` (8) and `Server.FlightTurnRate` (45), never the prefab's. Off-game: the geometry simulated by
-both sides (a 90 m start at 8 m/s drops at 11.7 m after 16.8 s; a 30 m start at 16.8 m after 13.6 s). **Not yet
-flown**: items 21 and 22.
+both sides (a 90 m start at 8 m/s drops at 11.7 m after 16.8 s; a 30 m start at 16.8 m after 13.6 s). `MerchantEnabled`
+is true since P5 landed, so a visit now authors both. **Still not flown on a screen**: items 21 and 22. A bird HAS
+been authored in a live visit (the integrated run's last line, with the plan's numbers in the log), but nobody has
+watched the glide, the drop, or a second client's dead-reckoning.
 
 **The BarrkBOT export, Wu'barrk, 2026-09-07 (branch `b/barrkbot-export`).** `BARRKBOT_CONTRACT.md` (repo root) is
 the per-mod contract, on the BlightedHeart/Let It Grow template, against the authoritative
@@ -194,6 +215,17 @@ server and a populated one. **Not yet seen anywhere real**: nobody has installed
 server and watched `barrkbot_cargo_*.json` land on disk, and BarrkBOT itself has never read one of these
 files — shape-verified, not live-verified (the authoritative contract's own distinction). See "What to verify
 in-game" item 23.
+
+**P5 the merchant and the 0.1.0 integration, Wu'barrk, 2026-09-07 (PR #22, merged; `v0.1.0-rc1` tagged).**
+`Client/CargoMerchant.cs` on `Core/MerchantPlan.cs` (pure): the carry pin, the drop handoff, follow, the callout,
+the leash, dismissal and the Odin vanish; `Patches/Patch_Humanoid_Awake.cs` adds the component, `Patch_Character_InIntro.cs`
+holds the carry, and `Patch_Character_Damage.cs` — which patches **`Character.RPC_Damage`, not `Character.Damage`**,
+the correction the knowledge base forced — makes him immortal. `Spawner.Sweep` reclaims orphans at boot and
+`MerchantEnabled` is true. Also in the same merge: the `vc_` → `VCargo_` rename with `Core/Keys.cs` as the one place
+that types each name (issue #16), P4's drop-point bound from the P11 trust-boundary pass (NaN-safe), the P12
+BarrkBOT export, and Thorium's economy decisions (`docs/DECISIONS-WUBARRK.md`): the **Fair Market Act**, the purse
+at 1500, four Wants from base 2 to 3, `PriceChangePolicy` deleted, and house rule 4's written exception for the one
+runtime material copy. 1301 off-game checks, 0 warnings. Its one live run is the section below.
 
 ---
 
@@ -239,6 +271,7 @@ ValkyriesCargo/
   ValkyriesCargo.cs          plugin entry: config (creates the ConfigSync), Harmony, tick, boot line
   Config/ModConfig.cs        Server.* synced+locked, Client.* local, VisitState/MarketState channels
   Core/CargoTick.cs          the ONLY Update and the only OnGUI in the mod; role decided at runtime
+  Core/Keys.cs               PURE: every ZDO key and RPC name this mod owns, typed once, under the VCargo_ prefix
   Core/Catalogue.cs          PURE: the catalogue line parser and the 72 defaults
   Core/Wire.cs Core/MarketSnapshot.cs Core/VisitSnapshot.cs Core/Deal.cs   PURE: the contract (PR #1)
   Core/Market.cs             PURE: rules, price curve, purse, drift, settlement, sidecar rows
@@ -266,9 +299,14 @@ ValkyriesCargo/
   Client/BodyLoader.cs       the embedded bundle, once; the body swapped onto the merchant, additively
   Client/IngvarBody.cs       the driver: a PlayableGraph over the six clips; speed from displacement
   Core/FlightPlan.cs         PURE: the flight inside the active block; TurningRadius/Reachable (Wu'barrk, P4)
-  Server/Spawner.cs          authors the bird (and, from P5, the merchant) owned by the pilot; watches VCargo_dropped (Wu'barrk)
+  Core/MerchantPlan.cs       PURE: the merchant's state machine: carried -> approaching -> trading -> leaving (Wu'barrk, P5)
+  Server/Spawner.cs          authors the bird and the merchant, owned by the pilot; watches VCargo_dropped; Sweep reclaims orphans (Wu'barrk)
   Client/CargoFlight.cs      the owner flies the bird from VCargo_target/VCargo_turn; writes s_velHash for the watchers (Wu'barrk)
+  Client/CargoMerchant.cs    Ingvar on the ground: the plan, the carry pin, follow, callout, dismissal, the vanish (Wu'barrk, P5)
   Patches/Patch_Valkyrie_Awake.cs   prefix, Priority.Low: skips vanilla Awake for our bird only (the named exception)
+  Patches/Patch_Humanoid_Awake.cs   postfix: adds CargoMerchant when the ZDO carries VCargo_ingvar (Wu'barrk, P5)
+  Patches/Patch_Character_InIntro.cs  postfix: __result true while the carry link is set, so the fall never accumulates
+  Patches/Patch_Character_Damage.cs   prefix on Character.RPC_Damage (NOT Damage): the merchant is immortal
   Server/VisitDirector.cs    where the world runs: gather ZDOs -> Scheduler -> event -> VisitState/MarketState
   Server/CargoEvent.cs       the vanilla RandomEvent `valkyries_cargo`: definition, registration, start, remaining
   Server/AdminGate.cs        vanilla's ZNet.IsAdmin(hostName), fail closed (RavenEye's shape)
@@ -284,17 +322,13 @@ tests/CoreTests/             net8.0 harness; compiles the REAL Core sources agai
 tests/EconSim/               the economy simulation: nine seeded scenarios on the real Core; writes docs/ECONOMY-SIM.md
 tools/                       fetch-libs, run-tests, package, deploy-test, tail-log, set-test-config, run-econsim; setup-ingvar-unity.ps1, build_ingvar.py, preview_ingvar.py, unity/IngvarBundleBuilder.cs (the bake, Wu'barrk's)
 libs/                        gitignored; populated by fetch-libs.ps1
-docs/                        DESIGN, TLDR, CATALOGUE, WORKSPLIT, RELEASE, PROOF-CLIENT (the verify runbook), CLIENT-AUDIT, ECONOMY-SIM, HANDOFF-CLAUDE, HANDOFF-WUBARRK, REVIEW-v5, data/items table, the partner's drafts
+docs/                        TODO (**the tracker: who owns what, cut after rc1**), DESIGN, TLDR, CATALOGUE, WORKSPLIT, RELEASE, PROOF-CLIENT (the verify runbook), CLIENT-AUDIT, ECONOMY-SIM, DECISIONS-WUBARRK, HANDOFF-CLAUDE, HANDOFF-WUBARRK, REVIEW-v5, ENGINE-BASELINE + ENGINE-SURFACE + engine-sweeps/ (P10a), knowledge-base/ (Wu'barrk's snapshot), data/items table, the partner's drafts
 models/                      Ingvar's source art (ingvar.fbx + ingvar_albedo.png, the one binary exception) and the bake docs (Wu'barrk's)
 ```
 
-Planned (design section 3; names are final, files do not exist yet):
-
-```
-  Client/CargoMerchant.cs
-  Patches/Patch_Humanoid_Awake.cs
-  Patches/Patch_Character_InIntro.cs Patch_Character_Damage.cs
-```
+Nothing is planned-but-missing any more: every file design section 3 names exists on `main` as of PR #22, and
+the four that were listed here (`Client/CargoMerchant.cs`, `Patch_Humanoid_Awake.cs`, `Patch_Character_InIntro.cs`,
+`Patch_Character_Damage.cs`) are in the list above.
 
 ---
 
@@ -339,8 +373,9 @@ broke in production. **This mod did not consult it until 2026-09-07 and paid for
 shape another mod has already found the hard way.
 
 > **It is in this repository at `docs/knowledge-base/`** (decided by the owner 2026-09-07): a snapshot of
-> Wu'barrk's `~/WubarrkCODING/libs-Tools/` as of that day, 66 Markdown files, no binaries — the
-> `VALHEIM-API-REFERENCE\` folder completed the snapshot on 2026-09-07. His copy is the source and updates
+> Wu'barrk's `~/WubarrkCODING/libs-Tools/` as of that day, **67 Markdown files, no binaries; the snapshot is
+> complete** — the `VALHEIM-API-REFERENCE\` folder, the last piece missing, landed with PR #17 on 2026-09-07.
+> His copy is the source and updates
 > arrive as PRs. Anything this mod actually depends on is still copied into CLAUDE.md or DESIGN as a quoted
 > fact with its source named — as the two corrections below are — so the code never rests on an unread
 > document, and so a fact survives the snapshot going stale.
@@ -362,17 +397,21 @@ shape another mod has already found the hard way.
    off disk. The id is stable while the world stays loaded and meaningless the moment it does not,
    so the feature works all session and every key in it is orphaned by the next login. It cost
    TortalPortal its favourites feature. **`Spawner.CarrierKey` (`VCargo_carrier`) writes the bird's
-   `ZDOID` onto the merchant's PERSISTENT ZDO and is exposed to exactly this.** P5 owns the fix:
-   the carry link is session-only, so the restart sweep must clear `VCargo_carrier` (`ZDO.RemoveZDOID`
-   exists) and treat `VCargo_state` as the authority, never a surviving id.
+   `ZDOID` onto the merchant's PERSISTENT ZDO and was exposed to exactly this.** **Fixed in P5** (PR #22):
+   `Spawner.Sweep` walks every merchant ZDO at boot, destroys the ones whose visit is not running, and for
+   the one that is, sets `VCargo_carrier` back to `ZDOID.None` and `VCargo_state` to `Approaching` — logged
+   as `N carry link(s) cleared (a restored ZDOID means nothing)`. `VCargo_state` is the authority; a
+   surviving id never is.
 
 2. **`Character.Damage` is a thin RPC sender, not where damage happens.** It runs on the ATTACKER's
    client, calls `FindWeakSpotIndex` and `InvokeRPC("RPC_Damage", hit)`, and nothing else — reading
    or modifying health there does nothing. The work is in the private `Character.RPC_Damage`, whose
    first lines run on EVERY client that has the victim instanced; the `if (!m_nview.IsOwner()) return;`
-   gate is partway down. So the planned `Patch_Character_Damage` for the merchant's immortality is
-   named for the wrong method: cancelling belongs at `RPC_Damage`, and anything that mutates state in
-   a postfix there must re-gate on `IsOwner()` or it applies once per peer.
+   gate is partway down. So `Patch_Character_Damage` — which keeps that FILE name — is a prefix on
+   `Character.RPC_Damage`, not on `Damage`; anything that mutates state in a postfix there must re-gate
+   on `IsOwner()` or it applies once per peer. **Landed as written** in P5 (PR #22):
+   `[HarmonyPatch(typeof(Character), "RPC_Damage")]`. `docs/DESIGN.md` §3.3 still names the file, not the
+   method, which is why the file name was left alone.
 
 Also load-bearing for what this mod already does, and confirmed rather than corrected: `ZDO.Set` has
 **no** ownership check on any overload (the `okForNotOwner` parameter is ignored in the body), so a
@@ -405,7 +444,7 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
 | Departure | The Odin vanish (`Odin.m_despawn`), once per screen; 300 s event clock or Shift+E twice |
 | Price-change policy | Reconfirm (provisional; `Teardown` behind config) |
 | The round trip | **The Fair Market Act (owner, 2026-09-07; `docs/DECISIONS-WUBARRK.md` §2).** The code fix, not the config fix: `Market.PaysFor` clamps a Ware's buy-back multiplier at 1.0, so he never pays more than `base × SpreadBuy` for something he sells; `PriceFor` (what he charges) and every `Want` are untouched. `MarketRules.FairMarketAct` / `Server.FairMarketAct`, synced+locked, default on |
-| 0.1 body | `Dverger`, tamed, following, immortal |
+| 0.1 body | A `Dverger` clone as the chassis — tamed, following, immortal — and, **since PR #22 (2026-09-07), Ingvar's own baked mesh ADDED onto that clone**, the stand-in's renderers switched off and never destroyed. The decision itself is unchanged; what shipped is recorded here. `Server.CustomBody` (default true) is the switch back |
 | Console prefix / GUID / namespace | `cargo` / `com.raveniron.valkyriescargo` / `RavenIron.ValkyriesCargo` |
 
 ---
@@ -518,8 +557,18 @@ vanish. The two-client items cannot be run here at all.
 
 ## What to verify in-game
 
-Item 1 is done. Items 2 to 20 have never been run. **The runbook is `docs/PROOF-CLIENT.md`**: the order, the exact
+**An item is proven by its own pasted log line and a date, and by nothing else.** Done so far: **item 1**
+(2026-09-06, headless, in Status); **items 2 and 6** (the first client run, 2026-09-07, below); **item 19**
+(the same day, once the bundle existed); **item 20 in part** — he stands textured, upright, feet on the ground,
+and `body=Ingvar` on a live merchant, while daylight and the walk and one-shot clips are still open.
+**Never run: items 3, 4, 5, 7 to 18, 21, 22 and 23.** Wu'barrk's one live visit (INTEGRATED IN-GAME RUN, above)
+produced the server-log half of item 10 (`visit #1 ended: timer; takings 0 coins`) and of item 15
+(`visit #2 RESUMED after a restart`, the countdown continuing) — and is a pass for NEITHER, because neither
+item's client half was seen (the banner and `cargo status` for 10; the sidecar's changed `stock` rows after
+deals for 15, and no deal has ever been made).
+**The runbook is `docs/PROOF-CLIENT.md`**: the order, the exact
 command for each, the line the code writes, and `tools/deploy-test.ps1` / `tail-log.ps1` / `set-test-config.ps1`.
+Deploy the **rc1 release DLL**: it is the only build that carries Ingvar on a machine without the bundle asset.
 The client audit (`docs/CLIENT-AUDIT.md`, PR #11) fixed six defects on these paths before anyone ran them; its
 section (c) lists what only a screen can settle.
 
@@ -577,8 +626,8 @@ P7, the terminal (a client, no server needed for the first item):
 18. **On a real visit** (`cargo visit`, then `cargo terminal open`): the countdown matches the server's; a buy
     changes the inventory by exactly the deal and the server log shows the deal; the same row's price moved on
     every machine; a sell of goods you carry pays coins; Fill from my goods covers a ware with the dearest goods
-    first; Send him off twice ends the visit (`ended: dismissed by <name>`); Tab and M close it; walking away
-    closes it only once P5 gives it a merchant.
+    first; Send him off twice ends the visit (`ended: dismissed by <name>`); Tab and M close it; walking more than
+    5 m from the merchant closes it (P5 is in, so this branch is live now).
 
 **FIRST CLIENT RUN, 2026-09-07 03:00, Wu'barrk's Linux box** (a shadow copy of the client, BepInEx from the
 shadow server, a throwaway world, listen host). In order: the boot line with `renderer=True, patches=14` (item 2 --
@@ -647,8 +696,9 @@ LINUX client needs a Linux bake through `BodyLoader`'s loose-file path to run th
 
 P4, the flight (Wu'barrk's two-client proof; a visit on a server, the pilot's client watching the sky):
 21. **The bird**: at `cargo visit` the server log shows `visit #N: flight authored: start (...) at ..., descent (...)
-    at ... (N m short), drop (...) at ..., straight in 90 m out; bird <id>, owned by the pilot; NO MERCHANT (P5 is
-    not in yet, so nothing is authored to carry)`; the pilot's log shows `cargo flight #N: flying from ... via ... to
+    at ... (N m short), drop (...) at ..., straight in 90 m out; bird <id>, Dverger <id>, both owned by the pilot`
+    (that line HAS been seen, in the integrated run above; the rest of this item has not);
+    the pilot's log shows `cargo flight #N: flying from ... via ... to
     ..., 76.5 m out at 8 m/s, turning 45 deg/s (radius 10.2 m)`; a Valkyrie appears about 90 m out and 120 m up,
     glides straight in over about 17 s, and `dropped at (...) after N s` prints near 12 m above the drop point; then
     it turns and leaves. A second client nearby sees the same glide, not a stutter (`s_velHash`).
