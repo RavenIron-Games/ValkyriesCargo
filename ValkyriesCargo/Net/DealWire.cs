@@ -158,7 +158,12 @@ namespace RavenIron.ValkyriesCargo.Net
             catch (Exception ex) { if (_throws++ < 3) ValkyriesCargo.Log.LogError(Dealt + " send threw: " + ex); }
         }
 
-        private static ZNetPeer PeerFor(ZRpc rpc)
+        /// <summary>
+        /// The peer on the other end of THIS socket, by reference. The one identity on the direct wire
+        /// that a client cannot write: the ZRpc is the connection, not a field in the packet. `AdminRpc`
+        /// uses it too, which is why it is public rather than a second copy of the loop.
+        /// </summary>
+        public static ZNetPeer PeerFor(ZRpc rpc)
         {
             ZNet znet = ZNet.instance;
             if (znet == null || rpc == null) return null;
