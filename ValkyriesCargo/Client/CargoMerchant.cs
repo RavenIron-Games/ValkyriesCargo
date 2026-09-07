@@ -373,18 +373,60 @@ namespace RavenIron.ValkyriesCargo.Client
         {
             ZDO zdo = _nview.GetZDO();
             if (zdo == null) { Pinned = false; return; }
+            int was = _state;
             _state = zdo.GetInt(Spawner.StateHash, _state);
 
             ZDOID carrier = zdo.GetZDOID(Spawner.CarrierKey);
-            if (carrier.IsNone() || ZNetScene.instance == null) { Pinned = false; _pin = null; return; }
+            GameObject bird = (carrier.IsNone() || ZNetScene.instance == null) ? null : ZNetScene.instance.FindInstance(carrier);
+            if (bird == null) { Pinned = false; _pin = null; }
+            else
+            {
+                CargoFlight flight = bird.GetComponent<CargoFlight>();
+                _pin = flight != null ? flight.AttachPoint : bird.transform;
+                _pinOffset = flight != null ? flight.AttachOffset : new Vector3(0f, 0.3f, 0.4f);
+                Pinned = MerchantPlan.ShouldPin(_state, true);
+            }
 
-            GameObject bird = ZNetScene.instance.FindInstance(carrier);
-            if (bird == null) { Pinned = false; _pin = null; return; }
+            // A state the PLAN did not choose arrived through the ZDO: the bird's drop
+            // (CargoFlight.Drop writes Approaching), the server's sweep, or another machine's
+            // Decide. It must get the same entry bookkeeping Decide gives its own transitions,
+            // or the first walk-up runs on the flight's clock and the carry's displacement
+            // (StormTest 2026-09-07, 6/6: `budget scaled from 0 m at entry`). Logged once, with
+            // the numbers the session could not give: when it landed relative to waking, whether
+            // the talons still held him, how far out he was, and who owns him.
+            if (_state != was)
+            {
+                float distance = EnterState(_state);
+                ValkyriesCargo.Log.LogInfo("cargo merchant #" + _visitId + ": " + MerchantPlan.Name(was) + " -> " +
+                    MerchantPlan.Name(_state) + " via the ZDO, " + Wire.Float(_age) + " s after waking; carrier " +
+                    (carrier.IsNone() ? "none" : (bird != null ? "still instanced" : "gone")) + ", " +
+                    Wire.Float(distance) + " m from the player, " + (_nview.IsOwner() ? "ours" : "watching") +
+                    ", grounded " + (_character == null || _character.IsOnGround() ? "yes" : "no") +
+                    (_state == MerchantState.Approaching ? "; walk-up budget " + Wire.Float(MerchantPlan.ApproachBudget(distance)) + " s" : ""));
+            }
+        }
 
-            CargoFlight flight = bird.GetComponent<CargoFlight>();
-            _pin = flight != null ? flight.AttachPoint : bird.transform;
-            _pinOffset = flight != null ? flight.AttachOffset : new Vector3(0f, 0.3f, 0.4f);
-            Pinned = MerchantPlan.ShouldPin(_state, true);
+        /// <summary>
+        /// The one place a state is entered from, whichever way it arrived: the plan's own step in
+        /// Decide, or a value read off the ZDO in ResolveCarrier. Resets the clocks the plan judges
+        /// by and, on entry to Approaching, starts THIS approach's budget and stuck window from where
+        /// he actually is now. Returns the distance to the nearest player, measured here so both
+        /// callers use the same number.
+        /// </summary>
+        private float EnterState(int state)
+        {
+            Player near = Player.GetClosestPlayer(transform.position, 9999f);
+            float distance = near != null ? Vector3.Distance(transform.position, near.transform.position) : float.MaxValue;
+            _timeInState = 0f;
+            _farSeconds = 0f;
+            _approachMoved = 0f;
+            _lastApproachPos = transform.position;      // the carry's displacement is not a walk
+            if (state == MerchantState.Approaching)
+            {
+                _distanceAtApproachEntry = distance;
+                _progress = default;
+            }
+            return distance;
         }
 
         private void PinToTalon()
@@ -437,17 +479,8 @@ namespace RavenIron.ValkyriesCargo.Client
             string diagnosis = (step.TimedOut || step.Stuck) ? WalkDiagnosis(distance) : null;
 
             _state = step.State;
-            _timeInState = 0f;
-            _farSeconds = 0f;
-            _approachMoved = 0f;
             if (step.LeashFired) _leashSpent = true;      // F5 part 3: spent, never re-arms this visit
-            if (_state == MerchantState.Approaching)
-            {
-                // A fresh budget and a fresh stuck timer for THIS approach (F5), whether it began at
-                // the landing above or at the leash re-arm just above that.
-                _distanceAtApproachEntry = distance;
-                _progress = default;
-            }
+            EnterState(_state);                           // the same bookkeeping as the ZDO path (D1)
             ZDO zdo = _nview.GetZDO();
             if (zdo != null) zdo.Set(Spawner.StateHash, _state);
 
@@ -513,10 +546,11 @@ namespace RavenIron.ValkyriesCargo.Client
             // approach began, so the log has to recompute it from the same number Next used rather than
             // quote the old fixed ApproachTimeoutSeconds, which is now only the floor.
             float budget = MerchantPlan.ApproachBudget(_distanceAtApproachEntry);
-            return "moved " + Wire.Float(_approachMoved) + " m in " + Wire.Float(budget) +
-                   " s (budget scaled from " + Wire.Float(_distanceAtApproachEntry) +
-                   " m at entry; stuck " + Wire.Float(_progress.StuckSeconds) +
-                   " s of the last window) and stopped " + Wire.Float(distance) +
+            return "walked " + Wire.Float(_timeInState) + " s of a " + Wire.Float(budget) +
+                   " s budget (scaled from " + Wire.Float(_distanceAtApproachEntry) +
+                   " m at entry), moved " + Wire.Float(_approachMoved) +
+                   " m; stuck " + Wire.Float(_progress.StuckSeconds) +
+                   " s of the last window, and stopped " + Wire.Float(distance) +
                    " m away; follow target " + follow + ", tamed " + tamed + ", alerted " + alerted +
                    ", AI target " + target +
                    ", grounded " + (_character == null || _character.IsOnGround() ? "yes" : "no") + ".";
