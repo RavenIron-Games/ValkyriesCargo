@@ -51,6 +51,13 @@ namespace RavenIron.ValkyriesCargo
             // Creates the ConfigSync (version gate included) and parses the catalogue.
             ModConfig.Bind(base.Config, PluginId, PluginName, PluginVersion);
 
+            // P10b, and it belongs exactly here: AFTER the config binds (a probe's answer is printed by
+            // `cargo status`, which reads config) and BEFORE PatchAll (a patch must never be waiting on
+            // a probe that has not run). It logs the four version numbers it found against the ones this
+            // DLL was compiled with, and resolves every engine fact a patch relies on, once. A mismatch
+            // is information: nothing here refuses to load.
+            EngineCheck.Run();
+
             _harmony = new Harmony(PluginId);
             _harmony.PatchAll();
 
@@ -67,6 +74,7 @@ namespace RavenIron.ValkyriesCargo
                 $"patches={_harmony.GetPatchedMethods().Count()}, " +
                 $"catalogue={ModConfig.CatalogueParsed.Count} entries" +
                 (ModConfig.CatalogueProblems.Count > 0 ? $" ({ModConfig.CatalogueProblems.Count} problem(s), see `cargo status`)" : "") +
+                $", {EngineCheck.StatusLine()}" +
                 ", ServerSync version gate armed; role is decided when a world loads.");
         }
 
