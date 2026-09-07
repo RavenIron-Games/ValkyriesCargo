@@ -36,10 +36,12 @@ which is ours), and it could not see any of:
   `ZPlayFabSocket`, `StringExtensionMethods`, `Version`, `SE_Rested`, `ZSyncAnimation`,
   `VisEquipment`, `FootStep`, `RandomAnimation`, `Projectile`, `Console`.
 
-There are no `___field` injections in the mod today: `grep -rnoE '___[A-Za-z_][A-Za-z0-9_]*'` over
-`ValkyriesCargo/` returns nothing. The three patches take `__instance`, `__runOriginal` and
-`__result` only. When P5 lands (`Patch_Humanoid_Awake`, `Patch_Character_InIntro`,
-`Patch_Character_Damage`) that will change, and the injections go here.
+There are no `___field` injections anywhere this mod reaches, P5 included: `grep -rnoE
+'___[A-Za-z_][A-Za-z0-9_]*'` over `ValkyriesCargo/` on `origin/b/p5-merchant` returns nothing, same
+as main. All six patches - the three already merged plus P5's `Patch_Humanoid_Awake`,
+`Patch_Character_InIntro` and `Patch_Character_Damage` (which patches `Character.RPC_Damage`, not
+`Damage` - see the row below) - take `__instance`, `__runOriginal` and `__result` only. This
+paragraph used to predict P5 would need one; checked directly against P5's own tree, it does not.
 
 Four types are named only as a `GetComponent<T>()` type argument in `cargo prefab`'s dump —
 `MonsterAI`, `NpcTalk`, `Tameable`, `ZSyncAnimation` — so only their existence matters, and a build
@@ -252,7 +254,20 @@ Player.Update | assembly_valheim | fact | reads TakeInput() before any OnGUI run
 Character.GetAllCharacters | assembly_valheim | call | CargoFlight.FindMerchantByCarrier, the only path on a pure client
 Character.GetSEMan | assembly_valheim | call | ComfortReporter
 Character.m_name | assembly_valheim | call | cargo prefab dump
-Character.m_faction | assembly_valheim | call | cargo prefab dump
+Character.m_faction | assembly_valheim | call | cargo prefab dump; CargoMerchant.Reassert sets it to Character.Faction.Players (P5)
+Character.Faction | assembly_valheim | type | nested public enum, Players first; what CargoMerchant.Reassert sets so vanilla treats him as a player ally for aggro and targeting
+Character.SetTamed | assembly_valheim | call | CargoMerchant.Reassert; public, but fires RPC_SetTamed and does NOT set m_tamed synchronously - only the RPC handler (m_nview.IsOwner()-gated) does, so IsTamed() right after MakeTame() is not a usable check
+Character.InIntro | assembly_valheim | patch | our postfix (Patch_Character_InIntro): __result = true while CargoMerchant.Pinned; the one caller (UpdateMotion, off CustomFixedUpdate) zeroes the Rigidbody's velocity every step while true - not immunity, just no fall accumulating under the carry pin
+Character.Damage | assembly_valheim | fact | NOT where damage happens: public, runs on the ATTACKER's machine, FindWeakSpotIndex + InvokeRPC("RPC_Damage", hit) and nothing else; see Character.RPC_Damage and CLAUDE.md's "Two corrections"
+Character.RPC_Damage | assembly_valheim | patch | private; our prefix (Patch_Character_Damage, Priority.Low, __runOriginal) cancels it for the merchant HERE, not on Damage - the victim-side choke point every hit passes through
+Humanoid.Awake | assembly_valheim | patch | our postfix (Patch_Humanoid_Awake) adds CargoMerchant when the ZDO carries vc_ingvar; runs after m_visEquipment and m_seed are set up here - NOT after GiveDefaultItems, which this method does not call (see Humanoid.Start)
+Humanoid.Start | assembly_valheim | fact | calls GiveDefaultItems() for non-players only - the Dverger's crossbow is equipped HERE, not in Awake; CargoMerchant.Reassert's staggered re-apply (0.5s/1s/3s, then every 5s), not patch ordering, is what strips it back off
+Humanoid.UnequipAllItems | assembly_valheim | call | CargoMerchant.Reassert: strips every equip slot (incl. the crossbow Start just gave him), triggerEquipEffects false
+MonsterAI.MakeTame | assembly_valheim | call | CargoMerchant.Reassert; calls Character.SetTamed(true) (async, see above), SetAlerted(false), clears both target fields
+MonsterAI.m_alertRange | assembly_valheim | call | declared here, not BaseAI; default 9999f, CargoMerchant.Reassert sets it 0
+BaseAI.m_aggravatable | assembly_valheim | call | declared on BaseAI, not MonsterAI (MonsterAI : BaseAI); CargoMerchant.Reassert sets it false
+BaseAI.m_passiveAggresive | assembly_valheim | call | declared on BaseAI, not MonsterAI; CargoMerchant.Reassert sets it false
+BaseAI.m_randomMoveRange | assembly_valheim | call | declared on BaseAI, not MonsterAI; default 4f, CargoMerchant.Reassert sets it 1.5
 Character.Awake | assembly_valheim | fact | caches m_animator = GetComponentInChildren<Animator>(); BodyLoader's appended-last defence
 Character.m_animator | assembly_valheim | fact | must keep pointing at the VANILLA animator after the body swap
 Character.SetVisible | assembly_valheim | fact | throws m_lodGroup.localReferencePoint out and back on every ownership change
