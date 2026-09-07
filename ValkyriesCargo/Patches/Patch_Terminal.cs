@@ -295,6 +295,10 @@ namespace RavenIron.ValkyriesCargo.Patches
                       " left" + (s.Clock.Warned ? ", one-minute warning given" : "") + ", " + s.Republishes + " clock republish(es)"
                     : "none" + (s.LastVisitId > 0 ? "; last #" + s.LastVisitId + " ended: " + s.LastEndReason + ", takings " + d.LastTakings + " coins" : "")) +
                     "; purse " + d.Market.Purse + ", next visit #" + d.Market.NextVisitId + (d.Session.Resumed ? " (resumed after a restart)" : ""));
+                Say(args, "  " + Spawner.Describe() + (Spawner.Active
+                    ? "; " + F(FlightPlan.MinimumStartDistance, "0") + " m is the shortest flight worth flying, " +
+                      F(FlightPlan.EdgeMargin, "0") + " m the margin kept inside the block"
+                    : ""));
                 Say(args, "  wire: " + DealWire.Registered + " peer socket(s), " + DealWire.OpenTerminals + " terminal(s) open, " + DealWire.Deals + " deal(s), " +
                           DealWire.Redeliveries + " redeliver" + (DealWire.Redeliveries == 1 ? "y" : "ies") + "; owed ledger " + d.Ledger.Count + " row(s)");
                 Say(args, "  sidecar: " + (d.Store != null && d.Store.Path != null

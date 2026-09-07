@@ -145,6 +145,14 @@ namespace RavenIron.ValkyriesCargo.Server
                     {
                         string republish = _session.Sync(worldTime, CargoEvent.Remaining(res));
                         if (republish != null) Publish(republish);
+
+                        // The server never flies anything: it watches the pilot's `vc_dropped` flag and
+                        // moves the visit's phase and drop point to follow (P4).
+                        string flightState;
+                        string note = Spawner.Tick(_session, GatherIntervalSeconds, out flightState);
+                        if (flightState != null) { Publish(flightState); _dirty = true; }
+                        if (note != null) ValkyriesCargo.Log.LogInfo(note);
+
                         if (_session.Clock.OneMinuteWarningDue(worldTime))
                             ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + ": one minute left");   // P5: vc_say the line
                     }
@@ -297,6 +305,14 @@ namespace RavenIron.ValkyriesCargo.Server
             PublishMarket();
             ValkyriesCargo.Log.LogInfo("visit #" + visitId + " begins: pilot " + pilot + " (uid " + Wire.Long(pilot.Uid) + ") at (" + Wire.Float(pilot.X) + ", " +
                                        Wire.Float(pilot.Z) + "), " + Wire.Float(lifespan) + " s, purse " + _market.Purse + ", seed " + seed);
+
+            // P4 (design 3.2): the bird and the merchant are authored here, owned by the pilot, who
+            // instantiates and flies them. The event and the clock have already started -- decided
+            // 2026-09-06: the visit starts at dispatch, as P3 built it, not at the drop as 3.2 wrote
+            // it, so the banner cues the player to look up while the bird is still inbound.
+            string flight = Spawner.Author(visitId, pilot.Uid, pilot.X, pilot.Y, pilot.Z, seed);
+            ValkyriesCargo.Log.LogInfo("visit #" + visitId + ": " + (flight ?? "NO FLIGHT AND NO MERCHANT: " + Spawner.LastProblem));
+
             Flush("visit start");
         }
 
@@ -304,6 +320,7 @@ namespace RavenIron.ValkyriesCargo.Server
         {
             _lastTakings = _market.Takings;
             int id = _session.VisitId;
+            Spawner.Clear();          // a bird still in the air when the visit ends is reclaimed and destroyed (P4)
             Publish(_session.End(reason));
             _pendingEndReason = null;
             _dirty = true;

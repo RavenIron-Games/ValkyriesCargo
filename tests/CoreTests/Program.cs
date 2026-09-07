@@ -55,6 +55,7 @@ namespace ValkyriesCargo.Tests
             BodyMotionTests();
             TrayModelTests();
             CargoRpcTests();
+            FlightPlanTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
             return _failed == 0 ? 0 : 1;
@@ -2759,6 +2760,210 @@ namespace ValkyriesCargo.Tests
             CargoRpc.ResetForTests();
             Check(CargoRpc.Inbox.Count == 0, "Inbox cleared after ResetForTests");
         }
+
+        // ---- FlightPlan: the flight's geometry, inside the active block (design 3.2) ----
+
+        private static void FlightPlanTests()
+        {
+            Section("FlightPlan: zones and the active block");
+
+            // The zone maths must agree with the game's, so the stub is the oracle: it carries
+            // ZoneSystem.GetZone from the decompile, and a disagreement here is a real disagreement.
+            for (float v = -200f; v <= 200f; v += 7.5f)
+            {
+                var z = ZoneSystem.GetZone(new UnityEngine.Vector3(v, 0f, v));
+                if (FlightPlan.ZoneOf(v) != z.x) { Check(false, $"ZoneOf({v}) matches ZoneSystem.GetZone"); return; }
+            }
+            Check(true, "ZoneOf agrees with ZoneSystem.GetZone across 54 sample points on both axes");
+
+            Check(FlightPlan.ZoneOf(0f) == 0 && FlightPlan.ZoneOf(31.9f) == 0 && FlightPlan.ZoneOf(32.1f) == 1,
+                  "the zone boundary is at +32, not 0 (the zone is centred on its coordinate)");
+            Check(FlightPlan.ZoneOf(-32.1f) == -1, "the boundary is symmetric below zero");
+
+            // activeArea 1 = the pilot's own zone only; 2 = the 3x3 block around it.
+            Check(FlightPlan.InActiveArea(0, 0, 0, 0, 1), "activeArea 1: the pilot's own zone is active");
+            Check(!FlightPlan.InActiveArea(1, 0, 0, 0, 1), "activeArea 1: the next zone is NOT active");
+            Check(FlightPlan.InActiveArea(1, 1, 0, 0, 2), "activeArea 2: the diagonal neighbour is active");
+            Check(!FlightPlan.InActiveArea(2, 0, 0, 0, 2), "activeArea 2: two zones out is NOT active");
+
+            Section("FlightPlan: the seed decides the flight, identically everywhere");
+
+            for (int seed = 1; seed < 50000; seed += 977)
+            {
+                double b = FlightPlan.Bearing(seed);
+                if (b < 0 || b >= Math.PI * 2) { Check(false, $"Bearing({seed}) is inside [0, 2pi)"); return; }
+                float d = FlightPlan.DropDistance(seed);
+                if (d < 12f || d > 15f) { Check(false, $"DropDistance({seed}) is 12-15 m"); return; }
+            }
+            Check(true, "Bearing stays inside [0, 2pi) and DropDistance inside 12-15 m across 52 seeds");
+            Check(FlightPlan.Bearing(12345) == FlightPlan.Bearing(12345) &&
+                  FlightPlan.DropDistance(12345) == FlightPlan.DropDistance(12345),
+                  "the same seed gives the same bearing and drop distance (every machine agrees without a message)");
+            Check(FlightPlan.Bearing(-7) == FlightPlan.Bearing(7), "a negative seed does not throw or wrap oddly");
+
+            Section("FlightPlan: every waypoint lands inside the block");
+
+            // The pilot in the middle of a 3x3 block: the configured 90 m should survive whole.
+            var mid = FlightPlan.Make(0f, 30f, 0f, 4242, 2, 90f, 120f, 50f);
+            Check(mid.Ok, "a pilot in the middle of a 3x3 block gets a plan");
+            Check(Math.Abs(mid.StartDistance - 90f) < 0.01f, "and keeps the full 90 m start distance");
+            Check(Math.Abs(mid.StartY - 150f) < 0.01f, "the start is the pilot's ground plus the 120 m altitude");
+            Check(FlightPlan.PointInBlock(mid.StartX, mid.StartZ, 0f, 0f, 2), "the start is inside the block");
+            Check(FlightPlan.PointInBlock(mid.DescentX, mid.DescentZ, 0f, 0f, 2), "the descent waypoint is inside the block");
+            Check(FlightPlan.PointInBlock(mid.DropX, mid.DropZ, 0f, 0f, 2), "the drop is inside the block");
+
+            // The drop is 12-15 m from the pilot, on the same bearing as the start: the bird comes
+            // in along one line and puts him down short of you.
+            double dropDist = Math.Sqrt(mid.DropX * mid.DropX + mid.DropZ * mid.DropZ);
+            Check(dropDist >= 12f && dropDist <= 15f, "the drop is 12-15 m from the pilot");
+            double startDist = Math.Sqrt(mid.StartX * mid.StartX + mid.StartZ * mid.StartZ);
+            Check(Math.Abs(startDist - 90f) < 0.01f, "the start is the planned distance from the pilot");
+            Check(Math.Abs(mid.StartX / startDist - mid.DropX / dropDist) < 0.001f &&
+                  Math.Abs(mid.StartZ / startDist - mid.DropZ / dropDist) < 0.001f,
+                  "start and drop share one bearing: the approach is a straight line in, not a fly-past");
+
+            Section("FlightPlan: the approach is straight and the altitude is on the waypoint (PR #8)");
+
+            // Both halves of this section are regressions. The first version swung the descent waypoint
+            // sideways by the same distance it sat forward, and left it at the START altitude; the bird
+            // could not fly to the first (it was inside its own turning circle) and dropped the merchant
+            // 105 m up when it could. Neither was visible to the harness, so both are asserted now.
+
+            // 1. Straight: the descent waypoint is ON the start-to-drop line.
+            double crossMid = (mid.DescentX - mid.StartX) * (mid.DropZ - mid.StartZ)
+                            - (mid.DescentZ - mid.StartZ) * (mid.DropX - mid.StartX);
+            Check(Math.Abs(crossMid) < 0.05f,
+                  "the descent waypoint is collinear with the start and the drop: the approach is one straight line");
+            double dDesc = Math.Sqrt(mid.DescentX * mid.DescentX + mid.DescentZ * mid.DescentZ);
+            Check(dDesc > dropDist && dDesc < startDist,
+                  "and it sits BETWEEN them, not past either end");
+            Check(Math.Abs(mid.DescentDistance - 50f) < 0.01f,
+                  "at the configured 50 m short of the drop, when the block leaves room for it");
+
+            // 2. The altitude: a steady glide, so the bird arrives at drop height instead of putting
+            //    110 m of descent on the last four seconds of the flight.
+            float runMid = (float)(startDist - dropDist);
+            float expected = 30f + FlightPlan.DropAltitude + (120f - FlightPlan.DropAltitude) * (50f / runMid);
+            Check(Math.Abs(mid.DescentY - expected) < 0.05f,
+                  $"its altitude is the glide's, interpolated along the run ({mid.DescentY:0.0} m, not the start's {mid.StartY:0.0})");
+            Check(mid.DescentY < mid.StartY - 1f && mid.DescentY > mid.DropY + 1f,
+                  "which is strictly below the start and strictly above the drop");
+
+            // 3. Reachability. A pure pursuer cannot capture a point inside its own turning circle, and
+            //    at the shipped 8 m/s and 45 deg/s that circle is 10 m across. THIS is the check that
+            //    would have caught the shipped bug off-game.
+            float radius = FlightPlan.TurningRadius(8f, 45f);
+            Check(Math.Abs(radius - 10.19f) < 0.02f,
+                  $"TurningRadius(8 m/s, 45 deg/s) = {radius:0.00} m (v / omega, omega in radians)");
+            Check(FlightPlan.TurningRadius(20f, 20f) > 57f && FlightPlan.TurningRadius(20f, 20f) < 58f,
+                  "and the prefab's own 20 m/s at 20 deg/s is the 57 m circle that broke the first version");
+            Check(FlightPlan.TurningRadius(8f, 0f) > 1e6f, "a flyer that cannot turn has an unbounded circle");
+
+            // The bird starts pointing at the drop (Spawner writes that rotation), so its first heading
+            // is the start-to-drop bearing; from the waypoint it is already on the line.
+            Check(FlightPlan.Reachable(mid.StartX, mid.StartZ, mid.DropX - mid.StartX, mid.DropZ - mid.StartZ,
+                                       mid.DescentX, mid.DescentZ, radius),
+                  "the bird can reach its descent waypoint from the start");
+            Check(FlightPlan.Reachable(mid.DescentX, mid.DescentZ, mid.DropX - mid.DescentX, mid.DropZ - mid.DescentZ,
+                                       mid.DropX, mid.DropZ, radius),
+                  "and the drop from the descent waypoint");
+
+            // The regression witness: rebuild the waypoint the way the first version did -- 50 m forward
+            // of the drop and 50 m to the side -- and show the same predicate refuses it at the prefab's
+            // numbers. If a swing is ever reintroduced, this is the check that has to be argued with.
+            {
+                float bx = (float)(mid.StartX / startDist), bz = (float)(mid.StartZ / startDist);   // pilot -> start
+                float swungX = -bz * 50f + bx * (float)(dropDist + 50f);
+                float swungZ = bx * 50f + bz * (float)(dropDist + 50f);
+                Check(!FlightPlan.Reachable(mid.StartX, mid.StartZ, mid.DropX - mid.StartX, mid.DropZ - mid.StartZ,
+                                            swungX, swungZ, FlightPlan.TurningRadius(20f, 20f)),
+                      "the ORIGINAL swung waypoint is inside the prefab bird's turning circle: unreachable, which is why it orbited for 180 s");
+            }
+
+            Section("FlightPlan: the shrink and the turn (design 3.2's active-block constraint)");
+
+            // Every position in a 3x3 block, every bearing: the plan must never put a waypoint outside.
+            int planned = 0, turned = 0, shrunk = 0, failed = 0, straight = 0;
+            for (float px = -96f; px <= 96f; px += 8f)
+            {
+                for (float pz = -96f; pz <= 96f; pz += 8f)
+                {
+                    for (int seed = 1; seed < 4000; seed += 397)
+                    {
+                        var p = FlightPlan.Make(px, 30f, pz, seed, 2, 90f, 120f, 50f);
+                        if (!p.Ok) { failed++; continue; }
+                        planned++;
+                        if (p.Turned) turned++;
+                        if (p.StartDistance < 90f) shrunk++;
+                        if (!FlightPlan.PointInBlock(p.StartX, p.StartZ, px, pz, 2) ||
+                            !FlightPlan.PointInBlock(p.DescentX, p.DescentZ, px, pz, 2) ||
+                            !FlightPlan.PointInBlock(p.DropX, p.DropZ, px, pz, 2))
+                        {
+                            Check(false, $"a waypoint left the block at pilot ({px}, {pz}) seed {seed}");
+                            return;
+                        }
+                        double cr = (p.DescentX - p.StartX) * (p.DropZ - p.StartZ)
+                                  - (p.DescentZ - p.StartZ) * (p.DropX - p.StartX);
+                        if (Math.Abs(cr) > 0.05f)
+                        { Check(false, $"the approach bent at pilot ({px}, {pz}) seed {seed}"); return; }
+                        if (!(p.DescentY <= p.StartY + 0.01f && p.DescentY >= p.DropY + FlightPlan.DropAltitude - 0.01f))
+                        { Check(false, $"the descent altitude left the glide at pilot ({px}, {pz}) seed {seed}"); return; }
+                        if (!FlightPlan.Reachable(p.StartX, p.StartZ, p.DropX - p.StartX, p.DropZ - p.StartZ,
+                                                  p.DescentX, p.DescentZ, FlightPlan.TurningRadius(8f, 45f)))
+                        { Check(false, $"the bird could not reach its waypoint at pilot ({px}, {pz}) seed {seed}"); return; }
+                        double toStart = Math.Sqrt(Math.Pow(p.DescentX - p.StartX, 2) + Math.Pow(p.DescentZ - p.StartZ, 2));
+                        double toDrop = Math.Sqrt(Math.Pow(p.DescentX - p.DropX, 2) + Math.Pow(p.DescentZ - p.DropZ, 2));
+                        if (toStart < 1f || toDrop < 1f)
+                        { Check(false, $"the descent waypoint collapsed onto an end at pilot ({px}, {pz}) seed {seed}"); return; }
+                        straight++;
+                    }
+                }
+            }
+            Check(failed == 0, $"every one of {planned} plans across a 3x3 block found room (0 failures)");
+            Check(straight == planned && planned > 0,
+                  $"and all {straight} of them are straight, keep a real two-leg glide, and are flyable at 8 m/s / 45 deg/s");
+            // A 3x3 block always has 30 m of room somewhere along the seeded bearing, so the shrink
+            // carries it alone and the turn never fires here. The turn is a one-zone measure; it is
+            // asserted below, where the block is small enough to actually run out of room.
+            Check(shrunk > 0 && turned == 0,
+                  $"the block bites: {shrunk} of {planned} plans shrank the start distance, and none had to turn");
+
+            // The tightest case the design admits: activeArea 1, one 64 m zone, the pilot in a corner.
+            var corner = FlightPlan.Make(30f, 30f, 30f, 99, 1, 90f, 120f, 50f);
+            Check(!corner.Ok || FlightPlan.PointInBlock(corner.StartX, corner.StartZ, 30f, 30f, 1),
+                  "activeArea 1 in a zone corner: the plan either declines or stays inside the one zone");
+
+            int oneZoneOk = 0, oneZoneNo = 0, oneZoneTurned = 0;
+            for (float px = -28f; px <= 28f; px += 4f)
+                for (float pz = -28f; pz <= 28f; pz += 4f)
+                {
+                    var p = FlightPlan.Make(px, 30f, pz, 7, 1, 90f, 120f, 50f);
+                    if (p.Ok)
+                    {
+                        oneZoneOk++;
+                        if (p.Turned) oneZoneTurned++;
+                        if (!FlightPlan.PointInBlock(p.StartX, p.StartZ, px, pz, 1))
+                        { Check(false, $"activeArea 1: start left the zone at ({px}, {pz})"); return; }
+                        if (p.StartDistance > 64f) { Check(false, "activeArea 1: a start further than one zone"); return; }
+                    }
+                    else oneZoneNo++;
+                }
+            Check(oneZoneOk + oneZoneNo == 225 && oneZoneOk > 0,
+                  $"activeArea 1 (one 64 m zone): {oneZoneOk} of 225 positions still get a flight, {oneZoneNo} decline");
+            // This is what the turn is for: one seed, one bearing, and the pilot standing where that
+            // bearing points at the zone wall. Without the turn these positions would all decline.
+            Check(oneZoneTurned > 0,
+                  $"and {oneZoneTurned} of them only found room by turning the bearing a quarter at a time");
+
+            Section("FlightPlan: a declined plan is safe to use");
+
+            var none = FlightPlan.Make(31.9f, 30f, 31.9f, 1, 1, 90f, 120f, 50f);
+            Check(none.Ok || (none.StartDistance == 0f && none.DropX == 31.9f && none.DropZ == 31.9f),
+                  "a declined plan drops on the pilot rather than returning nonsense to fly");
+            Check(!double.IsNaN(none.Bearing), "a declined plan still carries a readable bearing");
+            Check(none.Ok || Math.Abs(none.DescentY - (30f + FlightPlan.DropAltitude)) < 0.01f,
+                  "and parks its descent waypoint at drop height, so nothing reads a 120 m altitude off a flight that is not flown");
+        }
     }
 
     /// <summary>Fake transport for testing duplicate delivery handling.</summary>
@@ -2774,5 +2979,7 @@ namespace ValkyriesCargo.Tests
         {
             onAnswer(_result);
         }
+
+
     }
 }
