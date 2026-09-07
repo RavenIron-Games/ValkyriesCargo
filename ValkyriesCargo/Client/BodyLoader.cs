@@ -78,7 +78,21 @@ namespace RavenIron.ValkyriesCargo.Client
         /// the bundle is never unloaded anyway.
         /// </summary>
         private static Stream _stream;
+        /// <summary>
+        /// Ingvar's mesh is authored Z-UP and the FBX header says otherwise, so Unity imports it lying on
+        /// its back: `char1`'s bounds put the 1.36 m height on Z and 0.49 m on Y. Confirmed in-game
+        /// 2026-09-07 -- `cargo body preview` stood up a model on its side. `ModelImporter.bakeAxisConversion`
+        /// was tried at the bake and does nothing here (the header is what it reads), and the raw Meshy
+        /// source needed for a clean re-export is not in this repo and expires 2026-09-09. So the correction
+        /// lives here: -90 degrees about X maps +Z to +Y, which is the whole of it.
+        /// </summary>
+        public static readonly Quaternion BodyRotation = Quaternion.Euler(-90f, 0f, 0f);
+
+        /// <summary>The albedo, tagged into the same bundle. See <see cref="Dress"/> for why it is bound by hand.</summary>
+        private const string AlbedoName = "ingvar_albedo";
+
         private static GameObject _prefab;
+        private static Texture2D _albedo;
         private static readonly List<BodyClipInfo> _clips = new List<BodyClipInfo>();
         private static GameObject _preview;
 
@@ -147,6 +161,7 @@ namespace RavenIron.ValkyriesCargo.Client
                     return;
                 }
                 _prefab = _bundle.LoadAsset<GameObject>(PrefabName);
+                _albedo = _bundle.LoadAsset<Texture2D>(AlbedoName);
                 ReadClips();
                 Measure();
             }
@@ -274,24 +289,78 @@ namespace RavenIron.ValkyriesCargo.Client
                 if (r.bones != null && r.bones.Length > BoneCount) BoneCount = r.bones.Length;
                 AddMesh(r.sharedMesh, ref box);
             }
+            // Static meshes are counted for the triangle report but kept OUT of the box. The shipped
+            // FBX carries a stray 80-triangle `Icosphere` at the origin -- 31192 against char1's 31112,
+            // which is exactly how it was found -- and it is switched off on attach (see Dress). A
+            // measurement that includes geometry we do not draw is a measurement of the wrong body.
             MeshFilter[] filters = _prefab.GetComponentsInChildren<MeshFilter>(true);
             for (int i = 0; i < filters.Length; i++)
-                if (filters[i] != null) AddMesh(filters[i].sharedMesh, ref box);
+                if (filters[i] != null) CountMesh(filters[i].sharedMesh);
 
             if (!BoundsKnown) return;
             MeshBounds = box;
-            // The offset that puts the lowest authored vertex on the parent's origin. Expected 0.
-            GroundOffset = -box.min.y;
+            // The offset that puts the lowest authored vertex on the parent's origin, measured through
+            // the SAME rotation `Attach` applies. Measuring the raw box instead is what reported a
+            // 0.244 m lift for a character 1.36 m tall: that 0.244 was half his WIDTH.
+            GroundOffset = -Rotated(box, BodyRotation).min.y;
         }
 
         private static void AddMesh(Mesh mesh, ref Bounds box)
         {
             if (mesh == null) return;
+            CountMesh(mesh);
+            if (!BoundsKnown) { box = mesh.bounds; BoundsKnown = true; }
+            else box.Encapsulate(mesh.bounds);
+        }
+
+        private static void CountMesh(Mesh mesh)
+        {
+            if (mesh == null) return;
             // GetIndexCount reads the submesh descriptor, so it needs no Read/Write and allocates nothing;
             // mesh.triangles would copy the whole index buffer into managed memory to count it.
             for (int s = 0; s < mesh.subMeshCount; s++) Triangles += (int)(mesh.GetIndexCount(s) / 3);
-            if (!BoundsKnown) { box = mesh.bounds; BoundsKnown = true; }
-            else box.Encapsulate(mesh.bounds);
+        }
+
+        /// <summary>The axis-aligned box of `box` after `q`: all eight corners through the rotation.</summary>
+        private static Bounds Rotated(Bounds box, Quaternion q)
+        {
+            Vector3 c = box.center, e = box.extents;
+            Bounds outBox = new Bounds(q * c, Vector3.zero);
+            for (int i = 0; i < 8; i++)
+                outBox.Encapsulate(q * (c + new Vector3((i & 1) == 0 ? -e.x : e.x,
+                                                        (i & 2) == 0 ? -e.y : e.y,
+                                                        (i & 4) == 0 ? -e.z : e.z)));
+            return outBox;
+        }
+
+        /// <summary>
+        /// Two things the bake got wrong that cannot be fixed in the bake, done once on the instance.
+        ///
+        /// 1. The stray `Icosphere`: 80 triangles at the origin with its own material, which renders as a
+        ///    white ellipsoid swallowing Ingvar whole. It is leftover source geometry, it is inside OUR
+        ///    prefab so `HideStandIn` never sees it, and it is switched off rather than destroyed for the
+        ///    same reason everything else here is: something may hold a reference to it.
+        /// 2. The albedo is not bound. Unity imported the FBX's material with `_MainTex` EMPTY -- the
+        ///    texture ships in the same bundle but nothing references it -- so every surface draws pure
+        ///    white. Binding it here rather than at the bake means one code path fixes every future bake
+        ///    of this asset, and it costs one assignment on a shared material.
+        /// </summary>
+        private static int Dress(GameObject go)
+        {
+            int off = 0;
+            Renderer[] all = go.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                Renderer r = all[i];
+                if (r == null) continue;
+                if (!(r is SkinnedMeshRenderer)) { if (r.enabled) { r.enabled = false; off++; } continue; }
+                if (_albedo == null) continue;
+                Material[] mats = r.sharedMaterials;
+                for (int m = 0; m < mats.Length; m++)
+                    if (mats[m] != null && mats[m].HasProperty("_MainTex") && mats[m].mainTexture == null)
+                        mats[m].mainTexture = _albedo;
+            }
+            return off;
         }
 
         // ---- putting him on the merchant ------------------------------------------------------------
@@ -325,15 +394,17 @@ namespace RavenIron.ValkyriesCargo.Client
                 // own localScale survives - the Armature's 0.01 is CORRECT and must never be "fixed".
                 go.transform.SetParent(c.transform, false);
                 go.transform.localPosition = new Vector3(0f, GroundOffset, 0f);
-                go.transform.localRotation = Quaternion.identity;
+                go.transform.localRotation = BodyRotation;   // the Z-up source; see BodyRotation
 
+                int stray = Dress(go);
                 int hidden = HideStandIn(c.transform, go.transform);
 
                 IngvarBody body = go.AddComponent<IngvarBody>();
                 body.Bind(c);
                 ValkyriesCargo.Log.LogInfo(
                     "body: Ingvar attached to '" + c.name + "' at local y " + GroundOffset.ToString("0.###") +
-                    "; " + hidden + " stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, " +
+                    ", rotated " + BodyRotation.eulerAngles + " for the Z-up source; " + stray +
+                    " stray renderer(s) in the bundle switched off; " + hidden + " stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, " +
                     "CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)");
                 return body;
             }

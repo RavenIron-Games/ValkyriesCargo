@@ -482,6 +482,34 @@ P7, the terminal (a client, no server needed for the first item):
     first; Send him off twice ends the visit (`ended: dismissed by <name>`); Tab and M close it; walking away
     closes it only once P5 gives it a merchant.
 
+**FIRST CLIENT RUN, 2026-09-07 03:00, Wu'barrk's Linux box** (a shadow copy of the client, BepInEx from the
+shadow server, a throwaway world, listen host). In order: the boot line with `renderer=True, patches=14` (item 2 --
+the 14th is P4's `Patch_Valkyrie_Awake`), `event 'valkyries_cargo' registered (19 events now)`, `role: listen host
+(server + client)` -- **the listen-host role had never been exercised** -- and `director up: ... day 1800 s
+(EnvMan.m_dayLengthSec) ... roll every 1500 s at 25% ... sidecar valkyriescargo_2484912131.dat (fresh world)`.
+Then `cargo status` answered with, among the rest: **`ZoneSystem.m_activeArea=2`** (item 6: the runtime value, NOT
+the compiled 1, and it is what `FlightPlan` clamps against), `catalogue: 72 entries (18 wares, 54 wants), 0
+problem(s)`, `30 events registered, ours=yes`, `config: this side is the source of truth, locked=True`,
+`my report: rested=no, comfort=1, written 2 s ago` (ComfortReporter is live), and `day length 1800 s` read off a
+CLIENT's EnvMan for the first time. Item 2 and item 6 are DONE.
+
+**Item 19 passed but for the bake; item 20 FAILED, and found three real defects.** `cargo body` reported
+`source embedded - loaded`, `bundle open, prefab 'ingvar' found`, `clips (6 of 6 wanted): Hello 3.75s, Idle 10.00s,
+Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s` (exactly the bake's numbers) and `bones=24 (24 expected)`. **The
+`StandaloneWindows64` bundle loads on a LINUX client** -- that question is settled. But: `tris=31192 (31112
+expected)` and `ground offset 0.244 m ... NOT near 0`. `cargo body preview` then stood up a **pure white ellipsoid
+with Ingvar inside it**. Dumping the FBX from the Editor named all three:
+
+- **a stray `Icosphere`, 80 triangles** -- exactly the 31192-31112 -- with its own material. The white blob.
+- **`mats=[Material_1/Standard/tex=NONE]`**: the albedo ships in the bundle and nothing references it. Pure white.
+- **`char1` bounds `Extents(0.47, 0.24, 0.68)`**: the 1.36 m height is on **Z**. The source is Z-up and the FBX
+  header says otherwise, so he imports lying down and the "0.244 m ground offset" was half his WIDTH.
+
+All three are fixed in `Client/BodyLoader.cs` (rotation on attach, the offset measured through that same rotation,
+the stray renderer switched off, the albedo bound by hand) and **none of the three fixes has been seen on a screen
+yet** -- item 20 is still open. `ModelImporter.bakeAxisConversion` was tried at the bake and does nothing; the
+builder now says so, so nobody spends that round trip again.
+
 P8, the body (a client with the baked bundle embedded; **the bundle exists as of 2026-09-07** -- baked on
 Wu'barrk's Linux box in Unity 6000.0.61f1, 3,826,415 bytes, and the Debug DLL grows 273,408 -> 4,100,096
 when it is embedded. Note it is a `StandaloneWindows64` bundle, which is right for the ship and means a
