@@ -52,6 +52,9 @@ namespace RavenIron.ValkyriesCargo.Server
         private string _lastLogged = "";
         private string _pendingEndReason;
         private string _pendingSessionRow;
+        /// <summary>F3's grace period: the visit id `End` sent Keys.Vanish for and is waiting to reclaim. 0 = nothing pending.</summary>
+        private int _pendingVanishVisitId;
+        private double _pendingClearAt;
         private float _adoptWaited;
         private bool _orphanLogged;
         private bool _dirty;
@@ -165,6 +168,16 @@ namespace RavenIron.ValkyriesCargo.Server
                 ModConfig.FillMarketRules(_market.Rules, null);
                 ModConfig.FillSchedulerRules(_scheduler.Rules, null);
 
+                // F3's grace period (Spawner.VanishGraceSeconds after End sent Keys.Vanish): independent
+                // of everything below, on purpose, so a RandEventSystem hiccup or "no visit active" never
+                // delays reclaiming a merchant who has already had his moment to say goodbye.
+                if (_pendingVanishVisitId != 0 && now >= _pendingClearAt)
+                {
+                    int ended = _pendingVanishVisitId;
+                    _pendingVanishVisitId = 0;
+                    FinishDeparture(ended);
+                }
+
                 RandEventSystem res = RandEventSystem.instance;
                 if (res == null) return;
                 RandomEvent current = res.GetCurrentRandomEvent();
@@ -176,7 +189,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 {
                     if (!ours)
                     {
-                        End(_pendingEndReason ?? (current == null ? "timer" : "displaced by event '" + current.m_name + "'"), worldTime);
+                        End(_pendingEndReason ?? (current == null ? "timer" : "displaced by event '" + current.m_name + "'"), now, worldTime);
                     }
                     else
                     {
@@ -281,6 +294,18 @@ namespace RavenIron.ValkyriesCargo.Server
                 _dirty = true;
                 ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + " RESUMED after a restart: pilot " + _session.PilotName + ", " +
                                            _session.Clock.FormatRemaining(worldTime) + " left by the saved clock (the event's own timer corrects it next tick)");
+
+                // F4 (docs/AUDIT-P4P5-2026-09-07.md): Author() never ran for this visit in THIS process,
+                // so Spawner's Bird/Merchant/VisitId/Dropped/Active were never bound to it -- without
+                // this, End() -> Spawner.Clear() would reclaim nothing and the merchant (his ZDO is
+                // PERSISTENT) would outlive the visit forever, immortal and interactable, with the next
+                // visit authoring a second one beside him. The boot sweep already spared his ZDO under
+                // this same visit id; find it again and bind Spawner to it.
+                string rebound = Spawner.Rebind(_session.VisitId);
+                if (rebound != null) ValkyriesCargo.Log.LogInfo(rebound);
+                else ValkyriesCargo.Log.LogWarning("visit #" + _session.VisitId + " resumed: no merchant ZDO found to rebind " +
+                                                   "(looked for VCargo_ingvar=" + _session.VisitId + "); Clear() will have nothing " +
+                                                   "of its own to reclaim when this visit ends (the restart sweep is still the backstop)");
                 return;
             }
             _adoptWaited += Mathf.Max(dt, GatherIntervalSeconds);
@@ -437,7 +462,7 @@ namespace RavenIron.ValkyriesCargo.Server
             Flush("visit start");
         }
 
-        private void End(string reason, double worldTime)
+        private void End(string reason, double now, double worldTime)
         {
             _lastTakings = _market.Takings;
             _lastCoined = _market.Coined;
@@ -455,13 +480,54 @@ namespace RavenIron.ValkyriesCargo.Server
                 : 0.0;
             DateTime endedUtc = DateTime.UtcNow;
             _visitHistory.Record(id, pilot, endedUtc.AddSeconds(-duration), endedUtc, duration, _lastTakings, reason);
-            Spawner.Clear();          // a bird still in the air when the visit ends is reclaimed and destroyed (P4)
-            Publish(_session.End(reason));
+
+            // The session is inactive from HERE on, before the departure below reads it: FinishDeparture
+            // (whether called immediately or after the grace period) tells a live NEW visit apart from
+            // "nothing running" by asking `_session.Active`/`.VisitId`, and both must already reflect
+            // this visit having ended, not the visit itself.
+            string endedState = _session.End(reason);
+
+            // F3, the server half (docs/AUDIT-P4P5-2026-09-07.md): ask him to vanish before he's gone.
+            // `CargoMerchant.RPC_Vanish` already exists and already does the right thing on receive --
+            // the farewell line, `Leaving`, the Odin despawn effect created by the owner -- but nothing
+            // had ever sent it. Give it `Spawner.VanishGraceSeconds` to actually play before `Clear`
+            // destroys the ZDO the RPC was targeted at; `Clear` (via `FinishDeparture`) stays the
+            // backstop and runs regardless, whether now or after the grace. Nothing bound (MerchantEnabled
+            // was off, or an adopted visit's Rebind found no merchant) -> nothing to wait for.
+            if (!Spawner.Merchant.IsNone())
+            {
+                Spawner.SendVanish();
+                _pendingVanishVisitId = id;
+                _pendingClearAt = now + Spawner.VanishGraceSeconds;
+            }
+            else
+            {
+                FinishDeparture(id);
+            }
+
+            Publish(endedState);
             _pendingEndReason = null;
             _dirty = true;
             ValkyriesCargo.Log.LogInfo("visit #" + id + " ended: " + reason + "; takings " + _lastTakings + " coins, purse " + _market.Purse +
                                        ", " + _session.Republishes + " clock republish(es), " + _ledger.Count + " owed deliver" + (_ledger.Count == 1 ? "y" : "ies"));
             Flush("visit end");
+        }
+
+        /// <summary>
+        /// F3's backstop and F4's belt-and-braces sweep (audit Task 1b), fired together: whether
+        /// `Spawner.Clear()` runs right now (nothing was bound at `End`) or after the grace period
+        /// (`Tick`, above), the same two steps happen in the same order. `ClearIfStillOurs` only
+        /// reclaims if nothing has re-authored a NEW visit's bird and merchant since `endedVisitId`
+        /// was the one ending; the sweep afterward is the audit's own backstop, run against whatever
+        /// visit is actually live now (0 if none) rather than a stale guess -- it destroys every OTHER
+        /// merchant ZDO tagged `VCargo_ingvar`, however it got there, while sparing a new visit's own.
+        /// </summary>
+        private void FinishDeparture(int endedVisitId)
+        {
+            Spawner.ClearIfStillOurs(endedVisitId);
+            int liveNow = _session.Active ? _session.VisitId : 0;
+            string swept = Spawner.Sweep(liveNow);
+            if (swept != null) ValkyriesCargo.Log.LogInfo(swept);
         }
 
         // ---- publish and persist ---------------------------------------------------------------------
