@@ -163,7 +163,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       DONE 2026-09-07 (owner's word): 3,845,930 bytes; a build here is 4,181,504 bytes with Ingvar in it.
 - [ ] **The audit's probe rows into P10b's registry** (`docs/AUDIT-P4P5-2026-09-07.md` §2), now that
       PR #28 is in; and item 24 run on a real machine.
-- [ ] **F11 ghost mode — PR #37 (open, on the owner's word).** The owner's decision, built here because
+- [x] **F11 ghost mode — PR #37, merged 2026-09-07.** The owner's decision, built here because
       Track B is loaded: a `Priority.Low` prefix on the static `BaseAI.IsEnemy(a, b)`, any pair with the
       merchant in it answers "not enemies" while a visit runs; `Core/Ghost.Decide` pure, 11 checks, three
       mutations caught; the `character_ai` probe resolves the static overload; DESIGN §8 row; CLAUDE.md
