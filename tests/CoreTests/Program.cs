@@ -52,6 +52,7 @@ namespace ValkyriesCargo.Tests
             VisitSessionTests();
             SidecarTests();
             OwedLedgerTests();
+            PatchLedgerTests();
             SessionRowTests();
             BodyMotionTests();
             TrayModelTests();
@@ -2309,6 +2310,63 @@ namespace ValkyriesCargo.Tests
             Equal(3, problems.Count, "unknown row, second session row and a bad format line are each reported");
             Check(junk.FormatMatches, "and the good format line stands");
             Equal("", Sidecar.Split("format\t1\n", null).MarketRows, "a header-only file has empty bundles and tolerates a null problem list");
+        }
+
+        private static void PatchLedgerTests()
+        {
+            Section("PatchLedger (issue #31: patches applied one class at a time; a failure is counted and named, never fatal, unless load-bearing)");
+
+            PatchLedger l = new PatchLedger();
+            Equal(0, l.Expected, "an empty ledger expects nothing");
+            Equal("patches 0/0 applied", l.StatusLine(), "and says so");
+            Check(!l.Refused, "and refuses nothing");
+
+            l.Record("Patch_Valkyrie_Awake", "RavenIron.ValkyriesCargo.Patches.Patch_Valkyrie_Awake", true, 1, null);
+            l.Record("UIFocus+UIFocusPatch", "RavenIron.SharedUI.UIFocus+UIFocusPatch", true, 3, null);
+            Equal(2, l.Applied, "two applied");
+            Equal(0, l.Failed, "none failed");
+            Equal("patches 2/2 applied", l.StatusLine(), "the clean line is the count alone");
+            Equal(0, new List<string>(l.Report()).Count, "and the report is empty");
+
+            PatchLedger.Row r = l.Record("Patch_Humanoid_Awake", "RavenIron.ValkyriesCargo.Patches.Patch_Humanoid_Awake", false, 7,
+                                         "Could not find method Humanoid.Awake\nat HarmonyLib.PatchClassProcessor...");
+            Equal(1, l.Failed, "a failure is counted");
+            Equal(2, l.Applied, "and not as applied");
+            Equal(3, l.Expected, "expected is every patch class, applied or not");
+            Check(!r.LoadBearing, "ours is not load-bearing");
+            Check(!l.Refused, "so the mod is degraded, not refused");
+            Equal("patches 2/3 applied; FAILED: Patch_Humanoid_Awake; running degraded", l.StatusLine(),
+                  "the line names the failure and says degraded");
+            List<string> rep = new List<string>(l.Report());
+            Equal(1, rep.Count, "one report line per failure");
+            Equal("Patch_Humanoid_Awake: Could not find method Humanoid.Awake", rep[0], "the report carries the FIRST line of the error only");
+            Equal(0, r.Methods, "a failed row patched nothing, whatever it was told");
+            Equal("", l.Rows[0].Error, "an applied row carries no error");
+
+            Check(PatchLedger.IsLoadBearing("ServerSync.ConfigSync+RegisterRPCPatch"), "ServerSync's nested patch classes are load-bearing");
+            Check(PatchLedger.IsLoadBearing("ServerSync.VersionCheck"), "so is the version check");
+            Check(!PatchLedger.IsLoadBearing("RavenIron.ValkyriesCargo.Patches.Patch_Terminal"), "ours are not");
+            Check(!PatchLedger.IsLoadBearing("RavenIron.SharedUI.UIFocus+UIFocusPatch"), "nor the vendored UI focus");
+            Check(!PatchLedger.IsLoadBearing(null), "and null is not");
+            Check(!PatchLedger.IsLoadBearing("MyServerSync.Thing"), "the prefix is the namespace, not a substring");
+
+            PatchLedger g = new PatchLedger();
+            g.Record("Patch_Terminal", "RavenIron.ValkyriesCargo.Patches.Patch_Terminal", true, 1, null);
+            g.Record("ConfigSync+RegisterRPCPatch", "ServerSync.ConfigSync+RegisterRPCPatch", false, 0, "boom");
+            Check(g.Refused, "a load-bearing failure refuses the mod");
+            Equal("patches 1/2 applied; FAILED: ConfigSync+RegisterRPCPatch [LOAD-BEARING]; the mod REFUSED to run (a load-bearing patch did not apply)",
+                  g.StatusLine(), "and the line says so, marking the row");
+            g.Record("Patch_Valkyrie_Awake", "RavenIron.ValkyriesCargo.Patches.Patch_Valkyrie_Awake", true, 1, null);
+            Check(g.Refused, "a later success does not un-refuse it");
+
+            // A stack trace never floods the status: one line, at most 200 characters.
+            PatchLedger t = new PatchLedger();
+            t.Record("X", "X", false, 0, new string('e', 500) + "\nsecond line");
+            string only = new List<string>(t.Report())[0];
+            Equal("X: ".Length + 200, only.Length, "the error is cut at 200 characters of its first line");
+            PatchLedger u = new PatchLedger();
+            u.Record("Y", "Y", false, 0, "");
+            Equal("Y: did not apply", new List<string>(u.Report())[0], "an empty error still says it did not apply");
         }
 
         private static void OwedLedgerTests()

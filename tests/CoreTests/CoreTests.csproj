@@ -27,6 +27,7 @@
     <Compile Include="..\..\ValkyriesCargo\Core\MarketSnapshot.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\VisitSnapshot.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Deal.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\PatchLedger.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\DemoMarket.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Market.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Scheduler.cs" />

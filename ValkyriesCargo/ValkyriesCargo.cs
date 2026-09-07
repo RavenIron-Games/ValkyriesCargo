@@ -59,7 +59,18 @@ namespace RavenIron.ValkyriesCargo
             EngineCheck.Run();
 
             _harmony = new Harmony(PluginId);
-            _harmony.PatchAll();
+            // Issue #31: never a bare PatchAll. Every patch class is applied on its own; a class that fails
+            // to apply is logged by name and counted, and the mod runs DEGRADED and says so - except when
+            // the failure is the vendored ServerSync's (the version gate and the config lock), which
+            // refuses the mod outright: nothing ticks, nothing registers, the console still answers.
+            Patching.Apply(_harmony, typeof(ValkyriesCargo).Assembly);
+            Core.PatchLedger patches = Patching.Ledger;
+            if (patches.Refused)
+            {
+                Log.LogError($"{PluginName} v{PluginVersion} REFUSED to run: {patches.StatusLine()}. " +
+                             "The version gate or the config lock did not apply, and everything else rests on them; `cargo status` has the detail.");
+                return;
+            }
 
             // A plain MonoBehaviour driven from Update - deliberately NOT a coroutine.
             gameObject.AddComponent<CargoTick>();
@@ -71,7 +82,7 @@ namespace RavenIron.ValkyriesCargo
             // outside the game, so this line exists before there is anything to report.
             Log.LogInfo(
                 $"{PluginName} v{PluginVersion} loaded - renderer={HasRenderer}, " +
-                $"patches={_harmony.GetPatchedMethods().Count()}, " +
+                $"{patches.StatusLine()}, " +
                 $"catalogue={ModConfig.CatalogueParsed.Count} entries" +
                 (ModConfig.CatalogueProblems.Count > 0 ? $" ({ModConfig.CatalogueProblems.Count} problem(s), see `cargo status`)" : "") +
                 $", {EngineCheck.StatusLine()}" +
