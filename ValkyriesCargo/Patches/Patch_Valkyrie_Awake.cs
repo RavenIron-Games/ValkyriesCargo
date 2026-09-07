@@ -8,7 +8,7 @@ namespace RavenIron.ValkyriesCargo.Patches
     /// <summary>
     /// The one named exception to "never replace a vanilla method", on our own object only (design 4;
     /// RavenEye's `UpdateNoMap` shape). A prefix at `Priority.Low` that returns false for a bird carrying
-    /// `vc_cargo` and true for everything else, so a real intro Valkyrie is untouched.
+    /// `VCargo_cargo` and true for everything else, so a real intro Valkyrie is untouched.
     ///
     /// Why it must be a skip and not a postfix, from the decompiled body (2026-09-06):
     /// - `Valkyrie.Awake` line 1 is `m_instance = this`. `Game.SkipIntro` calls

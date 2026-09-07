@@ -49,11 +49,12 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<float>  MinPriceMultiplier;
         public static ConfigEntry<float>  MaxPriceMultiplier;
         public static ConfigEntry<float>  SpreadBuy;
+        public static ConfigEntry<bool>   FairMarketAct;
         public static ConfigEntry<float>  StockHalfLifeGameDays;
         public static ConfigEntry<int>    PurseCoins;
         public static ConfigEntry<int>    PurseCarryPercent;
         public static ConfigEntry<bool>   EnableBarter;
-        public static ConfigEntry<string> PriceChangePolicy;
+        public static ConfigEntry<bool>   BarrkBotExport;
 
         // ---- Client (local) ---------------------------------------------------------------
 
@@ -114,7 +115,7 @@ namespace RavenIron.ValkyriesCargo.Config
                 "Metres: a base on cooldown blocks its neighbours within this radius. Read on the SERVER.",
                 new AcceptableValueRange<float>(0f, 500f));
             MerchantLifespanSeconds = S(cfg, "Server", "MerchantLifespanSeconds", 300f,
-                "How long Ingvar stays, as the vanilla random event's duration. Odin's compiled default is 300; his prefab's own value is unchecked. Read on the SERVER.",
+                "How long Ingvar stays, as the vanilla random event's duration. Ours alone: Odin's prefab says 60, not the 300 his field initialiser says, so this number was never inherited from him. Read on the SERVER.",
                 new AcceptableValueRange<float>(30f, 1800f));
             ApproachDistance = S(cfg, "Server", "ApproachDistance", 3.5f,
                 "Metres from the pilot at which he stops walking. Read on the SERVER.",
@@ -148,7 +149,10 @@ namespace RavenIron.ValkyriesCargo.Config
                 "Exponent of (target / stock) in the price; higher = steeper. Read on the SERVER.",
                 new AcceptableValueRange<float>(0.05f, 1.5f));
             MinPriceMultiplier = S(cfg, "Server", "MinPriceMultiplier", 0.4f,
-                "Floor on the price multiplier when he is flooded. Read on the SERVER.",
+                "Floor on the price multiplier. A GUARD for an edited catalogue, not a price a player will see: " +
+                "every shipped row has MaxStock = 3 x TargetStock, so the lowest multiplier trading can reach is " +
+                "(1/3)^Elasticity = 0.68, and this floor would need MaxStock above 13.7 x target to bind at all. " +
+                "If you want a real flooded-out floor, raise MaxStock in the catalogue, not this. Read on the SERVER.",
                 new AcceptableValueRange<float>(0.05f, 1f));
             MaxPriceMultiplier = S(cfg, "Server", "MaxPriceMultiplier", 3f,
                 "Ceiling on the price multiplier when he is out. Read on the SERVER.",
@@ -156,20 +160,30 @@ namespace RavenIron.ValkyriesCargo.Config
             SpreadBuy = S(cfg, "Server", "SpreadBuy", 0.7f,
                 "What he pays as a fraction of what he charges for the same item. Read on the SERVER.",
                 new AcceptableValueRange<float>(0.1f, 1f));
+            FairMarketAct = S(cfg, "Server", "FairMarketAct", true,
+                "Caps what he pays to buy back a Ware at par (base x SpreadBuy), so MaxPriceMultiplier x SpreadBuy > 1 can never turn buying a shelf out and selling it straight back into free coins. Read on the SERVER.");
             StockHalfLifeGameDays = S(cfg, "Server", "StockHalfLifeGameDays", 1f,
                 "Between visits his stock drifts back toward target with this half-life, in world days. Read on the SERVER.",
                 new AcceptableValueRange<float>(0.1f, 30f));
-            PurseCoins = S(cfg, "Server", "PurseCoins", 800,
-                "Coins he arrives with. Read on the SERVER.",
+            PurseCoins = S(cfg, "Server", "PurseCoins", 1500,
+                "Coins he arrives with. 800 was thin for what this mod is for: one visit bought 39 silver ore " +
+                "for 795 and left him with 5, and a dozen flametal ore was the whole purse. Read on the SERVER.",
                 new AcceptableValueRange<int>(0, 100000));
             PurseCarryPercent = S(cfg, "Server", "PurseCarryPercent", 50,
-                "Percent of last visit's takings added to the next purse, capped at three purses. Read on the SERVER.",
+                "Percent of the coins last visit took IN -- gross, not net -- added to the next purse, capped at " +
+                "three purses. Measured on the gross so a visit where players sold him as much as they bought " +
+                "still carries something forward; on the net it carried nothing, and that is precisely the " +
+                "supplying server the catalogue was written for. Read on the SERVER.",
                 new AcceptableValueRange<int>(0, 100));
             EnableBarter = S(cfg, "Server", "EnableBarter", true,
                 "Allow paying with goods he wants, valued at his live buy price. Read on the SERVER.");
-            PriceChangePolicy = S(cfg, "Server", "PriceChangePolicy", "Reconfirm",
-                "Reconfirm: a staged deal whose price moved turns amber and needs one more click. Teardown: every open tray is cleared on any price change. Read on the SERVER.",
-                new AcceptableValueList<string>("Reconfirm", "Teardown"));
+            // PriceChangePolicy is deliberately NOT bound. It was a synced, locked knob offering a choice
+            // between Reconfirm and Teardown that NOTHING read: the terminal implements Reconfirm and only
+            // Reconfirm (`Client/Terminal/TrayModel.cs`). A setting that promises a behaviour the code does
+            // not have is worse than no setting, because a server owner will set it and believe it. 0.1.0 is
+            // unreleased, so removing it costs nobody a migration. If Teardown is ever built, bind it then.
+            BarrkBotExport = S(cfg, "Server", "BarrkBotExport", true,
+                "Write barrkbot_cargo_market.json, barrkbot_cargo_traders.json and barrkbot_cargo_visits.json under BepInEx/config/ValkyriesCargo/ for BarrkBOT to read off the server filesystem (BARRKBOT_CONTRACT.md), refreshed about once a minute. Never the source of truth: the world sidecar always saves first. Read on the SERVER.");
 
             ShowArrivalMessage = C(cfg, "Client", "ShowArrivalMessage", true,
                 "Show the private 'wings beat in the upper skies' line when you are the chosen player. Read on the CLIENT.");
@@ -211,6 +225,7 @@ namespace RavenIron.ValkyriesCargo.Config
             r.MinMultiplier = MinPriceMultiplier.Value;
             r.MaxMultiplier = MaxPriceMultiplier.Value;
             r.Spread = SpreadBuy.Value;
+            r.FairMarketAct = FairMarketAct.Value;
             r.HalfLifeGameDays = StockHalfLifeGameDays.Value;
             r.PurseCoins = PurseCoins.Value;
             r.PurseCarryPercent = PurseCarryPercent.Value;

@@ -63,7 +63,7 @@ namespace RavenIron.ValkyriesCargo.Client
         /// <summary>The character this body was hung on, or null for a preview.</summary>
         public Character Owner => _owner;
 
-        // ---- the public one-shots: P5 calls these on EVERY machine from the ZDO state and vc_say ----
+        // ---- the public one-shots: P5 calls these on EVERY machine from the ZDO state and VCargo_say ----
 
         public bool Greet() => Fire(BodyClip.Hello);
         public bool Talk()  => Fire(BodyClip.Talk);

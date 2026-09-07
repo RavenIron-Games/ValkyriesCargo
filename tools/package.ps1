@@ -109,7 +109,14 @@ $stage = "$dist\stage"
 if (Test-Path $stage) { Remove-Item $stage -Recurse -Force }
 New-Item -ItemType Directory -Force -Path $stage | Out-Null
 
-Copy-Item "$root\manifest.json", "$root\README.md", "$root\CHANGELOG.md", "$root\icon.png" -Destination $stage
+# The README in the zip is the STORE PAGE. The root README.md is the DEVELOPER's -- 257 lines of
+# layout, house style and build commands opening with a status line -- and shipping that as the store
+# page was one call away from happening on 2026-09-07.
+$storeReadme = "$root\HexiumDist\README.md"
+if (-not (Test-Path $storeReadme)) { $storeReadme = "$root\README.md" }
+Write-Host "  store page: $storeReadme"
+Copy-Item "$root\manifest.json", "$root\CHANGELOG.md", "$root\icon.png" -Destination $stage
+Copy-Item $storeReadme -Destination "$stage\README.md"
 New-Item -ItemType Directory -Force -Path "$stage\plugins" | Out-Null
 Copy-Item $dll -Destination "$stage\plugins"
 

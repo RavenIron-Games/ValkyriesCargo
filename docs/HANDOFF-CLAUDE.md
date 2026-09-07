@@ -26,7 +26,7 @@ stop, and no PR was opened. The paragraphs below describe the state as it was be
 | PR | What | Proof |
 |---|---|---|
 | #7 | P7 the Cargo Terminal: IMGUI on the vendored gilt theme, the pure tray model, `cargo terminal demo|open|close` | 926 checks; never drawn on a screen |
-| #8 | P4 the authored flight (Wu'barrk): straight approach, `vc_turn`, glide altitude on the waypoint, `FlightSpeed` 8 / `FlightTurnRate` 45 synced, the merchant gated behind P5; reviewed with a simulation, answered, both sides reproduced the numbers | 39 checks; never flown |
+| #8 | P4 the authored flight (Wu'barrk): straight approach, `vc_turn` (renamed `VCargo_turn` on 2026-09-07), glide altitude on the waypoint, `FlightSpeed` 8 / `FlightTurnRate` 45 synced, the merchant gated behind P5; reviewed with a simulation, answered, both sides reproduced the numbers | 39 checks; never flown |
 | #9 | P8 loader (`BodyLoader`, `IngvarBody` PlayableGraph over the six clips, no controller needed in the bake, `Server.CustomBody`, `cargo body preview`) + P9 release pass (README truth, CHANGELOG, manifest, `package.ps1`, `docs/RELEASE.md`; Hexium name free); adversarial review found the LODGroup re-enable and fixed it | 1034 checks; no bundle baked |
 | #10 | `docs/PROOF-CLIENT.md`, the client proof runbook for items 2–20, with `tools/deploy-test.ps1`, `tail-log.ps1`, `set-test-config.ps1` | scripts dry-run only |
 | #11 | The client-path audit: 57 members verified, six defects fixed (the demo terminal never ticked from the main menu; Tab/M double-open; refused deals acked; a destroyed merchant; leaked focus tokens; legacy Input) plus `DealInbox.Forget` | 1039 checks |
@@ -46,7 +46,10 @@ P10a handover (below), and `docs/HANDOFF-WUBARRK.md` section 0, your evening lis
   Findings go on the PR; it merges when they are answered.
 - **Issue #16, rename `vc_` to `VCargo_`** (21 names, 5 files): Don's, done after #15 and P11 land, as one
   pass with a `Core/Keys.cs`, a harness check for the prefix and uniqueness, and the collision mechanics in
-  the trust-boundary document.
+  the trust-boundary document. (Done 2026-09-07: the rename, found to be 21 names across more call sites
+  than the issue predicted, plus `Core/Keys.cs` and its distinctness harness check, landed on
+  `b/vcargo-prefix-rename`. The collision mechanics write-up in the trust-boundary document was not part
+  of that pass.)
 - **In flight on Don's side**, three Opus agents in worktrees, each opening a PR when done: P10a (the sweep
   tooling: `fetch-builds`, `decompile-builds`, `diff-engine.js`, `docs/ENGINE-SURFACE.md`, `ENGINE-BASELINE.md`,
   the client-vs-server sweep, and the dedicated-server live and public-test sweeps via steamcmd); P10b (the
@@ -105,7 +108,8 @@ were read from its source (`ConfigSync.cs`, master). The facts your work will le
   on his ZDO; it travels as two ServerSync custom values (`VisitState`, `MarketState`).
 - **Objects exist on a client only inside its active zone block** (`ZNetScene.InActiveArea`,
   `|zone − centre| ≤ m_activeArea − 1`, 64 m zones). The bird starts ~90 m out, not 500 m.
-- **Comfort never leaves the client**; the client writes `vc_rested`/`vc_comfort` on its own ZDO.
+- **Comfort never leaves the client**; the client writes `vc_rested`/`vc_comfort` (renamed
+  `VCargo_rested`/`VCargo_comfort` on 2026-09-07) on its own ZDO.
 - **`ZRoutedRpc.instance` is null for all of plugin `Awake`**; routed RPCs are forgeable (the
   packet's own sender/target); money rides the direct peer `ZRpc`.
 - **VikingOS**: every class is `internal`; it is a beta; the reuse is **shared source** (the two

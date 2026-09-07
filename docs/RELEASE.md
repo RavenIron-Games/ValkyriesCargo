@@ -83,8 +83,17 @@ the Thunderstore package format, which is what `package.ps1` builds.
   mods found", and searches for `cargo`, `valkyrie` and `ingvar` turned up nothing by this name. The
   name is free. Re-check before uploading; it costs one search.
 - Upload the zip from `dist\`. Nothing is edited by hand on the store side: the description, the
-  dependency string (`denikson-BepInExPack_Valheim-5.4.2333`) and the icon all come out of the
-  package.
+  dependency string and the icon all come out of the package. As of the BarrkBOT export
+  (`BARRKBOT_CONTRACT.md`) that string is two entries, both written from `manifest.json`:
+  `denikson-BepInExPack_Valheim-5.4.2333` and `ValheimModding-JsonDotNET-13.0.4` (the version
+  confirmed live against Fatty's own shipped manifest, not guessed). The second exists because
+  `Server/BarrkBotExport.cs` compiles against `Newtonsoft.Json.dll` at build time only
+  (`<Private>false</Private>` in the csproj) and needs a runtime copy on the server; we do not ship
+  one ourselves (`docs/DECISIONS-WUBARRK.md` #3 — two Newtonsoft builds in one `BepInEx/plugins`
+  tree is a known way to break a server). `tools/fetch-libs.ps1` copies the build-time DLL itself
+  from the workspace's `libs-Tools\`, which is a fresh-clone build requirement, not a player-facing
+  one: a server owner installing this mod through a manager that resolves Thunderstore dependencies
+  gets JsonDotNET automatically from the manifest entry above.
 - **The release note must say that every client has to update.** The ServerSync gate refuses any
   client on a different version, so a server that updates and a player who does not is a player who
   cannot connect, with a message they will read as a crash. Say it in the first line of the note,

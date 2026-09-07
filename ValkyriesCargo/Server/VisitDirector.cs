@@ -24,16 +24,29 @@ namespace RavenIron.ValkyriesCargo.Server
         public const float GatherIntervalSeconds = 1f;
         public const float SaveCadenceSeconds = 30f;
         public const float AdoptWindowSeconds = 15f;
+        /// <summary>How often the BarrkBOT export refreshes (Server/BarrkBotExport.cs): independent of
+        /// _dirty, because generated_at must keep moving even on a quiet server, or BarrkBOT starts
+        /// calling perfectly current numbers stale past its own 60-minute threshold.</summary>
+        public const float ExportCadenceSeconds = 60f;
 
         private readonly Scheduler _scheduler;
         private readonly Market _market;
         private readonly VisitSession _session = new VisitSession();
         private readonly OwedLedger _ledger = new OwedLedger();
+        private readonly TraderLedger _traders = new TraderLedger();
+        private readonly VisitHistory _visitHistory = new VisitHistory();
         private readonly System.Random _rng = new System.Random();
         private List<Candidate> _candidates = new List<Candidate>();
         private float _gather;
         private float _sinceSave;
+        private float _sinceExport;
         private int _lastTakings;
+        /// <summary>
+        /// The GROSS coins the last visit took in, which is what the purse carry is measured on -- not
+        /// `_lastTakings`, which is the net and is what the log line and the visit history quote. A visit
+        /// where players sold him as much as they bought has a net of zero and a gross worth carrying.
+        /// </summary>
+        private int _lastCoined;
         private string _lastLogged = "";
         private string _pendingEndReason;
         private string _pendingSessionRow;
@@ -41,11 +54,18 @@ namespace RavenIron.ValkyriesCargo.Server
         private bool _orphanLogged;
         private bool _dirty;
         private int _throws;
+        private int _mirrorThrows;
 
         public Scheduler Scheduler => _scheduler;
         public Market Market => _market;
         public VisitSession Session => _session;
         public OwedLedger Ledger => _ledger;
+        /// <summary>Per-player trade totals this session, for barrkbot_cargo_traders.json (BARRKBOT_CONTRACT.md). New: not persisted, not in the sidecar.</summary>
+        public TraderLedger Traders => _traders;
+        /// <summary>Visits that have ended this session, for barrkbot_cargo_visits.json. New: not persisted, not in the sidecar.</summary>
+        public VisitHistory VisitHistory => _visitHistory;
+        /// <summary>When this VisitDirector came up -- the "session" barrkbot_cargo_traders.json and barrkbot_cargo_visits.json reset against.</summary>
+        public DateTime SessionStartedUtc { get; }
         public MarketStore Store { get; private set; }
         public IReadOnlyList<Candidate> Candidates => _candidates;
         public int LastTakings => _lastTakings;
@@ -58,6 +78,7 @@ namespace RavenIron.ValkyriesCargo.Server
         {
             _market = new Market(catalogue, marketRules, worldTime, salt);
             _scheduler = new Scheduler(schedulerRules);
+            SessionStartedUtc = DateTime.UtcNow;
         }
 
         /// <summary>Build from the live config, the engine's day length, the world's uid and the sidecar. Logs its sources.</summary>
@@ -81,6 +102,17 @@ namespace RavenIron.ValkyriesCargo.Server
             d.Problems = string.Join("; ", problems.ToArray());
             // A fresh world gets its file at once, so the path is proven on the desk and not on the first deal.
             if (d.Store.Path != null && d._pendingSessionRow == null) d.Flush(d.Loaded > 0 ? "boot" : "first write", force: true);
+
+            // P5, design 3.7: the merchant is the persistent half of the pair, so a server that stopped
+            // mid-visit brings him back with the world. Put away anyone who is not the visit we just
+            // adopted, and clear any restored carry link -- a ZDOID does not survive a world read.
+            // The id to KEEP. A restored row is adopted later, on a tick, once the engine brings its
+            // event back - so at boot `_session` is not Active yet and its VisitId is 0. Sweeping on
+            // that 0 would destroy the merchant of the visit about to resume.
+            int keep = d._session != null && d._session.Active ? d._session.VisitId
+                                                               : VisitSession.VisitIdOf(d._pendingSessionRow);
+            string swept = Spawner.Sweep(keep);
+            if (swept != null) ValkyriesCargo.Log.LogInfo(swept);
 
             ValkyriesCargo.Log.LogInfo("director up: salt " + salt + ", day " + Wire.Double(day) + " s (" + (fromEngine ? "EnvMan.m_dayLengthSec" : "ASSUMED, no EnvMan") +
                                        "), catalogue " + d._market.Count + " entries, purse " + d._market.Purse + ", next visit #" + d._market.NextVisitId +
@@ -121,6 +153,7 @@ namespace RavenIron.ValkyriesCargo.Server
         {
             _gather += dt;
             _sinceSave += dt;
+            _sinceExport += dt;
             if (_gather < GatherIntervalSeconds) return;
             _gather = 0f;
             try
@@ -139,14 +172,14 @@ namespace RavenIron.ValkyriesCargo.Server
                 {
                     if (!ours)
                     {
-                        End(_pendingEndReason ?? (current == null ? "timer" : "displaced by event '" + current.m_name + "'"));
+                        End(_pendingEndReason ?? (current == null ? "timer" : "displaced by event '" + current.m_name + "'"), worldTime);
                     }
                     else
                     {
                         string republish = _session.Sync(worldTime, CargoEvent.Remaining(res));
                         if (republish != null) Publish(republish);
 
-                        // The server never flies anything: it watches the pilot's `vc_dropped` flag and
+                        // The server never flies anything: it watches the pilot's `VCargo_dropped` flag and
                         // moves the visit's phase and drop point to follow (P4).
                         string flightState;
                         string note = Spawner.Tick(_session, GatherIntervalSeconds, out flightState);
@@ -154,7 +187,7 @@ namespace RavenIron.ValkyriesCargo.Server
                         if (note != null) ValkyriesCargo.Log.LogInfo(note);
 
                         if (_session.Clock.OneMinuteWarningDue(worldTime))
-                            ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + ": one minute left");   // P5: vc_say the line
+                            ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + ": one minute left");   // P5: VCargo_say the line
                     }
                 }
                 else if (ours && _pendingSessionRow == null)
@@ -175,6 +208,21 @@ namespace RavenIron.ValkyriesCargo.Server
                 }
 
                 if (_dirty && _sinceSave >= SaveCadenceSeconds) Flush("cadence");
+
+                // BarrkBOT (BARRKBOT_CONTRACT.md). Decision 4: the sidecar is the source of truth and the
+                // export a mirror of it, so Flush runs first, to completion, and only a successful save
+                // lets the mirror run at all -- SidecarThenMirror is what proves that ordering off-game.
+                // Independent of _dirty on purpose: with nothing changed Flush is a cheap no-op, but the
+                // export still needs to move generated_at, or a perfectly current file starts reading as
+                // stale to BarrkBOT past its own 60-minute threshold.
+                if (_sinceExport >= ExportCadenceSeconds)
+                {
+                    _sinceExport = 0f;
+                    SidecarThenMirror.Run(
+                        () => Flush("barrkbot export"),
+                        () => BarrkBotExport.Write(this),
+                        mex => { if (_mirrorThrows++ < 3) ValkyriesCargo.Log.LogError("barrkbot export mirror threw (non-fatal, the sidecar is unaffected): " + mex); });
+                }
             }
             catch (Exception ex)
             {
@@ -194,6 +242,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 {
                     ValkyriesCargo.Log.LogWarning("saved session row did not parse (" + string.Join("; ", problems.ToArray()) + "); ending the restored event");
                     RandEventSystem.instance.ResetRandomEvent();
+                    SweepAfterGivingUp("the saved row did not parse");
                     return;
                 }
                 Publish(state);
@@ -208,6 +257,19 @@ namespace RavenIron.ValkyriesCargo.Server
             ValkyriesCargo.Log.LogInfo("saved session row not adopted: the engine did not restore event '" + CargoEvent.Name + "' within " + AdoptWindowSeconds + " s; that visit ended with the restart");
             _pendingSessionRow = null;
             _dirty = true;
+            SweepAfterGivingUp("the engine never restored the event");
+        }
+
+        /// <summary>
+        /// The boot sweep SPARED a merchant because a saved visit was waiting to be adopted. Adoption
+        /// has now failed, so that visit is over and he is stranded - persistent, in the world save,
+        /// with nothing left to belong to. This is the second half of the boot sweep and it only runs
+        /// on the path where the first half deliberately held its hand.
+        /// </summary>
+        private void SweepAfterGivingUp(string why)
+        {
+            string swept = Spawner.Sweep(0);
+            if (swept != null) ValkyriesCargo.Log.LogInfo(swept + " (" + why + ")");
         }
 
         /// <summary>`cargo visit`: force a roll for one player, cooldowns ignored (Scheduler.Force). Returns the decision in words.</summary>
@@ -224,7 +286,7 @@ namespace RavenIron.ValkyriesCargo.Server
             return d.Reason;
         }
 
-        /// <summary>`cargo dismiss` and vc_dismiss: end the event now; the next tick ends the visit with this reason.</summary>
+        /// <summary>`cargo dismiss` and VCargo_dismiss: end the event now; the next tick ends the visit with this reason.</summary>
         public string Dismiss(string reason)
         {
             if (!_session.Active) return "no visit to dismiss";
@@ -256,6 +318,7 @@ namespace RavenIron.ValkyriesCargo.Server
             if (r.Ok)
             {
                 _ledger.Add(playerKey, r);
+                _traders.Record(playerKey, playerName, r);
                 _dirty = true;
                 PublishMarket();
                 ValkyriesCargo.Log.LogInfo("deal " + r.DeliveryId + " with " + playerName + ": " + Describe(r) + "; purse " + _market.Purse);
@@ -289,7 +352,7 @@ namespace RavenIron.ValkyriesCargo.Server
         private void Begin(Candidate pilot, double worldTime)
         {
             int visitId = _market.NextVisitId;
-            _market.StartVisit(visitId, worldTime, _lastTakings);
+            _market.StartVisit(visitId, worldTime, _lastCoined);
             if (!CargoEvent.Start(RandEventSystem.instance, new Vector3(pilot.X, pilot.Y, pilot.Z)))
             {
                 ValkyriesCargo.Log.LogError("visit #" + visitId + ": the event did not start; is '" + CargoEvent.Name + "' registered? (`cargo status` says)");
@@ -316,10 +379,24 @@ namespace RavenIron.ValkyriesCargo.Server
             Flush("visit start");
         }
 
-        private void End(string reason)
+        private void End(string reason, double worldTime)
         {
             _lastTakings = _market.Takings;
+            _lastCoined = _market.Coined;
             int id = _session.VisitId;
+            string pilot = _session.PilotName;
+            // The visit's duration comes from the EVENT CLOCK, not from world time. World time is
+            // `ZNet.GetTimeSeconds()`, and `EnvMan.SkipToMorning` drives it forward to the next morning
+            // when players sleep -- so a 300 s visit slept through would read as a thousand and more, and
+            // the `started_at` derived from it would land before the visit began. It also keeps running
+            // while the event is paused with nobody within 96 m, which the clock deliberately does not.
+            // `Sync` retargets the clock's end from the event's own remaining seconds, so this is elapsed
+            // event time: 300 at the timer, less on a dismiss. Found by review, 2026-09-07.
+            double duration = _session.Clock != null
+                ? Math.Max(0.0, CargoEvent.Lifespan() - _session.Clock.Remaining(worldTime))
+                : 0.0;
+            DateTime endedUtc = DateTime.UtcNow;
+            _visitHistory.Record(id, pilot, endedUtc.AddSeconds(-duration), endedUtc, duration, _lastTakings, reason);
             Spawner.Clear();          // a bird still in the air when the visit ends is reclaimed and destroyed (P4)
             Publish(_session.End(reason));
             _pendingEndReason = null;

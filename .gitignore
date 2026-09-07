@@ -47,3 +47,7 @@ models/ingvar_*.fbx
 models/preview/*_[0-9][0-9].png
 models/preview/row_*.png
 models/preview/nod/nod_[0-9][0-9].png
+
+# Claude Code session state and agent worktrees. Never ours to ship, and a worktree
+# committed as a gitlink is a clone nobody else can resolve.
+.claude/

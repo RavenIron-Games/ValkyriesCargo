@@ -32,10 +32,17 @@
     <Compile Include="..\..\ValkyriesCargo\Core\Scheduler.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\VisitClock.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\FlightPlan.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\MerchantPlan.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\Keys.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\VisitSession.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Lines.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Sidecar.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\OwedLedger.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\TraderLedger.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\VisitHistory.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\BarrkRollover.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\BarrkExport.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\SidecarThenMirror.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\BodyMotion.cs" />
     <Compile Include="..\..\ValkyriesCargo\Client\Terminal\TrayModel.cs" />
     <Compile Include="..\..\ValkyriesCargo\Net\CargoRpc.cs" />

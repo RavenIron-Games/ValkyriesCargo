@@ -276,7 +276,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             {
                 Say(args, "  my report: " + (rep.Reported
                     ? "rested=" + (rep.LastRested ? "yes" : "no") + ", comfort=" + rep.LastComfort + ", written " + F(rep.SecondsSinceWrite, "0.#") +
-                      " s ago (" + rep.Writes + " writes to my character ZDO as vc_rested/vc_comfort)"
+                      " s ago (" + rep.Writes + " writes to my character ZDO as " + Keys.Rested + "/" + Keys.Comfort + ")"
                     : "nothing written yet (no local player, or not its owner)"));
             }
 
@@ -364,8 +364,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                 Say(args, "  rig: SkinnedMeshRenderer=" + (BodyLoader.HasSkinnedMesh ? "yes" : "NO") +
                           ", bones=" + BodyLoader.BoneCount + " (24 expected), tris=" + BodyLoader.Triangles + " (31112 expected); " +
                           BodyLoader.BoundsWords() + "; ground offset " + F(BodyLoader.GroundOffset, "0.###") +
-                          " m, derived from the meshes" + (Math.Abs(BodyLoader.GroundOffset) > BodyLoader.GroundOffsetWarnAt
-                              ? " - NOT near 0, and his origin is meant to be at his feet" : " (0 expected: his origin is at his feet)"));
+                          " m (the BIND-POSE box, an observation only -- the posed-mesh lift is what places him; see `cargo body preview`)");
 
             IngvarBody p = BodyLoader.Preview;
             Say(args, "  preview: " + (p == null ? "none (cargo body preview)"
@@ -396,7 +395,9 @@ namespace RavenIron.ValkyriesCargo.Patches
             IngvarBody body = BodyLoader.StartPreview(spot, Quaternion.LookRotation(-facing, Vector3.up));
             if (body == null) { Say(args, "cargo: the preview could not be built; see the log"); return; }
             Say(args, "cargo: Ingvar is standing 2.5 m in front of you at y " + F(spot.y, "0.##") +
-                      " (ground offset " + F(BodyLoader.GroundOffset, "0.###") + " m), " + body.ClipsBound + " clip(s) bound, graph " +
+                      " (lifted " + F(BodyLoader.PreviewLift, "0.###") + " m off the ground point, measured on the posed mesh" +
+                      (BodyLoader.PreviewStrays > 0 ? "; " + BodyLoader.PreviewStrays + " stray renderer(s) in the bundle switched off" : "") +
+                      "), " + body.ClipsBound + " clip(s) bound, graph " +
                       (body.GraphLive ? "live" : "DEAD") + ". Nothing about him is networked. `cargo body walk`, `cargo body clip Hello`, `cargo body clear`.");
         }
 

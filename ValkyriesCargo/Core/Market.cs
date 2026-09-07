@@ -19,8 +19,21 @@ namespace RavenIron.ValkyriesCargo.Core
         public double MinMultiplier = 0.4;      // floor when flooded
         public double MaxMultiplier = 3.0;      // ceiling when out
         public double Spread = 0.7;             // what he pays as a fraction of what he charges
+        // The Fair Market Act (2026-09-07, docs/DECISIONS-WUBARRK.md §2): MaxMultiplier x Spread = 2.1 > 1,
+        // so an unclamped Ware pays MORE to buy back than it charged to sell, and a shelf bought out and sold
+        // straight back pumps the purse for free (docs/ECONOMY-SIM.md §9). On: PaysFor caps a Ware's buy-back
+        // multiplier at 1.0. Off: the pre-fix number, for an owner who wants it back.
+        public bool FairMarketAct = true;
         public double HalfLifeGameDays = 1.0;   // stock drifts back to target with this half-life
         public double SecondsPerGameDay = DefaultSecondsPerGameDay;   // EnvMan.instance.m_dayLengthSec, read once at boot
+        /// <summary>
+        /// The pure core's own baseline, and NOT what ships: `ModConfig.FillMarketRules` overwrites this
+        /// from `Server.PurseCoins` (1500) before any market the game builds ever sees it. Deliberately
+        /// left at a round 800 so the harness's mechanics tests -- the carry arithmetic, the purse_empty
+        /// refusals -- read against a fixed number instead of being rewritten every time the balance moves.
+        /// A test that says "60 scrap iron at 15 is 900 and the purse holds 800" is about the refusal, not
+        /// about the shipped purse.
+        /// </summary>
         public int PurseCoins = 800;
         public int PurseCarryPercent = 50;
         public int PurseCapMultiple = 3;
@@ -118,6 +131,7 @@ namespace RavenIron.ValkyriesCargo.Core
         private readonly string _salt;
         private int _deliverySeq;
         private int _purseAtVisitStart;
+        private int _coinedThisVisit;
 
         public MarketRules Rules { get; }
         public int VisitId { get; private set; }
@@ -175,12 +189,36 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>
         /// What he pays: base × multiplier × spread, rounded ONCE, never below 1. Not the rounded charge times
         /// the spread: that squashes the spread on cheap goods (amber flooded: 3.34 → 3, not round(5 × 0.7) = 4).
+        ///
+        /// The Fair Market Act (2026-09-07, docs/DECISIONS-WUBARRK.md §2): for a Ware, with
+        /// <see cref="MarketRules.FairMarketAct"/> on, the multiplier on THIS side only is capped at 1.0 before
+        /// the spread is applied, so he never pays more than base × spread — the target-stock rate — for
+        /// something he also sells. <see cref="MultiplierFor"/> and <see cref="PriceFor"/> (what he CHARGES)
+        /// are untouched either way: an empty shelf still charges the full 3.0× going out. A Want is never
+        /// clamped; he does not sell it back, so there is no round trip to protect it from.
+        /// </summary>
+        public static int PaysFor(int basePrice, int target, int stock, EntryKind kind, MarketRules r) =>
+            PaysForCore(basePrice, target, stock, kind == EntryKind.Ware && r.FairMarketAct, r);
+
+        /// <summary>
+        /// The legacy 4-argument shape, kept working because CLAUDE.md's working agreement keeps an existing
+        /// signature alive rather than break its callers. It does not know the row's kind, so it always takes
+        /// the no-clamp path: the pre-Fair-Market-Act number, exactly. Every real trade reaches
+        /// <see cref="Pays(MarketItem)"/>, which calls the 5-argument overload above and does carry the kind;
+        /// prefer that one for anything new.
         /// </summary>
         public static int PaysFor(int basePrice, int target, int stock, MarketRules r) =>
-            Math.Max(1, (int)Math.Round(basePrice * MultiplierFor(target, stock, r) * r.Spread, MidpointRounding.AwayFromZero));
+            PaysForCore(basePrice, target, stock, clampToPar: false, r);
+
+        private static int PaysForCore(int basePrice, int target, int stock, bool clampToPar, MarketRules r)
+        {
+            double mult = MultiplierFor(target, stock, r);
+            if (clampToPar && mult > 1.0) mult = 1.0;
+            return Math.Max(1, (int)Math.Round(basePrice * mult * r.Spread, MidpointRounding.AwayFromZero));
+        }
 
         public int Charge(MarketItem it) => PriceFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, Rules);
-        public int Pays(MarketItem it) => PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, Rules);
+        public int Pays(MarketItem it) => PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, it.Entry.Kind, Rules);
         /// <summary>Derived from the charge against base for both kinds; monotone with Pays, so the arrow is right for a Want too.</summary>
         public int Trend(MarketItem it) { int c = Charge(it); return c > it.Entry.BasePrice ? 1 : c < it.Entry.BasePrice ? -1 : 0; }
 
@@ -198,12 +236,26 @@ namespace RavenIron.ValkyriesCargo.Core
             long cap = (long)Rules.PurseCoins * Rules.PurseCapMultiple;
             Purse = (int)Math.Min(cap, Rules.PurseCoins + carry);
             _purseAtVisitStart = Purse;
+            _coinedThisVisit = 0;
             _nonces.Clear();
             _deliverySeq = 0;
         }
 
-        /// <summary>Coins the purse gained this visit (what players bought minus what he paid), never negative.</summary>
+        /// <summary>Coins the purse gained this visit (what players bought minus what he paid), never negative. This is what the visit log quotes.</summary>
         public int Takings => Math.Max(0, Purse - _purseAtVisitStart);
+
+        /// <summary>
+        /// Coins that came IN this visit, gross -- every deal where the player paid him, with nothing
+        /// subtracted for the deals where he paid out. This, not `Takings`, is what the purse carry is
+        /// measured on.
+        ///
+        /// Why: `Takings` is the NET, so a visit where players sell him as much as they buy carries
+        /// nothing forward, and that is exactly the visit the catalogue was written for. Measured over
+        /// twenty simulated visits the carry cap engaged 19 times for a shopping server and **0 times**
+        /// for a supplying one, which saw a flat 800 for ever (`docs/ECONOMY-SIM.md`, "what looks off" 4).
+        /// A busy visit should refill him whichever direction the goods went.
+        /// </summary>
+        public int Coined => _coinedThisVisit;
 
         /// <summary>
         /// He trades elsewhere between visits: each item's stock moves toward target by
@@ -301,6 +353,7 @@ namespace RavenIron.ValkyriesCargo.Core
             if (want != null) { want.Stock -= d.Wanted.Count; want.UpdatedWorldTime = worldTime; }
             for (int i = 0; i < offered.Count; i++) { offered[i].Stock += d.Offered[i].Count; offered[i].UpdatedWorldTime = worldTime; }
             Purse += (int)net;
+            if (net > 0) _coinedThisVisit += (int)net;   // GROSS in; see Coined
 
             var r = new DealResult
             {
@@ -336,6 +389,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 lines.Add("stock\t" + it.Prefab + "\t" + Wire.Int(it.Stock) + "\t" + Wire.Double(it.UpdatedWorldTime));
             lines.Add("purse\t" + Wire.Int(Purse));
             lines.Add("purseStart\t" + Wire.Int(_purseAtVisitStart));
+            lines.Add("coined\t" + Wire.Int(_coinedThisVisit));
             lines.Add("visit\t" + Wire.Int(VisitId));
             lines.Add("seq\t" + Wire.Int(_deliverySeq));
             return string.Join("\n", lines.ToArray());
@@ -353,12 +407,13 @@ namespace RavenIron.ValkyriesCargo.Core
                 string line = raw.TrimEnd('\r');
                 if (line.Length == 0) continue;
                 string[] f = line.Split('\t');
-                if (f.Length == 2 && (f[0] == "purse" || f[0] == "purseStart" || f[0] == "visit" || f[0] == "seq"))
+                if (f.Length == 2 && (f[0] == "purse" || f[0] == "purseStart" || f[0] == "coined" || f[0] == "visit" || f[0] == "seq"))
                 {
                     int n;
                     if (!Wire.TryInt(f[1], out n) || n < 0) { Wire.Report(problems, f[0] + " row did not parse: " + line); continue; }
                     if (f[0] == "purse") Purse = n;
                     else if (f[0] == "purseStart") _purseAtVisitStart = n;
+                    else if (f[0] == "coined") _coinedThisVisit = n;
                     else if (f[0] == "visit") VisitId = n;
                     else _deliverySeq = n;
                     continue;

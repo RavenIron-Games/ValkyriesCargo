@@ -223,11 +223,11 @@ The question is not "is it synced" but **"what can a client change that it shoul
 - Every `Server.*` key: verify it is actually in the `ConfigSync` and actually locked, at runtime,
   on a live client — not by reading the binding code. The check is item 4 in `CLAUDE.md`'s verify
   list and it has never been run.
-- Every RPC: `vc_admin`, `vc_reply`, `vc_open`, `vc_close`, `vc_deal`, `vc_ack`, `vc_claim`,
-  `vc_dismiss`, `vc_dealt`. For each — who may send it, what the server validates, and what a
+- Every RPC: `VCargo_admin`, `VCargo_reply`, `VCargo_open`, `VCargo_close`, `VCargo_deal`, `VCargo_ack`, `VCargo_claim`,
+  `VCargo_dismiss`, `VCargo_dealt`. For each — who may send it, what the server validates, and what a
   hostile client gets by lying. The prices-the-player-saw check and the nonce ring are the
   interesting ones.
-- The ZDO writes. `vc_rested` / `vc_comfort` are **written by the client on its own character** and
+- The ZDO writes. `VCargo_rested` / `VCargo_comfort` are **written by the client on its own character** and
   read by the server's scheduler. That is a client asserting its own eligibility. It is probably
   fine — the worst case is an undeserved visit — but it should be a written-down decision rather
   than an accident of where comfort is computed.

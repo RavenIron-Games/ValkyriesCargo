@@ -78,7 +78,22 @@ namespace RavenIron.ValkyriesCargo.Client
         /// the bundle is never unloaded anyway.
         /// </summary>
         private static Stream _stream;
+        /// <summary>
+        /// The lift is measured on the LIVE INSTANCE, not from `sharedMesh.bounds`. On a skinned mesh
+        /// that box is bind-pose data in the mesh's own space: FBX axis conversion goes into the BONES
+        /// and leaves it alone, so it reported a 1.36 m height on Z and a "0.244 m ground offset" -- half
+        /// his width -- for a model that may be standing perfectly well. Measuring the box a
+        /// SkinnedMeshRenderer actually reports once instantiated is right whatever the source axes are,
+        /// and it is the only measurement that cannot be fooled by them. Found 2026-09-07, in-game.
+        /// </summary>
+        private const float LiftSanity = 3f;   // a lift larger than this is a broken asset, not a lift
+
+        /// <summary>The albedo, tagged into the same bundle. See <see cref="Dress"/> for why it is bound by hand.</summary>
+        private const string AlbedoName = "ingvar_albedo";
+
         private static GameObject _prefab;
+        private static Texture2D _albedo;
+        private static Material _dressed;
         private static readonly List<BodyClipInfo> _clips = new List<BodyClipInfo>();
         private static GameObject _preview;
 
@@ -104,6 +119,11 @@ namespace RavenIron.ValkyriesCargo.Client
         public static string Detail { get; private set; } = "not looked for yet";
         /// <summary>The preview body `cargo body preview` put in the world, or null.</summary>
         public static IngvarBody Preview { get; private set; }
+
+        /// <summary>What the last preview actually needed, measured on the posed mesh. `cargo body` prints it.</summary>
+        public static float PreviewLift { get; private set; }
+        /// <summary>Renderers in the bundle the last preview had to switch off. Should be 0 on a clean bake.</summary>
+        public static int PreviewStrays { get; private set; }
 
         /// <summary>True when a body can actually be attached: a renderer, the config, and a prefab out of the bundle.</summary>
         public static bool Ready => ValkyriesCargo.HasRenderer && ModConfig.CustomBody.Value && _prefab != null;
@@ -147,6 +167,7 @@ namespace RavenIron.ValkyriesCargo.Client
                     return;
                 }
                 _prefab = _bundle.LoadAsset<GameObject>(PrefabName);
+                _albedo = _bundle.LoadAsset<Texture2D>(AlbedoName);
                 ReadClips();
                 Measure();
             }
@@ -173,9 +194,11 @@ namespace RavenIron.ValkyriesCargo.Client
                 ", ground offset " + GroundOffset.ToString("0.###") + " m");
 
             if (BoundsKnown && Math.Abs(GroundOffset) > GroundOffsetWarnAt)
-                ValkyriesCargo.Log.LogWarning(
-                    "body: the ground offset is " + GroundOffset.ToString("0.###") + " m, not ~0. His origin is meant to be AT his feet " +
-                    "(models/README.md section 1). It is used as measured rather than as expected, but the bake is worth a look.");
+                ValkyriesCargo.Log.LogInfo(
+                    "body: the BIND-POSE box implies a " + GroundOffset.ToString("0.###") + " m offset, which on this asset is " +
+                    "an artefact of that box and not a real lift -- the source is authored on a different up-axis and FBX axis " +
+                    "conversion does not touch bind-pose bounds. Nothing is placed from this number: Attach and the preview both " +
+                    "measure the POSED mesh (BakeMesh). Kept because it is still the fastest way to see a bake come out sideways.");
 
             for (int i = 0; i < BodyMotion.ClipCount; i++)
             {
@@ -274,27 +297,221 @@ namespace RavenIron.ValkyriesCargo.Client
                 if (r.bones != null && r.bones.Length > BoneCount) BoneCount = r.bones.Length;
                 AddMesh(r.sharedMesh, ref box);
             }
+            // Static meshes are counted for the triangle report but kept OUT of the box. The shipped
+            // FBX carries a stray 80-triangle `Icosphere` at the origin -- 31192 against char1's 31112,
+            // which is exactly how it was found -- and it is switched off on attach (see Dress). A
+            // measurement that includes geometry we do not draw is a measurement of the wrong body.
             MeshFilter[] filters = _prefab.GetComponentsInChildren<MeshFilter>(true);
             for (int i = 0; i < filters.Length; i++)
-                if (filters[i] != null) AddMesh(filters[i].sharedMesh, ref box);
+                if (filters[i] != null) CountMesh(filters[i].sharedMesh);
 
             if (!BoundsKnown) return;
             MeshBounds = box;
-            // The offset that puts the lowest authored vertex on the parent's origin. Expected 0.
+            // Reported, never used to place him. On a skinned mesh this box is bind-pose data in the
+            // mesh's own space and FBX axis conversion does not touch it, so it read 1.36 m of height on
+            // Z and implied a 0.244 m lift that was really half his WIDTH. `Attach` measures the live
+            // instance instead (`MeasureLift`); this number stays in `cargo body` because it is still the
+            // fastest way to see that a bake came out on the wrong axis.
             GroundOffset = -box.min.y;
         }
 
         private static void AddMesh(Mesh mesh, ref Bounds box)
         {
             if (mesh == null) return;
-            // GetIndexCount reads the submesh descriptor, so it needs no Read/Write and allocates nothing;
-            // mesh.triangles would copy the whole index buffer into managed memory to count it.
-            for (int s = 0; s < mesh.subMeshCount; s++) Triangles += (int)(mesh.GetIndexCount(s) / 3);
+            CountMesh(mesh);
             if (!BoundsKnown) { box = mesh.bounds; BoundsKnown = true; }
             else box.Encapsulate(mesh.bounds);
         }
 
-        // ---- putting him on the merchant ------------------------------------------------------------
+        private static void CountMesh(Mesh mesh)
+        {
+            if (mesh == null) return;
+            // GetIndexCount reads the submesh descriptor, so it needs no Read/Write and allocates nothing;
+            // mesh.triangles would copy the whole index buffer into managed memory to count it.
+            for (int s = 0; s < mesh.subMeshCount; s++) Triangles += (int)(mesh.GetIndexCount(s) / 3);
+        }
+
+        /// <summary>
+        /// Two things the bake got wrong that cannot be fixed in the bake, done once on the instance.
+        ///
+        /// 1. The stray `Icosphere`: 80 triangles at the origin with its own material, which renders as a
+        ///    white ellipsoid swallowing Ingvar whole. It is leftover source geometry, it is inside OUR
+        ///    prefab so `HideStandIn` never sees it, and it is switched off rather than destroyed for the
+        ///    same reason everything else here is: something may hold a reference to it.
+        /// 2. The albedo is not bound. Unity imported the FBX's material with `_MainTex` EMPTY -- the
+        ///    texture ships in the same bundle but nothing references it -- so every surface draws pure
+        ///    white. Binding it here rather than at the bake means one code path fixes every future bake
+        ///    of this asset, and it costs one assignment on a shared material.
+        /// </summary>
+        /// <summary>
+        /// How far to lift the instance so its lowest drawn vertex sits on the parent's origin, measured
+        /// from what the renderers actually report now that they exist. Zero when the asset is authored
+        /// with its origin at the feet, which is what `models/README.md` section 1 says it should be.
+        /// Refused and treated as zero past `LiftSanity`: a metre and a half of "lift" is a broken bake,
+        /// and burying him is a better failure than launching him.
+        /// </summary>
+        private static float MeasureLift(Transform parent, GameObject go)
+        {
+            bool any = false;
+            float lowest = 0f;
+            // For a parentless preview the body sits at the ground point already, so the lift wanted is
+            // the gap between that point and the lowest posed vertex -- measure relative to where it is.
+            float origin = parent != null ? 0f : go.transform.position.y;
+            SkinnedMeshRenderer[] rs = go.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            for (int i = 0; i < rs.Length; i++)
+            {
+                SkinnedMeshRenderer smr = rs[i];
+                if (smr == null || !smr.enabled || smr.sharedMesh == null) continue;
+
+                // The bind-pose box is wrong on this asset (it puts his height on Z), and Unity culls a
+                // renderer by that box: without this he vanishes at angles where the real body is plainly
+                // on screen. It also makes `bounds` track the skinned result instead of the authored box.
+                smr.updateWhenOffscreen = true;
+
+                // BakeMesh is the posed mesh, in the renderer's own local space, and it is the ONLY
+                // measurement here that does not come back through the bad bind-pose box. `bounds`,
+                // `localBounds` and `sharedMesh.bounds` are all that box wearing different hats -- which is
+                // why the first attempt at this lifted him by 0.244 m, exactly half his authored width.
+                Mesh baked = new Mesh();
+                try
+                {
+                    smr.BakeMesh(baked);
+                    Bounds b = baked.bounds;
+                    Vector3 c = b.center, e = b.extents;
+                    for (int k = 0; k < 8; k++)
+                    {
+                        Vector3 corner = c + new Vector3((k & 1) == 0 ? -e.x : e.x,
+                                                         (k & 2) == 0 ? -e.y : e.y,
+                                                         (k & 4) == 0 ? -e.z : e.z);
+                        Vector3 world = smr.transform.TransformPoint(corner);
+                        // The preview has no parent: it stands in the world on its own, so world y IS
+                        // local y. `Attach` does have one, and the lift must be in ITS space.
+                        float y = parent != null ? parent.InverseTransformPoint(world).y : world.y;
+                        if (!any || y < lowest) { lowest = y; any = true; }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ValkyriesCargo.Log.LogWarning("body: BakeMesh failed on '" + smr.name + "', standing him at 0: " + ex.Message);
+                }
+                finally { UnityEngine.Object.Destroy(baked); }
+            }
+
+            if (!any) return 0f;
+            float lift = origin - lowest;
+            if (Math.Abs(lift) > LiftSanity)
+            {
+                ValkyriesCargo.Log.LogWarning(
+                    "body: the posed mesh wants a " + lift.ToString("0.###") + " m lift, which is not a lift but a " +
+                    "broken bake (models/SETUP-FOR-CLAUDE.md section 2). Standing him at 0 instead.");
+                return 0f;
+            }
+            return lift;
+        }
+
+        private static int Dress(GameObject go)
+        {
+            int off = 0;
+            Material dressed = IngvarMaterial();
+            Renderer[] all = go.GetComponentsInChildren<Renderer>(true);
+            for (int i = 0; i < all.Length; i++)
+            {
+                Renderer r = all[i];
+                if (r == null) continue;
+                if (!(r is SkinnedMeshRenderer)) { if (r.enabled) { r.enabled = false; off++; } continue; }
+
+                if (dressed != null)
+                {
+                    Material[] mats = r.sharedMaterials;
+                    for (int m = 0; m < mats.Length; m++) mats[m] = dressed;
+                    r.sharedMaterials = mats;            // the array is a COPY; it must be assigned back
+                }
+                else if (_albedo != null)
+                {
+                    // No donor: keep the bundle's own Standard material and at least bind the texture,
+                    // so he is the right colour under direct light rather than white everywhere.
+                    Material[] mats = r.sharedMaterials;
+                    for (int m = 0; m < mats.Length; m++)
+                        if (mats[m] != null && mats[m].HasProperty("_MainTex") && mats[m].mainTexture == null)
+                            mats[m].mainTexture = _albedo;
+                }
+            }
+            return off;
+        }
+
+        /// <summary>
+        /// One material for Ingvar, built once: a COPY of the stand-in's own material with our albedo in it.
+        ///
+        /// Copying the whole material matters, and swapping only the shader is not enough -- that was tried
+        /// and he came out lit by direct light with no ambient at all (2026-09-07, in-game). A bundle baked
+        /// in the Editor carries Unity's `Standard`; Valheim's creature shader has properties `Standard`
+        /// never had, and `material.shader = x` keeps only the ones that match BY NAME. Everything else --
+        /// the hue/saturation/value terms, the emission, the fog and wind handling -- falls back to shader
+        /// defaults that read as black under ambient light. Starting from a material the game itself ships
+        /// means every one of those is already right, and the only thing we change is the picture on it.
+        ///
+        /// The donor's own maps are cleared: they are authored against the DVERGER's UVs, and left in place
+        /// they project his surface detail onto our mesh.
+        /// </summary>
+        private static Material IngvarMaterial()
+        {
+            if (_dressed != null) return _dressed;
+            try
+            {
+                ZNetScene scene = ZNetScene.instance;
+                if (scene == null) return null;                      // ask again once a world is up
+                string name = ModConfig.BodyPrefab != null ? ModConfig.BodyPrefab.Value : "Dverger";
+                GameObject stand = scene.GetPrefab(name);
+                if (stand == null) return null;
+
+                Material donor = null;
+                SkinnedMeshRenderer[] rs = stand.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+                for (int i = 0; i < rs.Length && donor == null; i++)
+                    if (rs[i] != null && rs[i].sharedMaterial != null) donor = rs[i].sharedMaterial;
+                if (donor == null) return null;
+
+                Material mat = new Material(donor) { name = "IngvarBody" };
+                if (_albedo != null)
+                {
+                    if (mat.HasProperty("_MainTex")) mat.SetTexture("_MainTex", _albedo);
+                    else mat.mainTexture = _albedo;
+                }
+                for (int i = 0; i < DonorMapsToClear.Length; i++)
+                    if (mat.HasProperty(DonorMapsToClear[i])) mat.SetTexture(DonorMapsToClear[i], null);
+
+                // The Dverger GLOWS -- blue eyes and blue runes -- and that glow is an emission colour
+                // gated by an emission MASK. Clearing the mask above without clearing the colour lights
+                // the whole body instead of the eyes: the first try came out as a blue silhouette
+                // (2026-09-07, in-game). Ingvar is a merchant, not a lantern. Kill the colour and the
+                // keyword together, because Unity gates the emission pass on the keyword and a stale one
+                // keeps the pass alive even at black on some shader variants.
+                for (int i = 0; i < DonorEmissionToKill.Length; i++)
+                    if (mat.HasProperty(DonorEmissionToKill[i])) mat.SetColor(DonorEmissionToKill[i], Color.black);
+                mat.DisableKeyword("_EMISSION");
+                mat.globalIlluminationFlags = MaterialGlobalIlluminationFlags.EmissiveIsBlack;
+
+                _dressed = mat;
+                ValkyriesCargo.Log.LogInfo(
+                    "body: dressed Ingvar in a copy of the " + name + "'s own material ('" + donor.name +
+                    "', shader '" + (donor.shader != null ? donor.shader.name : "?") + "') with our albedo in it. " +
+                    "A baked bundle carries Unity's Standard, which Valheim lights only from direct light.");
+                return _dressed;
+            }
+            catch (Exception ex)
+            {
+                ValkyriesCargo.Log.LogWarning("body: could not build a material from the stand-in's; keeping the " +
+                                              "bundle's own: " + ex.Message);
+                return null;
+            }
+        }
+
+        /// <summary>The donor's maps, authored against ITS UVs. Ours would wear his surface detail.</summary>
+        private static readonly string[] DonorMapsToClear =
+            { "_BumpMap", "_SkinBumpMap", "_MetallicGlossMap", "_EmissionMap", "_ChestTex", "_LegsTex", "_MaskTex" };
+
+        /// <summary>The donor's glow. See <see cref="IngvarMaterial"/>: without the mask it lights everything.</summary>
+        private static readonly string[] DonorEmissionToKill =
+            { "_EmissionColor", "_EmissiveColor", "_GlowColor" };
 
         /// <summary>
         /// Give this character Ingvar's body, or leave the stand-in alone and answer null. Idempotent:
@@ -324,16 +541,19 @@ namespace RavenIron.ValkyriesCargo.Client
                 // worldPositionStays:false so the local transform below is what lands, and the prefab's
                 // own localScale survives - the Armature's 0.01 is CORRECT and must never be "fixed".
                 go.transform.SetParent(c.transform, false);
-                go.transform.localPosition = new Vector3(0f, GroundOffset, 0f);
+                go.transform.localPosition = Vector3.zero;
                 go.transform.localRotation = Quaternion.identity;
 
+                int stray = Dress(go);
+                float lift = MeasureLift(c.transform, go);
+                go.transform.localPosition = new Vector3(0f, lift, 0f);
                 int hidden = HideStandIn(c.transform, go.transform);
 
                 IngvarBody body = go.AddComponent<IngvarBody>();
                 body.Bind(c);
                 ValkyriesCargo.Log.LogInfo(
-                    "body: Ingvar attached to '" + c.name + "' at local y " + GroundOffset.ToString("0.###") +
-                    "; " + hidden + " stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, " +
+                    "body: Ingvar attached to '" + c.name + "' at local y " + lift.ToString("0.###") +
+                    "; " + stray + " stray renderer(s) in the bundle switched off; " + hidden + " stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, " +
                     "CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)");
                 return body;
             }
@@ -400,8 +620,18 @@ namespace RavenIron.ValkyriesCargo.Client
             if (_prefab == null) return null;
             GameObject go = UnityEngine.Object.Instantiate(_prefab);
             go.name = ChildName + "_preview";
-            go.transform.position = groundPos + new Vector3(0f, GroundOffset, 0f);
             go.transform.rotation = rotation;
+            go.transform.position = groundPos;
+
+            // The SAME two steps `Attach` does, and for the same reasons: the bundle carries a stray
+            // renderer and Unity's Standard material, and the lift has to come off the POSED mesh rather
+            // than the bind-pose box. Routing the preview down a shorter path is how it came to report a
+            // 0.244 m offset and stand him in the air while the merchant beside him stood correctly --
+            // the preview is meant to be the cheap way to SEE a bake, so it has to see the same body.
+            PreviewStrays = Dress(go);
+            PreviewLift = MeasureLift(go.transform.parent, go);
+            go.transform.position = groundPos + new Vector3(0f, PreviewLift, 0f);
+
             _preview = go;
             Preview = go.AddComponent<IngvarBody>();
             return Preview;

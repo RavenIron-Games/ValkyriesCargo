@@ -80,7 +80,7 @@ Every predicted string below is quoted from the code that writes it; where a val
    so `devcommands` is not needed. If F5 does nothing, add `-console` to the Steam launch options.
 
 7. **A dedicated server has no console.** Everything you TYPE goes into the client's console; admin verbs
-   ride `vc_admin` to the server and its answer prints back in your console (and into the client's log as
+   ride `VCargo_admin` to the server and its answer prints back in your console (and into the client's log as
    `server answered: <the same text>`). Everything the SERVER says is read from its log (section E). The one thing a dedicated server cannot show is its own `cargo status`
    director block (`candidates:`, `owed ledger`, `sidecar`, `wire`); where an item wants that, this file
    says which log line carries the same fact, and a **listen host** (host a world from the client:
@@ -299,7 +299,7 @@ pushed. Prove the refusal from the second, non-admin account (item 11b's account
 **Type:** `cargo status`
 
 ```
-  my report: rested=<yes|no>, comfort=<n>, written <x> s ago (<n> writes to my character ZDO as vc_rested/vc_comfort)
+  my report: rested=<yes|no>, comfort=<n>, written <x> s ago (<n> writes to my character ZDO as VCargo_rested/VCargo_comfort)
 ```
 (`ComfortReporter` writes every 2 s; `Reported` false gives
 `my report: nothing written yet (no local player, or not its owner)`.)
@@ -473,7 +473,7 @@ and, on a sell, `bought 10 Wood at <n>, coins +<n> to the player`.
 **Common failures**
 - `cargo: no transport (join a world; the wire registers on connect)` — no world, or the wire never
   registered; the server log should carry `deal wire registered for <name> (<uid>)` and the client
-  `deal wire: registered vc_dealt on the server socket`.
+  `deal wire: registered VCargo_dealt on the server socket`.
 - `cargo: no visit is running (cargo status)` — the visit ended under you.
 - `cargo: that is <n> coins and you carry <n>` — a client-side pre-check, before anything is sent.
 - `cargo: he has no row named '<x>' (cargo stock)` / `cargo: he only buys <x>, he does not sell it`.
@@ -516,7 +516,7 @@ the same handler that applies the deal (`Net/CargoTransport.cs`, `OnDealt`), so 
 if the client dies between the server's answer and the ack. Try: `cargo deal buy Iron 2`, then Alt+F4
 within a second of `cargo: sending`. Log back in and look for
 
-- server: `vc_claim from <name>: redelivered 1 owed deal(s)`
+- server: `VCargo_claim from <name>: redelivered 1 owed deal(s)`
 - client: `delivery <id> applied: +2 Iron, -<n> coins` and the top-left HUD line
   `Ingvar's delivery: +2 Iron, -<n> coins`
 
@@ -573,7 +573,7 @@ What the code fixes:
   `inventory or map open`, `player gone`, `too far`, `visit over`, `he is leaving`, `close button`,
   `sent him off`, `console`, `session ended`, `error`
 - the dismiss ends the visit through the wire: server log
-  `vc_dismiss from <name>: visit #<n> dismissed (dismissed by <name>)` then
+  `VCargo_dismiss from <name>: visit #<n> dismissed (dismissed by <name>)` then
   `visit #<n> ended: dismissed by <name>; takings <n> coins, ...`
 
 **Paste back:** the open line, one `terminal deal on visit #<n>: ok ...` line with the server's matching
@@ -657,7 +657,7 @@ cargo: not an admin (the server's adminlist.txt decides)
 ```
 **Server log** (a Warning):
 ```
-refused vc_admin visit from <name> (<uid>): not an admin
+refused VCargo_admin visit from <name> (<uid>): not an admin
 ```
 
 **13b / 18b — the same market on every machine.** With both clients connected and a visit running, one
@@ -687,7 +687,7 @@ exists the verbs still answer, honestly, and that answer is worth one line in th
   Format strings from `Patches/Patch_Terminal.cs`, `BodyReport`:
   - `body: source embedded - <detail>` then `  resource: 'ValkyriesCargo.valkyriescargo_kit' inside this DLL, which is what makes every player's Ingvar the same one`. With no bake: `body: source none - <detail>`. With a loose file: `body: source file - <detail>` and `  file: <path> - a LOCAL file, NOT the copy other players have; embed it before it ships`.
   - `  bundle open, prefab 'ingvar' found, CustomBody=True (false keeps the Dverger stand-in), renderer=yes` — on a dedicated server `renderer=no` and nothing after it says anything about appearance.
-  - `  clips (6 of 6 wanted): <names with lengths>`; any absent take prints `    MISSING '<name>': it plays at weight 0 and the rest carry on`. Expect `Walk 4.21s, Idle 10.00s, Talk 5.17s, Hello 3.79s, Shrug 2.00s, Nod 1.25s` (`models/README.md` section 1).
+  - `  clips (6 of 6 wanted): <names with lengths>`; any absent take prints `    MISSING '<name>': it plays at weight 0 and the rest carry on`. Expect `Walk 4.17s, Idle 10.00s, Talk 5.13s, Hello 3.75s, Shrug 1.96s, Nod 1.25s` -- the lengths Unity reported at the bake on 2026-09-07 (`models/README.md` section 1; its earlier row was one 24 fps frame longer on four of them).
   - `  rig: SkinnedMeshRenderer=yes, bones=24 (24 expected), tris=31112 (31112 expected); <bounds>; ground offset 0.000 m, derived from the meshes (0 expected: his origin is at his feet)`. An offset that is NOT near 0 prints ` - NOT near 0, and his origin is meant to be at his feet`: that is the bake, not the loader.
   - `  preview: none (cargo body preview)`.
   Paste the whole block into `CLAUDE.md` Status. The log carries the same facts at load, prefixed `body:`.
@@ -747,10 +747,10 @@ A healthy dedicated boot, in order (StormTest, 2026-09-06 19:25):
 [Info   : Unity Log] Registered 'com.raveniron.valkyriescargo ConfigSync' RPC - waiting for incoming connections
 [Info   : Unity Log] <time>: Load world: Dedicated (Dedicated)
 [Info   :Valkyrie's Cargo] role: dedicated server
-[Info   :Valkyrie's Cargo] routed RPCs registered for this session: vc_admin, vc_reply
+[Info   :Valkyrie's Cargo] routed RPCs registered for this session: VCargo_admin, VCargo_reply
 [Info   :Valkyrie's Cargo] director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), ...
 [Info   :Valkyrie's Cargo] roll: no eligible player: nobody online
 ```
 On a client the same boot reads `renderer=True`, then `role: client`, then
-`deal wire: registered vc_dealt on the server socket`; at logout,
+`deal wire: registered VCargo_dealt on the server socket`; at logout,
 `session ended: sidecar flushed; director, wire, reporter, routed RPCs and the terminal surface dropped`.

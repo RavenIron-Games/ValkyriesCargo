@@ -29,7 +29,11 @@ height      1.370 m      (design's dwarf scale; origin at the FEET, centred in X
 geometry    31,112 triangles, 18k verts, single-sided
 skeleton    24 joints, root "Hips" under an "Armature" node with scale 0.01
 material    one 2048² base colour, scalar roughness 0.41, no metallic/roughness map
-clips       Walk 4.21s · Idle 10.00s · Talk 5.17s · Hello 3.79s · Shrug 2.00s · Nod 1.25s
+clips       Walk 4.17s · Idle 10.00s · Talk 5.13s · Hello 3.75s · Shrug 1.96s · Nod 1.25s
+            (as Unity reports them after import, 2026-09-07. The earlier row here said 4.21 /
+            5.17 / 3.79 / 2.00 -- each exactly one frame at 24 fps longer, because a frame
+            COUNT over the rate counts both ends and AnimationClip.length does not. Same
+            clips; nothing to chase. `cargo body` prints these, so item 19 checks THESE.)
 ```
 
 **Every clip is in-place.** Largest hip travel is 0.19 m (the idle sway); the walk moves

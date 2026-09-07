@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using RavenIron.ValkyriesCargo.Core;
 using RavenIron.ValkyriesCargo.Net;
 using RavenIron.ValkyriesCargo.Client.Terminal;
@@ -56,6 +57,13 @@ namespace ValkyriesCargo.Tests
             TrayModelTests();
             CargoRpcTests();
             FlightPlanTests();
+            MerchantPlanTests();
+            KeysTests();
+            TraderLedgerTests();
+            VisitHistoryTests();
+            BarrkRolloverTests();
+            BarrkExportTests();
+            SidecarThenMirrorTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
             return _failed == 0 ? 0 : 1;
@@ -782,6 +790,150 @@ namespace ValkyriesCargo.Tests
             MarketItem wood = m.Find("Wood");                 // base 1, target 200, max 600
             wood.Stock = 600;
             Equal(0, m.Trend(wood), "a base price of 1 cannot move, so Wood's trend stays flat");
+
+            // ---- the Fair Market Act, 2026-09-07 (docs/DECISIONS-WUBARRK.md §2) ----------------------------
+            // Unclamped, MaxMultiplier (3.0) x SpreadBuy (0.7) = 2.1 > 1: an empty Ware shelf pays MORE than a
+            // full one charges, so buying a shelf out and selling it straight back pumps the purse for free
+            // (docs/ECONOMY-SIM.md §9, "the round trip"). The fix clamps the buy-back multiplier at 1.0 for a
+            // Ware only: PriceFor (what he CHARGES) and every Want are untouched.
+            Section("Market: the Fair Market Act (2026-09-07)");
+
+            MarketRules fma = MarketRules.Default;                       // FairMarketAct true by default
+            Check(fma.FairMarketAct, "the rule ships ON: nobody gets the old exploit by accident");
+            MarketRules noFma = new MarketRules { FairMarketAct = false };
+
+            // (1) The round trip itself, played through Settle -- the same door the exploit used. Buy the
+            // whole Iron shelf (base 25, target 20) in one deal at the full-shelf price, then sell the same
+            // 20 back in one deal at the now-empty-shelf price. Pre-fix (docs/ECONOMY-SIM.md §9): charge 25,
+            // pay back 50 -- a PROFIT of 500. The clamp leaves the charge at 25 (the scarcity signal survives
+            // on the way out) but caps the pay-back at round(25 * 1.0 * 0.7) = 18, not 50.
+            Market rt = NewMarket(0);
+            rt.StartVisit(1, 0, 0);
+            MarketItem rtIron = rt.Find("Iron");
+            Equal(20, rtIron.Stock, "Iron starts at its target stock, 20");
+            DealResult bought = rt.Settle(new Deal
+            {
+                VisitId = 1,
+                Nonce = 1,
+                Wanted = new DealLine { Prefab = "Iron", Count = 20, UnitPriceSeen = rt.Charge(rtIron) },
+            }, 10000, 0);
+            Check(bought.Ok, "buying the whole shelf in one deal succeeds");
+            int spent = -bought.CoinsDelta;
+            Equal(500, spent, "20 Iron at the full-shelf charge of 25 is 500 coins spent");
+            Equal(0, rtIron.Stock, "the shelf is now empty");
+            DealResult soldBack = rt.Settle(new Deal
+            {
+                VisitId = 1,
+                Nonce = 2,
+                Offered = new List<DealLine> { new DealLine { Prefab = "Iron", Count = 20, UnitPriceSeen = rt.Pays(rtIron) } },
+            }, 0, 0);
+            Check(soldBack.Ok, "selling the same 20 back in one deal succeeds");
+            int receivedBack = soldBack.CoinsDelta;
+            Equal(360, receivedBack, "he pays round(25 * 1.0 * 0.7) = 18 a unit clamped, 18 * 20 = 360");
+            Check(receivedBack < spent, "a real LOSS on the round trip, not merely break-even: the pump is dead");
+
+            // (2) A Ware flooded to its MAX (not merely back to target) pays the ordinary, unchanged
+            // number: the clamp only bites above a 1.0 multiplier and never touches the flooded side.
+            Equal(12, Market.PaysFor(25, 20, 60, EntryKind.Ware, fma),
+                  "Iron flooded to its 60 max: mult 0.68078, round(25 * 0.68078 * 0.7) = 12, clamp or not");
+            Equal(Market.PaysFor(25, 20, 60, noFma), Market.PaysFor(25, 20, 60, EntryKind.Ware, fma),
+                  "below a 1.0 multiplier the clamped and legacy numbers agree exactly");
+
+            // (3) PriceFor -- what he CHARGES -- still reaches the full 3.0x ceiling on an empty Ware
+            // shelf: the Act touches only what he pays, never what he asks.
+            Equal(300, Market.PriceFor(100, 100, 1, fma), "an empty shelf still charges the 3x ceiling, Act on");
+            Equal(300, Market.PriceFor(100, 100, 1, noFma), "and the same with the Act off: PriceFor never changed");
+
+            // (4) A real Want -- he never sells it back, so there is no round trip to protect it from --
+            // pays the unclamped amount at scarce stock, Act on or off alike.
+            Equal(23, Market.PaysFor(22, 30, 10, EntryKind.Want, fma),
+                  "IronScrap (a Want) scarce at stock 10 of 30: mult 1.4689, round(22 * 1.4689 * 0.7) = 23, unclamped");
+            Equal(Market.PaysFor(22, 30, 10, noFma), Market.PaysFor(22, 30, 10, EntryKind.Want, fma),
+                  "a Want pays the same whether the Act is on or off");
+
+            // (5) With the rule off, the old exploitable number returns exactly -- an owner who wants the
+            // pre-2026-09-07 behaviour on a private server can still have it.
+            Equal(50, Market.PaysFor(25, 20, 0, EntryKind.Ware, noFma),
+                  "Act off: an empty Iron shelf pays the old, unclamped 50 -- the exact exploit number");
+            Equal(50, Market.PaysFor(25, 20, 0, noFma), "and the legacy 4-argument overload still agrees: no clamp, ever");
+
+            // (6) At a multiplier of exactly 1.0 the clamp has nothing to do: min(1.0, 1.0) is 1.0.
+            Equal(1.0, Market.MultiplierFor(20, 20, fma), "target stock is exactly a 1.0 multiplier");
+            Equal(Market.PaysFor(25, 20, 20, noFma), Market.PaysFor(25, 20, 20, EntryKind.Ware, fma),
+                  "so at target stock a Ware pays the identical number clamped or not");
+
+            // (7) MarketRules never crosses EncodeState/ApplyState or the sidecar: Core/Sidecar.cs has no
+            // Rules row at all, and the director rebuilds Rules from Server.* config fresh every boot
+            // through ModConfig.FillMarketRules -- ServerSync, not the world save, is what carries a changed
+            // FairMarketAct to a rejoining client. Checked by inspection; nothing to round-trip. Prove it
+            // stays that way: the encoded state is identical whichever way the rule is set.
+            Market ruleOnMarket = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), MarketRules.Default, 0);
+            Market ruleOffMarket = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), new MarketRules { FairMarketAct = false }, 0);
+            Equal(ruleOnMarket.EncodeState(), ruleOffMarket.EncodeState(),
+                  "EncodeState never mentions Rules, so FairMarketAct cannot leak into the sidecar");
+
+            Section("Market: the purse carry is measured on the GROSS (2026-09-07)");
+
+            // `Takings` is the NET, so a visit where players sold him as much as they bought carried
+            // NOTHING forward -- and that is exactly the supplying server the catalogue was written for.
+            // Over twenty simulated visits the carry cap engaged 19 times for a shopping server and 0
+            // times for a selling one (docs/ECONOMY-SIM.md, "what looks off" 4).
+            var carryProblems = new List<string>();
+            Market carry = new Market(Catalogue.Parse(Catalogue.DefaultLine, carryProblems), MarketRules.Default, 0);
+            carry.StartVisit(1, 0, 0);
+            Equal(0, carry.Coined, "a fresh visit has taken nothing in");
+
+            int purse0 = carry.Purse;
+            // He SELLS the player 2 Iron: coins come in.
+            MarketSnapshot cs = carry.Snapshot();
+            int ironPrice = cs.Find("Iron").Buy;
+            DealResult cbuy = carry.Settle(new Deal { VisitId = 1, Nonce = 1,
+                Wanted = new DealLine { Prefab = "Iron", Count = 2, UnitPriceSeen = ironPrice } }, 100000, 0);
+            Check(cbuy.Ok, "the player buys 2 Iron");
+            Equal(2 * ironPrice, carry.Coined, "the gross counts what he was paid");
+            Equal(2 * ironPrice, carry.Takings, "and with nothing paid out yet the net agrees");
+
+            // Now he BUYS goods back for about the same money: the net collapses, the gross does not.
+            int spentIn = carry.Coined;
+            MarketSnapshot cs2 = carry.Snapshot();
+            int woodPays = cs2.Find("Wood").Sell;
+            int woodCount = Math.Max(1, (2 * ironPrice) / Math.Max(1, woodPays));
+            DealResult csell = carry.Settle(new Deal { VisitId = 1, Nonce = 2,
+                Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = woodCount, UnitPriceSeen = woodPays } } }, 100000, 0);
+            Check(csell.Ok, "and sells him " + woodCount + " Wood back");
+            Equal(spentIn, carry.Coined, "the GROSS is unchanged by money going OUT -- that is the whole point");
+            Check(carry.Takings < spentIn, "while the net has fallen, which is what used to be carried");
+            Check(carry.Purse < purse0 + spentIn, "and the purse really did pay out");
+
+            // The row has to survive a restart or the carry silently resets to nothing.
+            var reload = new List<string>();
+            Market carried = new Market(Catalogue.Parse(Catalogue.DefaultLine, reload), MarketRules.Default, 0);
+            carried.ApplyState(carry.EncodeState(), reload);
+            Equal(0, reload.Count, "the market state with a coined row applies with no problems");
+            Equal(carry.Coined, carried.Coined, "and the gross survives the round trip through the sidecar");
+
+            carry.StartVisit(2, 0, carry.Coined);
+            Equal(0, carry.Coined, "a new visit starts the gross again at zero");
+
+            Section("Catalogue: the four rows that used to pay firewood rates (2026-09-07)");
+
+            // PaysFor's max(1, ...) swallows the whole curve below base 3, so RoundLog, FineWood,
+            // Feathers and LeatherScraps paid EXACTLY what firewood pays -- though fine wood is 31
+            // recipes and leather scraps 32 (docs/CATALOGUE.md 3).
+            var catProblems = new List<string>();
+            var entries = Catalogue.Parse(Catalogue.DefaultLine, catProblems);
+            Equal(0, catProblems.Count, "the catalogue still parses clean");
+            Market cm = new Market(entries, MarketRules.Default, 0);
+            cm.StartVisit(1, 0, 0);
+            foreach (string raised in new[] { "RoundLog", "FineWood", "Feathers", "LeatherScraps" })
+            {
+                MarketItem it = cm.Find(raised);
+                Check(it != null && it.Entry.BasePrice == 3, raised + " is base 3, not 2");
+                Check(cm.Pays(it) == 2, raised + " pays 2 at target stock, where it used to pay 1");
+            }
+            MarketItem firewood = cm.Find("Wood");
+            Equal(1, cm.Pays(firewood), "and firewood still pays 1, which is the joke");
+
         }
 
         private static void MarketConstructionTests()
@@ -2963,6 +3115,483 @@ namespace ValkyriesCargo.Tests
             Check(!double.IsNaN(none.Bearing), "a declined plan still carries a readable bearing");
             Check(none.Ok || Math.Abs(none.DescentY - (30f + FlightPlan.DropAltitude)) < 0.01f,
                   "and parks its descent waypoint at drop height, so nothing reads a 120 m altitude off a flight that is not flown");
+
+            Section("FlightPlan: the drop the pilot reports is bounded by the drop the server authored");
+
+            // The bird's ZDO is owned by the PILOT, so `VCargo_target` is a value a client writes. Before
+            // this bound, `Spawner.Tick` handed it to the visit untouched: a modified client could put
+            // the drop point -- and, with P5, Ingvar himself -- anywhere in the world. P11's authority
+            // audit found it; this is the check that stands between that key and the world.
+            const float ax = 120f, ay = 40f, az = -80f;
+
+            // The honest case, and the ONLY thing a legitimate client does: CargoFlight.Drop writes the
+            // authored point back with its y replaced by the terrain height under it.
+            Check(FlightPlan.DropAccepted(ax, ay - 18f, az, ax, ay, az),
+                  "the authored point with the ground height in its y is accepted");
+            Check(FlightPlan.DropAccepted(ax, ay, az, ax, ay, az),
+                  "and so is the authored point unchanged");
+
+            // The exploit itself.
+            Check(!FlightPlan.DropAccepted(5000f, ay, 5000f, ax, ay, az),
+                  "a drop on the other side of the world is refused");
+            Check(!FlightPlan.DropAccepted(ax + 20f, ay, az, ax, ay, az),
+                  "and so is one 20 m away, which is enough to put him through a wall");
+
+            // Each half of the bound proves itself: move only in XZ, then only in y.
+            Check(!FlightPlan.DropAccepted(ax, ay, az + FlightPlan.DropToleranceXZ + 0.5f, ax, ay, az),
+                  "just outside the horizontal tolerance is refused (the XZ half is live)");
+            Check(FlightPlan.DropAccepted(ax, ay, az + FlightPlan.DropToleranceXZ - 0.5f, ax, ay, az),
+                  "just inside it is accepted");
+            Check(!FlightPlan.DropAccepted(ax, ay + FlightPlan.DropToleranceY + 1f, az, ax, ay, az),
+                  "a drop 65 m above the authored altitude is refused (the vertical half is live)");
+            Check(FlightPlan.DropAccepted(ax, ay - FlightPlan.DropToleranceY + 1f, az, ax, ay, az),
+                  "63 m below it -- a real mountainside -- is accepted");
+
+            // The tolerance is a RADIUS, not a box: 6 m on each axis is 8.49 m away.
+            Check(!FlightPlan.DropAccepted(ax + 6f, ay, az + 6f, ax, ay, az),
+                  "6 m on each axis is 8.49 m out and refused: the horizontal bound is a circle, not a square");
+
+            // A float is three keystrokes to forge, and every comparison against NaN is false, so the
+            // natural spelling of this check (`d > tolerance`) ACCEPTS a NaN and writes it into the
+            // session row, the wire and the sidecar.
+            Check(!FlightPlan.DropAccepted(float.NaN, ay, az, ax, ay, az), "a NaN x is refused");
+            Check(!FlightPlan.DropAccepted(ax, float.NaN, az, ax, ay, az), "a NaN y is refused");
+            Check(!FlightPlan.DropAccepted(ax, ay, float.NaN, ax, ay, az), "a NaN z is refused");
+            Check(!FlightPlan.DropAccepted(float.PositiveInfinity, ay, az, ax, ay, az), "an infinite x is refused");
+            Check(!FlightPlan.DropAccepted(ax, float.NegativeInfinity, az, ax, ay, az), "an infinite y is refused");
+        }
+
+        private static void MerchantPlanTests()
+        {
+            Section("MerchantPlan: the carry, and what ends it");
+
+            var s = MerchantPlan.Next(0, carried: true, grounded: false, distance: 40f, timeInState: 3f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 0 && !s.Changed && !s.Follow, "carried and still hanging: he stays in state 0 and does not walk");
+
+            // The bird cuts the link 10 m up. Landing on the state change rather than the link is
+            // what stops the arrival effect firing while he is still in the air.
+            s = MerchantPlan.Next(0, carried: false, grounded: false, distance: 14f, timeInState: 0.1f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 0 && !s.Changed, "link cut but still falling: still state 0, no landing yet");
+
+            s = MerchantPlan.Next(0, carried: false, grounded: true, distance: 14f, timeInState: 1f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 1 && s.Changed && s.Follow && !s.CallOut,
+                  "feet on the ground: state 1, he starts walking, and he does NOT call out yet");
+
+            Section("MerchantPlan: the approach, and the timeout that saves it");
+
+            s = MerchantPlan.Next(1, false, true, distance: 9f, timeInState: 4f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 1 && !s.Changed && s.Follow, "still too far: keeps walking");
+
+            s = MerchantPlan.Next(1, false, true, distance: 3.4f, timeInState: 4f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 2 && s.Changed && s.CallOut, "inside ApproachDistance: state 2 and the callout fires");
+
+            s = MerchantPlan.Next(1, false, true, distance: 60f, timeInState: 20f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 2 && s.Changed && s.CallOut,
+                  "unreachable player, 20 s gone: he stops and calls out anyway rather than walking into a wall forever");
+
+            s = MerchantPlan.Next(1, false, true, distance: 60f, timeInState: 19.9f, farSeconds: 0f, approachDistance: 3.5f);
+            Check(s.State == 1 && !s.CallOut, "and not one tick before 20 s");
+
+            // The callout is once per visit: state 2 never re-enters itself.
+            int callouts = 0;
+            int st = 1; float t = 0f;
+            for (int i = 0; i < 400; i++)
+            {
+                var step = MerchantPlan.Next(st, false, true, 2f, t, 0f, 3.5f);
+                if (step.CallOut) callouts++;
+                t = step.Changed ? 0f : t + 0.05f;
+                st = step.State;
+            }
+            Check(callouts == 1, $"400 ticks beside the player produce exactly one callout (got {callouts})");
+
+            Section("MerchantPlan: the trading leash");
+
+            s = MerchantPlan.Next(2, false, true, distance: 13f, timeInState: 30f, farSeconds: 4.9f, approachDistance: 3.5f);
+            Check(s.State == 2 && !s.Changed, "13 m for 4.9 s: he waits, he does not chase");
+
+            s = MerchantPlan.Next(2, false, true, distance: 13f, timeInState: 30f, farSeconds: 5f, approachDistance: 3.5f);
+            Check(s.State == 1 && s.Changed && s.Follow, "13 m for a full 5 s: he walks after them");
+
+            s = MerchantPlan.Next(2, false, true, distance: 11.9f, timeInState: 30f, farSeconds: 60f, approachDistance: 3.5f);
+            Check(s.State == 2, "inside 12 m, however long: he stays put (the distance gate is AND, not OR)");
+
+            // The timer itself: it must reset on the way in, or a player who steps out and back
+            // still sends him walking a minute later.
+            float far = 0f;
+            far = MerchantPlan.AccumulateFar(far, 20f, 1f);
+            far = MerchantPlan.AccumulateFar(far, 20f, 1f);
+            Check(Math.Abs(far - 2f) < 0.001f, "the far timer accumulates while he is outside the leash");
+            far = MerchantPlan.AccumulateFar(far, 5f, 1f);
+            Check(far == 0f, "and resets to zero the moment the player is back inside it");
+
+            Section("MerchantPlan: leaving is terminal, and the restart rule");
+
+            foreach (bool carried in new[] { true, false })
+                foreach (bool grounded in new[] { true, false })
+                {
+                    var leaving = MerchantPlan.Next(3, carried, grounded, 1f, 100f, 100f, 3.5f);
+                    if (leaving.State != 3 || leaving.Changed)
+                    { Check(false, "leaving was pulled back out of state 3"); return; }
+                }
+            Check(true, "nothing measured on the ground pulls him back out of leaving");
+
+            // The ZDOID trap: after a world reload every id in the save is renumbered, so a merchant
+            // restored in state 0 with a stale carrier id must NOT be pinned to whatever now holds
+            // that number. ShouldPin requires the carrier to have actually resolved.
+            Check(MerchantPlan.ShouldPin(0, carrierResolved: true), "state 0 with a live carrier: pin him to the talon");
+            Check(!MerchantPlan.ShouldPin(0, carrierResolved: false),
+                  "state 0 with a carrier id that resolves to nothing (a restart renumbered it): do NOT pin");
+            Check(!MerchantPlan.ShouldPin(1, carrierResolved: true), "and never pin once he is on his feet");
+
+            Section("VisitSession.VisitIdOf: the boot sweep's peek (PR #15's review)");
+
+            // The bug this exists to stop: at boot a restored row is NOT adopted yet, so the session
+            // is inactive and its VisitId is 0. A sweep on that 0 destroys the merchant of the visit
+            // that is about to resume.
+            var vsPeek = new VisitSession();
+            vsPeek.Begin(41, 700L, "Pilot", 5f, 6f, 7f, 1.0, 300f, 800, 12345);
+            string savedRow = vsPeek.EncodeSessionRow();
+            Check(VisitSession.VisitIdOf(savedRow) == 41,
+                  "the visit id is readable from a saved session row without adopting it");
+
+            var fresh = new VisitSession();
+            Check(!fresh.Active && fresh.VisitId == 0,
+                  "and a session that has not adopted that row yet still reads Active=false, VisitId=0 (which is the trap)");
+
+            Check(VisitSession.VisitIdOf(null) == 0, "no row: 0");
+            Check(VisitSession.VisitIdOf("") == 0, "empty row: 0");
+            Check(VisitSession.VisitIdOf("notasession\t41") == 0, "a row that is not a session row: 0");
+            Check(VisitSession.VisitIdOf("session\t41\ttoofewfields") == 0, "a truncated session row: 0");
+            Check(VisitSession.VisitIdOf(savedRow.Replace("session\t41", "session\tzzz")) == 0,
+                  "a session row whose id does not parse: 0");
+            Check(VisitSession.VisitIdOf(savedRow.Replace("session\t41", "session\t0")) == 0,
+                  "a session row claiming visit 0: 0, so it can never be mistaken for a live visit");
+            Check(VisitSession.VisitIdOf(savedRow.Replace("session\t41", "session\t-5")) == 0,
+                  "and a NEGATIVE id is 0 too (the id-0 case above passes with or without the guard, so it proves nothing alone)");
+            Check(VisitSession.VisitIdOf(savedRow + "\r") == 41, "a row with a trailing CR still parses (Windows sidecar)");
+
+        }
+
+        /// <summary>
+        /// Issue #16's centralisation: every ZDO key and RPC name lives once, in `Core/Keys.cs`. Read by
+        /// reflection rather than a hand-typed list of the 21 names, so a future addition to `Keys` is
+        /// covered automatically instead of silently skipped by a harness nobody remembered to update.
+        /// </summary>
+        private static void KeysTests()
+        {
+            Section("Keys (every VCargo_ name, in one place)");
+
+            FieldInfo[] fields = typeof(Keys)
+                .GetFields(BindingFlags.Public | BindingFlags.Static)
+                .Where(f => f.IsLiteral && !f.IsInitOnly && f.FieldType == typeof(string))
+                .ToArray();
+
+            Check(fields.Length >= 21, "at least the 21 names issue #16 inventoried are present (found " + fields.Length + ")");
+
+            var values = new List<string>();
+            foreach (FieldInfo f in fields)
+            {
+                string v = (string)f.GetRawConstantValue();
+                values.Add(v);
+                Check(!string.IsNullOrEmpty(v), "Keys." + f.Name + " is not empty");
+                Check(v.StartsWith("VCargo_", StringComparison.Ordinal),
+                      "Keys." + f.Name + " ('" + v + "') carries the VCargo_ prefix, not the old two-letter one");
+            }
+
+            var distinct = new HashSet<string>(values, StringComparer.Ordinal);
+            Equal(values.Count, distinct.Count,
+                  "no two Keys constants collide (" + values.Count + " names declared, " + distinct.Count + " distinct)");
+        }
+
+        // ---- BarrkBOT export (BARRKBOT_CONTRACT.md) --------------------------------------------
+
+        /// <summary>An accepted DealResult: buy (coins to Ingvar, items to the player) when coins is negative, sell the other way, 0 for a barter that nets out even.</summary>
+        private static DealResult AcceptedDeal(int coins, (string prefab, int count)[] added, (string prefab, int count)[] removed)
+        {
+            var r = new DealResult { Ok = true, DeliveryId = "w-1-1", Nonce = 1, CoinsDelta = coins };
+            foreach (var (prefab, count) in added ?? new (string, int)[0]) r.ItemsToAdd.Add(new DealLine { Prefab = prefab, Count = count, UnitPriceSeen = 1 });
+            foreach (var (prefab, count) in removed ?? new (string, int)[0]) r.ItemsToRemove.Add(new DealLine { Prefab = prefab, Count = count, UnitPriceSeen = 1 });
+            return r;
+        }
+
+        private static void TraderLedgerTests()
+        {
+            Section("TraderLedger (per-player totals for barrkbot_cargo_traders.json)");
+
+            TraderLedger l = new TraderLedger();
+            Equal(0, l.Count, "a fresh ledger has no rows");
+
+            l.Record("", "Nobody", AcceptedDeal(-10, new[] { ("Iron", 2) }, null));
+            l.Record(null, "Nobody", AcceptedDeal(-10, new[] { ("Iron", 2) }, null));
+            l.Record("steam1", "Don", null);
+            l.Record("steam1", "Don", DealResult.Refuse(1, DealReason.SoldOut));
+            Equal(0, l.Count, "an empty key, a null result and a refusal all record nothing");
+
+            // A buy: coins negative (spent), items added (bought).
+            l.Record("steam1", "Don", AcceptedDeal(-50, new[] { ("Iron", 2), ("Wood", 3) }, null));
+            Equal(1, l.Count, "the first accepted deal creates the row");
+            TraderRow don = l.Rows["steam1"];
+            Equal("Don", don.Name, "the display name is stored");
+            Equal(1, don.DealsSettled, "one deal settled");
+            Equal(50L, don.CoinsSpent, "CoinsDelta -50 is 50 coins spent");
+            Equal(0L, don.CoinsEarned, "and nothing earned");
+            Equal(5L, don.ItemsBought, "2 Iron + 3 Wood added = 5 items bought");
+            Equal(0L, don.ItemsSold, "nothing sold yet");
+
+            // A sell: coins positive (earned), items removed (sold).
+            l.Record("steam1", "Don", AcceptedDeal(20, null, new[] { ("DeerHide", 4) }));
+            Equal(2, don.DealsSettled, "a second deal settled");
+            Equal(50L, don.CoinsSpent, "spent is unchanged by a sale");
+            Equal(20L, don.CoinsEarned, "CoinsDelta +20 is 20 coins earned");
+            Equal(4L, don.ItemsSold, "4 DeerHide removed = 4 items sold");
+
+            // A barter that nets exactly zero: neither coins field moves, but the deal still counts.
+            l.Record("steam1", "Don", AcceptedDeal(0, new[] { ("Iron", 1) }, new[] { ("Wood", 25) }));
+            Equal(3, don.DealsSettled, "a zero-net barter still counts as a settled deal");
+            Equal(50L, don.CoinsSpent, "CoinsDelta 0 moves neither coins field");
+            Equal(20L, don.CoinsEarned, "same");
+            Equal(6L, don.ItemsBought, "but items still move: +1 bought");
+            Equal(29L, don.ItemsSold, "and +25 sold");
+
+            // A negative Count on a line is defensive-clamped, never subtracted.
+            var forged = new DealResult { Ok = true, DeliveryId = "w-1-2", Nonce = 2, CoinsDelta = -1 };
+            forged.ItemsToAdd.Add(new DealLine { Prefab = "Iron", Count = -99, UnitPriceSeen = 1 });
+            l.Record("steam1", "Don", forged);
+            Equal(6L, don.ItemsBought, "a negative line count contributes 0, never a negative amount");
+
+            // A second player gets a separate row; an empty new name does not overwrite the stored one.
+            l.Record("steam2", "Kyr", AcceptedDeal(-5, new[] { ("Wood", 1) }, null));
+            Equal(2, l.Count, "a second distinct player key is a second row");
+            l.Record("steam1", "", AcceptedDeal(-1, new[] { ("Wood", 1) }, null));
+            Equal("Don", l.Rows["steam1"].Name, "an empty display name never overwrites a real one");
+            l.Record("steam1", "Donatello", AcceptedDeal(-1, new[] { ("Wood", 1) }, null));
+            Equal("Donatello", l.Rows["steam1"].Name, "a real rename does");
+
+            l.Clear();
+            Equal(0, l.Count, "Clear forgets every row");
+        }
+
+        private static void VisitHistoryTests()
+        {
+            Section("VisitHistory (visits this session, for barrkbot_cargo_visits.json)");
+
+            DateTime t0 = new DateTime(2026, 9, 7, 12, 0, 0, DateTimeKind.Utc);
+            VisitHistory h = new VisitHistory(capacity: 3);
+            Equal(0, h.Count, "a fresh history has no rows");
+
+            h.Record(0, "Nobody", t0, t0, 10, 5, "timer");
+            h.Record(-1, "Nobody", t0, t0, 10, 5, "timer");
+            Equal(0, h.Count, "visit id 0 or negative is never a real visit and records nothing");
+
+            h.Record(1, "Don", t0, t0.AddSeconds(300), 300, 0, "timer");
+            Equal(1, h.Count, "a real visit records");
+            VisitRecord v1 = h.Rows[0];
+            Equal(1, v1.VisitId, "id");
+            Equal("Don", v1.PilotName, "pilot");
+            Equal(300.0, v1.DurationSeconds, "duration");
+            Equal(0, v1.Takings, "takings");
+            Equal("timer", v1.EndedReason, "reason");
+
+            h.Record(2, null, t0, t0, -50, -5, null);
+            VisitRecord v2 = h.Rows[1];
+            Equal(0.0, v2.DurationSeconds, "a negative duration is clamped to 0, never carried through as a negative number");
+            Equal(0, v2.Takings, "and so is a negative takings");
+            Equal("", v2.PilotName, "a null pilot name becomes empty, not null (so the JSON writer never has to null-check it)");
+            Equal("", v2.EndedReason, "same for a null reason");
+
+            // Oldest-first, and bounded: the 4th Record on a capacity-3 history evicts visit #1.
+            h.Record(3, "P3", t0, t0, 10, 1, "timer");
+            Equal(3, h.Count, "still at capacity");
+            h.Record(4, "P4", t0, t0, 10, 1, "timer");
+            Equal(3, h.Count, "capacity holds: the oldest was evicted, not appended past it");
+            Check(h.Rows[0].VisitId == 2, "visit #1 (the oldest) is gone; #2 is now the oldest");
+            Check(h.Rows[2].VisitId == 4, "and #4 (the newest) is last, oldest-first order preserved");
+
+            h.Clear();
+            Equal(0, h.Count, "Clear forgets every visit");
+        }
+
+        private static void BarrkRolloverTests()
+        {
+            Section("BarrkRollover (the v4 export's pagination and leaderboards)");
+
+            // ---- Paginate ---------------------------------------------------------------------
+            List<List<int>> emptyParts = BarrkRollover.Paginate(new List<int>(), 2600);
+            Equal(1, emptyParts.Count, "an empty roster still writes one part");
+            Equal(0, emptyParts[0].Count, "and that part is empty");
+            List<List<int>> nullParts = BarrkRollover.Paginate(null, 2600);
+            Equal(1, nullParts.Count, "null rowWidths is treated the same as empty, not a throw");
+            Equal(0, nullParts[0].Count, "and that part is empty too");
+
+            // The exact boundary: two 1000-char rows sum to exactly the 2000 budget and MUST share a
+            // part (the contract's own "> cap", not ">="); the third pushes a new one.
+            List<List<int>> exact = BarrkRollover.Paginate(new List<int> { 1000, 1000, 1000 }, 2000);
+            Equal(2, exact.Count, "1000+1000 fits the 2000 budget exactly; the third row needs a new part");
+            CollectionsEqual(new List<string> { "0", "1" }, IndicesAsStrings(exact[0]), "part 1 holds rows 0 and 1");
+            CollectionsEqual(new List<string> { "2" }, IndicesAsStrings(exact[1]), "part 2 holds row 2 alone");
+
+            List<List<int>> oneOver = BarrkRollover.Paginate(new List<int> { 1000, 1001 }, 2000);
+            Equal(2, oneOver.Count, "one character over the budget still forces a new part");
+
+            // A row wider than the whole budget is never dropped and never merged with a neighbour.
+            List<List<int>> oversized = BarrkRollover.Paginate(new List<int> { 5000, 100 }, 2600);
+            Equal(2, oversized.Count, "an oversized row still gets a part of its own");
+            CollectionsEqual(new List<string> { "0" }, IndicesAsStrings(oversized[0]), "alone in the first part");
+            CollectionsEqual(new List<string> { "1" }, IndicesAsStrings(oversized[1]), "the next row starts the next part, not appended to the oversized one");
+
+            // Every index appears exactly once, across however many parts, in order -- the property
+            // that makes the split safe: nothing is lost, nothing is duplicated.
+            List<int> widths = new List<int> { 900, 900, 900, 900, 900, 900, 900 };
+            List<List<int>> many = BarrkRollover.Paginate(widths, 2600);
+            List<int> seen = new List<int>();
+            foreach (List<int> part in many) seen.AddRange(part);
+            CollectionsEqual(new List<string> { "0", "1", "2", "3", "4", "5", "6" }, IndicesAsStrings(seen), "every row appears exactly once, in order, across all parts");
+
+            // ---- TopN ---------------------------------------------------------------------------
+            List<LeaderEntry> candidates = new List<LeaderEntry>
+            {
+                new LeaderEntry { Credit = "A", Value = 10 },
+                new LeaderEntry { Credit = "B", Value = 30 },
+                new LeaderEntry { Credit = "C", Value = 20 },
+                new LeaderEntry { Credit = "D", Value = 0 },
+                new LeaderEntry { Credit = "E", Value = -5 },
+                new LeaderEntry { Credit = "F", Value = double.NaN },
+                new LeaderEntry { Credit = "G", Value = double.PositiveInfinity },
+                null,
+            };
+            List<LeaderEntry> top = BarrkRollover.TopN(candidates, 3);
+            Equal(3, top.Count, "top 3 of 8, after exclusions");
+            Check(top[0].Credit == "B" && top[1].Credit == "C" && top[2].Credit == "A", "highest first: B (30), C (20), A (10)");
+            Check(top.TrueForAll(e => e.Credit != "D" && e.Credit != "E" && e.Credit != "F" && e.Credit != "G"),
+                  "zero, negative, NaN and infinite values are excluded -- 'unmeasured', never a false last place");
+
+            // Isolated from the top-3 cutoff above (there D's rank-4 finish would hide a broken filter
+            // just as well as a correct one): a roster of ONLY unrankable values must come back empty.
+            List<LeaderEntry> onlyExcluded = new List<LeaderEntry>
+            {
+                new LeaderEntry { Credit = "D", Value = 0 },
+                new LeaderEntry { Credit = "E", Value = -5 },
+                new LeaderEntry { Credit = "F", Value = double.NaN },
+                new LeaderEntry { Credit = "G", Value = double.PositiveInfinity },
+            };
+            Equal(0, BarrkRollover.TopN(onlyExcluded, 3).Count, "a roster with nothing rankable comes back empty, not padded with zeroes or NaNs");
+
+            List<LeaderEntry> ties = new List<LeaderEntry>
+            {
+                new LeaderEntry { Credit = "First", Value = 10 },
+                new LeaderEntry { Credit = "Second", Value = 10 },
+                new LeaderEntry { Credit = "Third", Value = 10 },
+            };
+            List<LeaderEntry> tieTop = BarrkRollover.TopN(ties, 2);
+            Check(tieTop[0].Credit == "First" && tieTop[1].Credit == "Second", "a genuine tie keeps the input's own order (a stable sort), not an arbitrary one");
+
+            Equal(0, BarrkRollover.TopN(candidates, 0).Count, "n=0 asks for nothing and gets nothing");
+            Equal(0, BarrkRollover.TopN(null, 3).Count, "a null candidate list is empty, not a throw");
+            Equal(2, BarrkRollover.TopN(new List<LeaderEntry> { new LeaderEntry { Credit = "Only1", Value = 1 }, new LeaderEntry { Credit = "Only2", Value = 2 } }, 5).Count,
+                  "fewer candidates than n returns all of them, not padded");
+        }
+
+        private static List<string> IndicesAsStrings(IEnumerable<int> indices)
+        {
+            List<string> s = new List<string>();
+            foreach (int i in indices) s.Add(i.ToString());
+            return s;
+        }
+
+        private static void BarrkExportTests()
+        {
+            Section("BarrkExport (the payload shaping BarrkBotExport.cs renders to JSON)");
+
+            Equal(0, BarrkExport.MarketRows(null).Count, "a null market shapes to an empty row list, not a throw");
+            Equal(0, BarrkExport.TraderRows(null).Count, "same for a null trader ledger");
+            Equal(0, BarrkExport.VisitRows(null).Count, "and a null visit history");
+
+            Market m = NewMarket(0);
+            List<MarketExportRow> marketRows = BarrkExport.MarketRows(m);
+            Equal(m.Count, marketRows.Count, "one export row per catalogue entry");
+            MarketExportRow bronze = marketRows.Find(r => r.Prefab == "Bronze");
+            Check(bronze != null, "the shipped catalogue's Bronze row is present");
+            Equal("Ware", bronze.Kind, "Bronze is a Ware");
+            Check(bronze.Purchasable, "and so purchasable is true");
+            MarketItem bronzeItem = m.Find("Bronze");
+            Equal(m.Charge(bronzeItem), bronze.BuyPrice, "buy_price is exactly Market.Charge, not a re-derived copy that could disagree");
+            Equal(m.Pays(bronzeItem), bronze.SellPrice, "sell_price is exactly Market.Pays");
+            Equal(m.Trend(bronzeItem), bronze.Trend, "trend is exactly Market.Trend");
+            Equal(bronzeItem.Entry.TargetStock, bronze.TargetStock, "target_stock");
+            Equal(bronzeItem.Entry.MaxStock, bronze.MaxStock, "max_stock");
+
+            MarketExportRow wood = marketRows.Find(r => r.Prefab == "Wood");
+            Check(wood != null, "the shipped catalogue's Wood row is present");
+            Equal("Want", wood.Kind, "Wood is a Want");
+            Check(!wood.Purchasable, "so purchasable is false, even though it still carries a buy_price for the trend arrow");
+
+            TraderLedger tl = new TraderLedger();
+            tl.Record("steam1", "Don", AcceptedDeal(-30, new[] { ("Iron", 1) }, null));
+            tl.Record("steam2", "Kyr", AcceptedDeal(15, null, new[] { ("Wood", 5) }));
+            List<TraderExportRow> traderRows = BarrkExport.TraderRows(tl);
+            Equal(2, traderRows.Count, "one row per trading player");
+            TraderExportRow donRow = traderRows.Find(r => r.PlayerKey == "steam1");
+            Equal("Don", donRow.Name, "the key and the display name both carry through");
+            Equal(30L, donRow.CoinsSpent, "and the totals");
+            Equal(1L, donRow.DealsSettled, "");
+
+            DateTime t0 = new DateTime(2026, 9, 7, 12, 0, 0, DateTimeKind.Utc);
+            VisitHistory vh = new VisitHistory();
+            vh.Record(1, "Don", t0, t0.AddSeconds(300), 300, 10, "timer");
+            vh.Record(2, "Kyr", t0.AddSeconds(1000), t0.AddSeconds(1100), 100, 999, "dismissed by Kyr");
+            List<VisitExportRow> visitRows = BarrkExport.VisitRows(vh);
+            Equal(2, visitRows.Count, "one row per ended visit");
+            Equal(2, visitRows[0].VisitId, "NEWEST first: visit #2 (recorded second) leads, matching what a member asks about first");
+            Equal(1, visitRows[1].VisitId, "visit #1 is last");
+
+            // ---- leaders: ranked by a field selector, credited by the right subject -------------
+            List<LeaderEntry> byBuyPrice = BarrkExport.MarketLeaders(marketRows, r => r.BuyPrice);
+            Check(byBuyPrice.Count > 0, "at least one purchasable/priced row ranks");
+            for (int i = 1; i < byBuyPrice.Count; i++)
+                Check(byBuyPrice[i - 1].Value >= byBuyPrice[i].Value, "MarketLeaders is sorted highest first");
+
+            List<LeaderEntry> byCoinsSpent = BarrkExport.TraderLeaders(traderRows, r => r.CoinsSpent);
+            Check(byCoinsSpent.Count == 1 && byCoinsSpent[0].Credit == "Don" && byCoinsSpent[0].Value == 30.0,
+                  "TraderLeaders credits by name (Kyr spent 0, so only Don -- who has coins_spent > 0 -- ranks)");
+
+            List<LeaderEntry> byTakings = BarrkExport.VisitLeaders(visitRows, r => r.Takings);
+            Check(byTakings.Count == 2 && byTakings[0].Credit == "Kyr" && byTakings[1].Credit == "Don",
+                  "VisitLeaders credits by pilot, highest takings first (Kyr 999, Don 10)");
+        }
+
+        private static void SidecarThenMirrorTests()
+        {
+            Section("SidecarThenMirror (decision 4: the sidecar succeeds first, a mirror throw never reaches the caller)");
+
+            List<string> order = new List<string>();
+            bool ok = SidecarThenMirror.Run(
+                () => { order.Add("primary"); return true; },
+                () => { order.Add("mirror"); });
+            Check(ok, "a successful primary is reported back");
+            CollectionsEqual(new List<string> { "primary", "mirror" }, order, "primary runs to completion BEFORE the mirror is even started");
+
+            order.Clear();
+            bool okFalse = SidecarThenMirror.Run(
+                () => { order.Add("primary"); return false; },
+                () => { order.Add("mirror"); });
+            Check(!okFalse, "a failed primary is reported back as failure");
+            CollectionsEqual(new List<string> { "primary" }, order, "the mirror never runs when the primary did not succeed");
+
+            order.Clear();
+            bool okThrow = SidecarThenMirror.Run(
+                () => { order.Add("primary"); throw new InvalidOperationException("disk full"); },
+                () => { order.Add("mirror"); });
+            Check(!okThrow, "a primary that throws is treated as a failure, not propagated (a second line of defence on top of Store.Save's own promise never to throw)");
+            CollectionsEqual(new List<string> { "primary" }, order, "and the mirror still never runs");
+
+            Exception caught = null;
+            bool okMirrorThrows = SidecarThenMirror.Run(() => true, () => throw new InvalidOperationException("mirror bug"), ex => caught = ex);
+            Check(okMirrorThrows, "a mirror that throws does not change the primary's own (successful) result");
+            Check(caught != null && caught.Message == "mirror bug", "the exception reaches onMirrorFailed instead of the caller");
+
+            Check(SidecarThenMirror.Run(() => true, () => throw new InvalidOperationException("x"), null), "a null onMirrorFailed still swallows the mirror's throw rather than propagating it");
+            Check(!SidecarThenMirror.Run(null, () => { }), "a null primary is treated as failure, not a throw");
+            Check(SidecarThenMirror.Run(() => true, null), "a null mirror is simply skipped");
         }
     }
 
@@ -2979,6 +3608,8 @@ namespace ValkyriesCargo.Tests
         {
             onAnswer(_result);
         }
+
+
 
 
     }

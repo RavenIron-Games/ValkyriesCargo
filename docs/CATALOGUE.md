@@ -18,8 +18,11 @@ there is no `Silk`; `Flametal` is the *old* flametal (`$item_flametal_old`), the
 
 - **Anchors.** Vanilla gives four items a coin value that Haldor pays flat: Amber 5, Amber Pearl 10, Ruby 20, Silver
   Necklace 30. Ingvar pays `base × SpreadBuy` (0.7) at target stock, so their bases are set to `value / 0.7` rounded:
-  he pays Haldor's rate at target stock, more when he is short, less when he is flooded. Haldor's price is the floor a
-  player already has; Ingvar's job is to be better than that when it matters.
+  he matches Haldor's rate exactly at target stock. All four are Wares, so since the Fair Market Act (§5) he never
+  pays MORE than that rate, whether at target or short — only ever less, and only once a flooded shelf drags the
+  multiplier under 1.0. Before 2026-09-07 he outbid Haldor while short; that was also the round trip's door in
+  (§5), so it is closed now. Haldor's price is the floor a player already has walking in; Ingvar matches it, never
+  beats it, at target or scarcer.
 - **Everything else has no vanilla value.** Base prices follow the progression ladder (tin, copper, bronze, iron, silver,
   black metal, flametal) with refined bars above their ores, and within a tier by weight and rarity.
 - **Target stock** is what he "normally carries": roughly two to four stacks for commons, half a stack to a stack for
@@ -30,8 +33,10 @@ there is no `Silk`; `Flametal` is the *old* flametal (`$item_flametal_old`), the
 - **Non-teleportable metals are the point.** Ores and bars cannot go through portals; Ingvar lands at the base with the
   smelter, so selling him iron scrap is the one liquidation that never needs a boat.
 
-Price at any moment: `base × clamp((target / max(1, stock))^0.35, 0.4, 3.0)`; he pays 0.7 × that. Stock drifts back to
-target with a one-game-day half-life between visits. Purse 800 coins plus half of last visit's takings.
+Price at any moment: `base × clamp((target / max(1, stock))^0.35, 0.4, 3.0)`; he pays 0.7 × that — for a Ware, capped
+so the multiplier on this side never exceeds 1.0 (the Fair Market Act, §5): he can buy back below par when flooded,
+never above it when short. Stock drifts back to target with a one-game-day half-life between visits. Purse 800 coins
+plus half of last visit's takings.
 
 ---
 
@@ -180,7 +185,10 @@ uncompressed on every change.
 
 Every number here comes out of `Core/Market.cs` and is asserted by the harness (§6). The rounding rule: the charge is
 `base × multiplier` rounded once; what he pays is `base × multiplier × 0.7` rounded once, never the rounded charge
-times 0.7 (that squashes the spread on cheap goods); both never below 1.
+times 0.7 (that squashes the spread on cheap goods); both never below 1. **The Fair Market Act** (2026-09-07,
+`docs/DECISIONS-WUBARRK.md` §2): for a Ware, the multiplier on the pay side is additionally capped at 1.0 before
+the 0.7 is applied, so he never pays more than `base × 0.7` — the target-stock rate — for something he also sells.
+The charge side and every Want are untouched.
 
 - A player sells Ingvar scrap iron (base 22, target 30, max 90). At target he pays 15 a unit. A deal is priced as a
   whole at the price on the screen when it is confirmed (the `UnitPriceSeen` rule): fifty in one deal is `50 × 15 = 750`,
@@ -191,8 +199,11 @@ times 0.7 (that squashes the spread on cheap goods); both never below 1.
   `300 × (2/1)^0.35 = 382`: an empty shelf is priced as if one were left, so the 3.0 ceiling only ever binds on rows
   with a target of 24 or more (wood, stone, arrows). Two game-days later the stock is back to 2 and the price to 300;
   stock is whole units, there is no "1.5".
-- Amber (base 7, target 30): at target he pays 5, Haldor's rate. After someone dumps 60 he pays 3; when he is down to
-  10 he pays 7. Haldor never moves. That spread is the whole reason to walk to the merchant instead of the trader.
+- Amber (base 7, target 30, a Ware): at target he pays 5, Haldor's rate. After someone dumps 60 he pays 3. When he is
+  down to 10 the bare curve would ask `7 × 3^0.35 × 0.7 = 7.2 → 7`, more than Haldor — that was the round trip's door
+  in, since he sells Amber too (§9 of `docs/ECONOMY-SIM.md`). The Fair Market Act holds a Ware's buy-back at par, so
+  he still pays 5, not 7, however short he is. Haldor never moves. That spread is the whole reason to walk to the
+  merchant instead of the trader when the shelf is flooded — not, any more, when it is short.
 - One big deal beats a drip-feed in both directions (750 for fifty at once against 635 one at a time). That is the
   price of "the price you see is the price you pay"; it is bounded by his purse on one side and his stock on the other,
   and it is recorded as a decision in DESIGN §8.

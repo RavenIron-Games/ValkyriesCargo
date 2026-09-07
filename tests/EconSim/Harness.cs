@@ -141,8 +141,27 @@ namespace ValkyriesCargo.EconSim
 
         public static Catalogue DefaultCatalogue() => Catalogue.Parse(Catalogue.DefaultLine, null);
 
+        /// <summary>
+        /// The rules THIS MOD SHIPS, not `MarketRules.Default`. The two are not the same: the core's own
+        /// baseline keeps a round 800 purse so the harness's mechanics tests read against a fixed number,
+        /// while `Server.PurseCoins` ships 1500. This report exists to review the SHIPPED economy, and
+        /// running it on a purse nobody plays with would make finding 4 -- which is about the purse --
+        /// a review of the wrong number. Mirrored by hand from `Config/ModConfig.cs`, because EconSim
+        /// compiles Core alone and cannot reach BepInEx's config types.
+        /// </summary>
+        public static MarketRules Shipped
+        {
+            get
+            {
+                var r = MarketRules.Default;
+                r.PurseCoins = 1500;          // Server.PurseCoins
+                r.PurseCarryPercent = 50;     // Server.PurseCarryPercent, now measured on the GROSS
+                return r;
+            }
+        }
+
         public static Market NewMarket(double worldTime = 0) =>
-            new Market(DefaultCatalogue(), MarketRules.Default, worldTime, Salt);
+            new Market(DefaultCatalogue(), Shipped, worldTime, Salt);
 
         public static Market NewMarket(MarketRules rules, double worldTime = 0) =>
             new Market(DefaultCatalogue(), rules, worldTime, Salt);

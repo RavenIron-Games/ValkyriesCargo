@@ -127,9 +127,37 @@ public static class IngvarBundleBuilder
         mi.globalScale        = 1f;     // the FBX is already real-world metres; a second factor here
                                         // is the classic route to a 100x character
 
+        // ---- LANDMINE 6 -------------------------------------------------------------------
+        // `sharedMesh.bounds` on a SKINNED mesh is BIND-POSE data and it lies about the up-axis: this
+        // model's box puts its 1.36 m height on Z and only 0.49 m on Y. The BONES are converted, so he
+        // stands upright in game -- but every bounds-derived number is measured off an axis that was
+        // never his up, which is where a "0.244 m ground offset" for a 1.36 m character came from. It
+        // was half his WIDTH.
+        //
+        // Do not try to fix it here. `ModelImporter.bakeAxisConversion` was tried and only flipped the
+        // sign (the FBX header claims Y-up while the geometry does not, so there is nothing to convert),
+        // and a Blender re-export with `axis_up='Y'` changed nothing either. Both tried 2026-09-07; the
+        // round trip is fifteen minutes and it has already been spent twice.
+        //
+        // Nothing rotates the body. `Client/BodyLoader.cs` measures the POSED mesh instead
+        // (`SkinnedMeshRenderer.BakeMesh`), which is the only measurement that does not come back
+        // through that box, and sets `updateWhenOffscreen` because Unity culls by it too.
+
         var takes = mi.defaultClipAnimations;
         for (int i = 0; i < takes.Length; i++)
         {
+            // ---- LANDMINE 5 ---------------------------------------------------------------
+            // Blender's FBX exporter names every action "Armature|Clip", and `name` is what the
+            // clip asset is CALLED in the bundle. `IngvarBody` resolves its six clips BY NAME, so
+            // the prefix means all six lookups miss, all six weights stay 0, and Ingvar stands
+            // frozen -- with a bundle that passes every other gate: right size, right asset count,
+            // rig intact, six clips present. The first bake here shipped exactly that.
+            // It also silently defeats the loop table below, because `Looping.Contains` is matching
+            // against "Armature|Walk" and never hits. A non-looping idle freezes on its last frame
+            // after ten seconds. Strip first, then decide looping, in that order.
+            int bar = takes[i].name.LastIndexOf('|');
+            if (bar >= 0) takes[i].name = takes[i].name.Substring(bar + 1);
+
             takes[i].loopTime           = Looping.Contains(takes[i].name);
             takes[i].lockRootRotation   = true;
             takes[i].keepOriginalPositionY = true;
@@ -144,6 +172,22 @@ public static class IngvarBundleBuilder
                   $"tris={(smr != null && smr.sharedMesh != null ? smr.sharedMesh.triangles.Length / 3 : 0)}");
         if (smr == null)
             Debug.LogWarning("[ValkyriesCargo] no SkinnedMeshRenderer - the rig did not survive import.");
+
+        // Report the clips as they came OUT of the import, not as we asked for them: the name in
+        // the bundle and the loop flag are what `IngvarBody` and `BodyMotion` actually meet, and
+        // the lengths are what verify item 19 checks against models/README.md.
+        var clips = AssetDatabase.LoadAllAssetsAtPath(Fbx).OfType<AnimationClip>()
+                                 .Where(c => !c.name.StartsWith("__preview"))
+                                 .OrderBy(c => c.name).ToArray();
+        foreach (var c in clips)
+            Debug.Log($"[ValkyriesCargo] clip '{c.name}': {c.length:0.00}s, loop={c.isLooping}, frameRate={c.frameRate}");
+        var wrong = clips.Where(c => c.name.Contains("|")).Select(c => c.name).ToArray();
+        if (wrong.Length > 0)
+            Fail("clip names still carry the exporter's prefix (" + string.Join(", ", wrong) +
+                 "). IngvarBody resolves BY NAME and every lookup would miss - see landmine 5.");
+        foreach (var want in Looping)
+            if (!clips.Any(c => c.name == want && c.isLooping))
+                Debug.LogWarning($"[ValkyriesCargo] '{want}' is not looping - it will freeze on its last frame.");
         return true;
     }
 

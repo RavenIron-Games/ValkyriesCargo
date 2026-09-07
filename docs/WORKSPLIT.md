@@ -11,7 +11,7 @@
 | P1 | Contract files + demo (`Core/`, `Net/CargoRpc`) | done, PR #1 | — | — |
 | P2 | Market core: pricing, drift, purse, scheduler, visit clock, packet encoders; tests | done, PR #3 | P1 | — |
 | P3 | Comfort report + event registration + `cargo visit`; headless proof | code done, headless-proven; client proof pending | P2 | a client on an admin-listed account |
-| P4 | Authored flight: server creates the bird, pilot flies it; two-client proof | **Wu'barrk** (owner, 2026-09-06 night) | P3 (merged) | design 3.2; reconcile the event start: P3 starts it at dispatch, 3.2 says at the drop (`vc_placed`); the clock follows whichever is chosen |
+| P4 | Authored flight: server creates the bird, pilot flies it; two-client proof | **Wu'barrk** (owner, 2026-09-06 night) | P3 (merged) | design 3.2; reconcile the event start: P3 starts it at dispatch, 3.2 says at the drop (`VCargo_placed`); the clock follows whichever is chosen |
 | P5 | Merchant: carry pin, `InIntro`, follow, callout, immortal, dismissal, Odin vanish, restart sweep | **Wu'barrk** (with P4: the carry straddles both) | P4 | design 3.3, 3.6, 3.7; the Animator is his own (DESIGN §8) |
 | P6 | Deal wire server side: direct ZRpc, owed ledger, persistence (Cairn pattern) | code done, headless-proven (sidecar round trip); client proof pending | P1, P2 | — |
 | P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | **Don**: code done, off-game proven; screen proof pending | P1, P6 (merged), SharedUI (vendored, PR #2) | design 3.4; §2 below is the whole contract |
@@ -100,10 +100,10 @@ namespace RavenIron.ValkyriesCargo.Net
         public static bool IsDemo { get; }
         public static MarketSnapshot Market { get; }             // last published, parsed
         public static VisitSnapshot  Visit  { get; }
-        public static void Open(int visitId);                    // vc_open
-        public static void Close(int visitId);                   // vc_close
-        public static void Dismiss(int visitId);                 // vc_dismiss
-        public static void Send(Deal deal, Action<DealResult> onAnswer);   // vc_deal -> vc_dealt; a redelivered Ok is answered duplicate
+        public static void Open(int visitId);                    // VCargo_open
+        public static void Close(int visitId);                   // VCargo_close
+        public static void Dismiss(int visitId);                 // VCargo_dismiss
+        public static void Send(Deal deal, Action<DealResult> onAnswer);   // VCargo_deal -> VCargo_dealt; a redelivered Ok is answered duplicate
         public static event Action<MarketSnapshot> MarketChanged;          // fired by PublishMarket
         public static event Action<VisitSnapshot>  VisitChanged;
         public static void UseDemo(bool on);                     // no server: settle against DemoMarket.Default(), publish its snapshots
@@ -172,7 +172,7 @@ What the market-core review (2026-09-06) says the terminal must know:
 1. P4: decide where the clock starts (dispatch, as P3 does, or the drop, as design 3.2 says), then the server
    authors the bird and the merchant with owner = pilot, `Patch_Valkyrie_Awake`, `CargoFlight`; two-client proof.
 2. P5: carry pin and `InIntro`, the drop handoff, follow and callout, immortal, dismissal (Shift+E twice,
-   `vc_dismiss` is already on the wire), the Odin vanish by the effect rule, the restart sweep
+   `VCargo_dismiss` is already on the wire), the Odin vanish by the effect rule, the restart sweep
    (`GetAllZDOsWithPrefabIterative`; the director already resumes the session row).
 3. P8 (Unity side): bake the bundle with `IngvarBundleBuilder`, size gate, hand it over for embedding.
 4. The client proofs of everything merged, as they come naturally with a client in hand.
@@ -201,7 +201,7 @@ a shared session on a server both can reach.
 
 | Track B needs from A | when |
 |---|---|
-| the contract, the wire, `VisitSession` phases and `SetDrop`, `vc_dismiss`: all merged | now |
+| the contract, the wire, `VisitSession` phases and `SetDrop`, `VCargo_dismiss`: all merged | now |
 | a decision on where the clock starts, if B wants it moved to the drop (a §2-style PR on `VisitDirector`) | at P4 start |
 | `ICargoTerminal` implementation to open on the merchant | before B2's interaction step |
 | ~~`BodyLoader` to put the bundle on~~ **built** (a/p8-loader): drop the bake at `Assets\valkyriescargo_kit` (the csproj line is in, conditional) and `cargo body` reports it | now |

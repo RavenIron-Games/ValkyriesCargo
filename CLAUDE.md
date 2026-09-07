@@ -15,7 +15,8 @@ Three firsts for the family, each a recorded decision: ServerSync, a trade termi
 
 Design of record: `docs/DESIGN.md` (v3). One screen: `docs/TLDR.md`. Catalogue with every number's
 reason: `docs/CATALOGUE.md`. Plan and sibling-code map: `PLAN.md`. Review of the partner's v5 draft
-and the model: `docs/REVIEW-v5-2026-09-06.md`.
+and the model: `docs/REVIEW-v5-2026-09-06.md`. Track B's decision record, with the reasoning behind every
+row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ---
 
@@ -24,9 +25,9 @@ and the model: `docs/REVIEW-v5-2026-09-06.md`.
 **Main after P8 and P9, 2026-09-07. Builds clean (0 warnings), 1034/1034 off-game checks, packages
 (`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right layout).** What exists: the plugin entry, ServerSync
 vendored and armed, the config surface bound and locked, the `cargo` console, the catalogue with 72 defaults, the
-market and the scheduler, the event and the director, the deal wire, the world sidecar, the Cargo Terminal and the
-body loader. The flight is built (PR #8, merged 2026-09-07) and not yet flown; the merchant is not started, and
-no bundle is baked, so a visit authors a bird and nothing for it to carry. 1078/1078 checks. The paragraphs below are the history, each with the lines seen.
+market and the scheduler, the event and the director, the deal wire, the world sidecar, the Cargo Terminal, the
+body loader and the BarrkBOT export. The flight is built (PR #8, merged 2026-09-07) and not yet flown; the merchant is not started, and
+the bundle is baked and embedded (2026-09-07), so a visit authors a bird and nothing for it to carry. 1190/1190 checks. The paragraphs below are the history, each with the lines seen.
 
 **HEADLESS VERIFIED 2026-09-06 15:23 on CairnTest (dedicated, port 2466, world CairnTest, alongside
 Cairn.dll and RavenEye.dll):** within 20 s of launch the BepInEx log showed, in order,
@@ -52,7 +53,7 @@ calls any of it yet. `cargo status` now prints `EnvMan.m_dayLengthSec`, the day 
 compiled default is 1200, the scene is expected to say 1800, and that is UNVERIFIED until a client boots.
 
 **P3 eligibility and event, 2026-09-06 (branch `a/p3-eligibility-event`).** `Client/ComfortReporter.cs` writes
-`vc_rested`/`vc_comfort` on the local player's own ZDO every 2 s; `Server/CargoEvent.cs` + the
+`VCargo_rested`/`VCargo_comfort` on the local player's own ZDO every 2 s; `Server/CargoEvent.cs` + the
 `RandEventSystem.Awake` prefix register the vanilla event `valkyries_cargo` on every machine;
 `Server/VisitDirector.cs` (one tick a second where the world runs) reads every character ZDO into the pure
 `Scheduler`, starts the event for the pilot it picks, publishes `VisitState`/`MarketState`, mirrors the
@@ -66,7 +67,7 @@ server, where `Server/AdminGate.cs` (vanilla's `ZNet.IsAdmin`, fail closed) deci
 (13 = the 10 above, UIFocus's 2, our RandEventSystem.Awake prefix; the breakdown of the 10 was never checked
 against `Harmony.GetAllPatchedMethods()`), then
 `event 'valkyries_cargo' registered (20 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.`,
-then `role: dedicated server`, `routed RPCs registered for this session: vc_admin, vc_reply`, then
+then `role: dedicated server`, `routed RPCs registered for this session: VCargo_admin, VCargo_reply`, then
 `director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 800, roll every 60 s at 25%, first roll one interval from now; market state is NOT persisted yet (P6)`
 (**the scene's day length IS 1800 s**: read from the live EnvMan, so the drift half-life is right), then one
 interval later `roll: held: a random event is active (a raid, a storm, or a visit)` (Ragnarok's Wrath had a storm
@@ -75,9 +76,9 @@ only on change, so a quiet log after that line is the loop holding, not the loop
 report in `cargo status`, a forced visit, the banner, the timer ending a visit; all need a client (see "What to
 verify in-game"). CairnTest was in use by the owner for another mod at the time and was not touched.
 
-**P6 deal wire and persistence, 2026-09-06 (branch `a/p6-deal-wire`).** `Net/DealWire.cs` registers `vc_open`,
-`vc_close`, `vc_deal`, `vc_ack`, `vc_claim`, `vc_dismiss` on EACH peer's own ZRpc as it connects and answers
-`vc_dealt` on the same socket; `Net/CargoTransport.cs` is the client end (the real `ICargoTransport` behind
+**P6 deal wire and persistence, 2026-09-06 (branch `a/p6-deal-wire`).** `Net/DealWire.cs` registers `VCargo_open`,
+`VCargo_close`, `VCargo_deal`, `VCargo_ack`, `VCargo_claim`, `VCargo_dismiss` on EACH peer's own ZRpc as it connects and answers
+`VCargo_dealt` on the same socket; `Net/CargoTransport.cs` is the client end (the real `ICargoTransport` behind
 `CargoRpc`), `LocalTransport` the listen host's in-process one, `Deliveries` the redelivery path;
 `Client/DealApplier.cs` is the ONLY code that writes an inventory for a deal (removals first, then additions,
 by the item's shared name); `Client/InboxStore.cs` keeps the applied delivery ids in the config folder.
@@ -140,7 +141,11 @@ preview | walk | clip <Hello|Talk|Shrug|Nod> | clear`, and one line in `cargo st
 a replacement during the hand-back, a hitch through the blend-out, a clip shorter than the blend-in), nine model
 mutations caught between the two; a 131,072-byte stand-in dropped at `Assets\valkyriescargo_kit`
 embedded as `ValkyriesCargo.valkyriescargo_kit` and grew the DLL by exactly that much. **Not yet seen on a screen**:
-the body itself (items 19 and 20) — there is no baked bundle on this machine and nothing here has drawn a pixel.
+the body itself (items 19 and 20) — nothing here has drawn a pixel. **The bundle exists as of 2026-09-07**: baked
+from `models/ingvar.fbx` in Unity 6000.0.61f1 on Wu'barrk's Linux box (`tools/setup-ingvar-unity.sh`, the twin of
+the .ps1), 3,826,415 bytes, 2 assets, `SkinnedMeshRenderer=True, bones=24, tris=31112`, six clips named `Hello,
+Idle, Nod, Shrug, Talk, Walk` with `Idle/Talk/Walk` looping; embedding it takes the Debug DLL from 273,408 to
+4,100,096 bytes, which is the bundle plus the resource header and is the check that catches a stale copy.
 
 **P4 the authored flight, Wu'barrk, 2026-09-07 (PR #8, merged 1884fcd).** `Core/FlightPlan.cs` (pure, 39 checks) plans
 the flight inside the pilot's active block: a STRAIGHT approach along the seeded bearing, shrunk by 12 m steps until the
@@ -148,16 +153,47 @@ start fits with an 8 m margin, turned a quarter at a time when a bearing has no 
 line carrying the glide altitude, capped at three quarters of the run; `TurningRadius(v, w)` and `Reachable(...)`
 assert every waypoint is flyable at the shipped speed and turn rate (a pure pursuer cannot reach a point inside its own
 turning circle; the review's finding, kept as code). `Server/Spawner.cs` authors the bird's ZDO (`Valkyrie` prefab,
-`SetPrefab` explicitly because `CreateNewZDO` does not, non-persistent, owned by the PILOT, keys `vc_cargo`,
-`vc_target`, `vc_turn`, `vc_dropped`), watches `vc_dropped` once a second for the director, and reclaims bird and
+`SetPrefab` explicitly because `CreateNewZDO` does not, non-persistent, owned by the PILOT, keys `VCargo_cargo`,
+`VCargo_target`, `VCargo_turn`, `VCargo_dropped`), watches `VCargo_dropped` once a second for the director, and reclaims bird and
 merchant on `Clear`; `MerchantEnabled = false` until P5, so nothing but a bird is authored and the merged DLL is safe
 on a live server. `Patches/Patch_Valkyrie_Awake.cs` (prefix, `Priority.Low`, `__runOriginal`) skips vanilla `Awake`
-for a bird carrying `vc_cargo` (vanilla takes `m_instance` before its owner guard and teleports `Player.m_localPlayer`)
+for a bird carrying `VCargo_cargo` (vanilla takes `m_instance` before its owner guard and teleports `Player.m_localPlayer`)
 and adds `Client/CargoFlight.cs`, which flies vanilla's own `UpdateValkyrie` maths on the owner only, writes
 `ZDOVars.s_velHash` so every other screen dead-reckons a glide, and reads speed and turn rate from the new synced
 `Server.FlightSpeed` (8) and `Server.FlightTurnRate` (45), never the prefab's. Off-game: the geometry simulated by
 both sides (a 90 m start at 8 m/s drops at 11.7 m after 16.8 s; a 30 m start at 16.8 m after 13.6 s). **Not yet
 flown**: items 21 and 22.
+
+**The BarrkBOT export, Wu'barrk, 2026-09-07 (branch `b/barrkbot-export`).** `BARRKBOT_CONTRACT.md` (repo root) is
+the per-mod contract, on the BlightedHeart/Let It Grow template, against the authoritative
+`WindowsDEV/Discord-BarrkBOT/docs/MOD_EXPORT_CONTRACT.md` v4. Three files under
+`BepInEx/config/ValkyriesCargo/`: `barrkbot_cargo_market.json` (the live catalogue, keyed by prefab; the
+72-entry default catalogue measures to exactly 5 parts under the contract's 2,600-char row budget, `_2`
+through `_5`), `barrkbot_cargo_traders.json` (per player, keyed by platform id: coins spent/earned, deals
+settled, items bought/sold — new counters, `Core/TraderLedger.cs`, nothing accumulated these before),
+`barrkbot_cargo_visits.json` (one row per visit that has ended this session, newest first, `Core/VisitHistory.cs`).
+Both new ledgers are in-memory, reset per session, fed from `Server/VisitDirector.cs`'s existing `Settle`
+(a trader's row) and `End` (a visit's row) — no new hook into the deal wire or the event system. `Core/BarrkExport.cs`
+(PURE) shapes the rows; `Core/BarrkRollover.cs` (PURE) paginates by each row's REAL rendered JSON width
+(measured with the real serializer, never guessed) and ranks `<collection>_leaders` over the whole roster
+before a split, the v4 contract's "hard rule". `Server/BarrkBotExport.cs` renders through Newtonsoft.Json
+(decision 3, `docs/DECISIONS-WUBARRK.md`; `<Reference>` against `libs\Newtonsoft.Json.dll`, `Private=false`,
+runtime copy from the new manifest dependency `ValheimModding-JsonDotNET-13.0.4` — version confirmed live
+against Fatty's own shipped manifest, not guessed) and writes each file `.tmp`-then-rename. Decision 4 (the
+sidecar stays authoritative, the JSON is a mirror) is enforced, not just documented: `VisitDirector.Tick`
+runs a new `ExportCadenceSeconds` (60 s) timer alongside the existing save cadence — no new coroutine, house
+rule 2 — that calls `Core/SidecarThenMirror.Run`, which runs the sidecar's own `Flush` to completion first and
+starts the JSON export only if that succeeded; a throw inside the export is caught there AND a second time
+inside `BarrkBotExport.Write` itself (logged at most three times each). New config `Server.BarrkBotExport`
+(synced+locked, default true). Off-game: builds clean (net48, 0 warnings), 1190 checks (98 new: the rollover's
+exact-budget boundary, the ranking exclusions, the coins/items accounting, oldest-first eviction, newest-first
+ordering, and the ordering guarantee itself — each proven to fail without its fix, real mutation output kept
+in the PR). A standalone run of the real `Core/BarrkExport.cs` + `Core/BarrkRollover.cs` against Newtonsoft.Json
+(outside CoreTests, which stays dependency-free) produced real, well-formed sample output for both a fresh
+server and a populated one. **Not yet seen anywhere real**: nobody has installed this DLL on a dedicated
+server and watched `barrkbot_cargo_*.json` land on disk, and BarrkBOT itself has never read one of these
+files — shape-verified, not live-verified (the authoritative contract's own distinction). See "What to verify
+in-game" item 23.
 
 ---
 
@@ -187,8 +223,8 @@ minimal one; the runbook is `RagnaroksWrath\docs\HANDOFF.md`). Valheim locks the
 Console today: `cargo status | version | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] |
 deal buy|sell <prefab> [count] | claim | terminal demo|open|close | visit [player] | dismiss | reset | save`.
 `visit`, `dismiss`, `reset` and `save` are
-admin verbs: on a server or listen host they run in place; from a client they ride `vc_admin` to the server,
-where the public `ZNet.IsAdmin` (RavenEye's `AdminGate` shape, fail closed) decides and `vc_reply` prints the
+admin verbs: on a server or listen host they run in place; from a client they ride `VCargo_admin` to the server,
+where the public `ZNet.IsAdmin` (RavenEye's `AdminGate` shape, fail closed) decides and `VCargo_reply` prints the
 answer in the caller's console. `deal` is the terminal's deal without the terminal: it builds the same `Deal`,
 sends it through `CargoRpc` and applies the answer through `DealApplier`.
 
@@ -213,8 +249,14 @@ ValkyriesCargo/
   Core/Lines.cs              PURE: Ingvar's words (design 7); indexes cross the wire, never text
   Core/Sidecar.cs            PURE: the world file's format; routes rows to market, scheduler, session, ledger
   Core/OwedLedger.cs         PURE: deliveries the server still owes, by platform id, until acked
+  Core/TraderLedger.cs       PURE: per-player trade totals THIS SESSION, for BarrkBOT (BARRKBOT_CONTRACT.md)
+  Core/VisitHistory.cs       PURE: visits that have ended this session, newest first, for BarrkBOT
+  Core/BarrkRollover.cs      PURE: the BarrkBOT export's v4 rollover (real-width pagination) and leaderboard ranking
+  Core/BarrkExport.cs        PURE: the BarrkBOT export's payload shaping: Market/TraderLedger/VisitHistory -> rows
+  Core/SidecarThenMirror.cs  PURE: decision 4 proved off-game: the sidecar succeeds first, a mirror throw never reaches the caller
   Server/MarketStore.cs      the sidecar on disk: valkyriescargo_{worldUid}.dat, .tmp/.bak/.corrupt
-  Net/DealWire.cs            server end: vc_open/close/deal/ack/claim/dismiss on each peer's ZRpc; vc_dealt back
+  Net/DealWire.cs            server end: VCargo_open/close/deal/ack/claim/dismiss on each peer's ZRpc; VCargo_dealt back
+  Server/BarrkBotExport.cs   writes barrkbot_cargo_market/traders/visits.json under BepInEx/config/ValkyriesCargo/, from VisitDirector.Tick
   Net/CargoTransport.cs      client end (the real ICargoTransport), LocalTransport (listen host), Deliveries
   Client/DealApplier.cs      the ONLY inventory writer for a deal: CanApply, Apply, by shared item name
   Client/InboxStore.cs       the applied delivery ids on disk (config folder)
@@ -224,14 +266,14 @@ ValkyriesCargo/
   Client/BodyLoader.cs       the embedded bundle, once; the body swapped onto the merchant, additively
   Client/IngvarBody.cs       the driver: a PlayableGraph over the six clips; speed from displacement
   Core/FlightPlan.cs         PURE: the flight inside the active block; TurningRadius/Reachable (Wu'barrk, P4)
-  Server/Spawner.cs          authors the bird (and, from P5, the merchant) owned by the pilot; watches vc_dropped (Wu'barrk)
-  Client/CargoFlight.cs      the owner flies the bird from vc_target/vc_turn; writes s_velHash for the watchers (Wu'barrk)
+  Server/Spawner.cs          authors the bird (and, from P5, the merchant) owned by the pilot; watches VCargo_dropped (Wu'barrk)
+  Client/CargoFlight.cs      the owner flies the bird from VCargo_target/VCargo_turn; writes s_velHash for the watchers (Wu'barrk)
   Patches/Patch_Valkyrie_Awake.cs   prefix, Priority.Low: skips vanilla Awake for our bird only (the named exception)
   Server/VisitDirector.cs    where the world runs: gather ZDOs -> Scheduler -> event -> VisitState/MarketState
   Server/CargoEvent.cs       the vanilla RandomEvent `valkyries_cargo`: definition, registration, start, remaining
   Server/AdminGate.cs        vanilla's ZNet.IsAdmin(hostName), fail closed (RavenEye's shape)
-  Client/ComfortReporter.cs  vc_rested / vc_comfort on the local player's own ZDO, every 2 s
-  Net/AdminRpc.cs            vc_admin (client -> server) and vc_reply (server -> client) on the routed RPC
+  Client/ComfortReporter.cs  VCargo_rested / VCargo_comfort on the local player's own ZDO, every 2 s
+  Net/AdminRpc.cs            VCargo_admin (client -> server) and VCargo_reply (server -> client) on the routed RPC
   Patches/Patch_RandEventSystem_Awake.cs   prefix, Priority.Low, return true: registers the event
   Net/CargoRpc.cs            the client-side surface the terminal calls; the demo transport (PR #1)
   Client/Terminal/ICargoTerminal.cs   what the merchant calls; Track B implements it (PR #1)
@@ -267,8 +309,12 @@ Planned (design section 3; names are final, files do not exist yet):
    (`Client/IngvarBody.cs`; `Client/CargoFlight.cs` when it lands). The rule is about timers that outlive their object.
 3. **Cosmetics off the gameplay path.** Every patch body is its own try/catch, logging at most three
    times.
-4. **Never patch `EnvMan`. Never touch materials, textures or shaders.** Reading `EnvMan.IsDay()` is
-   fine; the material work for the custom body happens at build time in the bundle, not at runtime.
+4. **Never patch `EnvMan`. Never touch materials, textures or shaders** — with one exception, written
+   down 2026-09-07 the way rule 2's was. Reading `EnvMan.IsDay()` is fine. `Client/BodyLoader.cs` builds
+   ONE material at runtime: a COPY of the stand-in's own, with our albedo in it. It has to be at runtime
+   and cannot be done in the bundle, because a bundle baked in the Editor carries Unity's `Standard` and
+   Valheim does not light `Standard` at all. Nothing vanilla is mutated — the donor material is read and
+   never written — and the exception is exactly that one copy. `docs/knowledge-base/SKINNED-CHARACTER-BUNDLE-FACTS.md` §4.
 5. **Publicized assemblies are COMPILE-TIME ONLY.** Our files name no private member. Private fields
    reach patches only by `___injection`; private methods are patched, never called. `Libs/ServerSync.cs`
    reflects into a few; that is its file.
@@ -302,9 +348,10 @@ shape another mod has already found the hard way.
 |---|---|
 | `IMPLEMENTATIONS\MASTER_IMPLEMENTATIONS.md` | The index: every reusable system in every project, one line each, pointing at a per-project detail file. Its **READ FIRST** section is the moving-an-object rules and the traps that cost real player data. |
 | `IMPLEMENTATIONS\DvergrAllies.md` | **P5's ground truth.** A shipped mod that clones Dverger prefabs, tames them, makes them follow and overrides their `MonsterAI`. The exact de-hostility field list, `Character.Faction.Players`, the staggered re-apply, the `Tameable` retrofit. |
-| `IMPLEMENTATIONS\WingsoftheValkyrie.md` | Flight movement and a multiplayer VFX state sync over custom ZDO fields — the same shape as `vc_state`. |
+| `IMPLEMENTATIONS\WingsoftheValkyrie.md` | Flight movement and a multiplayer VFX state sync over custom ZDO fields — the same shape as `VCargo_state`. |
 | `IMPLEMENTATIONS\AwayFromHome.md`, `MistsofAvalor.md` | The bundle pipeline and the grave-relocation disaster. Already cited by `models\README.md`. |
 | `VALHEIM-API-REFERENCE\` | 13 files of decompiled API facts with line numbers. `09-DAMAGE-ZDO-MULTIPLAYER.md` is the ZDO and damage authority: who runs what, and a GOTCHAS list that is worth reading whole. |
+| `SKINNED-CHARACTER-BUNDLE-FACTS.md` | **P8's ground truth, written FROM this mod 2026-09-07.** The five ways a custom character out of an AssetBundle is silently wrong, each of which passes every gate a build script can check: the `Armature\|` clip prefix that breaks by-name lookup and the loop table together, stray source geometry that only shows as an 80-triangle discrepancy, `sharedMesh.bounds` being bind-pose data that lies about the up-axis, Unity's `Standard` shader that Valheim does not light, and a donor's emission colour left behind when its mask is cleared. Also the debug order that converges. |
 | `*-FACTS.md` | Per-topic findings: dedicated server, headless/empty server, ZDO wire limits, console routing, player identity, player attach. |
 
 ### Two corrections it forces on this repo
@@ -313,10 +360,10 @@ shape another mod has already found the hard way.
    opens with `m_uid.SetID(++ZDOID.m_loadID)`: every ZDO is renumbered every time the world is read
    off disk. The id is stable while the world stays loaded and meaningless the moment it does not,
    so the feature works all session and every key in it is orphaned by the next login. It cost
-   TortalPortal its favourites feature. **`Spawner.CarrierKey` (`vc_carrier`) writes the bird's
+   TortalPortal its favourites feature. **`Spawner.CarrierKey` (`VCargo_carrier`) writes the bird's
    `ZDOID` onto the merchant's PERSISTENT ZDO and is exposed to exactly this.** P5 owns the fix:
-   the carry link is session-only, so the restart sweep must clear `vc_carrier` (`ZDO.RemoveZDOID`
-   exists) and treat `vc_state` as the authority, never a surviving id.
+   the carry link is session-only, so the restart sweep must clear `VCargo_carrier` (`ZDO.RemoveZDOID`
+   exists) and treat `VCargo_state` as the authority, never a surviving id.
 
 2. **`Character.Damage` is a thin RPC sender, not where damage happens.** It runs on the ATTACKER's
    client, calls `FindWeakSpotIndex` and `InvokeRPC("RPC_Damage", hit)`, and nothing else — reading
@@ -356,7 +403,7 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
 | Deals | Direct peer `ZRpc`, server-validated, nonce ring, the prices the player saw; inventory touched only after the answer |
 | Departure | The Odin vanish (`Odin.m_despawn`), once per screen; 300 s event clock or Shift+E twice |
 | Price-change policy | Reconfirm (provisional; `Teardown` behind config) |
-| The round trip | OPEN (2026-09-07, from `docs/ECONOMY-SIM.md`): `MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1, so buying a shelf out and selling it back drains his purse; pay a Ware bought back at most par, or lower the multiplier. Owners decide before anyone trades |
+| The round trip | **The Fair Market Act (owner, 2026-09-07; `docs/DECISIONS-WUBARRK.md` §2).** The code fix, not the config fix: `Market.PaysFor` clamps a Ware's buy-back multiplier at 1.0, so he never pays more than `base × SpreadBuy` for something he sells; `PriceFor` (what he charges) and every `Want` are untouched. `MarketRules.FairMarketAct` / `Server.FairMarketAct`, synced+locked, default on |
 | 0.1 body | `Dverger`, tamed, following, immortal |
 | Console prefix / GUID / namespace | `cargo` / `com.raveniron.valkyriescargo` / `RavenIron.ValkyriesCargo` |
 
@@ -368,16 +415,43 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
 - **ServerSync broadcasts on change only.** No heartbeat. Client writes are rejected while locked unless
   the client is on `adminlist.txt`. Payloads under 10 000 bytes go uncompressed.
 - **Comfort never leaves the client** (`SE_Rested.CalculateComfortLevel` is local); the client will
-  write `vc_rested` / `vc_comfort` on its own character ZDO, which replicates because the client owns it.
+  write `VCargo_rested` / `VCargo_comfort` on its own character ZDO, which replicates because the client owns it.
 - **Objects are instantiated on a client only inside its active zone block**
   (`ZNetScene.InActiveArea`: `|zone − centre| ≤ m_activeArea − 1`, 64 m zones); outside it
   `RemoveObjects` destroys the instance and a non-persistent owned ZDO with it. The Valkyrie starts
-  ~90 m out, never 500.
+  ~90 m out, never 800.
+- **`ZoneSystem.m_activeArea` is 2, not the compiled default of 1** (read live, 2026-09-07). The block
+  is 3x3 zones - 192 m - so `FlightPlan`'s configured 90 m start survives whole and neither the shrink
+  nor the bearing turn fires in practice. Both still ship, because the value is an inspector field and
+  a scene may say otherwise; `Spawner` reads it at runtime and never assumes.
+- **The `Valkyrie` prefab overrides almost every field initialiser** (read live, 2026-09-07):
+  `m_speed` 20 (not 10), `m_turnRate` 20 (not 5), `m_startDistance` **800** (not 500), `m_startAltitude`
+  190 (not 500), `m_descentAltitude` 180, `m_startDescentDistance` 300, `m_attachOffset` (0, 0.30, 0.40)
+  (not (0,0,1)). `m_attachPoint` EXISTS: `'Attach'`, under `valkyrie2/Armature/.../r_foot` - the
+  merchant hangs from her right talon. Our flight uses none of vanilla's numbers except `m_dropHeight`;
+  speed and turn rate are `Server.FlightSpeed` / `FlightTurnRate`.
+- **`Odin.m_ttl` on the shipped prefab is 60, not the 300 the field initialiser says** (read live,
+  2026-09-07). Nothing reads it - the departure borrows only the `m_despawn` EffectList - but design 3.6
+  cited the 300 as the reason our visit is 300 s, and that reasoning was never true. **Never add the
+  `Odin` COMPONENT to the merchant**: he would delete himself a fifth of the way into the visit.
+  `m_despawn`'s one entry, `vfx_odin_despawn`, carries a `ZNetView`, so by the effect rule the owner
+  creates it and vanilla replicates it - one vanish per screen.
+- **The shipped `Dverger` has `NpcTalk`** (`randomTalkInterval` 30) and **spawns holding
+  `DvergerArbalest`** + `Dverger_melee` (read live, 2026-09-07). Both are why design 3.3's "NpcTalk
+  disabled if present" and `UnequipAllItems()` are load-bearing rather than precautionary. It has **no**
+  `Tameable`, so `MonsterAI.m_follow` (private, non-persisted) is re-established by us, never restored.
+- **`Character.InIntro()` zeroes velocity; it does NOT grant immunity.** Its caller sets
+  `m_maxAirAltitude` to the current height and zeroes the Rigidbody's linear and angular velocity, which
+  is exactly what a carried merchant needs and nothing more. Immortality is a separate patch, and it
+  belongs on `Character.RPC_Damage`, not `Character.Damage` - see the knowledge-base section.
 - **`ZRoutedRpc.instance` is null for the whole of plugin `Awake`** and is re-created on every world
   join; register routed handlers per session, direct `ZRpc` handlers on peer connect.
 - `EnvMan.IsDay()` is static. `Character.m_collider` is a `CapsuleCollider`. `Odin.m_despawn` and
-  `Odin.m_ttl` are public; 300 is the field initialiser, and the value on the `odin` prefab is UNCHECKED (PR #8
-  reports 60 from the prefab). `cargo prefab odin` decides it.
+  `Odin.m_ttl` are public, and **`m_ttl` on the shipped `odin` prefab is 60, not the 300 the field initialiser
+  says** (read off the prefab in the headless sandbox, PR #8; the earlier "UNCHECKED" here was stale). Nothing of
+  ours turns on it: the departure borrows the `m_despawn` EffectList and never the `Odin` COMPONENT, and the 300 s
+  our clock quotes is the event's `m_duration`, which was never Odin's timer. `cargo prefab odin` confirms it on a
+  live client (item 5).
 - **The flight** (read from the prefab and the decompile by Wu'barrk, PR #8): the shipped `Valkyrie` says speed 20,
   turn rate 20 and drop height 10 (compiled defaults 10, 5, 10); at 20 m/s and 20 deg/s the turning circle is 57 m,
   wider than the whole 76 m run, so ours flies at the synced `FlightSpeed` 8 / `FlightTurnRate` 45. `ZSyncTransform`'s
@@ -409,6 +483,37 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
   `playerName`, `baseValue` and `dead` (`ZDOVars`); its owner is the peer's uid.
 
 ---
+
+## INTEGRATED IN-GAME RUN, 2026-09-07 (all four branches merged, listen host, shadow client)
+
+The first time every branch ran together. What was seen, in the log, in order:
+
+```
+Valkyrie's Cargo v0.1.0 loaded - renderer=True, patches=17, catalogue=72 entries
+role: listen host (server + client)
+director up: ... purse 1500 ... sidecar valkyriescargo_2484912131.dat (82 rows loaded, a saved visit waits for its event)
+visit #2 RESUMED after a restart: pilot Wubarrk Dev, 03:16 left by the saved clock
+cargo merchant #2: awake as approaching, ours, body=Ingvar
+cargo merchant #2: trading (entered: gave up walking after 20 s) [callout]
+cargo merchant #2: approaching (entered: the player left: 51.35 m for 5.02 s) [following]
+cargo merchant #2: trading (entered: gave up walking after 20 s) [callout]
+visit #1 ended: timer; takings 0 coins, purse 1500, 5 clock republish(es), 0 owed deliveries
+visit #2: flight authored: start (...) at 154.5, descent (...) (50 m short), drop (...) at 34.5,
+          straight in 90 m out; bird ...:8284, Dverger ...:8285, both owned by the pilot
+```
+
+**`body=Ingvar`** -- his own body on the merchant, not the stand-in. The `MerchantPlan` state machine runs and its
+leash fires exactly as designed (12 m for 5 s; it saw 51.35 m for 5.02 s). A visit RESUMES across a restart off the
+sidecar. A visit ENDS on its timer, republishing the clock five times. `patches=17` is P4's plus P5's three.
+
+**It also found the bug that mattered most.** `MonsterAI.MakeTame()` opens with `m_character.SetTamed(true)`, and
+`BaseAI.m_character` is assigned in `BaseAI.Awake` -- which has not run when our `Humanoid.Awake` postfix adds the
+component. `Reassert` threw out of vanilla, and the catch in `Awake` turned that into `enabled = false`: **every
+visit P5 ever authored left a bare Dverger with nothing driving it.** No off-game check could have caught it.
+
+Still not seen end to end: the glide itself, the drop, the walk-up completing (he timed out at 20 s and called out
+from where he stood, which is the designed fallback, not a success), the terminal on a real visit, a trade, and the
+vanish. The two-client items cannot be run here at all.
 
 ## What to verify in-game
 
@@ -443,7 +548,7 @@ P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormT
 10. **The end:** after 300 s the server log shows `visit #1 ended: timer; takings 0 coins`, the banner
     "Ingvar has gone back to the mist" shows, `cargo status` shows `visit: none; last #1 ended: timer`.
 11. **`cargo dismiss`** ends it early with `ended: admin <name>`; a non-admin's `cargo visit` is answered
-    `not an admin` and the server log says `refused vc_admin visit from <name>`.
+    `not an admin` and the server log says `refused VCargo_admin visit from <name>`.
 12. **The gates:** a client that is not rested is refused `forced: <name> not eligible: not rested; online: ...`.
 
 P6, the wire, with a visit running (`cargo visit` first):
@@ -453,7 +558,7 @@ P6, the wire, with a visit running (`cargo visit` first):
     shows stock 18 and a higher price on EVERY machine. `cargo deal sell Wood 10` the other way.
 14. **The ledger:** `cargo status` on the server shows `owed ledger 0 row(s)` after the ack arrives; log out
     the instant after a deal's answer (before the ack), log back in: the server log shows
-    `vc_claim from <name>: redelivered 1 owed deal(s)` and the client shows `delivery ... applied` or, if the
+    `VCargo_claim from <name>: redelivered 1 owed deal(s)` and the client shows `delivery ... applied` or, if the
     inbox already had it, nothing twice.
 15. **The sidecar after deals:** the server's file carries the changed `stock` rows, `purse`, `visit 1`,
     `seq N`, the `session` row while the visit runs, `cool` rows after it; a restart mid-visit prints
@@ -474,11 +579,58 @@ P7, the terminal (a client, no server needed for the first item):
     first; Send him off twice ends the visit (`ended: dismissed by <name>`); Tab and M close it; walking away
     closes it only once P5 gives it a merchant.
 
-P8, the body (a client with a baked bundle embedded; none exists yet):
+**FIRST CLIENT RUN, 2026-09-07 03:00, Wu'barrk's Linux box** (a shadow copy of the client, BepInEx from the
+shadow server, a throwaway world, listen host). In order: the boot line with `renderer=True, patches=14` (item 2 --
+the 14th is P4's `Patch_Valkyrie_Awake`), `event 'valkyries_cargo' registered (19 events now)`, `role: listen host
+(server + client)` -- **the listen-host role had never been exercised** -- and `director up: ... day 1800 s
+(EnvMan.m_dayLengthSec) ... roll every 1500 s at 25% ... sidecar valkyriescargo_2484912131.dat (fresh world)`.
+Then `cargo status` answered with, among the rest: **`ZoneSystem.m_activeArea=2`** (item 6: the runtime value, NOT
+the compiled 1, and it is what `FlightPlan` clamps against), `catalogue: 72 entries (18 wares, 54 wants), 0
+problem(s)`, `30 events registered, ours=yes`, `config: this side is the source of truth, locked=True`,
+`my report: rested=no, comfort=1, written 2 s ago` (ComfortReporter is live), and `day length 1800 s` read off a
+CLIENT's EnvMan for the first time. Item 2 and item 6 are DONE.
+
+**Item 19 passed but for the bake; item 20 found three real defects, and all three are now fixed AND SEEN
+fixed.** `cargo body` reported `source embedded - loaded`, `bundle open, prefab 'ingvar' found`, `clips (6 of 6
+wanted): Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s` (exactly the bake's numbers)
+and `bones=24 (24 expected)`. **The `StandaloneWindows64` bundle loads on a LINUX client** -- that question is
+settled. `cargo body preview` then stood up a **pure white ellipsoid with Ingvar inside it**. Dumping the FBX from
+the Editor named all three:
+
+- **a stray `Icosphere`** -- a 2 m sphere, unparented, no material, 80 triangles, which is exactly the
+  31192-against-31112 the runtime reported. The white blob. **Fixed at source**: deleted in a Blender re-export.
+- **`mats=[Material_1/Standard/tex=NONE]`**: the albedo shipped in the bundle and nothing referenced it, so every
+  surface drew white. **Fixed at source**: the image datablock is renamed `ingvar_albedo`, which is the name
+  Unity's material import resolves against the PNG beside the model.
+- **`char1` bounds `Extents(0.47, 0.24, 0.68)`**: the height is on **Z**. The BONES are converted so he stands
+  upright, but `sharedMesh.bounds` is bind-pose data that axis conversion never touches, so every bounds-derived
+  number lies -- the "0.244 m ground offset" was half his WIDTH. **Not fixable in the bake**: both
+  `bakeAxisConversion` and a Blender re-export with `axis_up='Y'` were tried and change nothing. `BodyLoader`
+  measures the POSED mesh (`BakeMesh`) instead and sets `updateWhenOffscreen`, because Unity culls by that box too.
+
+Then two more that only a screen could find: a bundle baked in the Editor carries Unity's `Standard` and **Valheim
+does not light it** (a lit head on a flat black body), and swapping only the shader is not enough because
+`material.shader = x` keeps only the properties matching BY NAME. He now wears a COPY of the stand-in's own
+material (`DvergerBody`, `Custom/Creature`) with our albedo in it -- which made him glow blue head to foot, because
+the Dverger's glow is an emission colour gated by a mask, and clearing the donor's maps without the colour lights
+everything the mask held back.
+
+**Seen fixed on a screen, 2026-09-07**: the blob, the white, the black body and the blue glow are all gone and
+Ingvar stands textured and upright with his feet on the ground. Not yet seen: how he reads in daylight -- the last
+run was at midnight -- and the walk and one-shot clips. Item 20 stays open on those.
+
+
+P8, the body (a client with the baked bundle embedded; **the bundle exists as of 2026-09-07** -- baked on
+Wu'barrk's Linux box in Unity 6000.0.61f1, 3,826,415 bytes, and the Debug DLL grows 273,408 -> 4,100,096
+when it is embedded. Note it is a `StandaloneWindows64` bundle, which is right for the ship and means a
+LINUX client needs a Linux bake through `BodyLoader`'s loose-file path to run these two items):
 19. **`cargo body`** says `source embedded ('ValkyriesCargo.valkyriescargo_kit')`, `bundle open`, `prefab 'ingvar'
-    found`, six clips with the lengths from models/README.md (`Walk 4.21s, Idle 10.00s, Talk 5.17s, Hello 3.79s,
-    Shrug 2.00s, Nod 1.25s`), `SkinnedMeshRenderer=yes, bones=24, tris=31112`, and a **ground offset within a few
-    millimetres of 0** — anything else and the bake, not the loader, is what to look at (the console prints it as two
+    found`, six clips with the lengths Unity reported at the bake (`Walk 4.17s, Idle 10.00s, Talk 5.13s,
+    Hello 3.75s, Shrug 1.96s, Nod 1.25s`; models/README.md's earlier row was one 24 fps frame longer on
+    four of them, corrected 2026-09-07), `SkinnedMeshRenderer=yes, bones=24, tris=31112`, and a **bind-pose ground offset of about
+    0.244 m, which is CORRECT for this asset and is not used to place him** — it is measured off a box whose
+    axes are wrong, reported because a bake that comes out sideways shows up there first. The number that must be
+    near 0 is `cargo body preview`'s `lifted N m ... measured on the posed mesh` (the console prints it as two
     lines: `body: source embedded - ...` then `resource: 'ValkyriesCargo.valkyriescargo_kit' inside this DLL ...`). On a dedicated server the
     same verb answers `source none - client only; not loaded here` and says nothing about appearance.
 20. **`cargo body preview`** stands Ingvar 2.5 m in front of the player, facing them, feet ON the ground (not
@@ -503,6 +655,16 @@ P4, the flight (Wu'barrk's two-client proof; a visit on a server, the pilot's cl
     walking out of their own zone block makes the bird vanish and, within 5 s, the server log says `the bird's ZDO is
     gone and the merchant was never dropped; the visit continues on the ground`; `cargo dismiss` mid-flight reclaims
     the bird (`spawner: ...` lines, no orphan in the world); a real intro Valkyrie (a new character) is untouched.
+
+The BarrkBOT export (`BARRKBOT_CONTRACT.md`), on a dedicated server, `Server.BarrkBotExport` at its default on:
+23. **The files land**: within `VisitDirector.ExportCadenceSeconds` (60 s) of `director up`, `BepInEx/config/ValkyriesCargo/`
+    holds `barrkbot_cargo_market.json` through `_5` (the shipped catalogue's measured part count), `barrkbot_cargo_traders.json`
+    and `barrkbot_cargo_visits.json`, each valid JSON with a `generated_at` that keeps moving every cycle even with
+    nobody online. A deal (`cargo deal buy ...`) makes the buyer's row appear in `barrkbot_cargo_traders.json` on the
+    NEXT export cycle, not immediately -- the export is time-driven, not deal-driven. A visit ending (`cargo dismiss`
+    or the timer) adds a row to `barrkbot_cargo_visits.json` the same way. `Server.BarrkBotExport` set to false stops
+    all three files from updating (existing ones are left as they were, not deleted). BarrkBOT itself, pointed at this
+    server's `BepInEx/config`, answers a real question from the live files within its own 60 s sweep.
 
 ---
 
