@@ -287,18 +287,18 @@ owner overwrites next frame).
 
 ## The workspace knowledge base — read it BEFORE deriving anything
 
-`libs-Tools\` is the family's accumulated engine knowledge, written up from mods that shipped and
+`docs/knowledge-base/` (Wu'barrk's `libs-Tools\`) is the family's accumulated engine knowledge, written up from mods that shipped and
 broke in production. **This mod did not consult it until 2026-09-07 and paid for that once already**
 (see the two corrections below). Consult it before decompiling, and before designing any system whose
 shape another mod has already found the hard way.
 
-> **It lives on Wu'barrk's machine only** — `~/WubarrkCODING/libs-Tools/`, a sibling of this repo there,
-> and it is not in this repository or on Don's. It is Markdown, not binaries, so it *could* be shared;
-> until it is, the table below is a catalogue of what to ask him for, not a path to open. Anything from
-> it that this mod actually depends on gets copied into this repo as a quoted fact with its source
-> named — as the two corrections below are — so the code here never rests on a document Don cannot read.
+> **It is in this repository at `docs/knowledge-base/`** (decided by the owner 2026-09-07): a snapshot of
+> Wu'barrk's `~/WubarrkCODING/libs-Tools/` as of that day, 52 Markdown files, no binaries. His copy is the
+> source and updates arrive as PRs; the `VALHEIM-API-REFERENCE\` folder named below is NOT in the snapshot
+> yet. Anything this mod actually depends on is still copied into CLAUDE.md or DESIGN as a quoted fact with
+> its source named — as the two corrections below are — so the code never rests on an unread document.
 
-| What to ask for | What is in it |
+| Where (under `docs/knowledge-base/`) | What is in it |
 |---|---|
 | `IMPLEMENTATIONS\MASTER_IMPLEMENTATIONS.md` | The index: every reusable system in every project, one line each, pointing at a per-project detail file. Its **READ FIRST** section is the moving-an-object rules and the traps that cost real player data. |
 | `IMPLEMENTATIONS\DvergrAllies.md` | **P5's ground truth.** A shipped mod that clones Dverger prefabs, tames them, makes them follow and overrides their `MonsterAI`. The exact de-hostility field list, `Character.Faction.Players`, the staggered re-apply, the `Tameable` retrofit. |
