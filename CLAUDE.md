@@ -369,7 +369,12 @@ the four that were listed here (`Client/CargoMerchant.cs`, `Patch_Humanoid_Awake
    down 2026-09-07: a driver MonoBehaviour that lives and dies with its own GameObject and updates only itself
    (`Client/IngvarBody.cs`; `Client/CargoFlight.cs` when it lands). The rule is about timers that outlive their object.
 3. **Cosmetics off the gameplay path.** Every patch body is its own try/catch, logging at most three
-   times.
+   times. And every patch CLASS is applied on its own — **never a bare `PatchAll()`** (issue #31,
+   `Patching.cs`): a patch that fails to APPLY is logged by name, counted, printed by the boot line
+   (`patches N/M applied`) and by `cargo status`, and the mod runs degraded and says so. The one
+   exception is the vendored ServerSync's patch classes (the version gate and the config lock), whose
+   failure REFUSES the mod outright: nothing ticks, nothing registers, the console still answers.
+   The decision is pure (`Core/PatchLedger.cs`); widening the load-bearing set is the owner's call.
 4. **Never patch `EnvMan`. Never touch materials, textures or shaders** — with one exception, written
    down 2026-09-07 the way rule 2's was. Reading `EnvMan.IsDay()` is fine. `Client/BodyLoader.cs` builds
    ONE material at runtime: a COPY of the stand-in's own, with our albedo in it. It has to be at runtime
@@ -700,7 +705,7 @@ The client audit (`docs/CLIENT-AUDIT.md`, PR #11) fixed six defects on these pat
 section (c) lists what only a screen can settle.
 
 1. ~~**Boot line, dedicated server**~~ **DONE 2026-09-06** (see Status): the DLL sits in CairnTest's
-   `BepInEx\plugins\`; a headless boot shows the loaded line with `patches=10, catalogue=72 entries`,
+   `BepInEx\plugins\`; a headless boot shows the loaded line with `patches N/N applied, catalogue=72 entries` (N is the number of patch CLASSES since issue #31; the old `patches=10` counted methods),
    ServerSync's RPC registration, and `role: dedicated server`.
 2. **Boot line, client:** same line with `renderer=True`; `cargo status` answers in the console.
 3. **Version wall:** a client on another version (bump the csproj, rebuild, install on one side only) is
@@ -757,7 +762,7 @@ P7, the terminal (a client, no server needed for the first item):
     5 m from the merchant closes it (P5 is in, so this branch is live now).
 
 **FIRST CLIENT RUN, 2026-09-07 03:00, Wu'barrk's Linux box** (a shadow copy of the client, BepInEx from the
-shadow server, a throwaway world, listen host). In order: the boot line with `renderer=True, patches=14` (item 2 --
+shadow server, a throwaway world, listen host). In order: the boot line with `renderer=True, patches N/N applied` (item 2 --
 the 14th is P4's `Patch_Valkyrie_Awake`), `event 'valkyries_cargo' registered (19 events now)`, `role: listen host
 (server + client)` -- **the listen-host role had never been exercised** -- and `director up: ... day 1800 s
 (EnvMan.m_dayLengthSec) ... roll every 1500 s at 25% ... sidecar valkyriescargo_2484912131.dat (fresh world)`.
