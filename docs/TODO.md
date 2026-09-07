@@ -94,7 +94,10 @@ step 4).
       `v0.1.0-rc1`, byte-identical to the embedded copy (PR #27's note). Every re-bake: a new asset.
 - [ ] **The walk-up.** In the one live visit he `gave up walking after 20 s` and called out from the drop
       point (issue #23, release note). P5, his client, his to find before Don spends screen time on the
-      same wall.
+      same wall. *Part done, PR #25 merged 2026-09-07:* the Dverger's AI consume list (Coins on it) emptied
+      so he no longer walks to a coin stack and eats it, and the timeout now logs a diagnosis. *Still open:*
+      the cause itself — the audit's F5 (a flat 20 s budget and a 12 m leash that loop from 51 m) is the
+      standing hypothesis, and one run with the new diagnosis line answers it.
 - [ ] **Valheim 1.0 lands 2026-09-09.** P10a is his: fetch the 1.0 client and server
       (`tools/fetch-builds.sh`), decompile, `diff-engine` against the 244-row `docs/ENGINE-SURFACE.md`,
       update `docs/ENGINE-BASELINE.md`, check in the report under `docs/engine-sweeps/`, and report
@@ -106,7 +109,9 @@ step 4).
 - [ ] **Item 23, the export, live:** a visit on his dedicated server, `barrkbot_cargo_*.json` landing under
       `BepInEx/config/ValkyriesCargo/` once a minute, the log line pasted into `BARRKBOT_CONTRACT.md`
       ("shape-verified, not yet live-verified"), and BarrkBOT's scanner picking the files up.
-- [ ] **Truth pass on his files.** `README.md` still lists the deleted `PriceChangePolicy` row (line ~195)
+- [ ] **Truth pass on his files.** *First half done, PR #27 merged 2026-09-07:* the base 2 → 3 reason is
+      decision 8 in `docs/DECISIONS-WUBARRK.md`, and `docs/CATALOGUE.md` matches the code entry by entry.
+      *Still open, in flight on his branch:* `README.md` still lists the deleted `PriceChangePolicy` row (line ~195)
       and says "No custom body yet" (line ~39); `CHANGELOG.md` says P4 is in review (~228) and P5 and
       the bundle are not started (~230); `models/README.md` §2 names `BodyPrefab` where `CustomBody` is
       the switch and §6's stream-disposal note is wrong (`docs/HANDOFF-WUBARRK.md` §0 item 2); the
@@ -124,31 +129,28 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
 
 ## 3. Claude on Don's side — rebases, audits, docs
 
-- [ ] **`a/p11-shakedown` first.** Rebase onto main; resolve `Config/ModConfig.cs`, `Net/DealWire.cs`,
-      `Server/VisitDirector.cs`; rename my keys to `VCargo_` via `Core/Keys.cs`; finish
-      `docs/CONFIG-SHAKEDOWN.md` (the `ApproachDistance` row is live again with P5) and
-      `docs/TRUST-BOUNDARY.md`; open the PR carrying the `VCargo_admin` caller-identity fix.
-- [ ] **`a/p10b-probes`.** Rebase; resolve `tests/CoreTests/Program.cs`; fix the probe gap
-      (`docs/P10B-PROBE-GAP.md`: probe `Character.RPC_Damage`, not `Character.Damage`); add probes for the
-      P5 members now on main — `MonsterAI.MakeTame`, the `BaseAI.Awake` ordering that bit P5,
-      `Character.InIntro`, `Humanoid.Awake` — and for the loader's donor material (`DvergerBody`,
-      `Custom/Creature`); open the PR. Move the stray `ValkyriesCargo/EngineCheck.cs` out of the main
-      checkout first.
-- [ ] **`a/p10a-sweep`.** Most of it reached main through PR #20. Diff what remains, apply the four doc
-      corrections its client-vs-server report listed, open a small PR or delete the branch.
+- [x] **`a/p11-shakedown`.** DONE: PR #24 merged 2026-09-07 (the `VCargo_admin` caller fix, the dismiss
+      gate, three bounded paths, both documents finished against main, two DESIGN §8 rows, 1302 checks).
+- [x] **`a/p10b-probes`.** DONE: PR #28 merged 2026-09-07 (the `RPC_Damage` probe gap fixed; 19 facts with
+      the P5 members and the Awake ordering; `docs/ENGINE-PROBES.md`; 1423 checks). Still open from it:
+      **item 24**, the probes resolving on a real machine (Don's client or StormTest), and the ~45 probe
+      rows from `docs/AUDIT-P4P5-2026-09-07.md` §2 into the registry.
+- [x] **`a/p10a-sweep`.** DONE: everything on it was already on main through PR #20 (byte-identical tools
+      and reports; main's two engine docs newer); the four doc corrections applied by PR #26; branch deleted.
 - [x] **P11d, the adversarial audit of P4 and P5** against the real assembly. DONE 2026-09-07:
       `docs/AUDIT-P4P5-2026-09-07.md` (1 blocker, 5 bugs, 5 risks, 15 notes, ~45 probe rows for P10b, and
       the list of what was checked and found correct); findings posted to Wu'barrk as an issue. The probe
       rows go into P10b's registry after PR #28 merges.
-- [ ] **Download the bundle asset** from the v0.1.0-rc1 release into this machine's ignored `Assets/`
-      (owner's OK to download), so a build here carries Ingvar.
+- [x] **Download the bundle asset** from the v0.1.0-rc1 release into this machine's ignored `Assets/`.
+      DONE 2026-09-07 (owner's word): 3,845,930 bytes; a build here is 4,181,504 bytes with Ingvar in it.
+- [ ] **The audit's probe rows into P10b's registry** (`docs/AUDIT-P4P5-2026-09-07.md` §2), now that
+      PR #28 is in; and item 24 run on a real machine.
 - [ ] **After the proofs, if the screen shows it** (`docs/CLIENT-AUDIT.md` report-only findings): the game
       menu opening behind the terminal (finding 7, `Patch_Menu_Update`), the negative icon cache
       (finding 9), the full-pack deal check (finding 10, `CanApply`), `HasRenderer` as a cached field
       (finding 8).
-- [ ] **CLAUDE.md is this track's; his files are his.** The stale status paragraph ("not a custom body in
-      0.1", "the merchant is not started", "not yet flown"); the engine facts from the knowledge base and
-      his headless prefab reads; the P10a corrections; the proof lines as Don sends them. Both handoff
-      documents (`docs/HANDOFF-CLAUDE.md` §0, `docs/HANDOFF-WUBARRK.md` §0) re-cut to today.
-- [ ] **Housekeeping:** merge PR #17 on the word; answer issue #23; close #16 if he does not; the
-      release-time README status and CHANGELOG entry (`docs/RELEASE.md` step 4) when the proofs are in.
+- [x] **CLAUDE.md is this track's; his files are his.** DONE: PR #26 merged 2026-09-07 (the status
+      paragraphs true to the one live visit, 17 engine facts with their sources, the P10a corrections, both
+      handoffs and WORKSPLIT and TLDR re-cut). Still open: **the proof lines as Don sends them.**
+- [x] **Housekeeping:** PR #17 merged; issue #23 answered; #16 closed by him. Still open: the release-time
+      README status and CHANGELOG entry (`docs/RELEASE.md` step 4) when the proofs are in.
