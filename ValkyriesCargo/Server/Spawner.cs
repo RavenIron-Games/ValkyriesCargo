@@ -449,9 +449,14 @@ namespace RavenIron.ValkyriesCargo.Server
         /// end, nothing is "live" but whatever NEW visit may already have begun in the meantime, so the
         /// caller passes that visit's id, or 0 when none is running.
         ///
+        /// `when` names the occasion for the log line ("boot", "boot, after giving up on the carry",
+        /// "after visit #N") -- the caller knows why it is sweeping and D3
+        /// (docs/AUDIT-STORMTEST-2026-09-07.md §2) found that a hardcoded "restart sweep" printed on
+        /// every visit end, not just a restart, because the same walk backs both occasions.
+        ///
         /// Returns a line to log, or null when there was nothing to do.
         /// </summary>
-        public static string Sweep(int liveVisitId)
+        public static string Sweep(int liveVisitId, string when)
         {
             try
             {
@@ -486,7 +491,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     }
                 }
                 if (stranded == 0 && cleared == 0) return null;
-                return "restart sweep: " + stranded + " stranded merchant(s) destroyed" +
+                return when + " sweep: " + stranded + " stranded merchant(s) destroyed" +
                        (cleared > 0 ? ", " + cleared + " carry link(s) cleared (a restored ZDOID means nothing)" : "") +
                        "; prefab '" + bodyName + "' hash " + bodyHash;
             }
