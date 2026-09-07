@@ -105,6 +105,7 @@ namespace RavenIron.ValkyriesCargo.Net
                     // inventory refused loses it for good, and persisting the inbox id would make the
                     // redelivery a duplicate. This is the discipline Deliveries.Handle already keeps.
                     if (r.Ok && DealApplier.LastApplied == r.DeliveryId) { InboxStore.Save(CargoRpc.Inbox); AckNow(r.DeliveryId); }
+                    else if (r.Ok) CargoRpc.Inbox.Forget(r.DeliveryId);   // Send marked it before the pack refused; the redelivery must apply, not ack
                     return;
                 }
                 Unsolicited++;
@@ -153,6 +154,7 @@ namespace RavenIron.ValkyriesCargo.Net
             onAnswer(r);
             // Same rule as the remote path: the ledger keeps what the pack refused.
             if (r.Ok && DealApplier.LastApplied == r.DeliveryId) { InboxStore.Save(CargoRpc.Inbox); d.Ack(_key, r.DeliveryId); }
+            else if (r.Ok) CargoRpc.Inbox.Forget(r.DeliveryId);
         }
 
         /// <summary>The host's owed rows are applied in-process at session start, the way a claim would.</summary>
