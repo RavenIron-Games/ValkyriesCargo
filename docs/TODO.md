@@ -103,11 +103,41 @@ step 4).
       were trial-merged together on `main`: clean, 1571 checks. Ticks when #39/#41/#42 merge.
 - [x] **Hand over the bundle, every bake.** DONE 2026-09-07: `Assets/valkyriescargo_kit` attached to
       `v0.1.0-rc1`, byte-identical to the embedded copy (PR #27's note). Every re-bake: a new asset.
-- [ ] **The walk-up.** PR #25 merged (the coin-eating consume list; the timeout logs a diagnosis). **The cause
-      is fixed in PR #42 (F5):** a budget scaled from the distance at entry (`Clamp(d/1.5, 20, 90)`), a 1 s
-      progress window feeding a 3 s stall detector that is a DIFFERENT outcome (`Stuck`) from the timeout, and
-      the leash fires once per visit. Proven against the model, not the world. *What closes it:* one forced
-      visit after #42 merges, and the `the walk-up did not finish` / `stuck` line pasted here.
+- [ ] **The walk-up.** PR #25 merged (the coin-eating consume list; the timeout logs a diagnosis). PR #42
+      built F5: a budget scaled from the distance at entry (`Clamp(d/1.5, 20, 90)`), a 1 s progress window
+      feeding a 3 s stall detector that is a DIFFERENT outcome (`Stuck`) from the timeout, and a leash that
+      fires once per visit. **F5 has never run on a machine, and D1 is why** — see the next item. *What closes
+      it:* one forced visit after D1 lands, and the `the walk-up did not finish` / `stuck` line pasted here.
+- [ ] **D1 — the ZDO-driven state change skips the entry reset** (`docs/AUDIT-STORMTEST-2026-09-07.md` §1;
+      found by the StormTest session of 2026-09-07, 6/6 visits). `ResolveCarrier` copies `VCargo_state` off the
+      ZDO into `_state` every physics step, ABOVE the `if (!step.Changed) return;` block in `Decide` that is the
+      only place resetting `_timeInState`, `_farSeconds`, `_approachMoved`, `_distanceAtApproachEntry` and
+      `_progress`. `CargoFlight.Drop` writes `Approaching` that way, so the drop is a third way in and the one
+      every visit uses: the walk-up runs on the flight's clock (16-17 s already on it) and is charged the carry's
+      displacement, with `budget scaled from 0 m at entry` printed 6 times out of 6 and no `entered: landed` line
+      anywhere in the session. **BUILT — PR #50**: one `EnterState(int)` both paths call, plus
+      the transition line the audit asked for (`... -> ... via the ZDO, N s after waking; carrier
+      none|still instanced|gone, N m from the player, ours|watching, grounded, walk-up budget N s`) and a warning
+      when `Drop` finds no merchant naming this bird. `Core/MerchantPlan.cs` untouched — the pure machine is
+      right, the caller fed it stale numbers. The retry in `Drop` and the `IsOnGround()` clock gate were both
+      refuted by the audit and are deliberately absent. Build 0/0, harness 1701. *What closes it:* the line on a
+      screen, and whether visits 4-6's second regime (§1.3, unexplained by the code) shows up again.
+- [ ] **D3 — the reclaim works; the sweep double-counts it** (`docs/AUDIT-STORMTEST-2026-09-07.md` §2; reporting
+      only). `FinishDeparture` ran `ClearIfStillOurs` and `Sweep` in one synchronous call, and `ZDOMan.DestroyZDO`
+      in 0.221.12 only queues into `m_destroySendList` — removal happens in `HandleDestroyedZDO` on the next
+      `ZDOMan.Update`. So the sweep found the merchant the reclaim had just destroyed and called it stranded:
+      six visit ends, six phantom `restart sweep: 1 stranded merchant(s) destroyed` lines, none of them a restart.
+      **BUILT — PR #51**: `_pendingSweepFor` drained at the top of `Tick` (above every
+      `FinishDeparture` call site, so it can never drain in the call that set it), `Sweep(int, string when)` with
+      the three call sites labelled `boot` / `boot, after giving up on the carry` / `after visit #N`, and the
+      reclaim logging its own outcome. The `LastReclaimed` skip list was refuted twice (`Reclaim` swallows its own
+      exceptions, so a reclaim that FAILED would be skipped by the sweep that exists to catch it) and is absent.
+      Build 0/0, harness 1701 (`Spawner` is outside the harness). **Known and accepted:** if the server stops
+      within one director tick of a departure finishing, the deferred sweep is lost — `CargoTick` calls
+      `Flush("shutdown")`, not `End`, so nothing drains it; the boot sweep catches the orphan at next start.
+      *What closes it:* a visit end on a server showing `merchant and bird reclaimed ...` and NO sweep line.
+      Note for Track A: every quoted `restart sweep:` in CLAUDE.md (line 726) and the proofs record becomes
+      historical once this lands — theirs to reword, not ours.
 - [ ] **Valheim 1.0 lands 2026-09-09.** P10a is his: fetch the 1.0 client and server
       (`tools/fetch-builds.sh`), decompile, `diff-engine` against the 244-row `docs/ENGINE-SURFACE.md`,
       update `docs/ENGINE-BASELINE.md`, check in the report under `docs/engine-sweeps/`, and report
@@ -136,10 +166,10 @@ step 4).
       Newtonsoft as a requirement (its "shape-verified against Newtonsoft" history can stay).
 - [x] ~~Pending Don's decision: replace the Newtonsoft call with a pure writer.~~ Decided and done on Track A
       2026-09-07 (section 3): `Core/Json.cs`. Item 23 (the files landing live) is unchanged and still yours.
-- [ ] **Record the reversal of decision 3.** The owner's PR #40 drops the JsonDotNET dependency for a pure
-      `Core/Json.cs` (byte-identical to Newtonsoft over 4,028 comparisons). Decision 3 in
-      `docs/DECISIONS-WUBARRK.md` says the opposite; once #40 merges it must say it was overridden by the
-      owner and why, not go quietly stale. Docs only, ours.
+- [x] **Record the reversal of decision 3.** DONE: PR #43 merged 2026-09-07. The owner's PR #40 dropped the
+      JsonDotNET dependency for a pure `Core/Json.cs` (byte-identical to Newtonsoft over 4,028 comparisons);
+      `docs/DECISIONS-WUBARRK.md` §3 now records that it was overridden, when, and why the original argument
+      was right about the problem and wrong about the size of the answer. §7's amendment was already in.
 
 Not his: the two-client items (cannot run on his side); Don's three branches (rebased here).
 
