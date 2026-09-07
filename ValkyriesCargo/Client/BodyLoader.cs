@@ -128,6 +128,9 @@ namespace RavenIron.ValkyriesCargo.Client
         /// <summary>True when a body can actually be attached: a renderer, the config, and a prefab out of the bundle.</summary>
         public static bool Ready => ValkyriesCargo.HasRenderer && ModConfig.CustomBody.Value && _prefab != null;
 
+        /// <summary>The yaw Ingvar's body gets about the vertical, degrees; `Client.BodyYawDegrees`, 180 unless bound.</summary>
+        public static float Yaw() => ModConfig.BodyYawDegrees != null ? ModConfig.BodyYawDegrees.Value : 180f;
+
         /// <summary>The clip by the name it carries in the bundle, or null.</summary>
         public static AnimationClip Clip(string name)
         {
@@ -556,7 +559,11 @@ namespace RavenIron.ValkyriesCargo.Client
                 // own localScale survives - the Armature's 0.01 is CORRECT and must never be "fixed".
                 go.transform.SetParent(c.transform, false);
                 go.transform.localPosition = Vector3.zero;
-                go.transform.localRotation = Quaternion.identity;
+                // The bundle's forward axis is the Dverger's BACK: attached with identity rotation he walked
+                // backward on a live visit (StormTest 2026-09-07 15:50). The yaw is a client knob so a bake
+                // that comes out the other way is a config edit; the preview applies the same turn.
+                float yaw = Yaw();
+                go.transform.localRotation = Quaternion.Euler(0f, yaw, 0f);
 
                 int stray = Dress(go);
                 float lift = MeasureLift(c.transform, go);
@@ -567,6 +574,7 @@ namespace RavenIron.ValkyriesCargo.Client
                 body.Bind(c);
                 ValkyriesCargo.Log.LogInfo(
                     "body: Ingvar attached to '" + c.name + "' at local y " + lift.ToString("0.###") +
+                    ", turned " + yaw.ToString("0") + " deg (Client.BodyYawDegrees)" +
                     "; " + stray + " stray renderer(s) in the bundle switched off; " + hidden + " stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, " +
                     "CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)");
                 return body;
@@ -634,7 +642,8 @@ namespace RavenIron.ValkyriesCargo.Client
             if (_prefab == null) return null;
             GameObject go = UnityEngine.Object.Instantiate(_prefab);
             go.name = ChildName + "_preview";
-            go.transform.rotation = rotation;
+            // The same half-turn Attach applies, so the preview shows the face the merchant shows.
+            go.transform.rotation = rotation * Quaternion.Euler(0f, Yaw(), 0f);
             go.transform.position = groundPos;
 
             // The SAME two steps `Attach` does, and for the same reasons: the bundle carries a stray

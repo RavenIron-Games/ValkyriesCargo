@@ -63,6 +63,15 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<bool>   ShowPriceTrend;
         public static ConfigEntry<string> Theme;
         public static ConfigEntry<float>  TerminalScale;
+        /// <summary>
+        /// The half-turn Ingvar's body gets when it is attached to the merchant and stood up by the
+        /// preview. On StormTest, 2026-09-07 15:50, the owner watched him WALK BACKWARD on a live visit:
+        /// the bundle's forward axis is the Dverger's back (the source is authored on a different axis
+        /// convention; the bind-pose box already lies about the up axis for the same reason), and the
+        /// loader attached him with identity rotation. A knob rather than a constant so a bake that comes
+        /// out the other way round is a config edit, not a rebuild; the attach line logs the value used.
+        /// </summary>
+        public static ConfigEntry<float>  BodyYawDegrees;
 
         // ---- Broadcast channels (server writes, everyone reads) ---------------------------
 
@@ -207,6 +216,11 @@ namespace RavenIron.ValkyriesCargo.Config
             TerminalScale = C(cfg, "Client", "TerminalScale", 1f,
                 "Terminal size multiplier. Read on the CLIENT.",
                 new AcceptableValueRange<float>(0.5f, 2f));
+            BodyYawDegrees = C(cfg, "Client", "BodyYawDegrees", 180f,
+                "Degrees Ingvar's body is turned about the vertical when it is attached to the merchant (and in `cargo body preview`). " +
+                "180 because the shipped bundle's forward axis faces the Dverger's back, so with 0 he walks backward (seen 2026-09-07). " +
+                "Set 0 for a bake that comes out facing forward. Read on the CLIENT.",
+                new AcceptableValueRange<float>(-180f, 180f));
 
             VisitState  = new CustomSyncedValue<string>(Sync, "visit", "");
             MarketState = new CustomSyncedValue<string>(Sync, "market", "");
