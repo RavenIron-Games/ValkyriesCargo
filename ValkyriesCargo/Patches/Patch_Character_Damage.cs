@@ -1,6 +1,7 @@
 using System;
 using HarmonyLib;
 using RavenIron.ValkyriesCargo.Client;
+using RavenIron.ValkyriesCargo.Core;
 
 namespace RavenIron.ValkyriesCargo.Patches
 {
@@ -27,11 +28,19 @@ namespace RavenIron.ValkyriesCargo.Patches
         [HarmonyPriority(Priority.Low)]
         private static bool Prefix(Character __instance, ref bool __runOriginal)
         {
-            if (!__runOriginal || CargoMerchant.LiveCount == 0) return false;
+            // These two are NOT the same answer and must never share a branch again. A prefix's
+            // return value is "run the original": `false` SKIPS it. So the old
+            // `if (!__runOriginal || LiveCount == 0) return false;` cancelled `Character.RPC_Damage`
+            // for EVERY character in the world whenever no merchant was instanced -- which is almost
+            // always -- and nothing could take damage at all. Shipped on main and in v0.1.0-rc1;
+            // found by Track A's P4/P5 adversarial audit as F1 (`docs/AUDIT-P4P5-2026-09-07.md`).
+            // The decision now lives in `Core/Immortality.RunOriginal`, where it is proven off-game.
+            if (!__runOriginal) return false;                        // another prefix already cancelled
+            if (CargoMerchant.LiveCount == 0) return true;           // no visit: not ours, vanilla runs
             try
             {
                 CargoMerchant m = __instance.GetComponent<CargoMerchant>();
-                if (m == null) return true;
+                if (Immortality.RunOriginal(__runOriginal, CargoMerchant.LiveCount, m != null)) return true;
                 __runOriginal = false;
                 return false;
             }
