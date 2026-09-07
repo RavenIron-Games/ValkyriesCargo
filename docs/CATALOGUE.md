@@ -178,13 +178,24 @@ uncompressed on every change.
 
 ## 5. Worked numbers, so the curve is felt before it is played
 
-- A player sells Ingvar 60 scrap iron in one visit (two stacks, 600 kg hauled). Stock 30 → 90 (the max; the 91st is
-  refused). Price falls from 22 to `22 × (30/90)^0.35 = 15`; he paid 15.4 → 10.8 a unit over the run, about 780 coins,
-  most of the purse. Next visit a game-day later stock has drifted halfway back, so he pays about 13.
-- A player buys the two Black Cores. Stock 2 → 0, SOLD OUT; the price he would charge for a third is clamped at
-  `300 × 3.0 = 900`. Two game-days later stock is back near 1.5, price near 340.
-- Amber, 30 in stock at target: he pays 5, Haldor's rate. After someone dumps 60, he pays 3.4; when he is down to 10, he
-  pays 7.3. Haldor never moves. That spread is the whole reason to walk to the merchant instead of the trader.
+Every number here comes out of `Core/Market.cs` and is asserted by the harness (§6). The rounding rule: the charge is
+`base × multiplier` rounded once; what he pays is `base × multiplier × 0.7` rounded once, never the rounded charge
+times 0.7 (that squashes the spread on cheap goods); both never below 1.
+
+- A player sells Ingvar scrap iron (base 22, target 30, max 90). At target he pays 15 a unit. A deal is priced as a
+  whole at the price on the screen when it is confirmed (the `UnitPriceSeen` rule): fifty in one deal is `50 × 15 = 750`,
+  most of the 800 purse; sixty in one deal is 900 and comes back `purse_empty`. Sold one at a time the price walks down
+  as his stock climbs, 15 → 10, and the sixty fetch about 745. Stock 30 → 90 is his max; the 91st is refused
+  `over_max`. Next visit a game-day later the stock has drifted halfway back to 60, so he pays 12.
+- A player buys the two Black Cores (base 300, target 2). Stock 2 → 0, SOLD OUT; the price he would ask for a third is
+  `300 × (2/1)^0.35 = 382`: an empty shelf is priced as if one were left, so the 3.0 ceiling only ever binds on rows
+  with a target of 24 or more (wood, stone, arrows). Two game-days later the stock is back to 2 and the price to 300;
+  stock is whole units, there is no "1.5".
+- Amber (base 7, target 30): at target he pays 5, Haldor's rate. After someone dumps 60 he pays 3; when he is down to
+  10 he pays 7. Haldor never moves. That spread is the whole reason to walk to the merchant instead of the trader.
+- One big deal beats a drip-feed in both directions (750 for fifty at once against 635 one at a time). That is the
+  price of "the price you see is the price you pay"; it is bounded by his purse on one side and his stock on the other,
+  and it is recorded as a decision in DESIGN §8.
 
 ---
 

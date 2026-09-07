@@ -34,7 +34,19 @@ namespace ValkyriesCargo.Tests
             VisitSnapshotTests();
             DealTests();
             DealInboxTests();
+            MarketRulesTests();
+            PriceCurveTests();
+            MarketConstructionTests();
+            StartVisitTests();
+            RelaxTests();
+            MarketSettleTests();
+            MarketStateTests();
+            NonceRingTests();
+            SchedulerTests();
+            VisitClockTests();
             DemoMarketTests();
+            DemoMarketKnobTests();
+            MarketReviewFixTests();
             CargoRpcTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
@@ -76,6 +88,29 @@ namespace ValkyriesCargo.Tests
         private static void Section(string name) => Console.WriteLine(name);
 
         // ---- helpers -------------------------------------------------------------------
+
+        /// <summary>A market on the shipped catalogue and the shipped rules: what the server actually runs.</summary>
+        private static Market NewMarket(double worldTime)
+        {
+            return new Market(Catalogue.Parse(Catalogue.DefaultLine, null), MarketRules.Default, worldTime);
+        }
+
+        /// <summary>An otherwise-eligible candidate. Each scheduler test breaks exactly one thing about him.</summary>
+        private static Candidate Player(long uid, string name, float x, float z)
+        {
+            return new Candidate
+            {
+                Uid = uid, Name = name, X = x, Y = 30f, Z = z,
+                BaseValue = 5, Rested = true, Comfort = 6, Alive = true, Ready = true,
+            };
+        }
+
+        /// <summary>A scripted random source: these values in order, then the last one for ever.</summary>
+        private static Func<double> Rolls(params double[] values)
+        {
+            int i = 0;
+            return () => values[Math.Min(i++, values.Length - 1)];
+        }
 
         private static string FindItemsFile()
         {
@@ -548,6 +583,1053 @@ namespace ValkyriesCargo.Tests
                 Check(restored.Ids[i] == inbox.Ids[i], $"Restored inbox preserves order at position {i}");
         }
 
+        private static void MarketRulesTests()
+        {
+            Section("MarketRules.Sanitize");
+
+            var problems = new List<string>();
+            MarketRules ok = MarketRules.Default;
+            ok.Sanitize(problems);
+            Equal(0, problems.Count, "the shipped defaults are all in range and report nothing");
+            Check(ok.Elasticity == 0.35 && ok.MinMultiplier == 0.4 && ok.MaxMultiplier == 3 &&
+                  ok.Spread == 0.7 && ok.HalfLifeGameDays == 1 &&
+                  ok.PurseCoins == 800 && ok.PurseCarryPercent == 50 && ok.PurseCapMultiple == 3,
+                  "an in-range value is left exactly as configured");
+
+            // Every float below its floor is clamped up and named.
+            problems.Clear();
+            MarketRules low = new MarketRules
+            {
+                Elasticity = 0.001, MinMultiplier = 0.001, MaxMultiplier = 0.5,
+                Spread = 0.01, HalfLifeGameDays = 0.01,
+            };
+            low.Sanitize(problems);
+            Equal(0.05, low.Elasticity, "Elasticity clamped up to its floor 0.05");
+            Equal(0.05, low.MinMultiplier, "MinMultiplier clamped up to its floor 0.05");
+            Equal(1, low.MaxMultiplier, "MaxMultiplier clamped up to its floor 1");
+            Equal(0.1, low.Spread, "Spread clamped up to its floor 0.1");
+            Equal(0.1, low.HalfLifeGameDays, "HalfLifeGameDays clamped up to its floor 0.1");
+            Equal(5, problems.Count, "five values out of range, five problems reported");
+            Check(problems[0].Contains("Elasticity") && problems[0].Contains("clamped up"),
+                  "the report names the value and says which way it moved");
+
+            // Every float above its ceiling is clamped down and named.
+            problems.Clear();
+            MarketRules high = new MarketRules
+            {
+                Elasticity = 5, MinMultiplier = 2, MaxMultiplier = 50,
+                Spread = 2, HalfLifeGameDays = 100,
+            };
+            high.Sanitize(problems);
+            Equal(1.5, high.Elasticity, "Elasticity clamped down to its ceiling 1.5");
+            Equal(1, high.MinMultiplier, "MinMultiplier clamped down to its ceiling 1");
+            Equal(10, high.MaxMultiplier, "MaxMultiplier clamped down to its ceiling 10");
+            Equal(1, high.Spread, "Spread clamped down to its ceiling 1");
+            Equal(30, high.HalfLifeGameDays, "HalfLifeGameDays clamped down to its ceiling 30");
+            Equal(5, problems.Count, "five ceilings, five problems reported");
+            Check(problems[2].Contains("MaxMultiplier") && problems[2].Contains("clamped down"),
+                  "the report names the value and says which way it moved");
+
+            // NaN and infinity are not numbers: each falls back to the floor with its own wording.
+            problems.Clear();
+            MarketRules nan = new MarketRules
+            {
+                Elasticity = double.NaN, MinMultiplier = double.NaN, MaxMultiplier = double.PositiveInfinity,
+                Spread = double.NegativeInfinity, HalfLifeGameDays = double.NaN,
+            };
+            nan.Sanitize(problems);
+            Equal(0.05, nan.Elasticity, "a NaN Elasticity falls back to the floor");
+            Equal(0.05, nan.MinMultiplier, "a NaN MinMultiplier falls back to the floor");
+            Equal(1, nan.MaxMultiplier, "an infinite MaxMultiplier falls back to the floor");
+            Equal(0.1, nan.Spread, "a negative-infinity Spread falls back to the floor");
+            Equal(0.1, nan.HalfLifeGameDays, "a NaN HalfLifeGameDays falls back to the floor");
+            Equal(5, problems.Count, "five non-numbers, five problems reported");
+            Check(problems[0].Contains("was not a number"), "a NaN is reported as not a number, not as a clamp");
+
+            // The integer knobs.
+            problems.Clear();
+            MarketRules purse = new MarketRules { PurseCoins = -5, PurseCarryPercent = 150, PurseCapMultiple = 0 };
+            purse.Sanitize(problems);
+            Equal(0, purse.PurseCoins, "a negative PurseCoins is clamped to 0");
+            Equal(100, purse.PurseCarryPercent, "PurseCarryPercent above 100 is clamped to 100");
+            Equal(1, purse.PurseCapMultiple, "PurseCapMultiple below 1 is clamped to 1");
+            Equal(3, problems.Count, "each integer clamp is reported");
+
+            problems.Clear();
+            MarketRules negCarry = new MarketRules { PurseCarryPercent = -10 };
+            negCarry.Sanitize(problems);
+            Equal(0, negCarry.PurseCarryPercent, "a negative PurseCarryPercent is clamped to 0");
+            Equal(1, problems.Count, "and reported");
+
+            // Sanitize is idempotent: rules already sanitized report nothing the second time.
+            problems.Clear();
+            low.Sanitize(problems);
+            high.Sanitize(problems);
+            nan.Sanitize(problems);
+            purse.Sanitize(problems);
+            Equal(0, problems.Count, "sanitizing already-sanitized rules reports nothing");
+
+            // A null problems list is accepted: the game side does not always collect them.
+            MarketRules quiet = new MarketRules { Elasticity = 99 };
+            quiet.Sanitize(null);
+            Equal(1.5, quiet.Elasticity, "Sanitize still clamps when nobody is collecting problems");
+        }
+
+        private static void PriceCurveTests()
+        {
+            Section("Market.PriceFor / PaysFor / Trend");
+
+            MarketRules r = MarketRules.Default;   // elasticity 0.35, clamps 0.4 / 3.0, spread 0.7
+
+            // At target the multiplier is 1^0.35 = 1, so the price is the base price.
+            Equal(25, Market.PriceFor(25, 20, 20, r), "at target stock the price is the base price");
+            Equal(300, Market.PriceFor(300, 2, 2, r), "at target, whatever the numbers");
+            Equal(1, Market.PriceFor(1, 200, 200, r), "a base of 1 at target stays 1");
+
+            // Stock 0 is priced through the max(1, stock) guard, never a division by zero.
+            Equal(Market.PriceFor(25, 20, 1, r), Market.PriceFor(25, 20, 0, r),
+                  "stock 0 is priced as stock 1: the max(1, stock) guard");
+            Equal(71, Market.PriceFor(25, 20, 0, r),
+                  "Iron sold out: 25 * (20/1)^0.35 = 25 * 2.8535 = 71.34 -> 71, still under the 3x ceiling");
+
+            // The ceiling only bites when target/stock exceeds 3^(1/0.35) = 44.9.
+            Equal(300, Market.PriceFor(100, 100, 1, r), "ceiling: (100/1)^0.35 = 5.01, clamped to 3.0 -> 300");
+            Equal(300, Market.PriceFor(100, 100, 0, r), "sold out quotes min(base * MaxMultiplier, the curve): 300");
+
+            // Flooded: the floor bites below 0.4^(1/0.35) = 0.073 of target.
+            Equal(40, Market.PriceFor(100, 10, 1000, r), "floor: (10/1000)^0.35 = 0.1996, clamped to 0.4 -> 40");
+            Equal(1, Market.PriceFor(1, 10, 1000, r), "a price is never below 1 coin, even at the floor");
+
+            // Monotone in stock: more stock is never dearer.
+            bool monotone = true;
+            int previous = int.MaxValue;
+            for (int stock = 1; stock <= 200; stock++)
+            {
+                int p = Market.PriceFor(25, 20, stock, r);
+                if (p > previous) monotone = false;
+                previous = p;
+            }
+            Check(monotone, "the price never rises as stock rises");
+
+            // docs/CATALOGUE.md section 5, each worked by hand against the formula.
+            Equal(22, Market.PriceFor(22, 30, 30, r), "IronScrap at target is its base 22");
+            Equal(15, Market.PriceFor(22, 30, 90, r),
+                  "IronScrap flooded to its max: 22 * (30/90)^0.35 = 22 * 0.68078 = 14.98 -> 15");
+            Equal(382, Market.PriceFor(300, 2, 0, r),
+                  "BlackCore sold out: the guard makes the ratio 2/1, so 300 * 2^0.35 = 300 * 1.27458 = 382.4 -> 382. " +
+                  "CATALOGUE section 5 records 382: with a target of 2 the ratio never reaches the 3x ceiling.");
+
+            // Amber, the anchored ware: he pays Haldor's 5 at target.
+            Equal(7, Market.PriceFor(7, 30, 30, r), "Amber at target charges its base 7");
+            Equal(5, Market.PaysFor(7, 30, 30, r),
+                  "and he pays round(7 * 0.7) = round(4.9) = 5, Haldor's rate");
+            Equal(5, Market.PriceFor(7, 30, 90, r),
+                  "Amber flooded to 90: 7 * (30/90)^0.35 = 4.765 -> 5 charged");
+            Equal(3, Market.PaysFor(7, 30, 90, r),
+                  "so he pays round(7 * 0.68078 * 0.7) = round(3.34) = 3: the spread is applied to the UNROUNDED curve, " +
+                  "once (CATALOGUE section 5). round(5 * 0.7) = 4 would squash the spread on every cheap row.");
+            Equal(10, Market.PriceFor(7, 30, 10, r), "Amber down to 10: 7 * 3^0.35 = 10.28 -> 10 charged");
+            Equal(7, Market.PaysFor(7, 30, 10, r),
+                  "and he pays round(10 * 0.7) = 7 (CATALOGUE's 7.3 before rounding)");
+
+            // PaysFor is the spread, and never below one coin.
+            Equal(18, Market.PaysFor(25, 20, 20, r), "he pays round(25 * 0.7) = round(17.5) = 18, away from zero");
+            Equal(1, Market.PaysFor(1, 200, 200, r), "he never pays less than 1 coin");
+            Equal(1, Market.PaysFor(0, 20, 20, r), "not even for a base of 0");
+            Equal(1, Market.PaysFor(-5, 20, 20, r), "nor for a nonsense negative base");
+
+            // A zero target is guarded the same way as stock.
+            Equal(Market.PriceFor(25, 1, 5, r), Market.PriceFor(25, 0, 5, r), "a target of 0 is priced as a target of 1");
+
+            // Charge / Pays / Trend on a live market.
+            Market m = NewMarket(0);
+            MarketItem iron = m.Find("Iron");                 // base 25, target 20, max 60
+            Equal(25, m.Charge(iron), "Charge reads the item's own base, target and stock");
+            Equal(18, m.Pays(iron), "Pays is that charge through the spread");
+            Equal(0, m.Trend(iron), "at target the trend is flat");
+            iron.Stock = 15;
+            Equal(28, m.Charge(iron), "scarce: 25 * (20/15)^0.35 = 27.65 -> 28");
+            Equal(1, m.Trend(iron), "above base, the trend reads up");
+            iron.Stock = 25;
+            Equal(23, m.Charge(iron), "flooded: 25 * (20/25)^0.35 = 23.12 -> 23");
+            Equal(-1, m.Trend(iron), "below base, the trend reads down");
+            iron.Stock = 20;
+            Equal(0, m.Trend(iron), "and back to flat at target");
+
+            // A base of 1 can never round off its base, so its trend is honestly flat.
+            MarketItem wood = m.Find("Wood");                 // base 1, target 200, max 600
+            wood.Stock = 600;
+            Equal(0, m.Trend(wood), "a base price of 1 cannot move, so Wood's trend stays flat");
+        }
+
+        private static void MarketConstructionTests()
+        {
+            Section("Market construction");
+
+            Market m = NewMarket(1234.5);
+            Equal(72, m.Count, "the default catalogue builds 72 items");
+            Equal(800, m.Purse, "the purse starts at MarketRules.PurseCoins");
+            Equal(0, m.VisitId, "no visit has started yet");
+
+            int offTarget = 0, badStamp = 0;
+            foreach (MarketItem it in m.Items)
+            {
+                if (it.Stock != it.Entry.TargetStock) offTarget++;
+                if (it.UpdatedWorldTime != 1234.5) badStamp++;
+            }
+            Equal(0, offTarget, "every item starts at its target stock");
+            Equal(0, badStamp, "and stamped with the world time it was built at");
+
+            Check(m.Find("Iron") != null, "Find returns the item for a known prefab");
+            Check(m.Find("NoSuchPrefab") == null, "Find returns null for an unknown prefab");
+            Check(m.Find("") == null, "Find returns null for an empty prefab name");
+            Check(m.Find(null) == null, "Find returns null for a null prefab name");
+            Check(m.Find("iron") == null, "Find is ordinal: 'iron' is not 'Iron'");
+
+            MarketItem iron = m.Find("Iron");
+            Check(iron.Prefab == "Iron" && iron.Kind == EntryKind.Ware, "the item carries its catalogue entry");
+            Check(!iron.SoldOut && !iron.Full, "at target it is neither sold out nor full");
+            iron.Stock = 0;
+            Check(iron.SoldOut, "stock 0 is SOLD OUT");
+            iron.Stock = iron.Entry.MaxStock;
+            Check(iron.Full, "stock at max is full");
+            iron.Stock = iron.Entry.TargetStock;
+
+            Market empty = new Market(null, MarketRules.Default, 0);
+            Equal(0, empty.Count, "a null catalogue gives an empty market");
+            Equal(800, empty.Purse, "with the purse still filled");
+            Check(empty.Find("Iron") == null, "and nothing to find in it");
+            Equal(0, empty.Snapshot().Count, "its snapshot is empty");
+
+            Market defaulted = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), null, 0);
+            Check(defaulted.Rules != null, "a null rules object falls back to the defaults");
+            Equal(800, defaulted.Purse, "so the purse is the default 800");
+            Equal(25, defaulted.Charge(defaulted.Find("Iron")), "and the default curve prices Iron at 25");
+
+            // The snapshot is a value copy of the state, not a window onto it.
+            MarketSnapshot snap = m.Snapshot();
+            Equal(72, snap.Count, "the snapshot carries every row");
+            Equal(m.Purse, snap.Purse, "and the purse");
+            Equal(m.VisitId, snap.VisitId, "and the visit id");
+            int stockWas = snap.Find("Iron").Stock;
+            m.Find("Iron").Stock = 3;
+            Equal(stockWas, snap.Find("Iron").Stock, "a row already handed out never changes underneath its holder");
+            Equal(3, m.Snapshot().Find("Iron").Stock, "only a fresh snapshot shows the new stock");
+        }
+
+        private static void StartVisitTests()
+        {
+            Section("Market.StartVisit");
+
+            Market m = NewMarket(0);
+
+            m.StartVisit(3, 0, 0);
+            Equal(3, m.VisitId, "StartVisit numbers the visit");
+            Equal(800, m.Purse, "with no takings last visit the purse is PurseCoins");
+            Equal(0, m.Takings, "and this visit's takings start at zero");
+            Equal(3, m.Snapshot().VisitId, "the snapshot carries the new visit id");
+
+            m.StartVisit(4, 0, 400);
+            Equal(1000, m.Purse, "800 + PurseCarryPercent (50%) of 400 takings");
+
+            m.StartVisit(5, 0, 10000);
+            Equal(2400, m.Purse, "capped at PurseCapMultiple (3) x PurseCoins, whatever last visit took");
+
+            m.StartVisit(6, 0, -50);
+            Equal(800, m.Purse, "negative takings carry nothing");
+
+            m.StartVisit(7, 0, 1);
+            // Every rounding in Market.cs is away from zero, the carry included.
+            Equal(801, m.Purse, "50% of 1 takings is 0.5, rounded away from zero: 1 coin carried");
+            m.StartVisit(8, 0, 3);
+            Equal(802, m.Purse, "50% of 3 is 1.5, so 2");
+            m.StartVisit(9, 0, 5);
+            Equal(803, m.Purse, "50% of 5 is 2.5, so 3, not the 2 of to-even");
+
+            // The nonce ring is forgotten between visits.
+            m.StartVisit(1, 0, 0);
+            Deal a = new Deal { VisitId = 1, Nonce = 4242, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 25 } };
+            Check(m.Settle(a, 1000, 0).Ok, "nonce 4242 is accepted in visit 1");
+            Deal again = new Deal { VisitId = 1, Nonce = 4242, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 25 } };
+            Equal(DealReason.Duplicate, m.Settle(again, 1000, 0).Reason, "and refused a second time inside the same visit");
+            m.StartVisit(2, 0, 0);
+            Deal next = new Deal { VisitId = 2, Nonce = 4242, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 25 } };
+            Check(m.Settle(next, 1000, 0).Ok, "the same nonce is accepted again in visit 2: the ring was cleared");
+
+            // Takings: what the purse gained, never negative.
+            m.StartVisit(3, 0, 0);
+            Equal(800, m.Purse, "a fresh visit refills the purse");
+            Equal(0, m.Takings, "takings reset with the visit");
+            Deal buy = new Deal { VisitId = 3, Nonce = 1, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 26 } };
+            Check(m.Settle(buy, 1000, 0).Ok, "a third Iron sold, at 26 now the shelf is down to 18");
+            Equal(826, m.Purse, "the purse takes the price");
+            Equal(26, m.Takings, "takings are the coins the purse gained this visit");
+
+            m.StartVisit(4, 0, 0);
+            Deal sell = new Deal { VisitId = 4, Nonce = 2, Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = 10, UnitPriceSeen = 1 } } };
+            Check(m.Settle(sell, 1000, 0).Ok, "he buys 10 Wood at 1 apiece");
+            Equal(790, m.Purse, "which comes out of the purse");
+            Equal(0, m.Takings, "takings never go negative");
+
+            // The delivery sequence restarts with the visit.
+            m.StartVisit(9, 0, 0);
+            Deal d9 = new Deal { VisitId = 9, Nonce = 3, Wanted = new DealLine { Prefab = "Honey", Count = 1, UnitPriceSeen = 2 } };
+            Equal("v-9-1", m.Settle(d9, 1000, 0).DeliveryId, "the delivery id names the visit and restarts at 1");
+        }
+
+        private static void RelaxTests()
+        {
+            Section("Market.Relax");
+
+            Market m = NewMarket(0);
+            MarketItem iron = m.Find("Iron");        // target 20
+
+            // Half a game day at a one-game-day half-life closes 1 - 0.5^0.5 = 29.29% of the gap.
+            iron.Stock = 10; iron.UpdatedWorldTime = 0;
+            m.Relax(900);
+            Equal(13, iron.Stock, "900 s is half a game day: round(10 * 0.2929) = 3, so 10 -> 13");
+            Equal(900.0, iron.UpdatedWorldTime, "and the item's own clock advances to the relaxed time");
+
+            // A whole game day closes half the gap.
+            iron.Stock = 10; iron.UpdatedWorldTime = 0;
+            m.Relax(1800);
+            Equal(15, iron.Stock, "1800 s is one half-life: half of a gap of 10, so 10 -> 15");
+
+            iron.Stock = 30; iron.UpdatedWorldTime = 0;
+            m.Relax(1800);
+            Equal(25, iron.Stock, "a surplus relaxes downward by the same half: 30 -> 25");
+
+            // A gap of one unit still closes: rounding is away from zero, so 0.5 becomes 1.
+            iron.Stock = 19; iron.UpdatedWorldTime = 0;
+            m.Relax(1800);
+            Equal(20, iron.Stock, "a gap of 1 closes within one half-life: round(0.5) away from zero is 1");
+            iron.Stock = 21; iron.UpdatedWorldTime = 0;
+            m.Relax(1800);
+            Equal(20, iron.Stock, "and the same from above");
+
+            // Never overshoots, and stays put once it arrives.
+            iron.Stock = 0; iron.UpdatedWorldTime = 0;
+            m.Relax(1800 * 20);
+            Equal(20, iron.Stock, "twenty game days away relaxes to target and no further");
+            m.Relax(1800 * 40);
+            Equal(20, iron.Stock, "and at target it stays at target");
+            iron.Stock = 60; iron.UpdatedWorldTime = 0;
+            m.Relax(1800 * 20);
+            Equal(20, iron.Stock, "a full shelf relaxes down to target and stops there");
+
+            // The overshoot clamp itself. With a sane half-life the fraction stays in [0, 1], so the move
+            // can never exceed the gap and the clamp is unreachable. Market takes its rules AS GIVEN --
+            // it never calls Sanitize -- so a config that skipped sanitising can hand it a NEGATIVE
+            // half-life, which makes 1 - 0.5^(days / halfLife) fall below -1 and the raw move overshoot,
+            // backwards and without limit. The clamp is what keeps the promise "never overshoots".
+            Market hostile = new Market(Catalogue.Parse(Catalogue.DefaultLine, null),
+                                        new MarketRules { HalfLifeGameDays = -1f }, 0);
+            MarketItem h = hostile.Find("Iron");                      // target 20
+            h.Stock = 10; h.UpdatedWorldTime = 0;
+            hostile.Relax(3600);
+            Equal(20, h.Stock, "two days at a -1 half-life computes a move of -30 on a gap of +10: clamped to the gap, 10 -> 20, not -20");
+            h.Stock = 30; h.UpdatedWorldTime = 0;
+            hostile.Relax(3600);
+            Equal(20, h.Stock, "and the same from a surplus: a move of +30 on a gap of -10 is clamped, 30 -> 20, not 60");
+
+            // Each item drifts from its OWN timestamp.
+            Market m2 = NewMarket(0);
+            MarketItem a = m2.Find("Iron"), b = m2.Find("Bronze");   // both target 20
+            a.Stock = 10; a.UpdatedWorldTime = 0;
+            b.Stock = 10; b.UpdatedWorldTime = 900;
+            m2.Relax(1800);
+            Equal(15, a.Stock, "Iron, last touched at 0, has had a whole half-life: 10 -> 15");
+            Equal(13, b.Stock, "Bronze, last touched at 900, has had half of one: 10 -> 13");
+
+            // A deal stamps only the lines it touched; everything else keeps its older clock.
+            Market m3 = NewMarket(0);
+            m3.StartVisit(1, 0, 0);
+            MarketItem ironD = m3.Find("Iron"), bronzeD = m3.Find("Bronze");
+            bronzeD.Stock = 10;                                       // scarce, and its clock still reads 0
+            Deal buy = new Deal { VisitId = 1, Nonce = 1, Wanted = new DealLine { Prefab = "Iron", Count = 10, UnitPriceSeen = 25 } };
+            Check(m3.Settle(buy, 10000, 900).Ok, "ten Iron bought at world time 900");
+            Equal(900.0, ironD.UpdatedWorldTime, "the traded line's clock is reset to the deal's time");
+            Equal(0.0, bronzeD.UpdatedWorldTime, "a line nobody touched keeps its own, older, timestamp");
+            m3.Relax(1800);
+            Equal(13, ironD.Stock, "Iron drifts from 900: 29% of a gap of 10, so 10 -> 13");
+            Equal(15, bronzeD.Stock, "Bronze drifts from 0: half of a gap of 10, so 10 -> 15");
+
+            // dt <= 0 is a no-op.
+            Market m4 = NewMarket(1000);
+            MarketItem it4 = m4.Find("Iron");
+            it4.Stock = 10;
+            m4.Relax(1000);
+            Equal(10, it4.Stock, "relaxing to the same world time moves nothing");
+            m4.Relax(500);
+            Equal(10, it4.Stock, "and a clock that ran backwards moves nothing");
+
+            // A half-life of half a day moves half the gap in half a day.
+            Market fast = new Market(Catalogue.Parse(Catalogue.DefaultLine, null),
+                                     new MarketRules { HalfLifeGameDays = 0.5f }, 0);
+            MarketItem f = fast.Find("Iron");
+            f.Stock = 10; f.UpdatedWorldTime = 0;
+            fast.Relax(900);
+            Equal(15, f.Stock, "at a half-day half-life, half a day is one half-life: 10 -> 15");
+        }
+
+        private static void MarketSettleTests()
+        {
+            Section("Market.Settle (the real market, in the server's refusal order)");
+
+            var problems = new List<string>();
+            Market m = new Market(Catalogue.Parse(Catalogue.DefaultLine, problems), MarketRules.Default, 0);
+            Equal(0, problems.Count, "the market is built from the default catalogue with no problems");
+            m.StartVisit(7, 0, 0);
+            Equal(7, m.VisitId, "visit 7 is open");
+            Equal(800, m.Purse, "with the default purse");
+
+            // ---- the refusals, in the order design 3.4 lists them ------------------------
+
+            DealResult r = m.Settle(null, 1000, 0);
+            Check(!r.Ok && r.Reason == DealReason.Malformed, "a null deal is malformed");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 1 }, 1000, 0);
+            Equal(DealReason.EmptyDeal, r.Reason, "an empty deal is refused first of all");
+            r = m.Settle(new Deal { VisitId = 999, Nonce = 1 }, 1000, 0);
+            Equal(DealReason.EmptyDeal, r.Reason, "even when its visit is also stale: empty is checked first");
+
+            r = m.Settle(new Deal { VisitId = 6, Nonce = 2, Wanted = new DealLine { Prefab = "NoSuchPrefab", Count = 1, UnitPriceSeen = 1 } }, 1000, 0);
+            Equal(DealReason.StaleVisit, r.Reason, "a stale visit is refused before the item is even looked up");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 3, Wanted = new DealLine { Prefab = "NoSuchPrefab", Count = 1, UnitPriceSeen = 1 } }, 1000, 0);
+            Equal(DealReason.UnknownItem, r.Reason, "a wanted prefab the catalogue does not carry is unknown_item");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 4, Wanted = new DealLine { Prefab = "Wood", Count = 1, UnitPriceSeen = 1 } }, 1000, 0);
+            Equal(DealReason.UnknownItem, r.Reason, "he does not SELL a Want: buying Wood is unknown_item");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 5, Wanted = new DealLine { Prefab = "Iron", Count = 0, UnitPriceSeen = 25 } }, 1000, 0);
+            Equal(DealReason.BadCount, r.Reason, "a wanted count below 1 is bad_count");
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 6, Wanted = new DealLine { Prefab = "Iron", Count = -3, UnitPriceSeen = 25 } }, 1000, 0);
+            Equal(DealReason.BadCount, r.Reason, "and so is a negative one");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 7, Wanted = new DealLine { Prefab = "Iron", Count = 21, UnitPriceSeen = 999 } }, 1000, 0);
+            Equal(DealReason.SoldOut, r.Reason, "more than he has on the shelf is sold_out, checked before the price");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 8, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 24 } }, 1000, 0);
+            Equal(DealReason.PriceChanged, r.Reason, "a wanted unit price that no longer matches is price_changed");
+            Check(r.NewMarketState.Length > 0, "and the refusal carries the market as it is now");
+            problems.Clear();
+            MarketSnapshot fresh = MarketSnapshot.Parse(r.NewMarketState, problems);
+            Equal(0, problems.Count, "the carried market parses cleanly");
+            Equal(25, fresh.Find("Iron").Buy, "and quotes the price he would actually charge");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 9, Offered = new List<DealLine> { new DealLine { Prefab = "NoSuchPrefab", Count = 1, UnitPriceSeen = 1 } } }, 1000, 0);
+            Equal(DealReason.UnknownItem, r.Reason, "an offered prefab he does not know is unknown_item");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 10, Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = 0, UnitPriceSeen = 1 } } }, 1000, 0);
+            Equal(DealReason.BadCount, r.Reason, "an offered count below 1 is bad_count");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 11, Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = 401, UnitPriceSeen = 999 } } }, 1000, 0);
+            Equal(DealReason.OverMax, r.Reason, "Wood is 200 of a max of 600: the 401st is over_max, checked before the price");
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 12, Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = 400, UnitPriceSeen = 999 } } }, 1000, 0);
+            Equal(DealReason.PriceChanged, r.Reason, "exactly up to the max is allowed through to the price check");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 13, Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = 1, UnitPriceSeen = 5 } } }, 1000, 0);
+            Equal(DealReason.PriceChanged, r.Reason, "an offered unit price that no longer matches is price_changed");
+            Check(r.NewMarketState.Length > 0, "and it too carries the market as it is now");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 777, Wanted = new DealLine { Prefab = "Iron", Count = 5, UnitPriceSeen = 25 } }, 100, 0);
+            Equal(DealReason.CoinsShort, r.Reason, "5 Iron at 25 is 125; a player holding 100 coins is coins_short");
+
+            // Coins are checked LAST, on the net, after every line has been priced. A player who is both
+            // short of coins and looking at a stale price must be told the price moved -- that is the
+            // refusal he can act on (the terminal re-quotes and he tries again), where coins_short would
+            // send him away to sell something he may not need to sell.
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 14, Wanted = new DealLine { Prefab = "Iron", Count = 5, UnitPriceSeen = 24 } }, 100, 0);
+            Equal(DealReason.PriceChanged, r.Reason, "stale price AND too few coins reads price_changed: the wanted line is checked before the coins");
+            Check(r.NewMarketState.Length > 0, "and it still carries the market to re-quote from");
+
+            // IronScrap: 30 of a max of 90, and he pays round(22 * 0.7) = 15. Sixty of them is 900, over his 800.
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 15, Offered = new List<DealLine> { new DealLine { Prefab = "IronScrap", Count = 60, UnitPriceSeen = 15 } } }, 1000, 0);
+            Equal(DealReason.PurseEmpty, r.Reason, "60 scrap iron at 15 is 900, and the purse holds 800: purse_empty");
+
+            // Not one of those refusals moved anything.
+            Equal(800, m.Purse, "no refusal touched the purse");
+            Equal(20, m.Find("Iron").Stock, "no refusal touched a shelf");
+            Equal(200, m.Find("Wood").Stock, "nor the other side of one");
+            Equal(0, m.Nonces.Count, "and no refusal spent its nonce");
+
+            // ---- what he accepts ---------------------------------------------------------
+
+            var ids = new HashSet<string>(StringComparer.Ordinal);
+
+            // The nonce a refusal did not spend is reusable.
+            Deal buy5 = new Deal { VisitId = 7, Nonce = 777, Wanted = new DealLine { Prefab = "Iron", Count = 5, UnitPriceSeen = 25 } };
+            r = m.Settle(buy5, 1000, 0);
+            Check(r.Ok, "nonce 777, refused for coins_short above, is accepted now the coins are there");
+            Equal(DealReason.Ok, r.Reason, "with reason ok");
+            Equal(-125, r.CoinsDelta, "the whole quantity is priced at the moment of the deal: 5 x 25 = 125 from the player");
+            Equal(15, m.Find("Iron").Stock, "and the shelf falls by the whole quantity at once");
+            Equal(925, m.Purse, "the purse takes all 125");
+            Equal(28, m.Charge(m.Find("Iron")), "the NEXT quote is dearer: 25 * (20/15)^0.35 = 27.65 -> 28");
+            Equal(28, m.Snapshot().Find("Iron").Buy, "and the snapshot says so too");
+            Equal(1, r.ItemsToAdd.Count, "the answer tells the client what to add");
+            Check(r.ItemsToAdd[0].Prefab == "Iron" && r.ItemsToAdd[0].Count == 5 && r.ItemsToAdd[0].UnitPriceSeen == 25,
+                  "naming the prefab, the count and the price actually charged");
+            Equal(0, r.ItemsToRemove.Count, "a buy removes nothing");
+            Check(ids.Add(r.DeliveryId), "the delivery id is new");
+            Check(Wire.IsToken(r.DeliveryId), "and carries none of ';' '|' ':'");
+
+            r = m.Settle(new Deal { VisitId = 7, Nonce = 777, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 28 } }, 1000, 0);
+            Equal(DealReason.Duplicate, r.Reason, "a nonce an ACCEPTED deal spent is refused as duplicate");
+            Equal(15, m.Find("Iron").Stock, "and the duplicate changed nothing");
+
+            // A pure sell: coins to the player, out of the purse.
+            Deal sell = new Deal { VisitId = 7, Nonce = 20, Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = 10, UnitPriceSeen = 1 } } };
+            r = m.Settle(sell, 1000, 0);
+            Check(r.Ok, "he buys 10 Wood");
+            Equal(10, r.CoinsDelta, "CoinsDelta is positive for the player on a sell");
+            Equal(210, m.Find("Wood").Stock, "the shelf rises by the whole quantity");
+            Equal(915, m.Purse, "and the purse pays");
+            Equal(0, r.ItemsToAdd.Count, "a sell adds nothing");
+            Equal(1, r.ItemsToRemove.Count, "and removes the offered line");
+            Check(ids.Add(r.DeliveryId), "a second, different delivery id");
+
+            // Barter with change out of the purse: he owes more than he charges.
+            Deal barterOut = new Deal
+            {
+                VisitId = 7, Nonce = 21,
+                Wanted = new DealLine { Prefab = "Iron", Count = 2, UnitPriceSeen = 28 },
+                Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = 100, UnitPriceSeen = 1 } },
+            };
+            r = m.Settle(barterOut, 1000, 0);
+            Check(r.Ok, "2 Iron at 28 against 100 Wood at 1");
+            Equal(44, r.CoinsDelta, "net is 56 - 100 = -44, so 44 coins of change go to the player");
+            Equal(871, m.Purse, "and that change comes out of the purse: 915 - 44");
+            Equal(13, m.Find("Iron").Stock, "the wanted line falls");
+            Equal(310, m.Find("Wood").Stock, "the offered line rises");
+            Equal(1, r.ItemsToAdd.Count, "a barter both adds");
+            Equal(1, r.ItemsToRemove.Count, "and removes");
+            Check(ids.Add(r.DeliveryId), "a third, different delivery id");
+
+            // Barter the other way: the player pays the difference.
+            Deal barterIn = new Deal
+            {
+                VisitId = 7, Nonce = 22,
+                Wanted = new DealLine { Prefab = "Iron", Count = 2, UnitPriceSeen = 29 },
+                Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = 5, UnitPriceSeen = 1 } },
+            };
+            r = m.Settle(barterIn, 1000, 0);
+            Check(r.Ok, "2 Iron at 29 (the shelf is down to 13) against 5 Wood at 1");
+            Equal(-53, r.CoinsDelta, "net is 58 - 5 = 53, paid by the player");
+            Equal(924, m.Purse, "which the purse takes: 871 + 53");
+            Equal(11, m.Find("Iron").Stock, "the wanted line falls again");
+            Check(ids.Add(r.DeliveryId), "a fourth, different delivery id");
+
+            Equal(4, ids.Count, "four accepted deals, four distinct delivery ids");
+            foreach (string id in ids)
+                Check(id.StartsWith("v-7-") && Wire.IsToken(id), "delivery id '" + id + "' names the visit and is wire-safe");
+
+            // The whole answer survives the wire.
+            problems.Clear();
+            DealResult reparsed = DealResult.Parse(r.Encode(), problems);
+            Equal(0, problems.Count, "an accepted answer re-parses with no problems");
+            Equal(r.Encode(), reparsed.Encode(), "and round-trips byte for byte");
+
+            // The coins test is on the NET, not on the price: goods can pay for goods. A penniless player
+            // whose offer covers the whole charge is served, so the coins check must come after both
+            // sides are priced, not before the wanted line.
+            Market poor = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), MarketRules.Default, 0);
+            poor.StartVisit(9, 0, 0);
+            int ironBuy = poor.Charge(poor.Find("Iron"));             // 25
+            int woodPay = poor.Pays(poor.Find("Wood"));               // 1
+            Equal(1, woodPay, "he pays 1 a log for Wood sitting at its target stock");
+            DealResult pr = poor.Settle(new Deal
+            {
+                VisitId = 9, Nonce = 1,
+                Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = ironBuy },
+                Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = ironBuy, UnitPriceSeen = woodPay } },
+            }, 0, 0);
+            Check(pr.Ok, "a player holding 0 coins swaps Wood for 1 Iron: the offer covers the charge exactly");
+            Equal(0, pr.CoinsDelta, "and not a coin changes hands");
+        }
+
+        private static void MarketStateTests()
+        {
+            Section("Market.EncodeState / ApplyState");
+
+            Market a = NewMarket(0);
+            a.StartVisit(1, 0, 0);
+            Check(a.Settle(new Deal { VisitId = 1, Nonce = 1, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 25 } }, 1000, 0).Ok,
+                  "one accepted buy, so the purse is not simply the default");
+            a.Find("Iron").Stock = 7;   a.Find("Iron").UpdatedWorldTime = 1234.5;
+            a.Find("Wood").Stock = 555; a.Find("Wood").UpdatedWorldTime = 99.25;
+
+            string rows = a.EncodeState();
+            Check(rows.Contains("stock\tIron\t7\t1234.5"), "a stock row is prefab, stock and the item's own timestamp");
+            Check(rows.Contains("purse\t825"), "and the purse is one row of its own");
+
+            Market b = NewMarket(0);
+            var problems = new List<string>();
+            b.ApplyState(rows, problems);
+            Equal(0, problems.Count, "state written by EncodeState applies with no problems");
+            Equal(825, b.Purse, "the purse round-trips");
+            Equal(7, b.Find("Iron").Stock, "stock round-trips");
+            Equal(1234.5, b.Find("Iron").UpdatedWorldTime, "the timestamp round-trips, so drift resumes where it stopped");
+            Equal(555, b.Find("Wood").Stock, "every row round-trips, not just the first");
+            Equal(99.25, b.Find("Wood").UpdatedWorldTime, "with its own timestamp");
+            Equal(a.EncodeState(), b.EncodeState(), "and the whole state round-trips byte for byte");
+
+            // A catalogue edit between saves: the row is reported and dropped, never a crash.
+            problems.Clear();
+            b.ApplyState("stock\tNotInTheCatalogue\t5\t0", problems);
+            Equal(1, problems.Count, "a row for a prefab the catalogue no longer carries is reported");
+            Check(problems[0].Contains("unknown prefab") && problems[0].Contains("NotInTheCatalogue"),
+                  "and the report names it");
+
+            // A max lowered between saves: the stock is clamped, not refused.
+            problems.Clear();
+            b.ApplyState("stock\tIron\t9999\t0", problems);
+            Equal(0, problems.Count, "a stock above max is not a parse problem");
+            Equal(60, b.Find("Iron").Stock, "it is clamped to the item's max");
+
+            // Junk.
+            problems.Clear();
+            b.ApplyState("this is not a row at all", problems);
+            Equal(1, problems.Count, "a junk row is reported");
+            Check(problems[0].Contains("unknown row ignored"), "and named as ignored");
+
+            problems.Clear();
+            int bronzeWas = b.Find("Bronze").Stock;
+            b.ApplyState("stock\tBronze\t-1\t0", problems);
+            Equal(1, problems.Count, "a negative stock is reported");
+            Check(problems[0].Contains("did not parse"), "as a row that did not parse");
+            Equal(bronzeWas, b.Find("Bronze").Stock, "and the item keeps the stock it had");
+
+            problems.Clear();
+            int purseWas = b.Purse;
+            b.ApplyState("purse\tlots", problems);
+            Equal(1, problems.Count, "a purse row that is not a number is reported");
+            Check(problems[0].Contains("purse row did not parse"), "by name");
+            Equal(purseWas, b.Purse, "and the purse is left alone");
+
+            problems.Clear();
+            b.ApplyState("purse\t-1", problems);
+            Equal(1, problems.Count, "a negative purse is reported");
+            Equal(purseWas, b.Purse, "and refused");
+
+            // Empty is a no-op.
+            problems.Clear();
+            string before = b.EncodeState();
+            b.ApplyState("", problems);
+            b.ApplyState(null, problems);
+            Equal(0, problems.Count, "an empty or null state reports nothing");
+            Equal(before, b.EncodeState(), "and changes nothing");
+
+            // A missing row keeps target stock.
+            Market c = NewMarket(0);
+            problems.Clear();
+            c.ApplyState("stock\tIron\t3\t50", problems);
+            Equal(0, problems.Count, "a partial state applies cleanly");
+            Equal(3, c.Find("Iron").Stock, "the saved line takes its saved stock");
+            Equal(20, c.Find("Bronze").Stock, "a line with no saved row keeps its target stock");
+            Equal(800, c.Purse, "and with no purse row the purse is left as it was");
+
+            // Line endings from a Windows sidecar.
+            problems.Clear();
+            c.ApplyState("stock\tIron\t9\t60\r\npurse\t111\r\n", problems);
+            Equal(0, problems.Count, "carriage returns and a trailing newline are tolerated");
+            Equal(9, c.Find("Iron").Stock, "the stock row applied");
+            Equal(111, c.Purse, "and the purse row with it");
+        }
+
+        private static void NonceRingTests()
+        {
+            Section("NonceRing");
+
+            var ring = new NonceRing(3);
+            Check(ring.Add(1), "a nonce not seen before is accepted");
+            Check(!ring.Add(1), "the same nonce a second time is refused");
+            Check(ring.Contains(1), "and it is remembered");
+            Check(!ring.Contains(99), "one never seen is not");
+            Equal(1, ring.Count, "one nonce in the ring");
+
+            Check(ring.Add(2) && ring.Add(3), "two more fill it to capacity");
+            Equal(3, ring.Count, "three of three");
+            Check(ring.Add(4), "a fourth is still accepted");
+            Equal(3, ring.Count, "and the ring stays at its capacity");
+            Check(!ring.Contains(1), "the oldest was evicted");
+            Check(ring.Contains(2) && ring.Contains(3) && ring.Contains(4), "the newest three are kept");
+
+            ring.Forget(3);
+            Check(!ring.Contains(3), "a refused deal's nonce is forgotten");
+            Equal(2, ring.Count, "and the ring shrinks");
+            Check(ring.Add(3), "so the same nonce may be offered again");
+
+            // Eviction order survives a Forget: the queue is rebuilt, not left with a hole.
+            var ring2 = new NonceRing(3);
+            ring2.Add(1); ring2.Add(2); ring2.Add(3);
+            ring2.Forget(2);
+            Check(ring2.Add(4) && ring2.Add(5), "two more after forgetting the middle one");
+            Equal(3, ring2.Count, "still three");
+            Check(!ring2.Contains(1), "and it is the OLDEST that went, not an arbitrary one");
+            Check(ring2.Contains(3) && ring2.Contains(4) && ring2.Contains(5), "leaving the three newest");
+
+            ring.Clear();
+            Equal(0, ring.Count, "Clear empties the ring");
+            Check(!ring.Contains(4), "nothing is remembered after it");
+            Check(ring.Add(4), "and a nonce it had is accepted again");
+
+            var tiny = new NonceRing(0);
+            Check(tiny.Add(1), "a capacity of 0 still holds one");
+            Check(tiny.Add(2) && !tiny.Contains(1), "and evicts on the next");
+
+            Check(ring.Add(0), "nonce 0 is a value like any other to the ring");
+            Check(!ring.Add(0), "and repeats like any other");
+        }
+
+        private static void SchedulerTests()
+        {
+            Section("Scheduler");
+
+            var one = new List<Candidate> { Player(1, "Sigrun", 0f, 0f) };
+
+            // ---- the interval ------------------------------------------------------------
+
+            Scheduler s = new Scheduler(SchedulerRules.Default);
+            s.Arm(0);
+            Equal(1500.0, s.NextRollAt, "Arm puts the first roll one interval (25 minutes) out");
+            Check(s.Tick(100, one, false, true, Rolls(0.0)) == null, "a tick before the interval does not roll at all");
+            Check(s.Tick(1499.9, one, false, true, Rolls(0.0)) == null, "not even a tenth of a second early");
+            Decision d = s.Tick(1500, one, false, true, Rolls(0.0, 0.0));
+            Check(d != null, "a tick at the interval rolls");
+            Equal(3000.0, s.NextRollAt, "and the next roll is one interval further on");
+
+            Scheduler unarmed = new Scheduler(SchedulerRules.Default);
+            Check(unarmed.Tick(500, one, false, true, Rolls(0.0)) == null,
+                  "the first tick on an unarmed scheduler arms it rather than rolling");
+            Equal(2000.0, unarmed.NextRollAt, "one interval after that first tick");
+            Equal("no roll yet", unarmed.LastDecision, "and no decision has been made yet");
+
+            // ---- the three holds ---------------------------------------------------------
+
+            Scheduler off = new Scheduler(new SchedulerRules { Enabled = false });
+            off.Arm(0);
+            Decision dOff = off.Tick(1500, one, false, true, Rolls(0.0));
+            Check(!dOff.Visit && dOff.Reason.StartsWith("held: Server.Enabled"), "Enabled false holds the roll and says so");
+
+            Scheduler ev = new Scheduler(SchedulerRules.Default);
+            ev.Arm(0);
+            Decision dEv = ev.Tick(1500, one, true, true, Rolls(0.0));
+            Check(!dEv.Visit && dEv.Reason.StartsWith("held: a random event"), "a random event already running holds the roll");
+
+            Scheduler night = new Scheduler(SchedulerRules.Default);
+            night.Arm(0);
+            Decision dNight = night.Tick(1500, one, false, false, Rolls(0.0));
+            Check(!dNight.Visit && dNight.Reason.StartsWith("held: night"), "night holds the roll while DaytimeOnly is on");
+            Equal(dNight.Reason, night.LastDecision, "and the last decision is kept in words for cargo status");
+
+            Scheduler anytime = new Scheduler(new SchedulerRules { DaytimeOnly = false });
+            anytime.Arm(0);
+            Check(anytime.Tick(1500, one, false, false, Rolls(0.0, 0.0)).Visit, "with DaytimeOnly off, night does not hold it");
+
+            // Two holds at once: the order design 3.1 lists them in decides which one is reported, and
+            // `cargo status` shows only that one. An event during the night must read as the event.
+            Scheduler raidAtNight = new Scheduler(SchedulerRules.Default);
+            raidAtNight.Arm(0);
+            Decision dBoth = raidAtNight.Tick(1500, one, true, false, Rolls(0.0));
+            Check(!dBoth.Visit, "a raid running at night holds the roll");
+            Check(dBoth.Reason.StartsWith("held: a random event"),
+                  "and names the event, not the night: the event hold is checked before the night hold");
+
+            Scheduler offAtNight = new Scheduler(new SchedulerRules { Enabled = false });
+            offAtNight.Arm(0);
+            Check(offAtNight.Tick(1500, one, true, false, Rolls(0.0)).Reason.StartsWith("held: Server.Enabled"),
+                  "and Server.Enabled is checked before either of them");
+
+            // ---- who is not eligible, and how it is reported -----------------------------
+
+            var flawed = new List<Candidate>();
+            Candidate c;
+            c = Player(11, "NotRested", 0f, 0f);   c.Rested = false;   flawed.Add(c);
+            c = Player(12, "Uncomfy", 0f, 0f);     c.Comfort = 3;      flawed.Add(c);
+            c = Player(13, "NoBase", 0f, 0f);      c.BaseValue = 0;    flawed.Add(c);
+            c = Player(14, "InACrypt", 0f, 0f);    c.Y = 3500f;        flawed.Add(c);
+            c = Player(15, "Dead", 0f, 0f);        c.Alive = false;    flawed.Add(c);
+            c = Player(16, "Loading", 0f, 0f);     c.Ready = false;    flawed.Add(c);
+
+            Scheduler nobody = new Scheduler(SchedulerRules.Default);
+            nobody.Arm(0);
+            Decision dn = nobody.Tick(1500, flawed, false, true, Rolls(0.0));
+            Equal(0, dn.Eligible, "six players, none eligible");
+            Check(!dn.Visit, "so no visit");
+            Check(dn.Reason.StartsWith("no eligible player: "), "the reason opens with the cause");
+            Check(dn.Reason.Contains("1 not rested"), "one is not rested");
+            Check(dn.Reason.Contains("1 comfort < 4"), "one is below MinComfort 4");
+            Check(dn.Reason.Contains("1 baseValue < 1"), "one is below MinBaseValue 1");
+            Check(dn.Reason.Contains("1 in a dungeon"), "one is above the 3000 m dungeon line");
+            Check(dn.Reason.Contains("1 dead"), "one is dead");
+            Check(dn.Reason.Contains("1 not ready"), "one is still loading");
+
+            var twoTired = new List<Candidate>();
+            c = Player(17, "A", 0f, 0f); c.Rested = false; twoTired.Add(c);
+            c = Player(18, "B", 0f, 0f); c.Rested = false; twoTired.Add(c);
+            Scheduler counting = new Scheduler(SchedulerRules.Default);
+            counting.Arm(0);
+            Check(counting.Tick(1500, twoTired, false, true, Rolls(0.0)).Reason.Contains("2 not rested"),
+                  "the counter counts, it does not just flag");
+
+            Scheduler alone = new Scheduler(SchedulerRules.Default);
+            alone.Arm(0);
+            Check(alone.Tick(1500, new List<Candidate>(), false, true, Rolls(0.0)).Reason.EndsWith("nobody online"),
+                  "an empty player list reads 'nobody online'");
+            Check(alone.Tick(3000, null, false, true, Rolls(0.0)).Reason.EndsWith("nobody online"),
+                  "and so does a null one");
+
+            Scheduler cool = new Scheduler(SchedulerRules.Default);
+            cool.Arm(0);
+            cool.StampCooldown(21, 0f, 0f, 1500);
+            Check(cool.OnPlayerCooldown(21, 1500), "a stamped player is on cooldown at once");
+            Check(!cool.OnPlayerCooldown(21, 5100), "and off it one PlayerCooldownSeconds later");
+            Check(cool.Tick(1500, new List<Candidate> { Player(21, "Sigrun", 0f, 0f) }, false, true, Rolls(0.0))
+                      .Reason.Contains("1 on cooldown"),
+                  "that player is counted as on cooldown");
+            Check(cool.Tick(3000, new List<Candidate> { Player(22, "Bjorn", 10f, 0f) }, false, true, Rolls(0.0))
+                      .Reason.Contains("1 near a base on cooldown"),
+                  "and a different player 10 m from that base is counted as near one");
+
+            Check(cool.NearBaseCooldown(59f, 0f, 3000), "59 m is inside CooldownRadius 60");
+            Check(!cool.NearBaseCooldown(61f, 0f, 3000), "61 m is outside it");
+            cool.Prune(5100);
+            Check(!cool.OnPlayerCooldown(21, 5100), "Prune drops the expired player cooldown");
+            Check(!cool.NearBaseCooldown(0f, 0f, 5100), "and the expired base cooldown with it");
+
+            // ---- tickets -----------------------------------------------------------------
+
+            var near = new List<Candidate> { Player(31, "A", 0f, 0f), Player(32, "B", 30f, 0f) };
+            Equal(1, Scheduler.Tickets(near, 40f).Count, "two players 30 m apart are one town, one ticket");
+            Equal(31L, Scheduler.Tickets(near, 40f)[0].Uid, "and the ticket is the first of them, in list order");
+            var far = new List<Candidate> { Player(33, "A", 0f, 0f), Player(34, "B", 50f, 0f) };
+            Equal(2, Scheduler.Tickets(far, 40f).Count, "two players 50 m apart are two tickets");
+            Equal(0, Scheduler.Tickets(new List<Candidate>(), 40f).Count, "nobody is no tickets");
+
+            // ---- the chance --------------------------------------------------------------
+
+            Scheduler ch = new Scheduler(SchedulerRules.Default);
+            ch.Arm(0);
+            Check(ch.Tick(1500, one, false, true, Rolls(0.24, 0.0)).Visit,
+                  "a roll of 0.24 is under EventChancePercent 25 and visits");
+
+            Scheduler ch2 = new Scheduler(SchedulerRules.Default);
+            ch2.Arm(0);
+            Decision d25 = ch2.Tick(1500, one, false, true, Rolls(0.25));
+            Check(!d25.Visit, "a roll of exactly 0.25 is NOT under 25 and does not visit");
+            Check(d25.Reason.Contains("no visit"), "and says so");
+            Equal(1, d25.Eligible, "the eligible count is still reported when only the chance failed");
+            Equal(1, d25.Tickets, "and so is the ticket count");
+
+            // ---- who gets it -------------------------------------------------------------
+
+            var twoTowns = new List<Candidate> { Player(41, "First", 0f, 0f), Player(42, "Last", 500f, 0f) };
+
+            Scheduler pickLast = new Scheduler(SchedulerRules.Default);
+            pickLast.Arm(0);
+            Decision dLast = pickLast.Tick(1500, twoTowns, false, true, Rolls(0.0, 0.99));
+            Equal(2, dLast.Tickets, "two towns, two tickets");
+            Check(dLast.Visit && dLast.Pilot.Uid == 42, "the SECOND random number picks: 0.99 of two tickets is the last");
+
+            Scheduler pickFirst = new Scheduler(SchedulerRules.Default);
+            pickFirst.Arm(0);
+            Decision dFirst = pickFirst.Tick(1500, twoTowns, false, true, Rolls(0.0, 0.0));
+            Check(dFirst.Visit && dFirst.Pilot.Uid == 41, "and 0.0 picks the first");
+
+            Scheduler pickEdge = new Scheduler(SchedulerRules.Default);
+            pickEdge.Arm(0);
+            Decision dEdge = pickEdge.Tick(1500, twoTowns, false, true, Rolls(0.0, 1.0));
+            Check(dEdge.Visit && dEdge.Pilot.Uid == 42, "a pick of 1.0 is clamped inside the list, never out of range");
+
+            // ---- a visit stamps the cooldowns --------------------------------------------
+
+            Scheduler stamped = new Scheduler(SchedulerRules.Default);
+            stamped.Arm(0);
+            Decision ds = stamped.Tick(1500, new List<Candidate> { Player(51, "Vik", 100f, 200f) }, false, true, Rolls(0.0, 0.0));
+            Check(ds.Visit, "a visit is decided");
+            Check(ds.Reason.StartsWith("visit: "), "and named in words");
+            Check(stamped.OnPlayerCooldown(51, 1500), "the pilot is stamped at dispatch, not at success");
+            Check(stamped.NearBaseCooldown(140f, 200f, 1500), "40 m from where he stood is within CooldownRadius 60");
+            Check(!stamped.NearBaseCooldown(200f, 200f, 1500), "100 m from it is not");
+            Check(!stamped.OnPlayerCooldown(52, 1500), "and nobody else is stamped");
+
+            // ---- cargo visit -------------------------------------------------------------
+
+            Scheduler f = new Scheduler(SchedulerRules.Default);
+            f.Arm(0);
+            Decision fOff = f.Force(0, one, false, true, 999);
+            Check(!fOff.Visit && fOff.Reason.Contains("is not online"), "forcing a uid nobody is playing says so");
+
+            Candidate tired = Player(61, "Sleepy", 0f, 0f);
+            tired.Rested = false;
+            Decision fBad = f.Force(0, new List<Candidate> { tired }, false, true, 61);
+            Check(!fBad.Visit, "an ineligible player is not forced into a visit");
+            Check(fBad.Reason.StartsWith("forced: ") && fBad.Reason.Contains("not eligible"),
+                  "the refusal says it was a forced attempt");
+            Check(fBad.Reason.Contains("1 not rested"), "and why he did not qualify");
+
+            Scheduler fHold = new Scheduler(SchedulerRules.Default);
+            Check(fHold.Force(0, one, true, true, 1).Reason.StartsWith("held: a random event"),
+                  "a force still respects the holds: one random event at a time");
+
+            Scheduler f0 = new Scheduler(new SchedulerRules { ChancePercent = 0f });
+            f0.Arm(0);
+            Decision fz = f0.Force(0, one, false, true, 1);
+            Check(fz.Visit && fz.Pilot.Uid == 1, "an eligible player is forced to a visit at chance 0, long before the interval");
+            Check(fz.Reason.StartsWith("forced visit: "), "and the reason says it was forced");
+            Check(f0.OnPlayerCooldown(1, 0), "a forced visit stamps the cooldown like any other");
+            Equal(1500.0, f0.NextRollAt, "and does not move the scheduled roll");
+            Decision fAgain = f0.Force(100, one, false, true, 1);
+            Check(fAgain.Visit, "a forced visit ignores the cooldown it just stamped: the admin asked, and milestone testing needs it");
+            Scheduler fCount = new Scheduler(SchedulerRules.Default);
+            var crowd = new List<Candidate> { Player(1, "Don", 0f, 0f), Player(2, "Far", 1000f, 0f), Player(3, "Wide", 2000f, 0f) };
+            Decision fc = fCount.Force(0, crowd, false, true, 2);
+            Check(fc.Visit && fc.Pilot.Uid == 2, "the named player is the one forced");
+            Equal(3, fc.Eligible, "and the counters still count everyone online, so cargo status tells the truth");
+            Equal(3, fc.Tickets, "three towns, three tickets");
+            Candidate tiredForced = Player(4, "Yawn", 3000f, 0f); tiredForced.Rested = false;
+            crowd.Add(tiredForced);
+            Decision fWhy = fCount.Force(0, crowd, false, true, 4);
+            Check(!fWhy.Visit && fWhy.Reason.StartsWith("forced: Yawn not eligible: not rested"), "a forced refusal names the forced player's own shortfall first");
+            Check(fWhy.Reason.Contains("online: 1 not rested"), "and the crowd's summary after it");
+
+            Candidate edge = Player(91, "Edge", 0f, 0f); edge.Y = 3000f;
+            Scheduler sEdge = new Scheduler(SchedulerRules.Default); sEdge.Arm(0);
+            Check(sEdge.Tick(1500, new List<Candidate> { edge }, false, true, Rolls(0.0)).Reason.Contains("1 in a dungeon"),
+                  "y = 3000 exactly is not on the surface (design 3.1: eligible needs y < 3000)");
+            Scheduler sHundred = new Scheduler(new SchedulerRules { ChancePercent = 100f }); sHundred.Arm(0);
+            Check(sHundred.Tick(1500, one, false, true, Rolls(1.0, 0.0)).Visit, "an inclusive random source returning 1.0 cannot starve chance 100");
+            Check(sHundred.LastDecision.EndsWith("1 eligible, 1 ticket(s)"), "the counters are invariant-culture ints");
+
+            var srProblems = new List<string>();
+            SchedulerRules wild = new SchedulerRules { MinComfort = -1, MinBaseValue = -1, IntervalSeconds = 0f, ChancePercent = 250f, PlayerCooldownSeconds = -1f, CooldownRadius = float.NaN, TownRadius = -5f };
+            wild.Sanitize(srProblems);
+            Equal(7, srProblems.Count, "every scheduler knob out of range is reported");
+            Check(wild.MinComfort == 0 && wild.MinBaseValue == 0 && wild.IntervalSeconds == 10f && wild.ChancePercent == 100f &&
+                  wild.PlayerCooldownSeconds == 0f && wild.CooldownRadius == 0f && wild.TownRadius == 0f, "and clamped into range");
+            srProblems.Clear();
+            wild.Sanitize(srProblems);
+            Equal(0, srProblems.Count, "idempotent");
+            SchedulerRules everyTick = new SchedulerRules { IntervalSeconds = 0f };
+            new Scheduler(everyTick);
+            Equal(10f, everyTick.IntervalSeconds, "the constructor sanitizes in place: an interval of 0 cannot roll every tick");
+
+            // ---- the sidecar rows --------------------------------------------------------
+
+            Scheduler src = new Scheduler(SchedulerRules.Default);
+            src.StampCooldown(71, 10f, -20f, 100);
+            string rows = src.EncodeCooldowns(100);
+            Check(rows.Contains("cool\t71\t3600"), "a player row is uid and the seconds remaining at save time");
+            Check(rows.Contains("coolbase\t10\t-20\t3600"), "a base row is x, z and the seconds remaining");
+
+            Scheduler dst = new Scheduler(SchedulerRules.Default);
+            var problems = new List<string>();
+            dst.ApplyCooldowns(rows, 100, problems);
+            Equal(0, problems.Count, "rows written by EncodeCooldowns apply with no problems");
+            Check(dst.OnPlayerCooldown(71, 100), "the player cooldown came back");
+            Check(!dst.OnPlayerCooldown(71, 3700), "with its expiry intact");
+            Check(dst.NearBaseCooldown(10f, -20f, 100), "the base cooldown came back");
+            Check(!dst.NearBaseCooldown(10f, -20f, 3700), "with its expiry intact");
+            Equal(rows, dst.EncodeCooldowns(100), "and the rows round-trip byte for byte");
+
+            // Rebased: a restart resets the caller's clock to zero, and the saved remainder counts from the new now.
+            Scheduler rebased = new Scheduler(SchedulerRules.Default);
+            rebased.ApplyCooldowns(rows, 0, problems);
+            Check(rebased.OnPlayerCooldown(71, 3599), "3600 s remained at save; after a restart to clock 0 the player is on cooldown at 3599");
+            Check(!rebased.OnPlayerCooldown(71, 3600), "and off it at 3600, not at the old absolute 3700");
+            Check(rebased.NearBaseCooldown(10f, -20f, 3599) && !rebased.NearBaseCooldown(10f, -20f, 3600), "the base row is rebased the same way");
+            rebased.ApplyCooldowns(rows, 0, problems);
+            Equal(rows, rebased.EncodeCooldowns(0), "applying the same rows twice replaces them, never duplicates a base row");
+            Equal("", src.EncodeCooldowns(5000), "an expired cooldown is not written at all");
+            Scheduler stale = new Scheduler(SchedulerRules.Default);
+            stale.ApplyCooldowns("cool\t71\t-5\ncoolbase\t1\t1\t0", 0, problems);
+            Check(!stale.OnPlayerCooldown(71, 0) && !stale.NearBaseCooldown(1f, 1f, 0), "a row with no time left is dropped on load");
+
+            problems.Clear();
+            dst.ApplyCooldowns("", 100, problems);
+            dst.ApplyCooldowns(null, 100, problems);
+            Equal(0, problems.Count, "an empty set of rows is a no-op");
+
+            problems.Clear();
+            dst.ApplyCooldowns("garbage\trow", 100, problems);
+            Equal(1, problems.Count, "a junk cooldown row is reported");
+            Check(problems[0].Contains("cooldown row ignored"), "and named as ignored");
+
+            problems.Clear();
+            dst.ApplyCooldowns("cool\tnotanumber\t50", 100, problems);
+            Equal(1, problems.Count, "a cooldown row whose uid does not parse is reported too");
+        }
+
+        private static void VisitClockTests()
+        {
+            Section("VisitClock");
+
+            VisitClock c = VisitClock.Start(1000, 300f);
+            Equal(1000.0, c.StartWorldTime, "Start records the world time it began at");
+            Equal(1300.0, c.EndWorldTime, "and the end one lifespan later");
+            Equal(300.0, c.Remaining(1000), "the whole lifespan remains at the start");
+            Equal(150.0, c.Remaining(1150), "half of it halfway through");
+            Equal(0.0, c.Remaining(1300), "none of it at the end");
+            Equal(0.0, c.Remaining(1400), "and Remaining never goes negative");
+            Check(!c.Expired(1299), "not expired a second before the end");
+            Check(c.Expired(1300), "expired at the end time itself");
+            Check(c.Expired(9999), "and after it");
+
+            Check(!c.Warned, "a fresh clock has not warned");
+            Check(!c.OneMinuteWarningDue(1239), "the warning is not due with 61 s left");
+            Check(c.OneMinuteWarningDue(1240), "it is due the moment 60 s remain");
+            Check(!c.OneMinuteWarningDue(1240), "and never a second time");
+            Check(!c.OneMinuteWarningDue(1250), "not later in the same minute either");
+            Check(c.Warned, "the clock remembers that it warned");
+
+            VisitClock missed = VisitClock.Start(0, 300f);
+            Check(!missed.OneMinuteWarningDue(400), "a clock nobody asked until after the end does not warn late");
+            Check(!missed.Warned, "and is not marked as having warned");
+
+            VisitClock resumed = VisitClock.Resume(0, 300, 270);
+            Equal(0.0, resumed.StartWorldTime, "Resume keeps the saved start");
+            Equal(300.0, resumed.EndWorldTime, "and the saved end");
+            Equal(30.0, resumed.Remaining(270), "so the remainder is what the save said");
+            Check(!resumed.Warned, "resuming with 30 s left has NOT warned yet: the player who comes back still hears one 'hurry'");
+            Check(resumed.OneMinuteWarningDue(271), "and it fires once, at once");
+            Check(!resumed.OneMinuteWarningDue(272), "and never again");
+
+            VisitClock resumedEarly = VisitClock.Resume(0, 300, 100);
+            Check(!resumedEarly.Warned, "resuming with 200 s left has not warned");
+            Check(resumedEarly.OneMinuteWarningDue(241), "and warns when the minute comes");
+
+            VisitClock moved = VisitClock.Start(0, 300f);
+            Check(moved.OneMinuteWarningDue(240), "warned at 60 s left");
+            moved.Retarget(400);
+            Equal(400.0, moved.EndWorldTime, "Retarget moves the deadline (the event paused while nobody was near)");
+            Equal(160.0, moved.Remaining(240), "so more time remains");
+            Check(moved.Warned && !moved.OneMinuteWarningDue(340), "and the warning is not re-armed");
+            moved.Retarget(double.NaN);
+            Equal(400.0, moved.EndWorldTime, "a NaN deadline is ignored");
+            moved.Retarget(-50);
+            Equal(0.0, moved.EndWorldTime, "a deadline before the start is clamped to the start");
+            Equal(0.5, VisitClock.Start(0, 300f).Fraction(150), "Fraction is elapsed over lifespan");
+            Equal(1.0, VisitClock.Start(0, 300f).Fraction(999), "clamped at 1");
+            Equal(0.0, VisitClock.Start(100, 300f).Fraction(50), "and at 0 before the start");
+            Equal("03:42", VisitClock.Start(0, 300f).FormatRemaining(78), "FormatRemaining is Format(Remaining(now))");
+            Equal("00:00", VisitClock.Format(double.NaN), "a NaN reads 00:00, never a garbage number");
+            Equal("100:00", VisitClock.Format(6000), "and a long remainder widens rather than wraps");
+
+            Equal("03:42", VisitClock.Format(222), "222 s reads 03:42");
+            Equal("00:00", VisitClock.Format(0), "0 s reads 00:00");
+            Equal("00:00", VisitClock.Format(-5), "a negative remainder reads 00:00, never a minus sign");
+            Equal("05:00", VisitClock.Format(300), "the full visit reads 05:00");
+            Equal("00:01", VisitClock.Format(0.6), "a fraction rounds to the nearest second");
+            Equal("59:59", VisitClock.Format(3599), "and it counts on without widening");
+
+            VisitClock tiny = VisitClock.Start(0, 0f);
+            Equal(1.0, tiny.EndWorldTime, "a lifespan below a second is clamped to one second");
+            VisitClock negative = VisitClock.Start(0, -30f);
+            Equal(1.0, negative.EndWorldTime, "and so is a negative one");
+        }
+
         private static void DemoMarketTests()
         {
             Section("DemoMarket.Settle");
@@ -555,14 +1637,17 @@ namespace ValkyriesCargo.Tests
             DemoMarket market = DemoMarket.Default();
             int playerCoins = 840;
 
-            // Get known prefabs from the market
-            MarketRow ware1 = null, want1 = null;
+            // Snapshots are VALUES (WORKSPLIT section 2): a MarketRow held from an earlier snapshot
+            // never changes, and every accepted deal moves the price. So these tests keep only the
+            // prefab NAMES and re-read the row from a fresh snapshot immediately before each deal.
+            string warePrefab = null, wantPrefab = null;
             foreach (var row in market.Market.Rows)
             {
-                if (row.Kind == EntryKind.Ware && ware1 == null) ware1 = row;
-                if (row.Kind == EntryKind.Want && want1 == null) want1 = row;
-                if (ware1 != null && want1 != null) break;
+                if (row.Kind == EntryKind.Ware && warePrefab == null) warePrefab = row.Prefab;
+                if (row.Kind == EntryKind.Want && wantPrefab == null) wantPrefab = row.Prefab;
+                if (warePrefab != null && wantPrefab != null) break;
             }
+            Check(warePrefab != null && wantPrefab != null, "the demo market has at least one Ware and one Want");
 
             // Empty deal
             Deal empty = new Deal { VisitId = 1, Nonce = 1 };
@@ -570,15 +1655,18 @@ namespace ValkyriesCargo.Tests
             Check(r.Reason == DealReason.EmptyDeal, "Empty deal returns empty_deal");
 
             // Wrong VisitId
-            Deal wrongVisit = new Deal { VisitId = 999, Nonce = 2, Wanted = new DealLine { Prefab = ware1.Prefab, Count = 1, UnitPriceSeen = ware1.Buy } };
+            MarketRow ware = market.Market.Find(warePrefab);
+            Deal wrongVisit = new Deal { VisitId = 999, Nonce = 2, Wanted = new DealLine { Prefab = warePrefab, Count = 1, UnitPriceSeen = ware.Buy } };
             r = market.Settle(wrongVisit, playerCoins);
             Check(r.Reason == DealReason.StaleVisit, "Wrong VisitId returns stale_visit");
 
             // Duplicate nonce
-            Deal first = new Deal { VisitId = 1, Nonce = 100, Wanted = new DealLine { Prefab = ware1.Prefab, Count = 1, UnitPriceSeen = ware1.Buy } };
+            ware = market.Market.Find(warePrefab);
+            Deal first = new Deal { VisitId = 1, Nonce = 100, Wanted = new DealLine { Prefab = warePrefab, Count = 1, UnitPriceSeen = ware.Buy } };
             r = market.Settle(first, playerCoins);
             Check(r.Ok, "First deal with nonce 100 succeeds");
-            Deal dup = new Deal { VisitId = 1, Nonce = 100, Wanted = new DealLine { Prefab = ware1.Prefab, Count = 1, UnitPriceSeen = ware1.Buy } };
+            ware = market.Market.Find(warePrefab);
+            Deal dup = new Deal { VisitId = 1, Nonce = 100, Wanted = new DealLine { Prefab = warePrefab, Count = 1, UnitPriceSeen = ware.Buy } };
             r = market.Settle(dup, playerCoins);
             Check(r.Reason == DealReason.Duplicate, "Same nonce twice returns duplicate");
 
@@ -586,12 +1674,13 @@ namespace ValkyriesCargo.Tests
             Deal refused = new Deal { VisitId = 1, Nonce = 101, Wanted = new DealLine { Prefab = "Unknown", Count = 1, UnitPriceSeen = 0 } };
             r = market.Settle(refused, playerCoins);
             Check(!r.Ok && r.Reason == DealReason.UnknownItem, "Unknown item is refused");
-            Deal reused = new Deal { VisitId = 1, Nonce = 101, Wanted = new DealLine { Prefab = ware1.Prefab, Count = 1, UnitPriceSeen = ware1.Buy } };
+            ware = market.Market.Find(warePrefab);
+            Deal reused = new Deal { VisitId = 1, Nonce = 101, Wanted = new DealLine { Prefab = warePrefab, Count = 1, UnitPriceSeen = ware.Buy } };
             r = market.Settle(reused, playerCoins);
             Check(r.Ok, "Refused nonce 101 may be reused and accepted");
 
             // Buying a Want-kind prefab (only Ware can be bought)
-            Deal buyWant = new Deal { VisitId = 1, Nonce = 102, Wanted = new DealLine { Prefab = want1.Prefab, Count = 1, UnitPriceSeen = 0 } };
+            Deal buyWant = new Deal { VisitId = 1, Nonce = 102, Wanted = new DealLine { Prefab = wantPrefab, Count = 1, UnitPriceSeen = 0 } };
             r = market.Settle(buyWant, playerCoins);
             Check(r.Reason == DealReason.UnknownItem, "Buying a Want-kind prefab returns unknown_item");
 
@@ -610,29 +1699,33 @@ namespace ValkyriesCargo.Tests
 
             // Wrong unit price seen
             nonce++;
-            Deal wrongPrice = new Deal { VisitId = 1, Nonce = nonce, Wanted = new DealLine { Prefab = ware1.Prefab, Count = 1, UnitPriceSeen = ware1.Buy + 50 } };
+            ware = market.Market.Find(warePrefab);
+            Deal wrongPrice = new Deal { VisitId = 1, Nonce = nonce, Wanted = new DealLine { Prefab = warePrefab, Count = 1, UnitPriceSeen = ware.Buy + 50 } };
             r = market.Settle(wrongPrice, playerCoins);
             Check(r.Reason == DealReason.PriceChanged && r.NewMarketState.Length > 0, "Wrong UnitPriceSeen returns price_changed with NewMarketState");
 
             // Offering more than max
             nonce++;
-            Deal overMax = new Deal { VisitId = 1, Nonce = nonce, Offered = new List<DealLine> { new DealLine { Prefab = want1.Prefab, Count = want1.Max + 10, UnitPriceSeen = want1.Sell } } };
+            MarketRow want = market.Market.Find(wantPrefab);
+            Deal overMax = new Deal { VisitId = 1, Nonce = nonce, Offered = new List<DealLine> { new DealLine { Prefab = wantPrefab, Count = want.Max + 10, UnitPriceSeen = want.Sell } } };
             r = market.Settle(overMax, playerCoins);
             Check(r.Reason == DealReason.OverMax, "Offering more than max returns over_max");
 
-            // coins_short: find a ware and buy enough to exceed the 10 coins we're giving
+            // coins_short: buy enough of a ware to exceed the 10 coins we're giving
             nonce++;
-            int coinShortQuantity = Math.Max(1, (10 / Math.Max(1, ware1.Buy)) + 5); // Enough to exceed 10 coins
-            Deal coinShort = new Deal { VisitId = 1, Nonce = nonce, Wanted = new DealLine { Prefab = ware1.Prefab, Count = coinShortQuantity, UnitPriceSeen = ware1.Buy } };
+            ware = market.Market.Find(warePrefab);
+            int coinShortQuantity = Math.Max(1, (10 / Math.Max(1, ware.Buy)) + 5); // Enough to exceed 10 coins
+            Deal coinShort = new Deal { VisitId = 1, Nonce = nonce, Wanted = new DealLine { Prefab = warePrefab, Count = coinShortQuantity, UnitPriceSeen = ware.Buy } };
             r = market.Settle(coinShort, 10);
             Check(r.Reason == DealReason.CoinsShort, "Buying too much with too few coins returns coins_short");
 
-            // purse_empty: sell enough of a want to exceed the merchant's purse
+            // purse_empty: sell enough of a want to exceed the merchant's purse. The headroom is
+            // Max MINUS the stock he already holds; more than that is over_max, a different refusal.
             nonce++;
             bool purseEmptyTested = false;
             foreach (var testWant in market.Market.Rows)
             {
-                if (testWant.Kind == EntryKind.Want && testWant.Sell > 0 && testWant.Max > 0)
+                if (testWant.Kind == EntryKind.Want && testWant.Sell > 0 && testWant.Max > testWant.Stock)
                 {
                     int testPurse = market.Market.Purse;
                     // To trigger purse_empty: offeredValue > purse
@@ -640,9 +1733,10 @@ namespace ValkyriesCargo.Tests
                     // So: quantity * sell_price > purse
                     //     quantity > purse / sell_price
                     long minQuantity = (long)testPurse / testWant.Sell + 1;
-                    int tryQuantity = (int)Math.Min(testWant.Max, minQuantity);
+                    int headroom = testWant.Max - testWant.Stock;
+                    int tryQuantity = (int)Math.Min(headroom, minQuantity);
 
-                    // If we can fit the quantity within max and it would overflow purse, try it
+                    // If we can fit the quantity under his max and it would still overflow the purse, try it
                     if (tryQuantity > 0 && (long)tryQuantity * testWant.Sell > testPurse)
                     {
                         Deal purseOverflow = new Deal { VisitId = 1, Nonce = nonce, Offered = new List<DealLine> { new DealLine { Prefab = testWant.Prefab, Count = tryQuantity, UnitPriceSeen = testWant.Sell } } };
@@ -662,44 +1756,225 @@ namespace ValkyriesCargo.Tests
 
             // Accepted buy reduces stock and raises purse
             nonce++;
-            Deal acceptBuy = new Deal { VisitId = 1, Nonce = nonce, Wanted = new DealLine { Prefab = ware1.Prefab, Count = 1, UnitPriceSeen = ware1.Buy } };
-            int stockBefore = ware1.Stock;
+            ware = market.Market.Find(warePrefab);
+            int stockBefore = ware.Stock;
             int purseBefore = market.Market.Purse;
+            int priceSeen = ware.Buy;
+            Deal acceptBuy = new Deal { VisitId = 1, Nonce = nonce, Wanted = new DealLine { Prefab = warePrefab, Count = 1, UnitPriceSeen = priceSeen } };
             r = market.Settle(acceptBuy, 10000);
             Check(r.Ok, "Accept buy succeeds");
-            Check(ware1.Stock == stockBefore - 1, "Stock decremented");
-            Check(market.Market.Purse == purseBefore + ware1.Buy, "Purse raised by price");
+            Check(market.Market.Find(warePrefab).Stock == stockBefore - 1, "Stock decremented");
+            Check(market.Market.Purse == purseBefore + priceSeen, "Purse raised by price");
             Check(r.CoinsDelta < 0, "CoinsDelta is negative for player");
 
             // Accepted sell raises stock and lowers purse
             nonce++;
-            stockBefore = want1.Stock;
+            want = market.Market.Find(wantPrefab);
+            stockBefore = want.Stock;
             purseBefore = market.Market.Purse;
-            Deal acceptSell = new Deal { VisitId = 1, Nonce = nonce, Offered = new List<DealLine> { new DealLine { Prefab = want1.Prefab, Count = 1, UnitPriceSeen = want1.Sell } } };
+            int valueSeen = want.Sell;
+            Deal acceptSell = new Deal { VisitId = 1, Nonce = nonce, Offered = new List<DealLine> { new DealLine { Prefab = wantPrefab, Count = 1, UnitPriceSeen = valueSeen } } };
             r = market.Settle(acceptSell, 10000);
             Check(r.Ok, "Accept sell succeeds");
-            Check(want1.Stock == stockBefore + 1, "Stock incremented");
-            Check(market.Market.Purse == purseBefore - want1.Sell, "Purse lowered by value");
+            Check(market.Market.Find(wantPrefab).Stock == stockBefore + 1, "Stock incremented");
+            Check(market.Market.Purse == purseBefore - valueSeen, "Purse lowered by value");
             Check(r.CoinsDelta > 0, "CoinsDelta is positive for player");
 
             // Barter: net is price minus offered value
             nonce++;
+            ware = market.Market.Find(warePrefab);
+            want = market.Market.Find(wantPrefab);
             Deal barter = new Deal
             {
                 VisitId = 1, Nonce = nonce,
-                Wanted = new DealLine { Prefab = ware1.Prefab, Count = 1, UnitPriceSeen = ware1.Buy },
-                Offered = new List<DealLine> { new DealLine { Prefab = want1.Prefab, Count = 1, UnitPriceSeen = want1.Sell } }
+                Wanted = new DealLine { Prefab = warePrefab, Count = 1, UnitPriceSeen = ware.Buy },
+                Offered = new List<DealLine> { new DealLine { Prefab = wantPrefab, Count = 1, UnitPriceSeen = want.Sell } }
             };
             r = market.Settle(barter, 10000);
             Check(r.Ok && r.ItemsToAdd.Count > 0 && r.ItemsToRemove.Count > 0, "Barter accepted with both add and remove");
 
-            // Tick changes Buy/Sell and sets Trend
-            int buyBefore = ware1.Buy;
-            int sellBefore = ware1.Sell;
-            market.Tick(ware1.Prefab, true);
-            Check(ware1.Buy > buyBefore && ware1.Sell > sellBefore && ware1.Trend == 1, "Tick up increases prices and sets Trend to 1");
-            market.Tick(ware1.Prefab, false);
-            Check(ware1.Trend == -1, "Tick down sets Trend to -1");
+            // Tick walks the stock until the SHOWN price (Buy for a ware) moves: Iron, base 25 and target 20, moves at stock 18.
+            MarketRow iron = market.Market.Find("Iron");
+            int buyBefore = iron.Buy;
+            int sellBefore = iron.Sell;
+            Check(market.Tick("Iron", true), "Tick finds Iron");
+            iron = market.Market.Find("Iron");
+            Check(iron.Buy > buyBefore && iron.Sell >= sellBefore && iron.Trend == 1, "Tick scarcer raises the price and sets Trend to 1");
+            // Down puts the shelf back to target (trend flat); a second step floods it past target,
+            // which is what a trend of -1 means.
+            market.Tick("Iron", false);
+            Equal(0, market.Market.Find("Iron").Trend, "one Tick down is back at target, so the trend is flat");
+            market.Tick("Iron", false);
+            Check(market.Market.Find("Iron").Trend == -1, "Tick down sets Trend to -1");
+        }
+
+        private static void DemoMarketKnobTests()
+        {
+            Section("DemoMarket knobs");
+
+            DemoMarket demo = DemoMarket.Default();
+            Equal(1, demo.Market.VisitId, "the demo opens on visit 1");
+            Equal(800, demo.Market.Purse, "with the default purse of 800");
+            Equal(72, demo.Market.Count, "and the whole default catalogue");
+            Check(demo.Core != null && demo.Core.Find("Iron") != null, "Core exposes the real Market underneath");
+            Equal("demo", demo.Core.Salt, "the demo's delivery ids are salted 'demo', so a real server's never collide with them in the inbox");
+            Check(!ReferenceEquals(demo.Market, demo.Market), "Market hands out a FRESH snapshot on every call");
+            Equal(20, demo.Market.Find("Iron").Stock, "every line starts at target stock");
+            Equal(25, demo.Market.Find("Iron").Buy, "so Iron opens at its base price");
+
+            // Tick walks the stock one unit at a time until the SHOWN number moves (Buy for a Ware).
+            int before, after;
+            Check(demo.Tick("Iron", true, out before, out after), "Tick answers true for a line it found");
+            Equal(25, before, "the price it showed before");
+            Equal(26, after, "and after: the first stock at which 25 * (20/s)^0.35 rounds past 25");
+            Equal(18, demo.Market.Find("Iron").Stock, "which is stock 18 (19 still rounds to 25)");
+            Equal(26, demo.Market.Find("Iron").Buy, "25 * (20/18)^0.35 = 25.94 -> 26");
+            Equal(1, demo.Market.Find("Iron").Trend, "with the trend reading up");
+
+            Check(demo.Tick("Iron", false), "Tick the other way");
+            Equal(19, demo.Market.Find("Iron").Stock, "one unit back is enough: 25.45 -> 25");
+            Equal(25, demo.Market.Find("Iron").Buy, "back at the base price");
+            Equal(0, demo.Market.Find("Iron").Trend, "and the trend is flat again");
+
+            Check(demo.Tick("Iron", false), "and again");
+            Equal(22, demo.Market.Find("Iron").Stock, "20 and 21 still show 25; 22 is the first flooded price");
+            Equal(24, demo.Market.Find("Iron").Buy, "25 * (20/22)^0.35 = 24.18 -> 24");
+            Equal(-1, demo.Market.Find("Iron").Trend, "and the trend reads down");
+
+            // A base-1 Want, the row a quarter-target step could never move: Wood shows Sell.
+            Check(demo.Tick("Wood", true, out before, out after), "Tick moves Wood, base 1, target 200, max 600");
+            Equal(1, before, "he paid 1");
+            Equal(2, after, "and now pays 2");
+            Equal(22, demo.Market.Find("Wood").Stock, "which took the shelf down to 22: (200/22)^0.35 * 0.7 = 1.516 -> 2, where 23 gives 1.49 -> 1");
+            Equal(2, demo.Market.Find("Wood").Sell, "as the snapshot shows");
+
+            // At the bound the walk fails and leaves the stock alone.
+            Check(demo.Tick("BlackCore", true), "BlackCore 2 -> 1: 300 -> 382");
+            Equal(1, demo.Market.Find("BlackCore").Stock, "one left");
+            Check(!demo.Tick("BlackCore", true), "1 -> 0 shows the same 382 and there is nothing below 0, so the tick fails");
+            Equal(1, demo.Market.Find("BlackCore").Stock, "and the stock is left where it was");
+            Check(demo.Tick("BlackCore", false), "the other way still works");
+            Equal(2, demo.Market.Find("BlackCore").Stock, "back to 2");
+            Check(!demo.Tick("NoSuchPrefab", true), "Tick answers false for a prefab the catalogue does not carry");
+
+            // Every default row can be moved both ways from target: the demo can show price_changed on any line.
+            DemoMarket every = DemoMarket.Default();
+            int stuck = 0;
+            foreach (MarketRow row in every.Market.Rows)
+            {
+                if (!every.Tick(row.Prefab, true)) stuck++;
+                if (!every.Tick(row.Prefab, false)) stuck++;
+            }
+            Equal(0, stuck, "all 72 rows move scarcer and less scarce from target (the quarter-target step left 42 of them stuck)");
+
+            // Advance relaxes the ticked line back toward target and leaves the rest alone.
+            DemoMarket drift = DemoMarket.Default();
+            drift.Tick("Iron", true);
+            Equal(18, drift.Market.Find("Iron").Stock, "Iron is ticked down to 18, a gap of 2");
+            drift.Advance(1800);
+            Equal(19, drift.Market.Find("Iron").Stock, "one game day is one half-life: half of a gap of 2 is 1, so 18 -> 19");
+            Equal(20, drift.Market.Find("Bronze").Stock, "a line already at target does not move");
+            drift.Advance(1800 * 10);
+            Equal(20, drift.Market.Find("Iron").Stock, "and it settles back at target, never past it");
+        }
+
+        private static void MarketReviewFixTests()
+        {
+            Section("Market: the review's fixes (2026-09-06)");
+
+            // A null offered line is malformed, refused before the nonce is spent.
+            Market m = NewMarket(0);
+            m.StartVisit(1, 0, 0);
+            Deal bad = new Deal { VisitId = 1, Nonce = 77, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 25 } };
+            bad.Offered.Add(null);
+            DealResult r = m.Settle(bad, 1000, 0);
+            Check(!r.Ok && r.Reason == DealReason.Malformed, "a null offered line is malformed, not a NullReferenceException");
+            Check(!m.Nonces.Contains(77), "and the nonce was never spent");
+            Deal nullList = new Deal { VisitId = 1, Nonce = 78, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 25 }, Offered = null };
+            Equal(DealReason.Malformed, m.Settle(nullList, 1000, 0).Reason, "a null offered list is malformed too");
+            Equal(DealReason.Malformed, m.Settle(null, 1000, 0).Reason, "and so is a null deal");
+
+            // The over-max guard cannot be wrapped past with a huge count.
+            Deal huge = new Deal { VisitId = 1, Nonce = 79, Offered = new List<DealLine> { new DealLine { Prefab = "Wood", Count = int.MaxValue, UnitPriceSeen = 1 } } };
+            Equal(DealReason.OverMax, m.Settle(huge, 1000, 0).Reason, "int.MaxValue units of Wood is over max, not a wrapped negative that slips through");
+
+            // Delivery ids carry the salt; the default salt keeps the 'v' form.
+            Market salted = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), MarketRules.Default, 0, "w1a2b3");
+            salted.StartVisit(1, 0, 0);
+            Equal("w1a2b3-1-1", salted.Settle(new Deal { VisitId = 1, Nonce = 1, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 25 } }, 1000, 0).DeliveryId,
+                  "a salted market's ids name the world, so two worlds' visit 1 never collide in one inbox");
+            Equal("v", NewMarket(0).Salt, "no salt is the plain 'v' prefix");
+            Equal("v", new Market(null, null, 0, "a;b").Salt, "a salt that is not a wire token falls back to 'v'");
+            Equal("v", new Market(null, null, 0, "a-b").Salt, "and so does one with a dash, which the id format uses");
+            Equal(2, salted.NextVisitId, "NextVisitId is one past the current visit");
+
+            // The restart rows: purseStart, visit, seq.
+            Market a = NewMarket(0);
+            a.StartVisit(5, 0, 300);
+            Check(a.Settle(new Deal { VisitId = 5, Nonce = 1, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 25 } }, 1000, 0).Ok, "one buy in visit 5");
+            Check(a.Settle(new Deal { VisitId = 5, Nonce = 2, Wanted = new DealLine { Prefab = "Bronze", Count = 1, UnitPriceSeen = 15 } }, 1000, 0).Ok, "and a second");
+            string rows = a.EncodeState();
+            Check(rows.Contains("purseStart\t950"), "the visit's purse baseline is a row (800 + half of 300)");
+            Check(rows.Contains("visit\t5"), "the visit id is a row");
+            Check(rows.Contains("seq\t2"), "and the delivery sequence is a row");
+            Market b = NewMarket(0);
+            var problems = new List<string>();
+            b.ApplyState(rows, problems);
+            Equal(0, problems.Count, "the new rows apply cleanly");
+            Equal(5, b.VisitId, "a resumed market is still visit 5, so a deal sent before the restart is not stale");
+            Equal(6, b.NextVisitId, "and the next visit will be 6, never 1 again");
+            Equal(40, b.Takings, "Takings survive the restart: 25 + 15, because the baseline came back");
+            Equal("v-5-3", b.Settle(new Deal { VisitId = 5, Nonce = 3, Wanted = new DealLine { Prefab = "Honey", Count = 1, UnitPriceSeen = 2 } }, 1000, 0).DeliveryId,
+                  "the sequence continues past the restart: v-5-3, never a second v-5-1 for the inbox to swallow");
+            problems.Clear();
+            b.ApplyState("visit\t-1\nseq\tx\npurseStart\t-2", problems);
+            Equal(3, problems.Count, "bad visit, seq and purseStart rows are each reported");
+            Equal(5, b.VisitId, "and refused");
+
+            // Relax keeps the time it could not yet spend.
+            Market often = NewMarket(0);
+            MarketItem iron = often.Find("Iron");
+            iron.Stock = 19; iron.UpdatedWorldTime = 0;
+            for (int i = 1; i <= 50; i++) often.Relax(i * 720);          // every 0.4 game days for 20 days
+            Equal(20, iron.Stock, "a gap of one closes even when Relax is called every 0.4 days: the stamp waits until a unit moves");
+            Market once = NewMarket(0);
+            MarketItem iron2 = once.Find("Iron");
+            iron2.Stock = 19; iron2.UpdatedWorldTime = 0;
+            once.Relax(720);
+            Equal(19, iron2.Stock, "0.4 days is 24% of a gap of 1: nothing moves yet");
+            Equal(0.0, iron2.UpdatedWorldTime, "so the stamp is kept, not thrown away");
+            once.Relax(2160);
+            Equal(20, iron2.Stock, "1.2 days later it closes");
+            Equal(2160.0, iron2.UpdatedWorldTime, "and is stamped then");
+            Market back = NewMarket(1000);
+            MarketItem iron3 = back.Find("Iron");
+            iron3.Stock = 10;
+            back.Relax(500);
+            Equal(1000.0, iron3.UpdatedWorldTime, "a clock that ran backwards leaves the stamp alone, not rewound to the earlier time");
+
+            // The purse cap cannot overflow, and the rules are sanitized on the way in.
+            MarketRules big = new MarketRules { PurseCoins = int.MaxValue, PurseCapMultiple = 100 };
+            Market rich = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), big, 0);
+            Equal(MarketRules.MaxPurseCoins, big.PurseCoins, "the constructor sanitizes the rules in place");
+            rich.StartVisit(1, 0, int.MaxValue);
+            Equal(MarketRules.MaxPurseCoins * 100, rich.Purse, "capped at PurseCapMultiple x PurseCoins, computed in long: never negative");
+
+            // The day length is a rule, read from EnvMan on the game side; the drift follows it.
+            MarketRules shortDay = new MarketRules { SecondsPerGameDay = 1200 };
+            Market sd = new Market(Catalogue.Parse(Catalogue.DefaultLine, null), shortDay, 0);
+            MarketItem si = sd.Find("Iron");
+            si.Stock = 10; si.UpdatedWorldTime = 0;
+            sd.Relax(1200);
+            Equal(15, si.Stock, "with a 1200 s day (the compiled EnvMan default), 1200 s is one half-life: 10 -> 15");
+            Equal(1800.0, MarketRules.DefaultSecondsPerGameDay, "and the default is the 30-minute day the scene is expected to carry");
+            problems.Clear();
+            new MarketRules { SecondsPerGameDay = 1 }.Sanitize(problems);
+            Equal(1, problems.Count, "a one-second day is clamped and reported");
+
+            // The curve's pieces.
+            Equal(1.0, Market.MultiplierFor(20, 20, MarketRules.Default), "at target the multiplier is exactly 1");
+            Equal(3.0, Market.MultiplierFor(600, 0, MarketRules.Default), "an empty high-target shelf hits the 3x ceiling");
+            Equal(0.4, Market.MultiplierFor(2, 600, MarketRules.Default), "a flooded low-target shelf hits the 0.4 floor");
         }
 
         private static void CargoRpcTests()

@@ -18,6 +18,15 @@
   prefab name verified against the item table in `docs\data`; a bad entry is reported and skipped,
   never thrown. 27 off-game tests.
 - Design of record: `docs\DESIGN.md` v3; `docs\TLDR.md`; `docs\CATALOGUE.md`.
+- The contract between the tracks (PR #1): `Core\Wire`, `MarketSnapshot`, `VisitSnapshot`, `Deal`,
+  `Net\CargoRpc` with a demo transport, `Client\Terminal\ICargoTerminal`; 231 off-game checks.
+- The market core: `Core\Market` (rules sanitized on the way in; the price curve with one rounding for
+  the charge and one for what he pays; purse and carry; drift by the EnvMan day length; settlement in
+  the contract's refusal order; salted delivery ids; sidecar rows including `purseStart`, `visit`,
+  `seq`), `Core\Scheduler` (eligibility, the roll, tickets, cooldowns saved as remaining seconds),
+  `Core\VisitClock` (a retargetable countdown mirror); `DemoMarket` is the real Market with a
+  price-driven `Tick`. 714 off-game checks, mutation-proven. `cargo status` prints the EnvMan day
+  length. Docs corrected from the review: CATALOGUE section 5, DESIGN sections 3.1/3.4/3.5/3.7/8.
 
-Not yet built: the scheduler, the flight, the merchant, the terminal, the market, persistence,
-the deal wire, admin commands. See `docs\DESIGN.md` section 9 for the order.
+Not yet built: the flight, the merchant, the terminal, the persistence layer, the deal wire, the
+admin commands; nothing on the game side calls the market core yet. See `docs\DESIGN.md` section 9 for the order.

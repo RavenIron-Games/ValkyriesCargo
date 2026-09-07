@@ -101,15 +101,18 @@ same trust class as vanilla's `baseValue`.
 **Server view** from `ZNet.instance.GetAllCharacterZDOS()` (host and every ready peer): `ownerUid = zdo.GetOwner()`,
 position, `baseValue = zdo.GetInt(ZDOVars.s_baseValue)`, `rested`, `comfort`, `y`.
 
-**Eligible** = `rested` (if `RequireRested`) ∧ `comfort ≥ MinComfortLevel` ∧ `baseValue ≥ MinBaseValue` ∧ `y < 3000`
+**Eligible** = ready ∧ alive ∧ `rested` (if `RequireRested`) ∧ `comfort ≥ MinComfortLevel` ∧ `baseValue ≥ MinBaseValue` ∧ `y < 3000`
 ∧ (`DaytimeOnly` → `EnvMan.instance.IsDay()`, read only) ∧ not on this player's cooldown ∧ no base within
 `CooldownRadius` on cooldown ∧ the owner peer is ready.
 
 **Roll** every `EventCheckIntervalMinutes` real minutes: hold if `RandEventSystem.instance.GetCurrentRandomEvent() != null`;
 else with any eligible candidate and `Random < EventChancePercent`, pick one uniformly (candidates within 40 m collapse to
 one ticket). That player's client is the **pilot**. Cooldown stamped at dispatch, so a failed flight cannot be farmed.
+The roll is `UnityEngine.Random.Range(0f, 1f)` or a `System.Random`, never `Random.value` (inclusive of 1.0); the core
+clamps a 1.0 anyway so chance 100 always visits.
 
-**Admin.** `cargo visit` forces a roll for the caller at chance 100, gated by `ZNet.IsAdmin(hostName)` through RavenEye's
+**Admin.** `cargo visit` forces a roll for the caller at chance 100, ignoring the cooldowns (the admin asked) but not
+rested, comfort, baseValue or the dungeon bound, gated by `ZNet.IsAdmin(hostName)` through RavenEye's
 `AdminGate` shape (public API, fail closed). `cargo dismiss`, `cargo stock`, `cargo reset` are admin too; `cargo status`
 and `cargo prefab <name>` are not. Console commands are not config: `LockConfiguration` does not touch them.
 
@@ -246,8 +249,10 @@ first until value ≥ price; change in coins). `expected` carries the unit price
 **Guarantees, stated honestly** (v5's five, corrected by the review):
 1. **Replay immunity**: 64-bit `nonce` per deal; the server keeps a 500-entry ring of settled nonces per visit and refuses
    repeats (a direct socket does not stop a replayed packet by itself).
-2. **Server-side atomicity**: one main thread, one visit: validate nonce, visitId, stock, max, purse, price conformity
-   (`expected` equals current), then commit stock, purse, `MarketState`, then answer. Two deals for the last unit arrive
+2. **Server-side atomicity**: one main thread, one visit: validate in `Core/Market.Settle`'s order (empty, stale visit, duplicate nonce; the
+   wanted line: unknown, bad count, sold out, price changed; each offered line: unknown, bad count, over max, price
+   changed; coins short; purse empty), then commit stock, purse, `MarketState`, then answer. Price is checked before
+   the purse so Reconfirm gets the price answer, not `purse_empty`. Two deals for the last unit arrive
    in order; the second gets `sold out`.
 3. **Price-change handling (provisional: reject-and-reconfirm)**: if `expected` no longer matches, the server answers
    `price_changed` with the new numbers; the tray keeps its contents, the changed line turns amber, and `[Confirm deal]`
@@ -268,7 +273,9 @@ sees the same reaction.
 **Delivery, taken from VikingOS's escrow ("Trading, Without Trusting Anyone").** Its rule: the server keeps offering a
 delivery until the client confirms it has it, and the client remembers what it has already been paid, so a redelivery is
 recognised rather than applied twice. Ported, not depended on:
-- Every accepted deal gets a `deliveryId`. The client applies it once and records the id in a bounded local inbox (500
+- Every accepted deal gets a `deliveryId` = `{salt}-{visitId}-{seq}`: the salt is the world's (`demo` for the demo),
+  visit ids are monotonic and persisted, the sequence is persisted, so an id never repeats across restarts, worlds or
+  the demo, and the inbox can be one file for every server. The client applies it once and records the id in a bounded local inbox (500
   ids, sidecar file in the config dir, the `TradeInbox` shape without Newtonsoft), then sends `vc_ack(deliveryId)`.
 - The server keeps an **owed ledger** per player id in the world sidecar (`owed` rows): a deal it committed but never
   saw acked. On `vc_ack` the row clears. At session start the client sends `vc_claim`; the server redelivers every owed
@@ -285,13 +292,19 @@ Use, when the inventory or map opens, when the local player dies, and when `Visi
 Catalogue lines `Prefab:BasePrice:TargetStock:MaxStock:Kind` (`Ware` = he sells and buys, `Want` = buys only); the defaults,
 their reasons and the item data they were checked against are in `docs/CATALOGUE.md` and `docs/data/`. Unknown prefab
 names at boot are dropped with one log line, never a crash; the off-game tests validate the defaults against the item
-table so a misspelling fails on the desk. Price `= base × clamp((target / max(1, stock))^α, MinMult, MaxMult)`, `α = 0.35`, clamps 0.4 / 3.0; `sell = price
-× SpreadBuy` (0.7). Bought units decrement, sold units increment, refused above `max`, `0` is SOLD OUT. Drift between
-visits: `stock += (target − stock) × (1 − 0.5^(days / StockHalfLifeGameDays))` in world time. Purse: `PurseCoins` +
-`PurseCarryPercent` of last takings, capped at 3×. Integer coins, min 1, never negative, never NaN.
+table so a misspelling fails on the desk. Price `= base × clamp((target / max(1, stock))^α, MinMult, MaxMult)`, `α = 0.35`, clamps 0.4 / 3.0; `sell = base ×
+multiplier × SpreadBuy` (0.7) rounded once, never the rounded price times 0.7. A deal is priced as a whole at the moment
+of settlement, `count × unit` at the current price, and stock moves after (§8: a bulk deal beats a drip-feed, by
+design). Bought units decrement, sold units increment, refused above `max`, `0` is SOLD OUT. Drift between visits:
+`stock += (target − stock) × (1 − 0.5^(days / StockHalfLifeGameDays))` in world time, a day being
+`EnvMan.instance.m_dayLengthSec` read once at boot (the compiled default is 1200; the scene is expected to say 1800 and
+`cargo status` prints what it found; 1800 is assumed only with no `EnvMan`). Purse: `PurseCoins` + `PurseCarryPercent`
+of last takings, capped at 3×. Integer coins, min 1, never negative, never NaN; the rules are sanitized into their
+ranges when the market is built.
 
 Persistence: Cairn's `Persistence.cs` clone, `valkyriescargo_{worldUid}.dat` beside the world; first line `format\t1`;
-tagged rows `stock`, `purse`, `cool`, `visit`; on a format mismatch, upgrade or reset with a `.corrupt` copy; write-behind,
+tagged rows `stock`, `purse`, `purseStart`, `visit`, `seq`, `cool` and `coolbase` (cooldowns saved as remaining
+seconds and rebased to the clock at load, so a restart never mixes clocks); on a format mismatch, upgrade or reset with a `.corrupt` copy; write-behind,
 cadence save, `OnDestroy` flush, `.tmp/.bak` discipline.
 
 Tests (off-game, shipping source against stubs): price monotonic in stock; clamps; sold-out and over-max; the three deal
@@ -324,6 +337,9 @@ audio; it is not the summon horn.
   is persistent and gets adopted by whichever client's block holds it; none within 30 s → server reclaims, visit ends.
 - **Pilot disconnects mid-visit**: the merchant is adopted by a nearer client; the visit continues.
 - A raid while he is there: impossible, one random event at a time. Nobody within 96 m: the clock pauses (vanilla).
+  The event's `m_time` (real seconds, paused out of range) is the authority; the server republishes
+  `VisitState.endWorldTime` whenever `now + (duration − m_time)` drifts more than a second from what it published (a
+  pause, a resume, a sleep skip), and every `VisitClock` retargets without re-arming its one-minute warning.
 - Two terminals open: both render `MarketState`; a deal from either updates both. Listen host: works as pilot and server.
 
 ### 3.8 Messages
@@ -486,6 +502,11 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Runtime material edits | Not in 0.1 (no custom body). When the body comes: bake the finished material into the bundle; no runtime `SetTexture` on a creature material | proposed |
 | Lifespan / dismissal | 300 s event clock; Shift+E twice; any visitor | locked / proposed |
 | Restart mid-visit | Resume the remaining time | proposed |
+| Deal pricing | The whole quantity at the price on screen when confirmed; stock moves after. A bulk deal beats a drip-feed, bounded by his purse and his stock | proposed (review 2026-09-06) |
+| Visit and delivery ids | Visit ids monotonic and persisted; `deliveryId = salt-visit-seq`, the world's salt (`demo` for the demo), seq persisted | proposed (review 2026-09-06) |
+| Cooldown persistence | Saved as remaining seconds, rebased at load | proposed (review 2026-09-06) |
+| Day length | `EnvMan.instance.m_dayLengthSec` read at boot and printed by `cargo status`; 1800 assumed only without an EnvMan | proposed (review 2026-09-06) |
+| Forced visits | `cargo visit` ignores cooldowns, keeps every other gate | proposed (review 2026-09-06) |
 | Build | net472, `libs\` via fetch-libs, `ILRepack.targets`, `AllowUnsafeBlocks` false; Unity project as a sibling directory; Editor 6000.0.61f1 for bundles | proposed |
 | Where bundles get built | open: install 6000.0.61f1 here, or Wu'barrk's Linux box | open |
 | Console prefix | `cargo` — `status`, `prefab <name>`; admin: `visit`, `dismiss`, `stock`, `reset` | proposed |

@@ -116,7 +116,10 @@ namespace RavenIron.ValkyriesCargo.Patches
             }
 
             Say(args, "  time: world " + F((float)ZNet.instance.GetTimeSeconds(), "0") + " s, " +
-                      (EnvMan.instance != null ? (EnvMan.IsDay() ? "day" : "night") : "no EnvMan"));
+                      (EnvMan.instance != null
+                          ? (EnvMan.IsDay() ? "day" : "night") + ", day length " + EnvMan.instance.m_dayLengthSec +
+                            " s (EnvMan.m_dayLengthSec, public; the drift half-life counts these; compiled default 1200, scene expected 1800)"
+                          : "no EnvMan"));
         }
 
         /// <summary>
