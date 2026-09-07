@@ -334,6 +334,8 @@ ValkyriesCargo/
   Patches/Patch_Humanoid_Awake.cs   postfix: adds CargoMerchant when the ZDO carries VCargo_ingvar (Wu'barrk, P5)
   Patches/Patch_Character_InIntro.cs  postfix: __result true while the carry link is set, so the fall never accumulates
   Patches/Patch_Character_Damage.cs   prefix on Character.RPC_Damage (NOT Damage): the merchant is immortal
+  Patches/Patch_BaseAI_IsEnemy.cs     prefix on the static BaseAI.IsEnemy(a, b): any pair with the merchant answers "not enemies" (ghost mode, F11)
+  Core/Ghost.cs              PURE: the ghost-mode decision (run vanilla / honour a prior cancel / not enemies), the Immortality shape
   Server/VisitDirector.cs    where the world runs: gather ZDOs -> Scheduler -> event -> VisitState/MarketState
   Server/CargoEvent.cs       the vanilla RandomEvent `valkyries_cargo`: definition, registration, start, remaining
   Server/AdminGate.cs        vanilla's ZNet.IsAdmin(hostName), fail closed (RavenEye's shape)
@@ -374,7 +376,11 @@ the four that were listed here (`Client/CargoMerchant.cs`, `Patch_Humanoid_Awake
    (`patches N/M applied`) and by `cargo status`, and the mod runs degraded and says so. The one
    exception is the vendored ServerSync's patch classes (the version gate and the config lock), whose
    failure REFUSES the mod outright: nothing ticks, nothing registers, the console still answers.
-   The decision is pure (`Core/PatchLedger.cs`); widening the load-bearing set is the owner's call.
+   The decision is pure (`Core/PatchLedger.cs`). Widening the load-bearing set was delegated to Track B and
+   DECLINED (`docs/DECISIONS-WUBARRK.md` §9): between refuse and degrade there is a third answer — a FEATURE
+   switching itself off on `PatchLedger.IsApplied(name)`. The flight is the one case: without
+   `Patch_Valkyrie_Awake`, vanilla `Valkyrie.Awake` runs on our bird and teleports the local player into
+   the sky, so `Spawner` authors no bird and puts Ingvar on the ground, and says so.
 4. **Never patch `EnvMan`. Never touch materials, textures or shaders** — with one exception, written
    down 2026-09-07 the way rule 2's was. Reading `EnvMan.IsDay()` is fine. `Client/BodyLoader.cs` builds
    ONE material at runtime: a COPY of the stand-in's own, with our albedo in it. It has to be at runtime
@@ -859,6 +865,12 @@ P10b, the engine probes (any boot, client or server, no visit needed):
     `EngineCheck.cs`, not in Valheim. Then the other direction, once: install on a machine whose Valheim has moved
     (or edit `EngineBaseline`'s constants and rebuild) and confirm the boot line says the version moved, the mod
     still loads, and nothing throws.
+
+Ghost mode (F11; the owner's decision 2026-09-07), a visit running, any client:
+25. **Nothing parks on him**: a Greydwarf pack or a raid near the visit walks past Ingvar and never targets him,
+    no enemy health bar appears over him, and he never swings at anything; the player is fought exactly as
+    before. `cargo status` lists `Patch_BaseAI_IsEnemy` among the applied patches. With no visit running,
+    hostiles behave exactly as vanilla (the prefix is one int compare there).
 
 ---
 

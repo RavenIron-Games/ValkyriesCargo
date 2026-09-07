@@ -53,6 +53,7 @@ namespace ValkyriesCargo.Tests
             SidecarTests();
             OwedLedgerTests();
             PatchLedgerTests();
+            GhostTests();
             SessionRowTests();
             BodyMotionTests();
             TrayModelTests();
@@ -2352,9 +2353,54 @@ namespace ValkyriesCargo.Tests
             Equal("", Sidecar.Split("format\t1\n", null).MarketRows, "a header-only file has empty bundles and tolerates a null problem list");
         }
 
+        private static void GhostTests()
+        {
+            Section("Ghost: F11 — hostiles neither target nor fear Ingvar (the owner's decision 2026-09-07: ghost mode)");
+
+            // The same shape as Immortality, for the same reason: a prefix's bool is "run the original",
+            // and the gate must never fold "somebody cancelled first" into "this is none of our business".
+            Equal(Ghost.Verdict.RunOriginal, Ghost.Decide(true, 0, false, false), "no visit, two ordinary characters: vanilla decides");
+            Equal(Ghost.Verdict.RunOriginal, Ghost.Decide(true, 0, true, false), "no visit: LiveCount is a fast path, so even a stray merchant flag changes nothing");
+            Equal(Ghost.Verdict.RunOriginal, Ghost.Decide(true, -1, true, true), "a negative count is the fast path too, not a visit");
+            Equal(Ghost.Verdict.RunOriginal, Ghost.Decide(true, 1, false, false), "a visit running, two ordinary characters: vanilla decides, so a raid still fights the player");
+            Equal(Ghost.Verdict.NotEnemies, Ghost.Decide(true, 1, true, false), "Ingvar asking about anyone: not enemies — he threatens nobody");
+            Equal(Ghost.Verdict.NotEnemies, Ghost.Decide(true, 1, false, true), "anyone asking about Ingvar: not enemies — nothing targets him, nothing parks on him");
+            Equal(Ghost.Verdict.NotEnemies, Ghost.Decide(true, 1, true, true), "both ours: not enemies");
+            Equal(Ghost.Verdict.Cancelled, Ghost.Decide(false, 1, true, true), "another prefix cancelled first: honoured, and its answer left alone");
+            Equal(Ghost.Verdict.Cancelled, Ghost.Decide(false, 0, false, false), "and honoured on the fast path, never quietly un-cancelled");
+
+            // The invariant: with a visit running and no prior cancel, exactly the three pairs that have
+            // Ingvar in them are ghosted; the fourth is the world's own business.
+            int ghosted = 0;
+            foreach (bool a in new[] { false, true })
+                foreach (bool b in new[] { false, true })
+                    if (Ghost.Decide(true, 1, a, b) == Ghost.Verdict.NotEnemies) ghosted++;
+            Equal(3, ghosted, "of the four pairs, exactly the three with Ingvar in them answer not-enemies");
+
+            // And with no visit, none of them are - the whole world is vanilla's.
+            int touched = 0;
+            foreach (bool a in new[] { false, true })
+                foreach (bool b in new[] { false, true })
+                    if (Ghost.Decide(true, 0, a, b) != Ghost.Verdict.RunOriginal) touched++;
+            Equal(0, touched, "with no visit running, no pair is touched at all");
+        }
+
         private static void PatchLedgerTests()
         {
             Section("PatchLedger (issue #31: patches applied one class at a time; a failure is counted and named, never fatal, unless load-bearing)");
+            // The middle tier (decision 9): a feature gates ITSELF on the one patch its safety rests on.
+            {
+                var tier = new PatchLedger();
+                tier.Record("Patch_Valkyrie_Awake", "RavenIron.ValkyriesCargo.Patches.Patch_Valkyrie_Awake", true, 1, null);
+                tier.Record("Patch_Character_InIntro", "RavenIron.ValkyriesCargo.Patches.Patch_Character_InIntro", false, 0, "boom");
+                Check(tier.IsApplied("Patch_Valkyrie_Awake"), "IsApplied: a patch that applied answers true, so the flight may author a bird");
+                Check(!tier.IsApplied("Patch_Character_InIntro"), "IsApplied: a patch that failed answers false");
+                Check(!tier.IsApplied("Patch_Never_Existed"), "IsApplied: a patch the ledger never saw answers FALSE — a feature must not assume a patch it cannot find");
+                Check(!tier.IsApplied("Patch_Valkyrie"), "IsApplied: the match is exact; a prefix does not vouch for the whole name");
+                Check(!tier.IsApplied("patch_valkyrie_awake"), "IsApplied: and it is case-sensitive, like the type name it comes from");
+                Check(!tier.IsApplied(null) && !tier.IsApplied(""), "IsApplied: null and empty answer false, not throw");
+                Check(!tier.Refused, "and none of that is load-bearing: two of ours failing never refuses the mod");
+            }
 
             PatchLedger l = new PatchLedger();
             Equal(0, l.Expected, "an empty ledger expects nothing");

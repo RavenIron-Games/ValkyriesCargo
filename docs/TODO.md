@@ -34,8 +34,13 @@ every bake reaches Don as a release asset (section 2, first item).
 - [ ] **Reconfirm versus teardown on a price tick.** The `PriceChangePolicy` knob is deleted (nothing read
       it); only Reconfirm exists (`Client/Terminal/TrayModel.cs`). Close as final, or ask for Teardown
       to be built. Update the `docs/DESIGN.md` §8 row and `docs/TLDR.md` either way.
-- [ ] **PR #17** (the `VALHEIM-API-REFERENCE` snapshot, docs only): merge on the word.
+- [x] **PR #17** (the `VALHEIM-API-REFERENCE` snapshot, docs only): merged 2026-09-07.
 - [ ] **The store.** No upload until the loop below has been seen (`docs/RELEASE.md` step 5; issue #23).
+      **And never the rc1 tag**: it carries F1 (fixed on main by PR #30, not in the tag); the next cut replaces it.
+- [x] **F11, from the P4/P5 audit:** a tamed Ingvar is a legal target for every hostile and cannot die or
+      be staggered, so a raid parks on him. **DECIDED 2026-09-07: ghost mode** — Ingvar is to hostiles what
+      a player in vanilla's `ghost` mode is: not a target, not a threat. Neither faction-only nor the aggro
+      magnet. The mechanism is Wu'barrk's ("he knows how"); moved to section 2.
 
 ### Screen proofs — the Windows client against StormTest
 
@@ -80,23 +85,29 @@ step 4).
 
 ## 2. Wu'barrk — flight, merchant, body, sweeps, export
 
-- [ ] **The P4/P5 audit's findings (`docs/AUDIT-P4P5-2026-09-07.md`; issue #29).** **F1 DONE**: PR #30 merged
-      2026-09-07 (the decision moved into the pure `Core/Immortality.RunOriginal`, seven checks) — but rc1
-      still carries it, so **the rc1 tag must not reach a tester**; the next cut replaces it. Still open,
-      F2 to F6 and the risks: F2 (the hover text never draws:
-      `Character` is itself `Hoverable` and wins), F3 (`VCargo_vanish`/`VCargo_say` registered, never sent:
-      no Odin vanish, single-screen speech), F4 (a resumed visit never rebinds `Spawner.Merchant`, so `End`
-      leaves an immortal merchant in the world), F5 (the flat 20 s timeout and the 12 m leash loop from
-      51 m for ever — the live log), F6 (burning/poison/smoke call `ApplyDamage` directly and bypass the
-      patch). F1, F3, F4 and F6 were re-verified on this side against the code and the decompile.
+- [x] ~~F11, decided by the owner 2026-09-07: ghost mode.~~ **Taken by Track A** (owner, the same evening:
+      Wu'barrk is loaded with F2–F10) — PR #37; see section 3. Nothing of Track B's is touched.
+
+- [ ] **The P4/P5 audit's findings (`docs/AUDIT-P4P5-2026-09-07.md`, issue #29).** **F1 DONE** — PR #30
+      merged 2026-09-07: `Core/Immortality.RunOriginal`, pure, seven checks, the exact rc1 line restored as
+      a mutation fails three of them. The release notes on `v0.1.0-rc1` now open with a do-not-install
+      warning, because the tag still carries F1. **F2–F10 in flight 2026-09-07**, split by FILE so four
+      branches cannot collide: `b/f4-resume-vanish` (F4 + F3's server half: `Spawner.cs`,
+      `VisitDirector.cs`), `b/merchant-audit` (F3's merchant half, F5, F9, F10: `CargoMerchant.cs`,
+      `MerchantPlan.cs`, `Lines.cs`), `b/patches-hover-dot` (F2, F6: `Patches/Patch_Character_*`),
+      `b/flight-floor-initzdo` (F7, F8, N1 if cheap: `CargoFlight.cs`, `FlightPlan.cs`, the two Awake
+      patches). Each lands as a draft PR, is reviewed and re-verified by the coordinator, then marked ready.
+      **F11 is a decision, not a fix** (a tamed Ingvar is a legal target for every hostile; faction-only
+      vs tamed-and-aggro-magnet) — the owner's call, on §1's plate.
 - [x] **Hand over the bundle, every bake.** DONE 2026-09-07: `Assets/valkyriescargo_kit` attached to
       `v0.1.0-rc1`, byte-identical to the embedded copy (PR #27's note). Every re-bake: a new asset.
 - [ ] **The walk-up.** In the one live visit he `gave up walking after 20 s` and called out from the drop
-      point (issue #23, release note). P5, his client, his to find before Don spends screen time on the
-      same wall. *Part done, PR #25 merged 2026-09-07:* the Dverger's AI consume list (Coins on it) emptied
-      so he no longer walks to a coin stack and eats it, and the timeout now logs a diagnosis. *Still open:*
-      the cause itself — the audit's F5 (a flat 20 s budget and a 12 m leash that loop from 51 m) is the
-      standing hypothesis, and one run with the new diagnosis line answers it.
+      point (issue #23, release note). *Part done, PR #25 merged 2026-09-07:* the Dverger's AI consume list
+      (Coins on it) emptied so he no longer walks to a coin stack and eats it, and the timeout now logs a
+      diagnosis. *Being fixed:* the cause is the audit's F5 (a flat 20 s budget, and "arrived" and "no
+      path" being the same `MoveTo` return) — a distance-scaled budget and a stall detector, in
+      `b/merchant-audit`. *Still needed after it merges:* one run, and the `the walk-up did not finish` /
+      stuck line pasted here.
 - [ ] **Valheim 1.0 lands 2026-09-09.** P10a is his: fetch the 1.0 client and server
       (`tools/fetch-builds.sh`), decompile, `diff-engine` against the 244-row `docs/ENGINE-SURFACE.md`,
       update `docs/ENGINE-BASELINE.md`, check in the report under `docs/engine-sweeps/`, and report
@@ -108,24 +119,23 @@ step 4).
 - [ ] **Item 23, the export, live:** a visit on his dedicated server, `barrkbot_cargo_*.json` landing under
       `BepInEx/config/ValkyriesCargo/` once a minute, the log line pasted into `BARRKBOT_CONTRACT.md`
       ("shape-verified, not yet live-verified"), and BarrkBOT's scanner picking the files up.
-- [x] **Truth pass on his files.** DONE: PR #27 (decision 8, CATALOGUE matched to the code) and PR #33
-      (README, CHANGELOG, models/README, plus the README config corrections from `docs/CONFIG-SHAKEDOWN.md`),
-      both merged 2026-09-07.
-- [x] **`event valkyries_cargo` from the vanilla console** starts a real visit instead of being killed as a
-      leftover (owner's ask; PR #34 merged 2026-09-07; `Scheduler.NearestTo` pure, NaN-safe). Not yet
-      typed on a screen.
-- [ ] *(history)* The truth-pass list as it stood: `README.md` still lists the deleted `PriceChangePolicy` row (line ~195)
-      and says "No custom body yet" (line ~39); `CHANGELOG.md` says P4 is in review (~228) and P5 and
-      the bundle are not started (~230); `models/README.md` §2 names `BodyPrefab` where `CustomBody` is
-      the switch and §6's stream-disposal note is wrong (`docs/HANDOFF-WUBARRK.md` §0 item 2); the
-      reason four Wants went from base 2 to 3 goes into `docs/DECISIONS-WUBARRK.md` (it is only in the
-      release note).
-- [x] **Close issue #16.** Done.
+- [ ] **Truth pass on his files.** *First half done, PR #27 merged 2026-09-07:* the base 2 → 3 reason is
+      decision 8 in `docs/DECISIONS-WUBARRK.md`, and `docs/CATALOGUE.md` matches the code entry by entry.
+      *Second half in PR #33 (open):* `README.md`, `CHANGELOG.md`, `models/README.md` — plus #24's config
+      corrections (the five client-read keys and the two ranges), applied only once #24 was on main so
+      the README never contradicted the shipped descriptions. Ticks when #33 merges.
+- [x] **Close issue #16.** Closed 2026-09-07 on the rename shipped in #22, verified on `main`.
 - [ ] **The load-bearing set (issue #31, PR #35), delegated by the owner 2026-09-07.** Which patches'
       failure to apply should REFUSE the mod rather than degrade it. As merged: `Core/PatchLedger.IsLoadBearing`
       says yes for the `ServerSync` namespace only (the version gate, the RPC registration, the config lock).
       Leave it and say so, or widen it: a PR against that predicate and its `PatchLedgerTests` checks, the
-      reason in `docs/DECISIONS-WUBARRK.md` and CLAUDE.md house rule 3.
+      reason in `docs/DECISIONS-WUBARRK.md` and CLAUDE.md house rule 3. *(Restored 2026-09-07: the
+      coordinator's section rewrite dropped this item minutes after it was added. Answer in progress.)*
+- [ ] **`event valkyries_cargo` from the vanilla console** (owner request 2026-09-07). PR #34 (open): the
+      director used to kill any run of our event it had not started; it now adopts it onto the player
+      nearest the event — vanilla passes the caller's own position — and authors the visit. Known and
+      not widened: `event` is `onlyServer` in vanilla (server console or listen host; `cargo visit` stays
+      the client route), and `stopevent` ends the visit reporting `timer` rather than the true reason.
 - [ ] *Pending Don's decision above:* stop tracking the DLL (ignore `HexiumDist/plugins/`, delete the
       tracked copy, payloads on releases).
 - [ ] *Pending Don's decision above:* replace the Newtonsoft call with a pure writer and drop the
@@ -153,6 +163,11 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       DONE 2026-09-07 (owner's word): 3,845,930 bytes; a build here is 4,181,504 bytes with Ingvar in it.
 - [ ] **The audit's probe rows into P10b's registry** (`docs/AUDIT-P4P5-2026-09-07.md` §2), now that
       PR #28 is in; and item 24 run on a real machine.
+- [x] **F11 ghost mode — PR #37, merged 2026-09-07.** The owner's decision, built here because
+      Track B is loaded: a `Priority.Low` prefix on the static `BaseAI.IsEnemy(a, b)`, any pair with the
+      merchant in it answers "not enemies" while a visit runs; `Core/Ghost.Decide` pure, 11 checks, three
+      mutations caught; the `character_ai` probe resolves the static overload; DESIGN §8 row; CLAUDE.md
+      verify item 25 is the screen proof (a raid walks past him; no enemy bar; he never swings).
 - [ ] **After the proofs, if the screen shows it** (`docs/CLIENT-AUDIT.md` report-only findings): the game
       menu opening behind the terminal (finding 7, `Patch_Menu_Update`), the negative icon cache
       (finding 9), the full-pack deal check (finding 10, `CanApply`), `HasRenderer` as a cached field
