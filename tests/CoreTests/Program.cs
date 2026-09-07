@@ -3714,6 +3714,15 @@ namespace ValkyriesCargo.Tests
             Equal(6, p.Find(EngineProbes.CharacterAi).Rank, "rank 6 is Character/MonsterAI, P5's surface");
             Check(p.Find("no such probe") == null, "an unregistered name simply is not there");
 
+            // The probe gap (docs/P10B-PROBE-GAP.md): the immortality patches the PRIVATE
+            // Character.RPC_Damage, never the public Character.Damage, and the probe's own words are
+            // what `cargo engine` prints, so they have to say the same thing the check asks for.
+            string ai = p.Find(EngineProbes.CharacterAi).What;
+            Check(ai.Contains("RPC_Damage"), "the Character probe stands for RPC_Damage, the member the immortality actually patches");
+            Check(!ai.Contains("/ Damage"), "and NOT for Character.Damage, a sender on the attacker's machine that nothing here depends on");
+            Check(p.Find(EngineProbes.CharacterAi).Degrades.Contains("mortal"),
+                  "and it says what P5 loses when it fails, rather than the old 'nothing today'");
+
             // ---- nothing has run: everything is permitted ----
             Equal(0, p.Run, "nothing has run");
             Equal(3, p.NotProbeable, "three facts are method BODIES and cannot be probed cheaply");

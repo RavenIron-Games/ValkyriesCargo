@@ -181,6 +181,9 @@ namespace RavenIron.ValkyriesCargo
             Type res = typeof(RandEventSystem);
             Type ev = typeof(RandomEvent);
             NeedProperty(res, "instance", res, bad);
+            // PRIVATE, and the target `Patch_RandEventSystem_Awake` names in a string: a rename here is a
+            // Harmony failure at PatchAll, not a compile error, so it belongs in the probe like RPC_Damage.
+            NeedMethod(res, "Awake", Type.EmptyTypes, bad);
             NeedField(res, "m_events", typeof(List<RandomEvent>), true, bad);
             NeedMethod(res, "SetRandomEventByName", new[] { typeof(string), typeof(Vector3) }, bad);
             NeedMethod(res, "ResetRandomEvent", Type.EmptyTypes, bad);
@@ -201,7 +204,7 @@ namespace RavenIron.ValkyriesCargo
             NeedField(ev, "m_forceMusic", typeof(string), true, bad);
             NeedField(ev, "m_forceEnvironment", typeof(string), true, bad);
             NeedField(ev, "m_biome", typeof(Heightmap.Biome), true, bad);
-            return 20;
+            return 21;
         }
 
         private static void ProbeZdoAuthoring()
@@ -326,8 +329,18 @@ namespace RavenIron.ValkyriesCargo
             Type c = typeof(Character);
             NeedMethod(c, "GetAllCharacters", Type.EmptyTypes, bad);       // used today, by CargoFlight
             NeedMethod(c, "GetSEMan", Type.EmptyTypes, bad);               // used today, by ComfortReporter
-            NeedMethod(c, "InIntro", Type.EmptyTypes, bad);                // P5's
-            NeedMethod(c, "Damage", new[] { typeof(HitData) }, bad);       // P5's
+            NeedMethod(c, "InIntro", Type.EmptyTypes, bad);                // Patch_Character_InIntro's target
+            // THE PROBE GAP (docs/P10B-PROBE-GAP.md, fixed here). This asked for the PUBLIC
+            // `Character.Damage(HitData)` and nothing in this mod depends on it: `Damage` is a thin
+            // sender that runs on the ATTACKER's machine, computes a weak-spot index and forwards to
+            // `InvokeRPC("RPC_Damage", hit)`. `Patch_Character_RPC_Damage` patches the PRIVATE
+            // `RPC_Damage(long, HitData)` - the victim-side choke point every hit passes through - so
+            // that is the member the immortality depends on and the only one worth probing. Probing the
+            // sender meant the probe could be green while the merchant had quietly become mortal.
+            // Verified against the real assembly, not the publicized one: `private void RPC_Damage(long
+            // sender, HitData hit)`, assembly_valheim 0.221.12 decompiled line 8700. `Anywhere` already
+            // includes NonPublic, so the name and the signature are the whole change.
+            NeedMethod(c, "RPC_Damage", new[] { typeof(long), typeof(HitData) }, bad);
             NeedMethod(typeof(MonsterAI), "MakeTame", Type.EmptyTypes, bad);
             NeedMethod(typeof(BaseAI), "IsEnemy", new[] { typeof(Character) }, bad);
             return 6;
@@ -499,6 +512,7 @@ namespace RavenIron.ValkyriesCargo
             NeedMethod(typeof(AnimationMixerPlayable), "Create", new[] { typeof(UnityEngine.Playables.PlayableGraph), typeof(int), typeof(bool) }, bad);
             NeedMethod(typeof(AnimationClipPlayable), "Create", new[] { typeof(UnityEngine.Playables.PlayableGraph), typeof(AnimationClip) }, bad);
             NeedMethod(typeof(AnimationPlayableOutput), "Create", new[] { typeof(UnityEngine.Playables.PlayableGraph), typeof(string), typeof(Animator) }, bad);
+
             return 8;
         }
 

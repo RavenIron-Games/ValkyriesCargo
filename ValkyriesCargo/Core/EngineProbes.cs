@@ -73,7 +73,7 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string VelocityCache = "velocity_cache";
         /// <summary>Rank 5. The Valkyrie fields the flight and the carry read.</summary>
         public const string ValkyrieFields = "valkyrie";
-        /// <summary>Rank 6. Character and MonsterAI: one member used today, the rest is P5's surface.</summary>
+        /// <summary>Rank 6. Character and MonsterAI: the two members read every second, and the three P5 patches.</summary>
         public const string CharacterAi = "character";
         /// <summary>Rank 7. The three inventory calls a delivery is applied with.</summary>
         public const string InventoryOps = "inventory";
@@ -122,8 +122,12 @@ namespace RavenIron.ValkyriesCargo.Core
                                       "the glide on every screen but the pilot's (CargoFlight)");
             Declare(ValkyrieFields, 5, "Valkyrie.m_attachPoint / m_attachOffset / m_dropHeight / m_speed / m_turnRate",
                                        "the carry point and the drop height (CargoFlight, P5's carry)");
-            Declare(CharacterAi, 6, "Character.GetAllCharacters / GetSEMan / InIntro / Damage, MonsterAI.MakeTame, BaseAI.IsEnemy",
-                                    "nothing today; P5's surface, audited when P5 lands (P11d)");
+            // RPC_Damage, not Damage: `Character.Damage` is a thin sender on the ATTACKER's machine and
+            // nothing of ours depends on it, while the PRIVATE `Character.RPC_Damage` is what
+            // `Patch_Character_RPC_Damage` actually patches. Probing the sender was green while the
+            // thing it stood for could be broken - `docs/P10B-PROBE-GAP.md`, fixed here.
+            Declare(CharacterAi, 6, "Character.GetAllCharacters / GetSEMan / InIntro / RPC_Damage, MonsterAI.MakeTame, BaseAI.IsEnemy",
+                                    "Ingvar is mortal (RPC_Damage), the carry does not hold him still (InIntro) and he is never tamed (MakeTame)");
             Declare(InventoryOps, 7, "Inventory.RemoveItem(string,int,int,bool) / AddItem(GameObject,int) / CanAddItem(GameObject,int) / CountItems, ObjectDB.GetItemPrefab",
                                      "a delivery cannot be applied (DealApplier)");
             Declare(Comfort, 8, "Player.GetComfortLevel, SEMan.s_statusEffectRested / HaveStatusEffect, ZDOVars.s_baseValue / s_dead / s_playerName",
