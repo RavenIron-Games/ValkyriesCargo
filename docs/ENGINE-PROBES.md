@@ -11,7 +11,7 @@ Three files, and one console verb:
 | file | what it is |
 |---|---|
 | `ValkyriesCargo/Core/EngineBaseline.cs` | PURE. The build this DLL was compiled against, as constants, and the comparison against the four numbers actually running. |
-| `ValkyriesCargo/Core/EngineProbes.cs` | PURE. The registry: 19 named engine facts, their risk rank, what each looks at, what turns itself off when it fails, and what became of it. |
+| `ValkyriesCargo/Core/EngineProbes.cs` | PURE. The registry: 25 named engine facts (18 probed at boot, 7 method bodies registered as not probeable), their risk rank, what each looks at, what turns itself off when it fails, and what became of it. |
 | `ValkyriesCargo/EngineCheck.cs` | The only file that touches a game type. Reads the live version numbers and resolves every fact, once, from plugin `Awake`. |
 | `cargo engine` | Prints all of it. `cargo status` carries the one-line version of it, second from the top. |
 
@@ -78,14 +78,17 @@ the log.
 ### The one named exception to house rule 5
 
 `EngineCheck.cs` is the only file in this mod that names a private game member — by NAME, in a
-string, handed to reflection, inside a probe, and **never called**. Four of them:
+string, handed to reflection, inside a probe, and **never called**. Eight of them since the audit's
+rows landed (§9):
 
 | member | why the probe has to name it |
 |---|---|
 | `ZSyncTransform.m_velocityCached` | the flight's whole dead-reckoning argument rests on it existing |
 | `Character.RPC_Damage` | what the immortality patch actually patches (see §3) |
 | `BaseAI.m_character` | the field whose assignment ORDER cost a shipped visit (see §4) |
-| `RandEventSystem.Awake` / `Humanoid.Awake` | Harmony targets named in strings: a rename is a PatchAll failure, not a compile error |
+| `RandEventSystem.Awake` / `Humanoid.Awake` / `Terminal.InitTerminal` | Harmony targets named in strings: a rename is a PatchAll failure, not a compile error |
+| `ZNetView.Awake` | the method whose BODY is the not-probeable `znetview_awake`; the method going missing is the loud half of that fact |
+| `BaseAI.Follow` / `BaseAI.MoveTo` | the chain the walk-up rides after `SetFollowTarget`; their bodies (the 3 m stop, the `true` on a failed path) are `ai_bodies` |
 
 Nothing here reads a value off a live object, writes anything, moves anything, or starts a timer. It
 runs once, from plugin `Awake`, **after** the config binds (a probe's answer is printed by
@@ -312,25 +315,153 @@ Eleven mutations, one at a time, each reverted before the next; every one must m
 
 Every one caught; the tree restored to 1423 passing.
 
+### The second pass, 2026-09-07 (PR #46, the audit's rows)
+
+The harness cannot see `EngineCheck.cs`, so the six mutations that matter most were run the other way:
+a wrong signature written into a probe, the mod rebuilt, and the built DLL run through the scratchpad
+`ProbeCheck` tool against the **real** `assembly_valheim.dll` from the Steam install (§8). Each must
+produce a `FAILED` line naming the member.
+
+| # | mutation (in `EngineCheck.cs`) | what the real assembly answered |
+|---|---|---|
+| M1 | `GetAllZDOsWithPrefabIterative` asked for WITHOUT the `ref` on its index | `FAILED: zdo_authoring` — `ZDOMan.GetAllZDOsWithPrefabIterative(String, List`1, Int32) is gone` |
+| M2 | `ZDO.Set(int, int)` asked for without its `okForNotOwner` parameter | **PASSED, and should not have.** See below. Caught only after `NeedMethod` was rewritten; `FAILED: zdo_authoring` since. |
+| M3 | `Interactable` expected to have THREE members | `FAILED: interfaces` — `Interactable has 2 member(s), not 3: CargoMerchant no longer implements it whole` |
+| M4 | `ZNetView.Everybody` expected to be 1 | `FAILED: znetview` — `ZNetView.Everybody is 0, not 1` |
+| M5 | the `InIntro` override asked of `Humanoid`, which does not override it | `FAILED: character` — `Humanoid no longer overrides InIntro()` |
+| M6 | a typo in the console patch target (`InitTerminals`) | `FAILED: console` — `Terminal.InitTerminals() is gone` |
+
+And three in the registry, against the harness:
+
+| # | mutation (in `EngineProbes.cs`) | checks failed |
+|---|---|---|
+| H1 | the console registered as not probeable | 5 |
+| H2 | `damage_path` registered as a probe that can pass | 5 |
+| H3 | the interface probe stops saying that a fifth member is the failure | 1 |
+
+**M2 found a probe helper that could lie.** `NeedMethod` used `Type.GetMethod(name, flags, null,
+types, null)`, which goes through .NET's default binder — and the default binder widens primitives
+the way a call site would, `int` to `long` and `int` to `float`. Asked for a `Set(int, int)` that
+does not exist (the real assembly has only `Set(int, int, bool okForNotOwner = false)`, confirmed by
+listing `ZDO`'s overloads off both the client and the dedicated-server DLL), it matched the
+neighbouring `Set(int, long)` and answered PASSED. A probe that widens cannot notice a moved
+parameter type, which is one of the two things the whole package exists to catch. `NeedMethod` and
+`NeedConstructor` now enumerate the members and compare every parameter type **by identity**
+(`FindExact` / `SameTypes`); an `AmbiguousMatchException` can no longer arise, so the "more than one
+match is still a match" clause is gone with it. Re-run after the rewrite: 18/18 on the real assembly,
+and M2 fails as it should.
+
 ---
 
 ## 8. What is NOT proven
 
-**No probe in this package has ever resolved a real member.** The harness is `net8.0` and compiles
-the pure `Core` sources against stubs; it can no more load `assembly_valheim` than it can load Unity.
-Everything in `EngineCheck.cs` is therefore verified two ways, both offline:
+**No probe in this package had resolved a real member until 2026-09-07, and none has yet resolved
+one inside the game.** The harness is `net8.0` and compiles the pure `Core` sources against stubs; it
+can no more load `assembly_valheim` than it can load Unity. Everything in `EngineCheck.cs` is
+therefore verified three ways, all offline:
 
 1. against the decompiled real assembly, member by member, with the line numbers in §4;
 2. by a throwaway reflection tool built against the same `libs\` the mod compiles against, resolving
    each member with the SAME `BindingFlags` the probes use — every member of the new and changed
-   probes came back, with the expected signature, on the first run.
+   probes came back, with the expected signature, on the first run;
+3. **since PR #46, by running the probes themselves.** The scratchpad `ProbeCheck` tool loads the
+   built `ValkyriesCargo.dll` under .NET 8, resolves its references from the Steam install's
+   `valheim_Data\Managed` (the REAL `assembly_valheim.dll` 0.221.12, not the publicized copy) and
+   BepInEx's `core`, and calls `EngineCheck.Run()`. It answered
+   `engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable`
+   with no `registry:` line — so every `Check*` has now found its members on the real assembly, and
+   the version comparison has read the real `Version` type. The six mutations in §7 are the same tool
+   saying `FAILED` when a probe is wrong.
 
-Neither is a boot on a machine with a game under it. **A typo or a wrong overload in a probe shows up
-as a FALSE failure that disables a working feature**, which is the one way this package can make
-things worse than not having it. `CLAUDE.md`'s verify list, item 24, is that run: on a stock 0.221.12
-the boot line must read `probes 15/15 ok, 4 not probeable` with no `FAILED` and no `registry:` line,
-and any failure there is a bug in `EngineCheck.cs`, not in Valheim.
+What the third one is NOT: a boot on a machine with a game under it. It runs on the .NET 8 runtime,
+not Mono, so the JIT-time resolution the `Probe*`/`Check*` pair exists for is exactly what it cannot
+exercise; and it never reaches plugin `Awake`, so the ordering against the config bind and `PatchAll`
+is unexercised too. **A typo or a wrong overload in a probe shows up as a FALSE failure that disables
+a working feature**, which is the one way this package can make things worse than not having it, and
+the tool has now ruled that out for the members while leaving the runtime to item 24. `CLAUDE.md`'s
+verify list, item 24, is that run: on a stock 0.221.12 the boot line must read
+`probes 18/18 ok, 7 not probeable` with no `FAILED` and no `registry:` line, and any failure there is a
+bug in `EngineCheck.cs`, not in Valheim.
 
-Also unproven, and by design: the not-probeable four (`event_clock`, `znetview_awake`,
-`server_refpin`, `awake_order`) are method bodies. Nothing at runtime will ever check them. They are
-P10a's job, and they are in the registry so that `cargo engine` says so out loud.
+Also unproven, and by design: the not-probeable seven (`event_clock`, `znetview_awake`,
+`server_refpin`, `zdo_bodies`, `awake_order`, `damage_path`, `ai_bodies`) are method bodies. Nothing
+at runtime will ever check them. They are P10a's job, and they are in the registry so that
+`cargo engine` says so out loud.
+
+---
+
+## 9. The audit's rows, and where each went
+
+`docs/AUDIT-P4P5-2026-09-07.md` §2 (P11d) listed every member P4 and P5 call or patch, with the
+signature each depends on and why. Folded in on 2026-09-07 (PR #46) by one rule: **an assembly fact
+is a probe; a body fact is a not-probeable entry; a prefab fact stays with `cargo prefab`.** Nothing
+was dropped; four rows name members our files no longer call and are noted as such. "(was)" marks a
+row the registry already covered before this pass.
+
+### P4 — the flight
+
+| audit row | where it went |
+|---|---|
+| `Valkyrie.Awake` | `valkyrie` (was) |
+| `Valkyrie.m_dropHeight` / `m_attachPoint` / `m_attachOffset` | `valkyrie` (was) |
+| `ZNetView.m_initZDO` | `znetview` — the ZDO the two prefab patches read INSIDE their first `Awake` (F8) |
+| `ZNetView.Awake` must not re-apply `Persistent` | `znetview` (the method) and `znetview_awake` (the body, was) |
+| `ZNetView.Destroy` / `IsOwner` / `GetZDO` / `IsValid` | `znetview` |
+| `ZNetView.Register(string, Action<long>)`, `Register<T>` | `znetview` — the merchant's `VCargo_say` / `VCargo_vanish` (F3) |
+| `ZDOMan.CreateNewZDO(Vector3, int)` "must still NOT set the prefab" | `zdo_authoring` (was) for the call; `zdo_bodies` for the body |
+| `ZDO.SetPrefab(int)` | `zdo_authoring` (was) |
+| `ZDO.Persistent` / `Distant` / `Type` | `zdo_authoring` (was) |
+| `ZDO.SetOwner`, `ZDOMan.GetSessionID`, `ZDOMan.DestroyZDO` | `zdo_authoring` (was); `DestroyZDO`'s non-owner no-op → `zdo_bodies` |
+| `ZDOMan.GetAllZDOsWithPrefabIterative(string, List<ZDO>, ref int)` | `zdo_authoring`, with the `ref` (mutation M1) |
+| `ZDO.GetHashZDOID`, `Set(KeyValuePair, ZDOID)`, `GetZDOID(KeyValuePair)` | `zdo_authoring` / `merchant` (was) |
+| `ZDO.Set(int, Vector3 / int / bool)`, "no ownership check" | `zdo_authoring`, by the overload each call site compiled to — `Set(int, int, bool)`, since the two-parameter form does not exist (mutation M2) — plus the `Get` overloads, `m_uid`, `GetPosition`, `GetOwner`, `ZDOID.None` / `IsNone`; the ignored `okForNotOwner` → `zdo_bodies` |
+| `ZDOVars.s_velHash` | `velocity_cache` (was), with the hash of `"vel"` |
+| `ZoneSystem.GetGroundHeight(Vector3, out float)` | `zone_maths`, the `out` overload on purpose (F7) |
+| `ZoneSystem.m_activeArea` / `m_waterLevel` | `zone_maths` (was) |
+| `ZNetScene.InActiveArea(Vector2i, Vector2i, int)` | `zone_maths` (was) |
+| `ZNetScene.HasPrefab(int)` / `GetPrefab(int)` / `GetPrefab(string)` / `FindInstance(ZDOID)` | `zdo_authoring` (`HasPrefab`, `GetPrefab(int)`) and `merchant` (was, the other two) |
+| `ZSyncTransform` on the Valkyrie prefab | a prefab fact: `cargo prefab Valkyrie`. The type itself is touched by `velocity_cache` |
+
+### P5 — the merchant
+
+| audit row | where it went |
+|---|---|
+| `Humanoid.Awake` / `Start` / `UnequipAllItems` | `merchant_awake` / `merchant` (was) |
+| `Humanoid.EquipBestWeapon` and "`MonsterAI.Start` still calls it" | `ai_bodies` — the re-arm, which is why the strip repeats. Our files never call it; not probed by name |
+| `Character.RPC_Damage(long, HitData)` | `character` (was) |
+| `Character.ApplyDamage(HitData, bool, bool, DamageModifier)` | `character` — the second immortality choke point (F6, PR #38); "bypasses `RPC_Damage`" → `damage_path` |
+| `Character.Damage` "still a thin sender" | `damage_path`. Not probed by name, on §3's principle |
+| `Character.InIntro()` and "`Player` still overrides it" | `character` (was) plus `NeedOverride(Player, InIntro)` (mutation M5) |
+| `Character.UpdateMotion` zeroes velocity under `InIntro` | `damage_path` |
+| `Character.UpdateGroundContact` fall damage `IsPlayer`-gated | `damage_path` |
+| `Character.CheckDeath` / `OnDeath` ends in `ZNetScene.Destroy` | `damage_path` |
+| `Character.SetTamed(bool)` + `ZDOVars.s_tamed`; `RPC_SetTamed` owner-only | `merchant_awake` (was); `character` (`s_tamed` with its hash, `IsTamed`); `damage_path` (the body) |
+| `Character.m_faction` / `m_name` | `merchant` (was) |
+| `Character.GetHoverText()` / `GetHoverName()`, "`Character` still implements `Hoverable`" | `character` — the hover patch's targets and `NeedInterface(Character, Hoverable)` (F2, PR #37) |
+| `Character.IsOnGround()` | `merchant` (was) |
+| `Character.GetSEMan()`, `SEMan.HaveStatusEffect(int)` | `character` / `comfort` (was) |
+| `MonsterAI.MakeTame()` first line | `character` (was) for the call; `awake_order` (was) for the body |
+| `BaseAI.Awake` assigns `m_character` | `merchant_awake` (was); `awake_order` (was) |
+| `MonsterAI.SetFollowTarget` / `GetFollowTarget` | `merchant` |
+| `MonsterAI.UpdateAI(float)` follow branch | `ai_bodies` |
+| `MonsterAI.m_alertRange`, "0 clears targets every tick" | `merchant` (was) for the field; `ai_bodies` for the rule |
+| `BaseAI.m_aggravatable` / `m_passiveAggresive` / `m_randomMoveRange` / `m_pathAgentType` | `merchant` (was). `m_pathAgentType` is not read by our files today and is not probed |
+| `BaseAI.SetPatrolPoint()` / `ResetPatrolPoint()` | `merchant` (was). `ResetPatrolPoint` is not called by our files today and is not probed |
+| `BaseAI.Follow(GameObject, float)` / `MoveTo(float, Vector3, float, bool)` | `merchant` (the two methods, named under the house-rule-5 exception) and `ai_bodies` (the 3 m stop, the `true` on a failed path) |
+| `BaseAI.IsEnemy(Character, Character)` | `character` (was) |
+| `Chat.SetNpcText(...)` | `merchant` (was) |
+| `Odin.m_despawn` + `EffectList.Create(...)` | `merchant` (was) |
+| `Player.GetClosestPlayer(Vector3, float)` | `merchant` (was) |
+| `Interactable` / `Hoverable`, the four members | `interfaces` — member for member AND by count (mutation M3) |
+| the `Dverger` and `Valkyrie` prefab probes | not in the registry, on §5's reasoning: runtime facts about a loaded world. `cargo prefab Dverger` / `cargo prefab Valkyrie` are their instrument, and the animator parameters can only be read on a client (CLAUDE.md, the headless prefab reads) |
+
+### Beyond the audit
+
+Members our files call that neither list had, added in the same pass because the rule is "every
+member we call": `Terminal.InitTerminal`, the `ConsoleCommand` constructor as compiled,
+`ConsoleEventArgs.Args` / `Context`, `Terminal.AddString` (`console`); `MessageHud.instance` /
+`ShowMessage` and the two banner types (`localization`); `ZNet.instance` / `IsServer`,
+`ZNetPeer.m_socket`, `ISocket.GetHostName`, `ZRoutedRpc.instance` / `Everybody` (`rpc`);
+`Player.m_localPlayer` (`comfort`); `Heightmap.Biome.All` (`randevent`); `ZNetView.Everybody` by
+VALUE (`znetview`, mutation M4), because the "handle it locally first" branch is keyed on the literal
+`0L` and a renumbered constant would route the callout to nobody without a compile error anywhere.

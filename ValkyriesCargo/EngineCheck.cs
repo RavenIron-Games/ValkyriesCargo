@@ -890,12 +890,38 @@ namespace RavenIron.ValkyriesCargo
                 bad.Add(t.Name + "." + name + " is " + Wire.Int((int)v) + ", not the hash of \"" + key + "\" (" + Wire.Int(want) + ")");
         }
 
+        /// <summary>
+        /// A method by name and EXACT parameter types. Not `Type.GetMethod(name, flags, null, types, null)`:
+        /// that goes through the default binder, which widens primitives the way a call site would -
+        /// `int` to `long`, `int` to `float` - so asking it for a `ZDO.Set(int, int)` that does not exist
+        /// came back with `Set(int, long)` and the probe said PASSED. Found by the second mutation pass
+        /// (docs/ENGINE-PROBES.md §7): a probe that widens is a probe that can lie about the very thing
+        /// it exists to catch, a moved parameter type. Identity on every parameter, or it is gone.
+        /// </summary>
         private static void NeedMethod(Type t, string name, Type[] args, List<string> bad)
         {
-            MethodInfo m = null;
-            try { m = t.GetMethod(name, Anywhere, null, args ?? Type.EmptyTypes, null); }
-            catch (AmbiguousMatchException) { return; }             // more than one match is still a match
-            if (m == null) bad.Add(t.Name + "." + name + "(" + Names(args) + ") is gone");
+            if (FindExact(t, name, args ?? Type.EmptyTypes) == null)
+                bad.Add(t.Name + "." + name + "(" + Names(args) + ") is gone");
+        }
+
+        /// <summary>The first method of that name whose parameter types are these, by identity; null when there is none. Two exact matches (a `new` member hiding a base one) are still a match.</summary>
+        private static MethodInfo FindExact(Type t, string name, Type[] args)
+        {
+            MethodInfo[] all = t.GetMethods(Anywhere);
+            for (int i = 0; i < all.Length; i++)
+            {
+                if (all[i].Name != name) continue;
+                if (SameTypes(all[i].GetParameters(), args)) return all[i];
+            }
+            return null;
+        }
+
+        private static bool SameTypes(ParameterInfo[] ps, Type[] args)
+        {
+            if (ps.Length != args.Length) return false;
+            for (int i = 0; i < ps.Length; i++)
+                if (ps[i].ParameterType != args[i]) return false;   // identity: a byref, an array, a nested type each compare as themselves
+            return true;
         }
 
         /// <summary>A generic method by name, generic arity and parameter count - `GetMethod` cannot ask for one by argument types.</summary>
@@ -911,13 +937,14 @@ namespace RavenIron.ValkyriesCargo
             bad.Add(t.Name + "." + name + "<" + Wire.Int(genericArgs) + ">(" + Wire.Int(paramCount) + " args) is gone");
         }
 
-        /// <summary>A constructor by argument types. `new Material(donor)` is a call like any other and can go the same way.</summary>
+        /// <summary>A constructor by EXACT argument types (the same reasoning as NeedMethod). `new Material(donor)` is a call like any other and can go the same way.</summary>
         private static void NeedConstructor(Type t, Type[] args, List<string> bad)
         {
-            ConstructorInfo c = null;
-            try { c = t.GetConstructor(Anywhere, null, args ?? Type.EmptyTypes, null); }
-            catch (AmbiguousMatchException) { return; }             // more than one match is still a match
-            if (c == null) bad.Add("new " + t.Name + "(" + Names(args) + ") is gone");
+            Type[] want = args ?? Type.EmptyTypes;
+            ConstructorInfo[] all = t.GetConstructors(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance);
+            for (int i = 0; i < all.Length; i++)
+                if (SameTypes(all[i].GetParameters(), want)) return;
+            bad.Add("new " + t.Name + "(" + Names(args) + ") is gone");
         }
 
         /// <summary>

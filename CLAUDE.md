@@ -236,16 +236,17 @@ the build this DLL was compiled against as constants — 0.221.12, network 36, p
 build ids — and the comparison against the four numbers actually running; the numbers are copied rather than
 referenced because vanilla's `Version` type is `internal` and its three numbers are `const`, so a direct
 reference would be inlined at OUR compile time and answer "same build" on every Valheim ever released.
-`Core/EngineProbes.cs` (PURE) is the registry: 19 named engine facts, ranked worst-first by how much SILENCE a
-break would come with, each with what it looks at and what turns itself off; four are method BODIES and are
+`Core/EngineProbes.cs` (PURE) is the registry: 25 named engine facts (the P11d audit's 53 rows folded in on
+2026-09-07, PR #46), ranked worst-first by how much SILENCE a
+break would come with, each with what it looks at and what turns itself off; seven are method BODIES and are
 registered as **not probeable**, which `cargo engine` says out loud rather than implying a pass. A probe is a
 veto and never a permit — a fact that has not run, could not be probed, or was never registered answers YES, so
 a bug in the registry can never be the thing that turns the mod off. `EngineCheck.cs` is the one file that
 touches a game type: every probe is a PAIR (a catching `Probe*` and a `[MethodImpl(NoInlining)]` `Check*`),
 because Mono resolves a member access when the CALLER is JIT-compiled and a try/catch in the same method never
 runs. It is the mod's ONE named exception to "our files name no private member": `ZSyncTransform.m_velocityCached`,
-`BaseAI.m_character`, `Character.RPC_Damage` and `RandEventSystem.Awake` are named in strings, handed to
-reflection, and never called. It runs from plugin `Awake` AFTER the config binds and BEFORE `PatchAll`. Two
+`BaseAI.m_character`, `Character.RPC_Damage`, `RandEventSystem.Awake`, `Humanoid.Awake`, `ZNetView.Awake`,
+`Terminal.InitTerminal` and `BaseAI.Follow` / `MoveTo` are named in strings, handed to reflection, and never called. It runs from plugin `Awake` AFTER the config binds and BEFORE `PatchAll`. Two
 features consult their probe and degrade rather than throw (`Server/CargoEvent.cs` refuses to register or start
 the event; `Client/BodyLoader.cs` keeps the stand-in), and `Server/MarketStore.cs` REFUSES a sidecar written by
 a newer build — held, never `.corrupt`, nothing saved over it, because that is somebody's market and not a
@@ -861,8 +862,8 @@ The BarrkBOT export (`BARRKBOT_CONTRACT.md`), on a dedicated server, `Server.Bar
 
 P10b, the engine probes (any boot, client or server, no visit needed):
 24. **The probes resolve**: the boot line carries `built against Valheim 0.221.12 (network 36, player 43, world 37;
-    ...); running same build 0.221.12 (net 36, player 43, world 37); probes 15/15 ok, 4 not probeable.` on an
-    unmodified install, and `cargo engine` lists all 19 facts worst-rank-first with no `FAILED` among them and no
+    ...); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable.` on an
+    unmodified install, and `cargo engine` lists all 25 facts worst-rank-first with no `FAILED` among them and no
     `registry:` line. **This is the one thing about P10b a clean build cannot prove**: every probe is a reflection
     lookup against a member this mod has never resolved at runtime, so a typo or a wrong overload shows up as a
     FALSE failure that disables a working feature. Any `FAILED` line on a stock 0.221.12 is a bug in
