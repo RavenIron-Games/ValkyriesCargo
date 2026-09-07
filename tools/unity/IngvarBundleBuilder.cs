@@ -130,6 +130,18 @@ public static class IngvarBundleBuilder
         var takes = mi.defaultClipAnimations;
         for (int i = 0; i < takes.Length; i++)
         {
+            // ---- LANDMINE 5 ---------------------------------------------------------------
+            // Blender's FBX exporter names every action "Armature|Clip", and `name` is what the
+            // clip asset is CALLED in the bundle. `IngvarBody` resolves its six clips BY NAME, so
+            // the prefix means all six lookups miss, all six weights stay 0, and Ingvar stands
+            // frozen -- with a bundle that passes every other gate: right size, right asset count,
+            // rig intact, six clips present. The first bake here shipped exactly that.
+            // It also silently defeats the loop table below, because `Looping.Contains` is matching
+            // against "Armature|Walk" and never hits. A non-looping idle freezes on its last frame
+            // after ten seconds. Strip first, then decide looping, in that order.
+            int bar = takes[i].name.LastIndexOf('|');
+            if (bar >= 0) takes[i].name = takes[i].name.Substring(bar + 1);
+
             takes[i].loopTime           = Looping.Contains(takes[i].name);
             takes[i].lockRootRotation   = true;
             takes[i].keepOriginalPositionY = true;
@@ -144,6 +156,22 @@ public static class IngvarBundleBuilder
                   $"tris={(smr != null && smr.sharedMesh != null ? smr.sharedMesh.triangles.Length / 3 : 0)}");
         if (smr == null)
             Debug.LogWarning("[ValkyriesCargo] no SkinnedMeshRenderer - the rig did not survive import.");
+
+        // Report the clips as they came OUT of the import, not as we asked for them: the name in
+        // the bundle and the loop flag are what `IngvarBody` and `BodyMotion` actually meet, and
+        // the lengths are what verify item 19 checks against models/README.md.
+        var clips = AssetDatabase.LoadAllAssetsAtPath(Fbx).OfType<AnimationClip>()
+                                 .Where(c => !c.name.StartsWith("__preview"))
+                                 .OrderBy(c => c.name).ToArray();
+        foreach (var c in clips)
+            Debug.Log($"[ValkyriesCargo] clip '{c.name}': {c.length:0.00}s, loop={c.isLooping}, frameRate={c.frameRate}");
+        var wrong = clips.Where(c => c.name.Contains("|")).Select(c => c.name).ToArray();
+        if (wrong.Length > 0)
+            Fail("clip names still carry the exporter's prefix (" + string.Join(", ", wrong) +
+                 "). IngvarBody resolves BY NAME and every lookup would miss - see landmine 5.");
+        foreach (var want in Looping)
+            if (!clips.Any(c => c.name == want && c.isLooping))
+                Debug.LogWarning($"[ValkyriesCargo] '{want}' is not looping - it will freeze on its last frame.");
         return true;
     }
 

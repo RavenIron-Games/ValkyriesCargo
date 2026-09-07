@@ -26,7 +26,7 @@ and the model: `docs/REVIEW-v5-2026-09-06.md`.
 vendored and armed, the config surface bound and locked, the `cargo` console, the catalogue with 72 defaults, the
 market and the scheduler, the event and the director, the deal wire, the world sidecar, the Cargo Terminal and the
 body loader. The flight is built (PR #8, merged 2026-09-07) and not yet flown; the merchant is not started, and
-no bundle is baked, so a visit authors a bird and nothing for it to carry. 1078/1078 checks. The paragraphs below are the history, each with the lines seen.
+the bundle is baked and embedded (2026-09-07), so a visit authors a bird and nothing for it to carry. 1092/1092 checks. The paragraphs below are the history, each with the lines seen.
 
 **HEADLESS VERIFIED 2026-09-06 15:23 on CairnTest (dedicated, port 2466, world CairnTest, alongside
 Cairn.dll and RavenEye.dll):** within 20 s of launch the BepInEx log showed, in order,
@@ -140,7 +140,11 @@ preview | walk | clip <Hello|Talk|Shrug|Nod> | clear`, and one line in `cargo st
 a replacement during the hand-back, a hitch through the blend-out, a clip shorter than the blend-in), nine model
 mutations caught between the two; a 131,072-byte stand-in dropped at `Assets\valkyriescargo_kit`
 embedded as `ValkyriesCargo.valkyriescargo_kit` and grew the DLL by exactly that much. **Not yet seen on a screen**:
-the body itself (items 19 and 20) — there is no baked bundle on this machine and nothing here has drawn a pixel.
+the body itself (items 19 and 20) — nothing here has drawn a pixel. **The bundle exists as of 2026-09-07**: baked
+from `models/ingvar.fbx` in Unity 6000.0.61f1 on Wu'barrk's Linux box (`tools/setup-ingvar-unity.sh`, the twin of
+the .ps1), 3,826,415 bytes, 2 assets, `SkinnedMeshRenderer=True, bones=24, tris=31112`, six clips named `Hello,
+Idle, Nod, Shrug, Talk, Walk` with `Idle/Talk/Walk` looping; embedding it takes the Debug DLL from 273,408 to
+4,100,096 bytes, which is the bundle plus the resource header and is the check that catches a stale copy.
 
 **P4 the authored flight, Wu'barrk, 2026-09-07 (PR #8, merged 1884fcd).** `Core/FlightPlan.cs` (pure, 39 checks) plans
 the flight inside the pilot's active block: a STRAIGHT approach along the seeded bearing, shrunk by 12 m steps until the
@@ -477,10 +481,14 @@ P7, the terminal (a client, no server needed for the first item):
     first; Send him off twice ends the visit (`ended: dismissed by <name>`); Tab and M close it; walking away
     closes it only once P5 gives it a merchant.
 
-P8, the body (a client with a baked bundle embedded; none exists yet):
+P8, the body (a client with the baked bundle embedded; **the bundle exists as of 2026-09-07** -- baked on
+Wu'barrk's Linux box in Unity 6000.0.61f1, 3,826,415 bytes, and the Debug DLL grows 273,408 -> 4,100,096
+when it is embedded. Note it is a `StandaloneWindows64` bundle, which is right for the ship and means a
+LINUX client needs a Linux bake through `BodyLoader`'s loose-file path to run these two items):
 19. **`cargo body`** says `source embedded ('ValkyriesCargo.valkyriescargo_kit')`, `bundle open`, `prefab 'ingvar'
-    found`, six clips with the lengths from models/README.md (`Walk 4.21s, Idle 10.00s, Talk 5.17s, Hello 3.79s,
-    Shrug 2.00s, Nod 1.25s`), `SkinnedMeshRenderer=yes, bones=24, tris=31112`, and a **ground offset within a few
+    found`, six clips with the lengths Unity reported at the bake (`Walk 4.17s, Idle 10.00s, Talk 5.13s,
+    Hello 3.75s, Shrug 1.96s, Nod 1.25s`; models/README.md's earlier row was one 24 fps frame longer on
+    four of them, corrected 2026-09-07), `SkinnedMeshRenderer=yes, bones=24, tris=31112`, and a **ground offset within a few
     millimetres of 0** — anything else and the bake, not the loader, is what to look at (the console prints it as two
     lines: `body: source embedded - ...` then `resource: 'ValkyriesCargo.valkyriescargo_kit' inside this DLL ...`). On a dedicated server the
     same verb answers `source none - client only; not loaded here` and says nothing about appearance.
