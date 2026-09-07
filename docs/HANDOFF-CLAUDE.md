@@ -5,7 +5,7 @@ Wu'barrk take part of what is left. This file tells you everything you need to a
 read it, and ends with the one job to do first: **divide the work packages with your owner, write the
 split down, and say so on PR #1.**
 
-Repo: <https://github.com/RavenIron/ValkyriesCargo> (public). Branch `a/contract` = PR #1; `main` = Phase 0.
+Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron-Games). Everything below is on `main`; PR #1 (the contract) is merged.
 
 ---
 
