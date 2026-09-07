@@ -54,6 +54,7 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<int>    PurseCarryPercent;
         public static ConfigEntry<bool>   EnableBarter;
         public static ConfigEntry<string> PriceChangePolicy;
+        public static ConfigEntry<bool>   BarrkBotExport;
 
         // ---- Client (local) ---------------------------------------------------------------
 
@@ -170,6 +171,8 @@ namespace RavenIron.ValkyriesCargo.Config
             PriceChangePolicy = S(cfg, "Server", "PriceChangePolicy", "Reconfirm",
                 "Reconfirm: a staged deal whose price moved turns amber and needs one more click. Teardown: every open tray is cleared on any price change. Read on the SERVER.",
                 new AcceptableValueList<string>("Reconfirm", "Teardown"));
+            BarrkBotExport = S(cfg, "Server", "BarrkBotExport", true,
+                "Write barrkbot_cargo_market.json, barrkbot_cargo_traders.json and barrkbot_cargo_visits.json under BepInEx/config/ValkyriesCargo/ for BarrkBOT to read off the server filesystem (BARRKBOT_CONTRACT.md), refreshed about once a minute. Never the source of truth: the world sidecar always saves first. Read on the SERVER.");
 
             ShowArrivalMessage = C(cfg, "Client", "ShowArrivalMessage", true,
                 "Show the private 'wings beat in the upper skies' line when you are the chosen player. Read on the CLIENT.");

@@ -24,15 +24,22 @@ namespace RavenIron.ValkyriesCargo.Server
         public const float GatherIntervalSeconds = 1f;
         public const float SaveCadenceSeconds = 30f;
         public const float AdoptWindowSeconds = 15f;
+        /// <summary>How often the BarrkBOT export refreshes (Server/BarrkBotExport.cs): independent of
+        /// _dirty, because generated_at must keep moving even on a quiet server, or BarrkBOT starts
+        /// calling perfectly current numbers stale past its own 60-minute threshold.</summary>
+        public const float ExportCadenceSeconds = 60f;
 
         private readonly Scheduler _scheduler;
         private readonly Market _market;
         private readonly VisitSession _session = new VisitSession();
         private readonly OwedLedger _ledger = new OwedLedger();
+        private readonly TraderLedger _traders = new TraderLedger();
+        private readonly VisitHistory _visitHistory = new VisitHistory();
         private readonly System.Random _rng = new System.Random();
         private List<Candidate> _candidates = new List<Candidate>();
         private float _gather;
         private float _sinceSave;
+        private float _sinceExport;
         private int _lastTakings;
         private string _lastLogged = "";
         private string _pendingEndReason;
@@ -41,11 +48,18 @@ namespace RavenIron.ValkyriesCargo.Server
         private bool _orphanLogged;
         private bool _dirty;
         private int _throws;
+        private int _mirrorThrows;
 
         public Scheduler Scheduler => _scheduler;
         public Market Market => _market;
         public VisitSession Session => _session;
         public OwedLedger Ledger => _ledger;
+        /// <summary>Per-player trade totals this session, for barrkbot_cargo_traders.json (BARRKBOT_CONTRACT.md). New: not persisted, not in the sidecar.</summary>
+        public TraderLedger Traders => _traders;
+        /// <summary>Visits that have ended this session, for barrkbot_cargo_visits.json. New: not persisted, not in the sidecar.</summary>
+        public VisitHistory VisitHistory => _visitHistory;
+        /// <summary>When this VisitDirector came up -- the "session" barrkbot_cargo_traders.json and barrkbot_cargo_visits.json reset against.</summary>
+        public DateTime SessionStartedUtc { get; }
         public MarketStore Store { get; private set; }
         public IReadOnlyList<Candidate> Candidates => _candidates;
         public int LastTakings => _lastTakings;
@@ -58,6 +72,7 @@ namespace RavenIron.ValkyriesCargo.Server
         {
             _market = new Market(catalogue, marketRules, worldTime, salt);
             _scheduler = new Scheduler(schedulerRules);
+            SessionStartedUtc = DateTime.UtcNow;
         }
 
         /// <summary>Build from the live config, the engine's day length, the world's uid and the sidecar. Logs its sources.</summary>
@@ -121,6 +136,7 @@ namespace RavenIron.ValkyriesCargo.Server
         {
             _gather += dt;
             _sinceSave += dt;
+            _sinceExport += dt;
             if (_gather < GatherIntervalSeconds) return;
             _gather = 0f;
             try
@@ -139,7 +155,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 {
                     if (!ours)
                     {
-                        End(_pendingEndReason ?? (current == null ? "timer" : "displaced by event '" + current.m_name + "'"));
+                        End(_pendingEndReason ?? (current == null ? "timer" : "displaced by event '" + current.m_name + "'"), worldTime);
                     }
                     else
                     {
@@ -175,6 +191,21 @@ namespace RavenIron.ValkyriesCargo.Server
                 }
 
                 if (_dirty && _sinceSave >= SaveCadenceSeconds) Flush("cadence");
+
+                // BarrkBOT (BARRKBOT_CONTRACT.md). Decision 4: the sidecar is the source of truth and the
+                // export a mirror of it, so Flush runs first, to completion, and only a successful save
+                // lets the mirror run at all -- SidecarThenMirror is what proves that ordering off-game.
+                // Independent of _dirty on purpose: with nothing changed Flush is a cheap no-op, but the
+                // export still needs to move generated_at, or a perfectly current file starts reading as
+                // stale to BarrkBOT past its own 60-minute threshold.
+                if (_sinceExport >= ExportCadenceSeconds)
+                {
+                    _sinceExport = 0f;
+                    SidecarThenMirror.Run(
+                        () => Flush("barrkbot export"),
+                        () => BarrkBotExport.Write(this),
+                        mex => { if (_mirrorThrows++ < 3) ValkyriesCargo.Log.LogError("barrkbot export mirror threw (non-fatal, the sidecar is unaffected): " + mex); });
+                }
             }
             catch (Exception ex)
             {
@@ -256,6 +287,7 @@ namespace RavenIron.ValkyriesCargo.Server
             if (r.Ok)
             {
                 _ledger.Add(playerKey, r);
+                _traders.Record(playerKey, playerName, r);
                 _dirty = true;
                 PublishMarket();
                 ValkyriesCargo.Log.LogInfo("deal " + r.DeliveryId + " with " + playerName + ": " + Describe(r) + "; purse " + _market.Purse);
@@ -316,10 +348,18 @@ namespace RavenIron.ValkyriesCargo.Server
             Flush("visit start");
         }
 
-        private void End(string reason)
+        private void End(string reason, double worldTime)
         {
             _lastTakings = _market.Takings;
             int id = _session.VisitId;
+            string pilot = _session.PilotName;
+            // World seconds are real seconds here (VisitSession's own doc comment: the event's m_time is
+            // real time, paused only while nobody is near), so this is the visit's own exact duration, not
+            // an approximation; the wall-clock started_at/ended_at BarrkBOT gets are derived from it rather
+            // than tracked separately (see barrkbot_cargo_visits.json's own notes for the one place that costs).
+            double duration = _session.Clock != null ? Math.Max(0.0, worldTime - _session.Clock.StartWorldTime) : 0.0;
+            DateTime endedUtc = DateTime.UtcNow;
+            _visitHistory.Record(id, pilot, endedUtc.AddSeconds(-duration), endedUtc, duration, _lastTakings, reason);
             Spawner.Clear();          // a bird still in the air when the visit ends is reclaimed and destroyed (P4)
             Publish(_session.End(reason));
             _pendingEndReason = null;

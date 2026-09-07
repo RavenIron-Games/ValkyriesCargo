@@ -4,6 +4,7 @@
     "website_url": "https://github.com/RavenIron-Games/ValkyriesCargo",
     "description": "NOT YET PLAYABLE. A Valkyrie will drop a wandering merchant at your base when you are rested; Ingvar buys and sells from a live stock at supply-and-demand prices. The server side runs headless; the flight and the merchant are not built yet.",
     "dependencies": [
-        "denikson-BepInExPack_Valheim-5.4.2333"
+        "denikson-BepInExPack_Valheim-5.4.2333",
+        "ValheimModding-JsonDotNET-13.0.4"
     ]
 }

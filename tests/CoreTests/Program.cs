@@ -56,6 +56,11 @@ namespace ValkyriesCargo.Tests
             TrayModelTests();
             CargoRpcTests();
             FlightPlanTests();
+            TraderLedgerTests();
+            VisitHistoryTests();
+            BarrkRolloverTests();
+            BarrkExportTests();
+            SidecarThenMirrorTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
             return _failed == 0 ? 0 : 1;
@@ -3007,6 +3012,297 @@ namespace ValkyriesCargo.Tests
             Check(!FlightPlan.DropAccepted(ax, ay, float.NaN, ax, ay, az), "a NaN z is refused");
             Check(!FlightPlan.DropAccepted(float.PositiveInfinity, ay, az, ax, ay, az), "an infinite x is refused");
             Check(!FlightPlan.DropAccepted(ax, float.NegativeInfinity, az, ax, ay, az), "an infinite y is refused");
+        }
+
+        // ---- BarrkBOT export (BARRKBOT_CONTRACT.md) --------------------------------------------
+
+        /// <summary>An accepted DealResult: buy (coins to Ingvar, items to the player) when coins is negative, sell the other way, 0 for a barter that nets out even.</summary>
+        private static DealResult AcceptedDeal(int coins, (string prefab, int count)[] added, (string prefab, int count)[] removed)
+        {
+            var r = new DealResult { Ok = true, DeliveryId = "w-1-1", Nonce = 1, CoinsDelta = coins };
+            foreach (var (prefab, count) in added ?? new (string, int)[0]) r.ItemsToAdd.Add(new DealLine { Prefab = prefab, Count = count, UnitPriceSeen = 1 });
+            foreach (var (prefab, count) in removed ?? new (string, int)[0]) r.ItemsToRemove.Add(new DealLine { Prefab = prefab, Count = count, UnitPriceSeen = 1 });
+            return r;
+        }
+
+        private static void TraderLedgerTests()
+        {
+            Section("TraderLedger (per-player totals for barrkbot_cargo_traders.json)");
+
+            TraderLedger l = new TraderLedger();
+            Equal(0, l.Count, "a fresh ledger has no rows");
+
+            l.Record("", "Nobody", AcceptedDeal(-10, new[] { ("Iron", 2) }, null));
+            l.Record(null, "Nobody", AcceptedDeal(-10, new[] { ("Iron", 2) }, null));
+            l.Record("steam1", "Don", null);
+            l.Record("steam1", "Don", DealResult.Refuse(1, DealReason.SoldOut));
+            Equal(0, l.Count, "an empty key, a null result and a refusal all record nothing");
+
+            // A buy: coins negative (spent), items added (bought).
+            l.Record("steam1", "Don", AcceptedDeal(-50, new[] { ("Iron", 2), ("Wood", 3) }, null));
+            Equal(1, l.Count, "the first accepted deal creates the row");
+            TraderRow don = l.Rows["steam1"];
+            Equal("Don", don.Name, "the display name is stored");
+            Equal(1, don.DealsSettled, "one deal settled");
+            Equal(50L, don.CoinsSpent, "CoinsDelta -50 is 50 coins spent");
+            Equal(0L, don.CoinsEarned, "and nothing earned");
+            Equal(5L, don.ItemsBought, "2 Iron + 3 Wood added = 5 items bought");
+            Equal(0L, don.ItemsSold, "nothing sold yet");
+
+            // A sell: coins positive (earned), items removed (sold).
+            l.Record("steam1", "Don", AcceptedDeal(20, null, new[] { ("DeerHide", 4) }));
+            Equal(2, don.DealsSettled, "a second deal settled");
+            Equal(50L, don.CoinsSpent, "spent is unchanged by a sale");
+            Equal(20L, don.CoinsEarned, "CoinsDelta +20 is 20 coins earned");
+            Equal(4L, don.ItemsSold, "4 DeerHide removed = 4 items sold");
+
+            // A barter that nets exactly zero: neither coins field moves, but the deal still counts.
+            l.Record("steam1", "Don", AcceptedDeal(0, new[] { ("Iron", 1) }, new[] { ("Wood", 25) }));
+            Equal(3, don.DealsSettled, "a zero-net barter still counts as a settled deal");
+            Equal(50L, don.CoinsSpent, "CoinsDelta 0 moves neither coins field");
+            Equal(20L, don.CoinsEarned, "same");
+            Equal(6L, don.ItemsBought, "but items still move: +1 bought");
+            Equal(29L, don.ItemsSold, "and +25 sold");
+
+            // A negative Count on a line is defensive-clamped, never subtracted.
+            var forged = new DealResult { Ok = true, DeliveryId = "w-1-2", Nonce = 2, CoinsDelta = -1 };
+            forged.ItemsToAdd.Add(new DealLine { Prefab = "Iron", Count = -99, UnitPriceSeen = 1 });
+            l.Record("steam1", "Don", forged);
+            Equal(6L, don.ItemsBought, "a negative line count contributes 0, never a negative amount");
+
+            // A second player gets a separate row; an empty new name does not overwrite the stored one.
+            l.Record("steam2", "Kyr", AcceptedDeal(-5, new[] { ("Wood", 1) }, null));
+            Equal(2, l.Count, "a second distinct player key is a second row");
+            l.Record("steam1", "", AcceptedDeal(-1, new[] { ("Wood", 1) }, null));
+            Equal("Don", l.Rows["steam1"].Name, "an empty display name never overwrites a real one");
+            l.Record("steam1", "Donatello", AcceptedDeal(-1, new[] { ("Wood", 1) }, null));
+            Equal("Donatello", l.Rows["steam1"].Name, "a real rename does");
+
+            l.Clear();
+            Equal(0, l.Count, "Clear forgets every row");
+        }
+
+        private static void VisitHistoryTests()
+        {
+            Section("VisitHistory (visits this session, for barrkbot_cargo_visits.json)");
+
+            DateTime t0 = new DateTime(2026, 9, 7, 12, 0, 0, DateTimeKind.Utc);
+            VisitHistory h = new VisitHistory(capacity: 3);
+            Equal(0, h.Count, "a fresh history has no rows");
+
+            h.Record(0, "Nobody", t0, t0, 10, 5, "timer");
+            h.Record(-1, "Nobody", t0, t0, 10, 5, "timer");
+            Equal(0, h.Count, "visit id 0 or negative is never a real visit and records nothing");
+
+            h.Record(1, "Don", t0, t0.AddSeconds(300), 300, 0, "timer");
+            Equal(1, h.Count, "a real visit records");
+            VisitRecord v1 = h.Rows[0];
+            Equal(1, v1.VisitId, "id");
+            Equal("Don", v1.PilotName, "pilot");
+            Equal(300.0, v1.DurationSeconds, "duration");
+            Equal(0, v1.Takings, "takings");
+            Equal("timer", v1.EndedReason, "reason");
+
+            h.Record(2, null, t0, t0, -50, -5, null);
+            VisitRecord v2 = h.Rows[1];
+            Equal(0.0, v2.DurationSeconds, "a negative duration is clamped to 0, never carried through as a negative number");
+            Equal(0, v2.Takings, "and so is a negative takings");
+            Equal("", v2.PilotName, "a null pilot name becomes empty, not null (so the JSON writer never has to null-check it)");
+            Equal("", v2.EndedReason, "same for a null reason");
+
+            // Oldest-first, and bounded: the 4th Record on a capacity-3 history evicts visit #1.
+            h.Record(3, "P3", t0, t0, 10, 1, "timer");
+            Equal(3, h.Count, "still at capacity");
+            h.Record(4, "P4", t0, t0, 10, 1, "timer");
+            Equal(3, h.Count, "capacity holds: the oldest was evicted, not appended past it");
+            Check(h.Rows[0].VisitId == 2, "visit #1 (the oldest) is gone; #2 is now the oldest");
+            Check(h.Rows[2].VisitId == 4, "and #4 (the newest) is last, oldest-first order preserved");
+
+            h.Clear();
+            Equal(0, h.Count, "Clear forgets every visit");
+        }
+
+        private static void BarrkRolloverTests()
+        {
+            Section("BarrkRollover (the v4 export's pagination and leaderboards)");
+
+            // ---- Paginate ---------------------------------------------------------------------
+            List<List<int>> emptyParts = BarrkRollover.Paginate(new List<int>(), 2600);
+            Equal(1, emptyParts.Count, "an empty roster still writes one part");
+            Equal(0, emptyParts[0].Count, "and that part is empty");
+            List<List<int>> nullParts = BarrkRollover.Paginate(null, 2600);
+            Equal(1, nullParts.Count, "null rowWidths is treated the same as empty, not a throw");
+            Equal(0, nullParts[0].Count, "and that part is empty too");
+
+            // The exact boundary: two 1000-char rows sum to exactly the 2000 budget and MUST share a
+            // part (the contract's own "> cap", not ">="); the third pushes a new one.
+            List<List<int>> exact = BarrkRollover.Paginate(new List<int> { 1000, 1000, 1000 }, 2000);
+            Equal(2, exact.Count, "1000+1000 fits the 2000 budget exactly; the third row needs a new part");
+            CollectionsEqual(new List<string> { "0", "1" }, IndicesAsStrings(exact[0]), "part 1 holds rows 0 and 1");
+            CollectionsEqual(new List<string> { "2" }, IndicesAsStrings(exact[1]), "part 2 holds row 2 alone");
+
+            List<List<int>> oneOver = BarrkRollover.Paginate(new List<int> { 1000, 1001 }, 2000);
+            Equal(2, oneOver.Count, "one character over the budget still forces a new part");
+
+            // A row wider than the whole budget is never dropped and never merged with a neighbour.
+            List<List<int>> oversized = BarrkRollover.Paginate(new List<int> { 5000, 100 }, 2600);
+            Equal(2, oversized.Count, "an oversized row still gets a part of its own");
+            CollectionsEqual(new List<string> { "0" }, IndicesAsStrings(oversized[0]), "alone in the first part");
+            CollectionsEqual(new List<string> { "1" }, IndicesAsStrings(oversized[1]), "the next row starts the next part, not appended to the oversized one");
+
+            // Every index appears exactly once, across however many parts, in order -- the property
+            // that makes the split safe: nothing is lost, nothing is duplicated.
+            List<int> widths = new List<int> { 900, 900, 900, 900, 900, 900, 900 };
+            List<List<int>> many = BarrkRollover.Paginate(widths, 2600);
+            List<int> seen = new List<int>();
+            foreach (List<int> part in many) seen.AddRange(part);
+            CollectionsEqual(new List<string> { "0", "1", "2", "3", "4", "5", "6" }, IndicesAsStrings(seen), "every row appears exactly once, in order, across all parts");
+
+            // ---- TopN ---------------------------------------------------------------------------
+            List<LeaderEntry> candidates = new List<LeaderEntry>
+            {
+                new LeaderEntry { Credit = "A", Value = 10 },
+                new LeaderEntry { Credit = "B", Value = 30 },
+                new LeaderEntry { Credit = "C", Value = 20 },
+                new LeaderEntry { Credit = "D", Value = 0 },
+                new LeaderEntry { Credit = "E", Value = -5 },
+                new LeaderEntry { Credit = "F", Value = double.NaN },
+                new LeaderEntry { Credit = "G", Value = double.PositiveInfinity },
+                null,
+            };
+            List<LeaderEntry> top = BarrkRollover.TopN(candidates, 3);
+            Equal(3, top.Count, "top 3 of 8, after exclusions");
+            Check(top[0].Credit == "B" && top[1].Credit == "C" && top[2].Credit == "A", "highest first: B (30), C (20), A (10)");
+            Check(top.TrueForAll(e => e.Credit != "D" && e.Credit != "E" && e.Credit != "F" && e.Credit != "G"),
+                  "zero, negative, NaN and infinite values are excluded -- 'unmeasured', never a false last place");
+
+            // Isolated from the top-3 cutoff above (there D's rank-4 finish would hide a broken filter
+            // just as well as a correct one): a roster of ONLY unrankable values must come back empty.
+            List<LeaderEntry> onlyExcluded = new List<LeaderEntry>
+            {
+                new LeaderEntry { Credit = "D", Value = 0 },
+                new LeaderEntry { Credit = "E", Value = -5 },
+                new LeaderEntry { Credit = "F", Value = double.NaN },
+                new LeaderEntry { Credit = "G", Value = double.PositiveInfinity },
+            };
+            Equal(0, BarrkRollover.TopN(onlyExcluded, 3).Count, "a roster with nothing rankable comes back empty, not padded with zeroes or NaNs");
+
+            List<LeaderEntry> ties = new List<LeaderEntry>
+            {
+                new LeaderEntry { Credit = "First", Value = 10 },
+                new LeaderEntry { Credit = "Second", Value = 10 },
+                new LeaderEntry { Credit = "Third", Value = 10 },
+            };
+            List<LeaderEntry> tieTop = BarrkRollover.TopN(ties, 2);
+            Check(tieTop[0].Credit == "First" && tieTop[1].Credit == "Second", "a genuine tie keeps the input's own order (a stable sort), not an arbitrary one");
+
+            Equal(0, BarrkRollover.TopN(candidates, 0).Count, "n=0 asks for nothing and gets nothing");
+            Equal(0, BarrkRollover.TopN(null, 3).Count, "a null candidate list is empty, not a throw");
+            Equal(2, BarrkRollover.TopN(new List<LeaderEntry> { new LeaderEntry { Credit = "Only1", Value = 1 }, new LeaderEntry { Credit = "Only2", Value = 2 } }, 5).Count,
+                  "fewer candidates than n returns all of them, not padded");
+        }
+
+        private static List<string> IndicesAsStrings(IEnumerable<int> indices)
+        {
+            List<string> s = new List<string>();
+            foreach (int i in indices) s.Add(i.ToString());
+            return s;
+        }
+
+        private static void BarrkExportTests()
+        {
+            Section("BarrkExport (the payload shaping BarrkBotExport.cs renders to JSON)");
+
+            Equal(0, BarrkExport.MarketRows(null).Count, "a null market shapes to an empty row list, not a throw");
+            Equal(0, BarrkExport.TraderRows(null).Count, "same for a null trader ledger");
+            Equal(0, BarrkExport.VisitRows(null).Count, "and a null visit history");
+
+            Market m = NewMarket(0);
+            List<MarketExportRow> marketRows = BarrkExport.MarketRows(m);
+            Equal(m.Count, marketRows.Count, "one export row per catalogue entry");
+            MarketExportRow bronze = marketRows.Find(r => r.Prefab == "Bronze");
+            Check(bronze != null, "the shipped catalogue's Bronze row is present");
+            Equal("Ware", bronze.Kind, "Bronze is a Ware");
+            Check(bronze.Purchasable, "and so purchasable is true");
+            MarketItem bronzeItem = m.Find("Bronze");
+            Equal(m.Charge(bronzeItem), bronze.BuyPrice, "buy_price is exactly Market.Charge, not a re-derived copy that could disagree");
+            Equal(m.Pays(bronzeItem), bronze.SellPrice, "sell_price is exactly Market.Pays");
+            Equal(m.Trend(bronzeItem), bronze.Trend, "trend is exactly Market.Trend");
+            Equal(bronzeItem.Entry.TargetStock, bronze.TargetStock, "target_stock");
+            Equal(bronzeItem.Entry.MaxStock, bronze.MaxStock, "max_stock");
+
+            MarketExportRow wood = marketRows.Find(r => r.Prefab == "Wood");
+            Check(wood != null, "the shipped catalogue's Wood row is present");
+            Equal("Want", wood.Kind, "Wood is a Want");
+            Check(!wood.Purchasable, "so purchasable is false, even though it still carries a buy_price for the trend arrow");
+
+            TraderLedger tl = new TraderLedger();
+            tl.Record("steam1", "Don", AcceptedDeal(-30, new[] { ("Iron", 1) }, null));
+            tl.Record("steam2", "Kyr", AcceptedDeal(15, null, new[] { ("Wood", 5) }));
+            List<TraderExportRow> traderRows = BarrkExport.TraderRows(tl);
+            Equal(2, traderRows.Count, "one row per trading player");
+            TraderExportRow donRow = traderRows.Find(r => r.PlayerKey == "steam1");
+            Equal("Don", donRow.Name, "the key and the display name both carry through");
+            Equal(30L, donRow.CoinsSpent, "and the totals");
+            Equal(1L, donRow.DealsSettled, "");
+
+            DateTime t0 = new DateTime(2026, 9, 7, 12, 0, 0, DateTimeKind.Utc);
+            VisitHistory vh = new VisitHistory();
+            vh.Record(1, "Don", t0, t0.AddSeconds(300), 300, 10, "timer");
+            vh.Record(2, "Kyr", t0.AddSeconds(1000), t0.AddSeconds(1100), 100, 999, "dismissed by Kyr");
+            List<VisitExportRow> visitRows = BarrkExport.VisitRows(vh);
+            Equal(2, visitRows.Count, "one row per ended visit");
+            Equal(2, visitRows[0].VisitId, "NEWEST first: visit #2 (recorded second) leads, matching what a member asks about first");
+            Equal(1, visitRows[1].VisitId, "visit #1 is last");
+
+            // ---- leaders: ranked by a field selector, credited by the right subject -------------
+            List<LeaderEntry> byBuyPrice = BarrkExport.MarketLeaders(marketRows, r => r.BuyPrice);
+            Check(byBuyPrice.Count > 0, "at least one purchasable/priced row ranks");
+            for (int i = 1; i < byBuyPrice.Count; i++)
+                Check(byBuyPrice[i - 1].Value >= byBuyPrice[i].Value, "MarketLeaders is sorted highest first");
+
+            List<LeaderEntry> byCoinsSpent = BarrkExport.TraderLeaders(traderRows, r => r.CoinsSpent);
+            Check(byCoinsSpent.Count == 1 && byCoinsSpent[0].Credit == "Don" && byCoinsSpent[0].Value == 30.0,
+                  "TraderLeaders credits by name (Kyr spent 0, so only Don -- who has coins_spent > 0 -- ranks)");
+
+            List<LeaderEntry> byTakings = BarrkExport.VisitLeaders(visitRows, r => r.Takings);
+            Check(byTakings.Count == 2 && byTakings[0].Credit == "Kyr" && byTakings[1].Credit == "Don",
+                  "VisitLeaders credits by pilot, highest takings first (Kyr 999, Don 10)");
+        }
+
+        private static void SidecarThenMirrorTests()
+        {
+            Section("SidecarThenMirror (decision 4: the sidecar succeeds first, a mirror throw never reaches the caller)");
+
+            List<string> order = new List<string>();
+            bool ok = SidecarThenMirror.Run(
+                () => { order.Add("primary"); return true; },
+                () => { order.Add("mirror"); });
+            Check(ok, "a successful primary is reported back");
+            CollectionsEqual(new List<string> { "primary", "mirror" }, order, "primary runs to completion BEFORE the mirror is even started");
+
+            order.Clear();
+            bool okFalse = SidecarThenMirror.Run(
+                () => { order.Add("primary"); return false; },
+                () => { order.Add("mirror"); });
+            Check(!okFalse, "a failed primary is reported back as failure");
+            CollectionsEqual(new List<string> { "primary" }, order, "the mirror never runs when the primary did not succeed");
+
+            order.Clear();
+            bool okThrow = SidecarThenMirror.Run(
+                () => { order.Add("primary"); throw new InvalidOperationException("disk full"); },
+                () => { order.Add("mirror"); });
+            Check(!okThrow, "a primary that throws is treated as a failure, not propagated (a second line of defence on top of Store.Save's own promise never to throw)");
+            CollectionsEqual(new List<string> { "primary" }, order, "and the mirror still never runs");
+
+            Exception caught = null;
+            bool okMirrorThrows = SidecarThenMirror.Run(() => true, () => throw new InvalidOperationException("mirror bug"), ex => caught = ex);
+            Check(okMirrorThrows, "a mirror that throws does not change the primary's own (successful) result");
+            Check(caught != null && caught.Message == "mirror bug", "the exception reaches onMirrorFailed instead of the caller");
+
+            Check(SidecarThenMirror.Run(() => true, () => throw new InvalidOperationException("x"), null), "a null onMirrorFailed still swallows the mirror's throw rather than propagating it");
+            Check(!SidecarThenMirror.Run(null, () => { }), "a null primary is treated as failure, not a throw");
+            Check(SidecarThenMirror.Run(() => true, null), "a null mirror is simply skipped");
         }
     }
 

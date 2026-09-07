@@ -25,9 +25,9 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 **Main after P8 and P9, 2026-09-07. Builds clean (0 warnings), 1034/1034 off-game checks, packages
 (`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right layout).** What exists: the plugin entry, ServerSync
 vendored and armed, the config surface bound and locked, the `cargo` console, the catalogue with 72 defaults, the
-market and the scheduler, the event and the director, the deal wire, the world sidecar, the Cargo Terminal and the
-body loader. The flight is built (PR #8, merged 2026-09-07) and not yet flown; the merchant is not started, and
-the bundle is baked and embedded (2026-09-07), so a visit authors a bird and nothing for it to carry. 1092/1092 checks. The paragraphs below are the history, each with the lines seen.
+market and the scheduler, the event and the director, the deal wire, the world sidecar, the Cargo Terminal, the
+body loader and the BarrkBOT export. The flight is built (PR #8, merged 2026-09-07) and not yet flown; the merchant is not started, and
+the bundle is baked and embedded (2026-09-07), so a visit authors a bird and nothing for it to carry. 1190/1190 checks. The paragraphs below are the history, each with the lines seen.
 
 **HEADLESS VERIFIED 2026-09-06 15:23 on CairnTest (dedicated, port 2466, world CairnTest, alongside
 Cairn.dll and RavenEye.dll):** within 20 s of launch the BepInEx log showed, in order,
@@ -164,6 +164,37 @@ and adds `Client/CargoFlight.cs`, which flies vanilla's own `UpdateValkyrie` mat
 both sides (a 90 m start at 8 m/s drops at 11.7 m after 16.8 s; a 30 m start at 16.8 m after 13.6 s). **Not yet
 flown**: items 21 and 22.
 
+**The BarrkBOT export, Wu'barrk, 2026-09-07 (branch `b/barrkbot-export`).** `BARRKBOT_CONTRACT.md` (repo root) is
+the per-mod contract, on the BlightedHeart/Let It Grow template, against the authoritative
+`WindowsDEV/Discord-BarrkBOT/docs/MOD_EXPORT_CONTRACT.md` v4. Three files under
+`BepInEx/config/ValkyriesCargo/`: `barrkbot_cargo_market.json` (the live catalogue, keyed by prefab; the
+72-entry default catalogue measures to exactly 5 parts under the contract's 2,600-char row budget, `_2`
+through `_5`), `barrkbot_cargo_traders.json` (per player, keyed by platform id: coins spent/earned, deals
+settled, items bought/sold — new counters, `Core/TraderLedger.cs`, nothing accumulated these before),
+`barrkbot_cargo_visits.json` (one row per visit that has ended this session, newest first, `Core/VisitHistory.cs`).
+Both new ledgers are in-memory, reset per session, fed from `Server/VisitDirector.cs`'s existing `Settle`
+(a trader's row) and `End` (a visit's row) — no new hook into the deal wire or the event system. `Core/BarrkExport.cs`
+(PURE) shapes the rows; `Core/BarrkRollover.cs` (PURE) paginates by each row's REAL rendered JSON width
+(measured with the real serializer, never guessed) and ranks `<collection>_leaders` over the whole roster
+before a split, the v4 contract's "hard rule". `Server/BarrkBotExport.cs` renders through Newtonsoft.Json
+(decision 3, `docs/DECISIONS-WUBARRK.md`; `<Reference>` against `libs\Newtonsoft.Json.dll`, `Private=false`,
+runtime copy from the new manifest dependency `ValheimModding-JsonDotNET-13.0.4` — version confirmed live
+against Fatty's own shipped manifest, not guessed) and writes each file `.tmp`-then-rename. Decision 4 (the
+sidecar stays authoritative, the JSON is a mirror) is enforced, not just documented: `VisitDirector.Tick`
+runs a new `ExportCadenceSeconds` (60 s) timer alongside the existing save cadence — no new coroutine, house
+rule 2 — that calls `Core/SidecarThenMirror.Run`, which runs the sidecar's own `Flush` to completion first and
+starts the JSON export only if that succeeded; a throw inside the export is caught there AND a second time
+inside `BarrkBotExport.Write` itself (logged at most three times each). New config `Server.BarrkBotExport`
+(synced+locked, default true). Off-game: builds clean (net48, 0 warnings), 1190 checks (98 new: the rollover's
+exact-budget boundary, the ranking exclusions, the coins/items accounting, oldest-first eviction, newest-first
+ordering, and the ordering guarantee itself — each proven to fail without its fix, real mutation output kept
+in the PR). A standalone run of the real `Core/BarrkExport.cs` + `Core/BarrkRollover.cs` against Newtonsoft.Json
+(outside CoreTests, which stays dependency-free) produced real, well-formed sample output for both a fresh
+server and a populated one. **Not yet seen anywhere real**: nobody has installed this DLL on a dedicated
+server and watched `barrkbot_cargo_*.json` land on disk, and BarrkBOT itself has never read one of these
+files — shape-verified, not live-verified (the authoritative contract's own distinction). See "What to verify
+in-game" item 23.
+
 ---
 
 ## Commands
@@ -218,7 +249,13 @@ ValkyriesCargo/
   Core/Lines.cs              PURE: Ingvar's words (design 7); indexes cross the wire, never text
   Core/Sidecar.cs            PURE: the world file's format; routes rows to market, scheduler, session, ledger
   Core/OwedLedger.cs         PURE: deliveries the server still owes, by platform id, until acked
+  Core/TraderLedger.cs       PURE: per-player trade totals THIS SESSION, for BarrkBOT (BARRKBOT_CONTRACT.md)
+  Core/VisitHistory.cs       PURE: visits that have ended this session, newest first, for BarrkBOT
+  Core/BarrkRollover.cs      PURE: the BarrkBOT export's v4 rollover (real-width pagination) and leaderboard ranking
+  Core/BarrkExport.cs        PURE: the BarrkBOT export's payload shaping: Market/TraderLedger/VisitHistory -> rows
+  Core/SidecarThenMirror.cs  PURE: decision 4 proved off-game: the sidecar succeeds first, a mirror throw never reaches the caller
   Server/MarketStore.cs      the sidecar on disk: valkyriescargo_{worldUid}.dat, .tmp/.bak/.corrupt
+  Server/BarrkBotExport.cs   writes barrkbot_cargo_market/traders/visits.json under BepInEx/config/ValkyriesCargo/, from VisitDirector.Tick
   Net/DealWire.cs            server end: vc_open/close/deal/ack/claim/dismiss on each peer's ZRpc; vc_dealt back
   Net/CargoTransport.cs      client end (the real ICargoTransport), LocalTransport (listen host), Deliveries
   Client/DealApplier.cs      the ONLY inventory writer for a deal: CanApply, Apply, by shared item name
@@ -543,6 +580,16 @@ P4, the flight (Wu'barrk's two-client proof; a visit on a server, the pilot's cl
     walking out of their own zone block makes the bird vanish and, within 5 s, the server log says `the bird's ZDO is
     gone and the merchant was never dropped; the visit continues on the ground`; `cargo dismiss` mid-flight reclaims
     the bird (`spawner: ...` lines, no orphan in the world); a real intro Valkyrie (a new character) is untouched.
+
+The BarrkBOT export (`BARRKBOT_CONTRACT.md`), on a dedicated server, `Server.BarrkBotExport` at its default on:
+23. **The files land**: within `VisitDirector.ExportCadenceSeconds` (60 s) of `director up`, `BepInEx/config/ValkyriesCargo/`
+    holds `barrkbot_cargo_market.json` through `_5` (the shipped catalogue's measured part count), `barrkbot_cargo_traders.json`
+    and `barrkbot_cargo_visits.json`, each valid JSON with a `generated_at` that keeps moving every cycle even with
+    nobody online. A deal (`cargo deal buy ...`) makes the buyer's row appear in `barrkbot_cargo_traders.json` on the
+    NEXT export cycle, not immediately -- the export is time-driven, not deal-driven. A visit ending (`cargo dismiss`
+    or the timer) adds a row to `barrkbot_cargo_visits.json` the same way. `Server.BarrkBotExport` set to false stops
+    all three files from updating (existing ones are left as they were, not deleted). BarrkBOT itself, pointed at this
+    server's `BepInEx/config`, answers a real question from the live files within its own 60 s sweep.
 
 ---
 
