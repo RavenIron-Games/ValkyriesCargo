@@ -72,10 +72,26 @@ namespace RavenIron.ValkyriesCargo.Client
         /// </summary>
         private float _approachMoved;
         private Vector3 _lastApproachPos;
+
+        /// <summary>
+        /// F5: the distance to the player at the moment THIS approach began, and the pathing-progress
+        /// window built from the same per-tick displacement as `_approachMoved`. Both feed
+        /// `MerchantPlan.Next`'s scaled timeout and stuck detector, and both are reset exactly when
+        /// `_approachMoved` is - on every transition INTO Approaching, wherever it started from.
+        /// </summary>
+        private float _distanceAtApproachEntry;
+        private MerchantPlan.ApproachProgress _progress;
+
+        /// <summary>F5 part 3: the trading leash fires at most once a visit - see `MerchantPlan.Next`.</summary>
+        private bool _leashSpent;
+
         private int _reasserted;
         private bool _calledOut, _vanishing;
         private float _dismissArmedAt = -99f;
         private int _throws;
+
+        /// <summary>F9: exactly what THIS instance added to `LiveCount`, so `OnDestroy` gives back only that.</summary>
+        private bool _counted;
 
         private Transform _pin;          // the bird's attach point, while it resolves
         private Vector3 _pinOffset;
@@ -88,6 +104,21 @@ namespace RavenIron.ValkyriesCargo.Client
 
         private void Awake()
         {
+            // F9, the FIRST statement, unconditionally - before anything below can throw or bail.
+            // `Patch_Character_RPC_Damage` / `Patch_Character_ApplyDamage` (the immortality) and
+            // `Patch_Character_InIntro` (the carry's velocity pin) all short-circuit whenever
+            // `LiveCount == 0`. The increment used to run last, after `Reassert`; if `Reassert` (or
+            // anything above it) threw - which is exactly what the catch below exists for, after a
+            // real NRE on the first live visit - the merchant survived (correctly, by that catch's own
+            // argument) but `LiveCount` stayed 0 for the whole visit, silently turning both patches off.
+            // `_counted` is what lets `OnDestroy` give back exactly what THIS instance added, once: the
+            // old unconditional decrement had no memory of whether this instance ever incremented, so
+            // an instance that bailed before the old late `LiveCount++` could still steal a live
+            // merchant's count on its own destruction (two merchants alive - F4's orphan case - and
+            // whichever dies first pays for both).
+            LiveCount++;
+            _counted = true;
+
             try
             {
                 _nview = GetComponent<ZNetView>();
@@ -97,7 +128,21 @@ namespace RavenIron.ValkyriesCargo.Client
                 _body = GetComponent<Rigidbody>();
 
                 ZDO zdo = _nview != null ? _nview.GetZDO() : null;
-                if (zdo == null) { enabled = false; return; }
+                if (zdo == null)
+                {
+                    // Counted anyway (see above), deliberately: this is still a real, physical,
+                    // damageable Dverger standing in the world even though we could not read our own
+                    // ZDO yet - most likely the F8 class of Awake-ordering race (ZNetView.Awake has not
+                    // consumed ZNetView.m_initZDO yet), whose fix belongs to whoever attaches this
+                    // component (Patch_Humanoid_Awake), not to this file. `enabled = false` here means
+                    // the staggered Reassert can never recover him - a disabled behaviour gets no
+                    // FixedUpdate either - so unlike the catch below there is no second chance, which
+                    // makes counting him the safer default: the immortality/carry-pin patches pay one
+                    // spurious GetComponent call per hit in the world rather than risk leaving a
+                    // merchant they cannot identify killable.
+                    enabled = false;
+                    return;
+                }
                 _visitId = zdo.GetInt(Spawner.IngvarHash, 0);
                 _seed = zdo.GetInt(Spawner.SeedHash, 0);
                 _state = zdo.GetInt(Spawner.StateHash, MerchantState.Carried);
@@ -122,7 +167,6 @@ namespace RavenIron.ValkyriesCargo.Client
                 }
 
                 Reassert(fromAwake: true);
-                LiveCount++;
                 ValkyriesCargo.Log.LogInfo("cargo merchant #" + _visitId + ": awake as " +
                     MerchantPlan.Name(_state) + ", " + (_nview.IsOwner() ? "ours" : "watching") +
                     ", body=" + (_ingvar != null ? "Ingvar" : "the stand-in"));
@@ -140,12 +184,44 @@ namespace RavenIron.ValkyriesCargo.Client
 
         private void OnDestroy()
         {
-            if (LiveCount > 0) LiveCount--;
+            // F9: exactly what this instance added, exactly once - even if OnDestroy somehow ran
+            // twice, which Unity does not promise never happens. The `LiveCount > 0` guard stays as a
+            // second line of defence against ever going negative, belt and braces.
+            if (_counted) { _counted = false; if (LiveCount > 0) LiveCount--; }
         }
 
         /// <summary>
-        /// Everything vanilla might undo. Owner only: these are all writes to shared state, and a
-        /// non-owner writing them is the silent desync the house rule is about.
+        /// Everything vanilla might undo, on the machine it must run on (F10, audit 2026-09-07). Splits
+        /// into a LOCAL half (every machine) and an OWNED half (owner only) - see each for why.
+        ///
+        /// F11 note (ghost mode, `Core/Ghost.cs` + `Patches/Patch_BaseAI_IsEnemy.cs`, PR #37, landed
+        /// 2026-09-07 alongside this fix): a prefix on the static `BaseAI.IsEnemy(Character, Character)`
+        /// now answers "not enemies" outright for any pair with our merchant in it. Verified directly in
+        /// the decompile that this makes MOST of what `ReassertLocal` below sets redundant for its
+        /// original (F10) purpose: `EnemyHud`'s hostile-colouring reads `BaseAI.IsEnemy(player, target)`
+        /// directly (line 38589), `BaseAI.FindEnemy()`'s candidate filter is `if (!IsEnemy(m_character,
+        /// item) || ...) continue;` (line ~5205, so Ingvar's own scan can never acquire a hostile target
+        /// either), and `MonsterAI.UpdateTarget`'s tame-gated `m_alertRange` clear is immediately
+        /// followed, in the same call, by an UNCONDITIONAL `else if (!IsEnemy(m_targetCreature))
+        /// m_targetCreature = null;` that fires regardless of tame state. So `m_faction`,
+        /// `m_alertRange`, `m_aggravatable` and `m_passiveAggresive` no longer carry the hostility
+        /// question ghost mode already answers. Kept here anyway, for three reasons that have nothing to
+        /// do with `IsEnemy`: (1) belt and braces if ghost mode's own patch ever fails to apply - see
+        /// house rule 3, a patch failing is counted and logged, never silently assumed; (2) it is a real,
+        /// if now secondary, correctness fix in its own right - a non-owner's local Character/BaseAI
+        /// state SHOULD match the owner's on principle; (3) it costs nothing, four plain field writes.
+        /// `m_randomMoveRange` was never an aggro field at all - it bounds idle wander, untouched by
+        /// ghost mode either way. This method does not duplicate PR #37: it never touches `IsEnemy` or
+        /// any ghost-mode file, only WHEN the pre-existing field writes below run.
+        ///
+        /// What ghost mode does NOT cover, and is still exactly why the OWNED half below keeps taming:
+        /// `BaseAI.AvoidFire(float, Character, bool)` opens `if (m_character.IsTamed()) return false;`
+        /// (`asm:4389`) - an UNTAMED Ingvar panics and flees a nearby campfire or hearth instead of
+        /// standing still, which has nothing to do with `IsEnemy` and everything to do with him landing
+        /// "beside your base". `AvoidFire` only runs from `MonsterAI.UpdateAI`, which is owner-gated
+        /// (`BaseAI.UpdateAI`, `asm:4110-4119`: `if (!m_nview.IsOwner()) { ...; return false; }`), so
+        /// what matters is that whichever machine currently owns him has `IsTamed() == true` - which the
+        /// OWNED half's `SetTamed` call is already exactly for, unchanged by ghost mode landing.
         /// </summary>
         /// <param name="fromAwake">
         /// True only for the call inside `Awake`, where vanilla's own `Awake`s have NOT all run yet.
@@ -159,13 +235,53 @@ namespace RavenIron.ValkyriesCargo.Client
         /// </param>
         private void Reassert(bool fromAwake = false)
         {
-            if (_nview == null || !_nview.IsValid() || !_nview.IsOwner()) return;
+            if (_nview == null || !_nview.IsValid()) return;
+            ReassertLocal();
+            if (_nview.IsOwner()) ReassertOwned(fromAwake);
+        }
 
+        /// <summary>
+        /// F10: `m_faction`, `MonsterAI.m_alertRange`, `BaseAI.m_aggravatable` / `m_passiveAggresive`
+        /// and `m_randomMoveRange` are plain fields with NO replication path at all - no RPC, no ZDO key,
+        /// ever touches them (`asm:6887` `Character.m_faction`, `asm:5640` `MonsterAI.m_alertRange`,
+        /// `asm:3917`/`3919` `BaseAI.m_aggravatable`/`m_passiveAggresive`, `asm:3881`
+        /// `BaseAI.m_randomMoveRange`). A machine that only ever WATCHES Ingvar keeps its own copy at
+        /// whatever a vanilla Dverger initialises it to unless IT sets them too, and ownership can hand
+        /// over mid-visit (the boot sweep and the release/claim path the audit's "Ownership through the
+        /// visit" section confirms), so the NEW owner needs these already right, not five seconds of
+        /// stale state after the handover. See the class-level `Reassert` comment for what ghost mode
+        /// (F11, PR #37) already covers of the original reason these existed, and what it does not.
+        /// </summary>
+        private void ReassertLocal()
+        {
             if (_character != null)
-            {
-                // What makes vanilla treat him as a player ally for aggro and targeting.
                 _character.m_faction = Character.Faction.Players;
 
+            if (_ai != null)
+            {
+                _ai.m_aggravatable = false;
+                _ai.m_passiveAggresive = false;
+                _ai.m_alertRange = 0f;
+                _ai.m_randomMoveRange = 1.5f;
+            }
+        }
+
+        /// <summary>
+        /// F10: stays owner-only. `SetTamed` fires an RPC and only the RPC handler assigns `m_tamed`
+        /// (the class comment above), so calling it from every machine is redundant chatter at best;
+        /// `UnequipAllItems` touches equipment, which `VisEquipment` replicates FROM the owner, so a
+        /// non-owner calling it is the silent desync the house rule warns about - a visible flicker that
+        /// the owner's next sync overwrites, not a real change. `MakeTame` (see `fromAwake`) manipulates
+        /// `MonsterAI`'s own target fields, which nothing but `MonsterAI.UpdateAI` ever reads - and that
+        /// is owner-gated too (`BaseAI.UpdateAI`, `asm:4110-4119`). The consume-list swap belongs here
+        /// for the same reason: its only reader, `MonsterAI.UpdateConsumeItem`, is called from within
+        /// `UpdateAI` (`asm:6048`), downstream of that same owner gate, so clearing it on a machine that
+        /// will never evaluate it is a no-op dressed as a fix.
+        /// </summary>
+        private void ReassertOwned(bool fromAwake)
+        {
+            if (_character != null)
+            {
                 // `Character.SetTamed` opens with `m_nview.IsValid()` on the CHARACTER's own ZNetView,
                 // which is not ours and is not necessarily assigned yet: this component is added from a
                 // `Humanoid.Awake` postfix, and on the first call it threw a NullReferenceException that
@@ -179,10 +295,6 @@ namespace RavenIron.ValkyriesCargo.Client
             if (_ai != null)
             {
                 if (!fromAwake) _ai.MakeTame();   // see fromAwake: vanilla's BaseAI.Awake has not run yet
-                _ai.m_aggravatable = false;
-                _ai.m_passiveAggresive = false;
-                _ai.m_alertRange = 0f;
-                _ai.m_randomMoveRange = 1.5f;
 
                 // The shipped Dverger's own consume list is `CookedMeat, Coins, Sausages,
                 // YggdrasilWood`, searched every 10 s inside 10 m - read off the prefab dump
@@ -296,14 +408,23 @@ namespace RavenIron.ValkyriesCargo.Client
             float distance = near != null ? Vector3.Distance(transform.position, near.transform.position) : float.MaxValue;
             bool grounded = _character == null || _character.IsOnGround();
 
+            // One displacement measurement feeds BOTH the diagnostic total (_approachMoved, unwindowed)
+            // and F5's windowed stuck detector (_progress) - the same number CargoMerchant already took
+            // every tick before F5, just handed to a second accumulator too.
+            float movedSinceLastTick = Vector3.Distance(transform.position, _lastApproachPos);
+            _lastApproachPos = transform.position;
+
             _timeInState += dt;
             if (_state == MerchantState.Trading) _farSeconds = MerchantPlan.AccumulateFar(_farSeconds, distance, dt);
             if (_state == MerchantState.Approaching)
-                _approachMoved += Vector3.Distance(transform.position, _lastApproachPos);
-            _lastApproachPos = transform.position;
+            {
+                _approachMoved += movedSinceLastTick;
+                _progress = MerchantPlan.AccumulateProgress(_progress, movedSinceLastTick, dt);
+            }
 
             float approach = ModConfig.ApproachDistance != null ? ModConfig.ApproachDistance.Value : 3.5f;
-            MerchantPlan.Step step = MerchantPlan.Next(_state, Pinned, grounded, distance, _timeInState, _farSeconds, approach);
+            MerchantPlan.Step step = MerchantPlan.Next(_state, Pinned, grounded, distance, _timeInState, _farSeconds,
+                approach, _distanceAtApproachEntry, _progress.StuckSeconds, _leashSpent);
 
             if (step.Follow && _ai != null)
                 _ai.SetFollowTarget(near != null ? near.gameObject : null);
@@ -311,12 +432,20 @@ namespace RavenIron.ValkyriesCargo.Client
             if (!step.Changed) return;
 
             // Taken before the reset below eats the numbers the diagnosis needs.
-            string diagnosis = step.TimedOut ? WalkDiagnosis(distance) : null;
+            string diagnosis = (step.TimedOut || step.Stuck) ? WalkDiagnosis(distance) : null;
 
             _state = step.State;
             _timeInState = 0f;
             _farSeconds = 0f;
             _approachMoved = 0f;
+            if (step.LeashFired) _leashSpent = true;      // F5 part 3: spent, never re-arms this visit
+            if (_state == MerchantState.Approaching)
+            {
+                // A fresh budget and a fresh stuck timer for THIS approach (F5), whether it began at
+                // the landing above or at the leash re-arm just above that.
+                _distanceAtApproachEntry = distance;
+                _progress = default;
+            }
             ZDO zdo = _nview.GetZDO();
             if (zdo != null) zdo.Set(Spawner.StateHash, _state);
 
@@ -326,9 +455,17 @@ namespace RavenIron.ValkyriesCargo.Client
                 if (step.CallOut && !_calledOut)
                 {
                     _calledOut = true;
-                    // Every machine derives the same line from the same seed: no text crosses the wire.
-                    Say(Lines.ArrivalFor(_seed), large: true);
-                    if (_ingvar != null) _ingvar.Greet();
+                    // F3: owner -> every screen, INCLUDING this one. `ZNetView.InvokeRPC(Everybody, ...)`
+                    // delegates to `ZRoutedRpc.InvokeRoutedRPC(0L, m_zdo.m_uid, ...)`, whose
+                    // `targetPeerID == 0L` branch calls `HandleRoutedRPC()` locally and SYNCHRONOUSLY
+                    // before the packet is ever routed out (decompile-confirmed:
+                    // `ZRoutedRpc.InvokeRoutedRPC(long, ZDOID, string, object[])`; the same guarantee
+                    // CLAUDE.md's knowledge-base section now documents in words: "`Everybody` (0L) also
+                    // invokes the handler locally on the caller"). RPC_Say below is therefore what draws
+                    // the bubble and plays Greet() everywhere, including here; calling Say/Greet
+                    // directly on this path too would double-draw on the owner's own screen.
+                    if (_nview.IsValid())
+                        _nview.InvokeRPC(ZNetView.Everybody, Keys.Say, Lines.ArrivalIndexFor(_seed));
                 }
             }
             ValkyriesCargo.Log.LogInfo("cargo merchant #" + _visitId + ": " + step);
@@ -338,10 +475,10 @@ namespace RavenIron.ValkyriesCargo.Client
 
         /// <summary>
         /// One line naming every gate on `MonsterAI.UpdateAI`'s follow branch that we are allowed to
-        /// read, written when the approach times out. It exists because the timeout is a SILENT
-        /// fallback: he calls out from where he stands and the visit carries on looking healthy, so
-        /// without this the log of a merchant who never moved is identical to the log of one who
-        /// walked up perfectly (CLAUDE.md, "Debugging discipline").
+        /// read, written when the approach gives up (F5: timed out OR stuck). It exists because both
+        /// fallbacks are SILENT: he calls out from where he stands and the visit carries on looking
+        /// healthy, so without this the log of a merchant who never moved is identical to the log of
+        /// one who walked up perfectly (CLAUDE.md, "Debugging discipline").
         ///
         /// `moved` is the number that splits the field in two. Near zero and vanilla never drove him
         /// at all - look at the follow target and `tamed`. Tens of metres with no arrival and it drove
@@ -370,29 +507,74 @@ namespace RavenIron.ValkyriesCargo.Client
             {
                 if (_throws++ < 3) ValkyriesCargo.Log.LogWarning("cargo merchant #" + _visitId + ": the diagnosis threw: " + ex.Message);
             }
-            return "moved " + Wire.Float(_approachMoved) + " m in " +
-                   Wire.Float(MerchantPlan.ApproachTimeoutSeconds) + " s and stopped " +
-                   Wire.Float(distance) + " m away; follow target " + follow +
-                   ", tamed " + tamed + ", alerted " + alerted + ", AI target " + target +
+            // The budget actually in force, not a flat constant (F5): it is scaled from where THIS
+            // approach began, so the log has to recompute it from the same number Next used rather than
+            // quote the old fixed ApproachTimeoutSeconds, which is now only the floor.
+            float budget = MerchantPlan.ApproachBudget(_distanceAtApproachEntry);
+            return "moved " + Wire.Float(_approachMoved) + " m in " + Wire.Float(budget) +
+                   " s (budget scaled from " + Wire.Float(_distanceAtApproachEntry) +
+                   " m at entry; stuck " + Wire.Float(_progress.StuckSeconds) +
+                   " s of the last window) and stopped " + Wire.Float(distance) +
+                   " m away; follow target " + follow + ", tamed " + tamed + ", alerted " + alerted +
+                   ", AI target " + target +
                    ", grounded " + (_character == null || _character.IsOnGround() ? "yes" : "no") + ".";
         }
 
         // ---- speech ------------------------------------------------------------------------------
 
-        /// <summary>An index into `Lines`, never text (design 3.6). Server -> everyone.</summary>
+        /// <summary>
+        /// An index into `Lines`, never text (design 3.6). Owner -> everyone, including the owner
+        /// itself (see `Decide`'s comment on the arrival callout). One unified index space
+        /// (`Lines.Say`/`Lines.Says`, F3) carries both the seeded arrival line and every other reaction;
+        /// `IsArrival` is what tells them apart so only the arrival plays large and waves.
+        /// </summary>
         private void RPC_Say(long sender, int index)
         {
-            string text = Lines.Reaction(index);
-            if (!string.IsNullOrEmpty(text)) Say(text, large: false);
+            try
+            {
+                string text = Lines.Reaction(index);
+                if (string.IsNullOrEmpty(text)) return;
+                bool arrival = Lines.IsArrival(index);
+                Say(text, large: arrival);
+                // The wave: only the arrival line plays it, matching what this path replaced (Decide
+                // used to call Greet() only from its own CallOut branch, never for a plain reaction).
+                if (arrival && _ingvar != null) _ingvar.Greet();
+            }
+            catch (Exception ex)
+            {
+                // N4 (audit 2026-09-07): a throw here unwinds into ZRoutedRpc's own dispatch loop. Dead
+                // while this handler was never invoked (F3); wiring it (this PR) is what makes N4 apply.
+                if (_throws++ < 3) ValkyriesCargo.Log.LogWarning("cargo merchant #" + _visitId + ": RPC_Say threw: " + ex.Message);
+            }
         }
 
         private void RPC_Vanish(long sender)
         {
-            if (_vanishing) return;
-            _vanishing = true;
-            _state = MerchantState.Leaving;
-            Say(Lines.Farewell, large: true);
-            Vanish();
+            try
+            {
+                if (_vanishing) return;
+                _vanishing = true;
+                _state = MerchantState.Leaving;
+
+                // F3: only the owner's write replicates (house rule). Every machine that receives this
+                // RPC already latches `_vanishing` above on its own, but the ZDO is what a client
+                // instancing him for the first time AFTER this reads back in `Awake`, and what anything
+                // outside this component - the terminal, the director - reads to know the visit is
+                // over; `_vanishing` is private to this instance and nobody else can see it.
+                if (_nview != null && _nview.IsValid() && _nview.IsOwner())
+                {
+                    ZDO zdo = _nview.GetZDO();
+                    if (zdo != null) zdo.Set(Spawner.StateHash, _state);
+                }
+
+                Say(Lines.Farewell, large: true);
+                Vanish();   // owner-gated inside (the effect rule): only the owner creates vfx_odin_despawn
+            }
+            catch (Exception ex)
+            {
+                // N4, same reasoning as RPC_Say above.
+                if (_throws++ < 3) ValkyriesCargo.Log.LogWarning("cargo merchant #" + _visitId + ": RPC_Vanish threw: " + ex.Message);
+            }
         }
 
         /// <summary>
