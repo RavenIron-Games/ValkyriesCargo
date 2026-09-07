@@ -120,7 +120,12 @@ step 4).
       the switch and §6's stream-disposal note is wrong (`docs/HANDOFF-WUBARRK.md` §0 item 2); the
       reason four Wants went from base 2 to 3 goes into `docs/DECISIONS-WUBARRK.md` (it is only in the
       release note).
-- [ ] **Close issue #16.** The rename shipped in #22.
+- [x] **Close issue #16.** Done.
+- [ ] **The load-bearing set (issue #31, PR #35), delegated by the owner 2026-09-07.** Which patches'
+      failure to apply should REFUSE the mod rather than degrade it. As merged: `Core/PatchLedger.IsLoadBearing`
+      says yes for the `ServerSync` namespace only (the version gate, the RPC registration, the config lock).
+      Leave it and say so, or widen it: a PR against that predicate and its `PatchLedgerTests` checks, the
+      reason in `docs/DECISIONS-WUBARRK.md` and CLAUDE.md house rule 3.
 - [ ] *Pending Don's decision above:* stop tracking the DLL (ignore `HexiumDist/plugins/`, delete the
       tracked copy, payloads on releases).
 - [ ] *Pending Don's decision above:* replace the Newtonsoft call with a pure writer and drop the
@@ -162,5 +167,5 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       pure), the boot line `patches N/M applied`, `cargo status` prints the failures, ServerSync's rows refuse
       the mod; 1462 → 1470 with #34. **Not yet seen on a machine**: the new boot line (item 2) and a
       deliberately failing patch in a scratch build printing its name rather than killing the mod.
-- [ ] **Owner's decision, when convenient:** widen the load-bearing set beyond ServerSync's patches, or leave
-      it. Recorded in CLAUDE.md house rule 3.
+- [x] ~~Owner's decision: widen the load-bearing set or leave it.~~ **Delegated to Wu'barrk 2026-09-07**
+      (owner: "more his alley"); moved to section 2.
