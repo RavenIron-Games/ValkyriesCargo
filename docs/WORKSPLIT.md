@@ -15,7 +15,7 @@
 | P5 | Merchant: carry pin, `InIntro`, follow, callout, immortal, dismissal, Odin vanish, restart sweep | **Wu'barrk** (with P4: the carry straddles both) | P4 | design 3.3, 3.6, 3.7; the Animator is his own (DESIGN §8) |
 | P6 | Deal wire server side: direct ZRpc, owed ledger, persistence (Cairn pattern) | code done, headless-proven (sidecar round trip); client proof pending | P1, P2 | — |
 | P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | **Don**: code done, off-game proven; screen proof pending | P1, P6 (merged), SharedUI (vendored, PR #2) | design 3.4; §2 below is the whole contract |
-| P8 | Body: rig, clips, bundle on Unity 6000.0.61f1 (**Wu'barrk**, PR #4 merged); `Client/BodyLoader.cs` + the Animator driver (**Don**, with P7) | split | model (in) | design §11; `models/SETUP-FOR-CLAUDE.md` for the bake |
+| P8 | Body: rig, clips, bundle on Unity 6000.0.61f1 (**Wu'barrk**, PR #4 merged; the BAKE is still to do); `Client/BodyLoader.cs` + the clip driver (**Don**: code done, off-game proven; screen proof pending) | split | model (in) | design §11; `models/SETUP-FOR-CLAUDE.md` for the bake. The bundle needs NO AnimatorController: the loader plays the clips by name |
 | P9 | Release: README truth pass, package, Hexium name check, store upload | **Don** | all | the RavenIronStudios store account |
 
 P4 → P5 is a chain on Wu'barrk's side; P7 and the loader run in parallel on Don's; the bake is independent.
@@ -155,8 +155,13 @@ What the market-core review (2026-09-06) says the terminal must know:
 3. ~~P7: panes, rows, glyphs, tray, payment mode, countdown, dismiss~~ built.
 4. ~~P7: the deal builder~~ built: stage → `Deal` → `CargoRpc.Send` → `DealApplier.Apply` on `Ok`; `price_changed`
    turns the line amber and Confirm accepts the new price. Proof on a real server pending (CLAUDE.md item 18).
-5. P8 (mod side): `Client/BodyLoader.cs` loads the embedded bundle, swaps the body under the same prefab clone,
-   drives the Animator from velocity and phase; gated by `Server.BodyPrefab`.
+5. ~~P8 (mod side): `Client/BodyLoader.cs` loads the embedded bundle, swaps the body under the same prefab clone,
+   drives the Animator from velocity and phase~~ **built** (a/p8-loader): `Client/BodyLoader.cs` +
+   `Client/IngvarBody.cs` + `Core/BodyMotion.cs` (pure, 78 checks); a `PlayableGraph` over the six clips with no
+   `AnimatorController` in the bundle, speed from the transform's own displacement, `Greet/Talk/Shrug/Nod` as the
+   API P5 calls. Gated by the NEW `Server.CustomBody`, not by `Server.BodyPrefab` — `BodyPrefab` stays the engine
+   prefab the merchant is cloned from. `cargo body [preview|walk|clip <name>|clear]` shows it without a merchant.
+   Screen proof pending (CLAUDE.md items 19 and 20): no baked bundle exists yet.
 6. P9: README truth pass, CHANGELOG, package, Hexium name check, store upload. Adversarial review before.
 
 **Track B (Wu'barrk)**
@@ -195,7 +200,7 @@ a shared session on a server both can reach.
 | the contract, the wire, `VisitSession` phases and `SetDrop`, `vc_dismiss`: all merged | now |
 | a decision on where the clock starts, if B wants it moved to the drop (a §2-style PR on `VisitDirector`) | at P4 start |
 | `ICargoTerminal` implementation to open on the merchant | before B2's interaction step |
-| `BodyLoader` to put the bundle on | at P8 embed |
+| ~~`BodyLoader` to put the bundle on~~ **built** (a/p8-loader): drop the bake at `Assets\valkyriescargo_kit` (the csproj line is in, conditional) and `cargo body` reports it | now |
 
 | Track A needs from B | when |
 |---|---|
