@@ -34,8 +34,16 @@ every bake reaches Don as a release asset (section 2, first item).
 - [ ] **Reconfirm versus teardown on a price tick.** The `PriceChangePolicy` knob is deleted (nothing read
       it); only Reconfirm exists (`Client/Terminal/TrayModel.cs`). Close as final, or ask for Teardown
       to be built. Update the `docs/DESIGN.md` §8 row and `docs/TLDR.md` either way.
-- [ ] **PR #17** (the `VALHEIM-API-REFERENCE` snapshot, docs only): merge on the word.
+- [x] **PR #17** (the `VALHEIM-API-REFERENCE` snapshot, docs only): merged 2026-09-07.
 - [ ] **The store.** No upload until the loop below has been seen (`docs/RELEASE.md` step 5; issue #23).
+      **And never the rc1 tag**: it carries F1 (fixed on main by PR #30, not in the tag); the next cut replaces it.
+- [ ] **F11, from the P4/P5 audit (raised by Wu'barrk 2026-09-07, section 2):** a tamed Ingvar is a legal
+      target for every hostile (`BaseAI.IsEnemy` treats a tamed creature as a player's side), and he can
+      neither die nor be staggered, so a raid parks on him for the visit's five minutes. Two shapes:
+      **faction-only** — keep `m_faction = Dverger` (not an enemy of `Players`, `AnimalsVeg` or `Boss`)
+      and drop the tame, losing what the tame gives (`AvoidFire`, the tamed target-clearing) — or
+      **tamed-and-aggro-magnet** — as built, accepted and documented. Say which; the fix is his, in
+      `CargoMerchant`, and the audit's F11 has the decompiled lines.
 
 ### Screen proofs — the Windows client against StormTest
 
