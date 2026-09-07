@@ -484,6 +484,37 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
 
 ---
 
+## INTEGRATED IN-GAME RUN, 2026-09-07 (all four branches merged, listen host, shadow client)
+
+The first time every branch ran together. What was seen, in the log, in order:
+
+```
+Valkyrie's Cargo v0.1.0 loaded - renderer=True, patches=17, catalogue=72 entries
+role: listen host (server + client)
+director up: ... purse 1500 ... sidecar valkyriescargo_2484912131.dat (82 rows loaded, a saved visit waits for its event)
+visit #2 RESUMED after a restart: pilot Wubarrk Dev, 03:16 left by the saved clock
+cargo merchant #2: awake as approaching, ours, body=Ingvar
+cargo merchant #2: trading (entered: gave up walking after 20 s) [callout]
+cargo merchant #2: approaching (entered: the player left: 51.35 m for 5.02 s) [following]
+cargo merchant #2: trading (entered: gave up walking after 20 s) [callout]
+visit #1 ended: timer; takings 0 coins, purse 1500, 5 clock republish(es), 0 owed deliveries
+visit #2: flight authored: start (...) at 154.5, descent (...) (50 m short), drop (...) at 34.5,
+          straight in 90 m out; bird ...:8284, Dverger ...:8285, both owned by the pilot
+```
+
+**`body=Ingvar`** -- his own body on the merchant, not the stand-in. The `MerchantPlan` state machine runs and its
+leash fires exactly as designed (12 m for 5 s; it saw 51.35 m for 5.02 s). A visit RESUMES across a restart off the
+sidecar. A visit ENDS on its timer, republishing the clock five times. `patches=17` is P4's plus P5's three.
+
+**It also found the bug that mattered most.** `MonsterAI.MakeTame()` opens with `m_character.SetTamed(true)`, and
+`BaseAI.m_character` is assigned in `BaseAI.Awake` -- which has not run when our `Humanoid.Awake` postfix adds the
+component. `Reassert` threw out of vanilla, and the catch in `Awake` turned that into `enabled = false`: **every
+visit P5 ever authored left a bare Dverger with nothing driving it.** No off-game check could have caught it.
+
+Still not seen end to end: the glide itself, the drop, the walk-up completing (he timed out at 20 s and called out
+from where he stood, which is the designed fallback, not a success), the terminal on a real visit, a trade, and the
+vanish. The two-client items cannot be run here at all.
+
 ## What to verify in-game
 
 Item 1 is done. Items 2 to 20 have never been run. **The runbook is `docs/PROOF-CLIENT.md`**: the order, the exact
