@@ -7,15 +7,79 @@ comfortable. He walks up, calls out, buys and sells from a live persistent stock
 prices for five minutes, and vanishes the way Odin does. Every player sees the same visit; only the
 server owns the market.
 
-**What has been seen on a screen, and what has not.** The plugin boots on a client and a dedicated
-server, the director runs, the market persists across restarts, and Ingvar's own body loads out of the
-bundle and stands correctly lit. A full visit -- the flight, the drop, the walk-up, the terminal and a
-trade -- has been proven off-game across 1301 checks and in a nine-scenario economy simulation, and is
-still being proven in-game; the runbook is `docs/PROOF-CLIENT.md` and what remains is listed in
+**What has been seen on a screen, and what has not.** On 2026-09-07 the owner's Windows client ran six
+visits against a dedicated server: the flight and the drop within a second of the simulation every time,
+Ingvar in his own body, the walk-up (finishing on every visit, but never on the first attempt -- the
+walk-up defect below), the terminal opened on the merchant, twenty deals with the price curve, the
+Fair Market Act, both drift knobs and the purse carry correct to the coin, dismissals, a relog mid-visit,
+and no exception from the mod on either side; the record is `docs/proofs/2026-09-07-stormtest-session.md`.
+Proven off-game across 1701 checks and a ten-scenario economy simulation. Never yet seen: six of the
+merged audit fixes (`docs/AUDIT-STORMTEST-2026-09-07.md` §5 says what would exercise each), the
+two-client items, and the screen questions (the release over the drop point, the vanish, the callout
+bubble, the hover prompt). The runbook is `docs/PROOF-CLIENT.md` and what remains is listed in
 CLAUDE.md's "what to verify in-game". Treat 0.1.0 as a first playable, not as a settled one.
 
-Entries are in build order, except the three sections directly below: 0.1.0's newest work, added
+Entries are in build order, except the four sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
+
+### Since 0.1.0-rc1 — 2026-09-07, the day the first visits flew (PRs #24 to #48)
+
+`v0.1.0-rc1` was cut at 09:37 that morning and **must not reach a tester**: it carries the F1 blocker
+fixed three hours later. Everything below is on `main` and goes into the next cut.
+
+- **F1, the blocker (PR #30, 1427 checks).** The immortality prefix on `Character.RPC_Damage` returned
+  `false` whenever no merchant was instanced, so with no visit running nothing in the world could take
+  damage. `Immortality.RunOriginal` now splits "somebody cancelled" from "no visit".
+- **The authority audit and the config shakedown (PR #24, 1302).** `VCargo_admin`'s caller is the
+  socket, never a field in the packet; a dismissal is accepted only from a player at the visit; three
+  client-driven paths are bounded. Two documents.
+- **Ingvar eats the customer's coins (PR #25).** The consume list; and the walk-up timeout logs a
+  diagnosis instead of failing silently.
+- **The boot-time engine probes (PR #28, 1423; PR #46, 1697).** `Core/EngineProbes.cs` registers 25
+  named engine facts; 18 are probed at boot against the running assembly and 7 method bodies are
+  registered as not probeable. The version line says what the DLL was built against and what is
+  running; a failed probe turns off the part that depends on it and says so, instead of throwing. The
+  `RPC_Damage` probe gap found by Track B is closed; every probe was resolved against the real
+  `assembly_valheim` 0.221.12 offline, six wrong-signature mutations each fail their own probe, and
+  against the previous stable build (0.221.4) the version line reports all four numbers as moved while
+  the 18 probes still resolve. `docs/ENGINE-PROBES.md`.
+- **`event valkyries_cargo` from the vanilla console starts a real visit (PR #34)** instead of being
+  killed within a second.
+- **Never a bare `PatchAll` (PR #35, 1470; issue #31).** Every patch class is applied on its own,
+  failures are named and counted (`patches N/M applied` in the boot line, the failures in
+  `cargo status`), and a ServerSync failure refuses the mod. Decision 9 (PR #36): the load-bearing set
+  stays ServerSync only; the flight gets a middle tier through `PatchLedger.IsApplied`.
+- **F11, ghost mode (PR #37, 1481).** Hostiles neither target nor fear Ingvar: one prefix on the static
+  `BaseAI.IsEnemy`, the decision pure.
+- **F2 and F6 (PR #38, 1488).** The hover prompt draws (`GetHoverText`/`GetHoverName` postfixes); the
+  immortality covers damage-over-time (a second prefix on the four-argument `ApplyDamage`).
+- **F4 and F3's server half (PR #39).** An adopted merchant is rebound after a restart; the server
+  sends the vanish and waits two seconds before reclaiming.
+- **No JSON library, and the built DLL untracked (PR #40, 1522).** `Core/Json.cs` writes the BarrkBOT
+  files byte-identical to Newtonsoft's output (4028 comparisons); the DLL and the bundle ship as release
+  assets, not in git. Decision 3 records its own reversal (PR #43).
+- **F7 and F8 (PR #41).** Unknown ground leaves the flight altitude alone instead of climbing; the
+  `Awake`-ordering hole is closed with the `m_initZDO` fallback.
+- **F5, F3's merchant half, F9, F10 (PR #42; the three fix PRs trial-merged together at 1571).** The
+  approach budget scales from the distance at entry with a 3 s stall detector and a leash that fires
+  once; the arrival line is broadcast, not drawn locally; `LiveCount` is right when `Awake` throws;
+  `Reassert` splits into a local half and an owned half.
+- **The catalogue verbs and the hot swap (PR #44, 1660).** `cargo catalogue list|add|remove|reset`
+  from an admin client; the shelf is rebuilt as soon as no visit is running, and a prefab the game has
+  no item for is dropped with its reason.
+- **Two drift knobs (PR #45).** One half-life per kind: Wares never drift, Wants relax over three game
+  days; the over-max hole it uncovered is closed.
+- **The first session on a Windows client, and its audit (PRs #46, #47).** Six visits on StormTest;
+  the proofs record, and the audit of what it found: the walk-up's first approach never starts cleanly
+  (D1, the ZDO-driven state change skips the entry reset -- so F5's scaled budget has never run on a
+  machine; a proposed diff, Track B's files), the visit-end sweep double-counts a reclaim that works
+  (D3), the eleven merged fixes against the logs.
+- **D2 and D4 (PR #48, 1701).** The per-player cooldown is keyed on the character's `s_playerID`, not
+  the per-join session uid, with the two probe rows that go with it; the admin and deal wires register
+  a peer once its identity has arrived; a client's session-end line no longer claims a sidecar.
+
+Known and open at this cut: the walk-up's first approach (D1, above) and the sweep's double count (D3),
+both with diffs written in `docs/AUDIT-STORMTEST-2026-09-07.md`.
 
 ### Phase 4-5 — the flight and the merchant
 

@@ -168,7 +168,10 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       (a scratchpad tool loads the built DLL and calls `EngineCheck.Run()`: `probes 18/18 ok, 7 not probeable`),
       six wrong-signature mutations each a FAILED line from it. `docs/ENGINE-PROBES.md` §7–§9. **Item 24's boot
       half DONE 2026-09-07 10:40 on StormTest**: `probes 18/18 ok, 7 not probeable` and `patches 18/18 applied` in the
-      real boot log, under Mono. Still open: `cargo engine` read on a client, and the moved-version direction.
+      real boot log, under Mono. **The moved-version direction, offline, 2026-09-07 evening**: against Steam's
+      `default_old` server build (0.221.4 / net 35 / player 42 / world 36) the tool answered `older game version
+      (0.221.4 vs 0.221.12); network version moved (35 vs 36); …; probes 18/18 ok` (ENGINE-PROBES §8 item 4). Still
+      open: `cargo engine` read on a client, and a moved-version BOOT on a machine.
 - [x] **The StormTest session, 2026-09-07 10:39–11:38** (Don's Windows client, PR #46's build; record:
       `docs/proofs/2026-09-07-stormtest-session.md` + the log excerpt). Six visits, 20 deals over the wire, no
       exception from the mod. DONE: items 8, 12, 13, 18, 24 (both sides), 26 (all but "waits"); the log halves of
