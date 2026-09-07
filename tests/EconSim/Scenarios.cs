@@ -775,7 +775,31 @@ namespace ValkyriesCargo.EconSim
             }
             md.Table(new[] { "Ware", "shelf", "he charges (full shelf)", "he pays (empty shelf)", "pays / charges", "sold back", "player's profit", "his purse", "shelf at the end" }, rows);
 
-            // How much a single player can take out of one visit, and out of three.
+            // How much a single player can take out of one visit, and out of three -- IF anything is
+            // still profitable to round-trip. Under the Fair Market Act nothing is, `bestWare` stays
+            // empty, and this whole section has no subject: `Sim.Stock(pump, "")` is a null deref, which
+            // is how the Act's arrival was discovered here. A simulation that dies when the exploit it
+            // measures is fixed is worse than useless, so the absence is now the finding.
+            if (bestWare.Length == 0)
+            {
+                Sim.Note("s9.best", "none");
+                Sim.Note("s9.bestprofit", "0");
+                Sim.Note("s9.losers", Sim.N(losers));
+                Sim.Note("s9.pervisit", "0");
+                md.Line("**No Ware is profitable to round-trip.** All " + Sim.N(rows.Count) + " of them lose the player coins, so the");
+                md.Line("pump table that used to stand here has no subject and is not printed.");
+                md.Line("");
+                md.Line("This is the **Fair Market Act** (`Server.FairMarketAct`, default on) doing its job: a Ware's buy-back");
+                md.Line("multiplier is clamped at 1.0, so he never pays more than `base x SpreadBuy` for something he himself");
+                md.Line("sells, and `3.0 x 0.7 = 2.1 > 1` no longer has anything to bite on. What he CHARGES still rises to the");
+                md.Line("full 3.0x, and Wants are untouched -- the scarcity signal is intact everywhere it was meant to be.");
+                md.Line("");
+                md.Line("Before the Act this section reported 17 of 18 Wares profitable and a player walking off with Ingvar's");
+                md.Line("whole purse on the first visit, with the shelves ending exactly where they started so nothing in the");
+                md.Line("saved state showed it. Turn the knob off and this table comes back; that is the regression test.");
+                return;
+            }
+
             Market pump = Sim.NewMarket(0);
             var thief = new Trader("Pump", 100000);
             int lastTakings = 0, firstVisitGain = 0;
@@ -813,6 +837,8 @@ namespace ValkyriesCargo.EconSim
             Sim.Note("s9.losers", Sim.N(losers));
             Sim.Note("s9.pervisit", Sim.N(firstVisitGain));
 
+            md.Line("**The Fair Market Act is OFF for this run** (`Server.FairMarketAct`), so the round trip below is live.");
+            md.Line("");
             md.Line("**A round trip is profitable on every Ware whose ratio above is over 1.00**, which is " + Sim.N(rows.Count - losers) + " of the " + Sim.N(rows.Count) + " Wares.");
             md.Line("The reason is one line of arithmetic: an empty shelf multiplies the price by up to `MaxPriceMultiplier` (3.0) and he pays");
             md.Line("`SpreadBuy` (0.7) of it, and `3.0 x 0.7 = 2.1 > 1`. Any Ware whose target is 3 or more reaches a multiplier above `1/0.7 = 1.43`");

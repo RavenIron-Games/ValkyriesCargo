@@ -211,7 +211,7 @@ him); buys are a fifth to a twentieth of a Ware's target, clamped to the shelf a
 |---|---|---|---|---|---|---|
 | 1 | 0 s | 800 | 12 | 12 | 1036 | 236 |
 | 2 | 600 s | 918 | 11 | 11 | 639 | 0 |
-| 3 | 1200 s | 800 | 9 | 8 | 788 | 0 |
+| 3 | 1200 s | 800 | 9 | 8 | 798 | 0 |
 
 | visit | player | deals | settled | coins spent | coins earned | coins left |
 |---|---|---|---|---|---|---|
@@ -223,8 +223,8 @@ him); buys are a fifth to a twentieth of a Ware's target, clamped to the shelf a
 | 2 | Bjorn | 3 | 3 | 0 | 163 | 794 |
 | 2 | Gudrun | 3 | 3 | 20 | 66 | 296 |
 | 2 | Halfdan | 2 | 2 | 0 | 90 | 305 |
-| 3 | Astrid | 3 | 3 | 30 | 99 | 346 |
-| 3 | Bjorn | 2 | 2 | 75 | 21 | 740 |
+| 3 | Astrid | 3 | 3 | 30 | 90 | 337 |
+| 3 | Bjorn | 2 | 2 | 75 | 20 | 739 |
 | 3 | Gudrun | 2 | 1 | 40 | 0 | 256 |
 | 3 | Halfdan | 2 | 2 | 45 | 82 | 342 |
 
@@ -325,35 +325,27 @@ and a new visit every 500 deals. What came back:
 
 | answer | deals | share |
 |---|---|---|
-| `bad_count` | 199 | 2.0% |
-| `coins_short` | 2 | 0.0% |
+| `bad_count` | 201 | 2.0% |
+| `coins_short` | 4 | 0.0% |
 | `empty_deal` | 1496 | 15.0% |
-| `ok` | 519 | 5.2% |
-| `over_max` | 1180 | 11.8% |
-| `price_changed` | 387 | 3.9% |
-| `purse_empty` | 655 | 6.6% |
-| `sold_out` | 773 | 7.7% |
+| `ok` | 537 | 5.4% |
+| `over_max` | 1210 | 12.1% |
+| `price_changed` | 380 | 3.8% |
+| `purse_empty` | 616 | 6.2% |
+| `sold_out` | 769 | 7.7% |
 | `stale_visit` | 777 | 7.8% |
-| `unknown_item` | 4012 | 40.1% |
+| `unknown_item` | 4010 | 40.1% |
 
 | invariant | violations |
 |---|---|
 | `Settle` threw | 0 |
 | an answer that is not a `DealReason` token | 0 |
-| a repeated delivery id (519 issued) | 0 |
+| a repeated delivery id (537 issued) | 0 |
 | stock outside 0..Max, purse negative, price below 1, or a multiplier that is not a number | 0 |
 
-**Ten thousand deals, 519 of them settled, and not one violation.** The pure core holds its bounds under nonsense.
+**Ten thousand deals, 537 of them settled, and not one violation.** The pure core holds its bounds under nonsense.
 
 ## 9. The round trip — buying a shelf out and selling it straight back
-
-**RESOLVED 2026-09-07 — the Fair Market Act (`docs/DECISIONS-WUBARRK.md` §2).** `Market.PaysFor` now clamps a
-Ware's buy-back multiplier at 1.0, so he never pays more than `base × SpreadBuy` — the target-stock rate — for
-something he also sells; `PriceFor` (what he charges) and every Want are untouched, and the rule is a synced,
-locked config knob (`MarketRules.FairMarketAct` / `Server.FairMarketAct`) defaulting on. The numbers below are the
-PRE-FIX simulation, kept as the evidence the decision was made on, not as the shipped behaviour: replayed today,
-every "he pays (empty shelf)" figure for a Ware would instead read `round(base × SpreadBuy)` — the same number as
-its own "at target" pay price — and every round trip in the table below settles at a loss, not a profit.
 
 `Settle` prices a whole deal at the pre-deal shelf (DESIGN section 8, 'a bulk deal beats a drip-feed') and Ingvar buys
 his own Wares back. Put those two together in one visit: buy the whole shelf at the full-shelf price, then sell the
@@ -361,39 +353,36 @@ same goods back at the empty-shelf price. Nothing else happens; the shelf ends w
 
 | Ware | shelf | he charges (full shelf) | he pays (empty shelf) | pays / charges | sold back | player's profit | his purse | shelf at the end |
 |---|---|---|---|---|---|---|---|---|
-| Bronze | 20 | 15 | 30 | 2.00 | 20 | +300 | 500 | 20 |
-| Iron | 20 | 25 | 50 | 2.00 | 20 | +500 | 300 | 20 |
-| Silver | 12 | 40 | 67 | 1.68 | 12 | +324 | 476 | 12 |
-| BlackMetal | 10 | 60 | 94 | 1.57 | 10 | +340 | 460 | 10 |
-| FlametalNew | 6 | 110 | 144 | 1.31 | 6 | +204 | 596 | 6 |
-| Eitr | 10 | 45 | 71 | 1.58 | 10 | +260 | 540 | 10 |
-| BlackCore | 2 | 300 | 268 | 0.89 | 2 | -64 | 864 | 2 |
-| Amber | 30 | 7 | 15 | 2.14 | 30 | +240 | 560 | 30 |
-| AmberPearl | 20 | 14 | 28 | 2.00 | 20 | +280 | 520 | 20 |
-| Ruby | 15 | 29 | 52 | 1.79 | 15 | +345 | 455 | 15 |
-| SilverNecklace | 8 | 43 | 62 | 1.44 | 8 | +152 | 648 | 8 |
-| ArrowIron | 100 | 2 | 4 | 2.00 | 100 | +200 | 600 | 100 |
-| ArrowFrost | 100 | 3 | 6 | 2.00 | 100 | +300 | 500 | 100 |
-| BoltIron | 100 | 3 | 6 | 2.00 | 100 | +300 | 500 | 100 |
-| MeadHealthMinor | 10 | 12 | 19 | 1.58 | 10 | +70 | 730 | 10 |
-| MeadStaminaMinor | 10 | 12 | 19 | 1.58 | 10 | +70 | 730 | 10 |
-| MeadTasty | 10 | 10 | 16 | 1.60 | 10 | +60 | 740 | 10 |
-| Honey | 50 | 2 | 4 | 2.00 | 50 | +100 | 700 | 50 |
+| Bronze | 20 | 15 | 11 | 0.73 | 20 | -80 | 880 | 20 |
+| Iron | 20 | 25 | 18 | 0.72 | 20 | -140 | 940 | 20 |
+| Silver | 12 | 40 | 28 | 0.70 | 12 | -144 | 944 | 12 |
+| BlackMetal | 10 | 60 | 42 | 0.70 | 10 | -180 | 980 | 10 |
+| FlametalNew | 6 | 110 | 77 | 0.70 | 6 | -198 | 998 | 6 |
+| Eitr | 10 | 45 | 31 | 0.69 | 10 | -140 | 940 | 10 |
+| BlackCore | 2 | 300 | 210 | 0.70 | 2 | -180 | 980 | 2 |
+| Amber | 30 | 7 | 5 | 0.71 | 30 | -60 | 860 | 30 |
+| AmberPearl | 20 | 14 | 10 | 0.71 | 20 | -80 | 880 | 20 |
+| Ruby | 15 | 29 | 20 | 0.69 | 15 | -135 | 935 | 15 |
+| SilverNecklace | 8 | 43 | 30 | 0.70 | 8 | -104 | 904 | 8 |
+| ArrowIron | 100 | 2 | 1 | 0.50 | 100 | -100 | 900 | 100 |
+| ArrowFrost | 100 | 3 | 2 | 0.67 | 100 | -100 | 900 | 100 |
+| BoltIron | 100 | 3 | 2 | 0.67 | 100 | -100 | 900 | 100 |
+| MeadHealthMinor | 10 | 12 | 8 | 0.67 | 10 | -40 | 840 | 10 |
+| MeadStaminaMinor | 10 | 12 | 8 | 0.67 | 10 | -40 | 840 | 10 |
+| MeadTasty | 10 | 10 | 7 | 0.70 | 10 | -30 | 830 | 10 |
+| Honey | 50 | 2 | 1 | 0.50 | 50 | -50 | 850 | 50 |
 
-| visit | purse at start | round trips | coins to the player | purse at end | takings |
-|---|---|---|---|---|---|
-| 1 | 800 | 2 | +800 | 0 | 0 |
-| 2 | 800 | 2 | +764 | 36 | 0 |
-| 3 | 800 | 2 | +764 | 36 | 0 |
+**No Ware is profitable to round-trip.** All 18 of them lose the player coins, so the
+pump table that used to stand here has no subject and is not printed.
 
-**A round trip is profitable on every Ware whose ratio above is over 1.00**, which is 17 of the 18 Wares.
-The reason is one line of arithmetic: an empty shelf multiplies the price by up to `MaxPriceMultiplier` (3.0) and he pays
-`SpreadBuy` (0.7) of it, and `3.0 x 0.7 = 2.1 > 1`. Any Ware whose target is 3 or more reaches a multiplier above `1/0.7 = 1.43`
-when its shelf is empty, so buying it out and selling it back turns coins into more coins. Only 1 row is safe:
-BlackCore, whose target of 2 caps its empty-shelf multiplier at 1.27.
-The player's profit equals the purse drain exactly, so **one player can walk off with Ingvar's entire purse every visit**
-(800 coins on the first visit above) without gathering anything, and the shelves end the visit exactly where they
-started, so nothing in the market state shows it happened.
+This is the **Fair Market Act** (`Server.FairMarketAct`, default on) doing its job: a Ware's buy-back
+multiplier is clamped at 1.0, so he never pays more than `base x SpreadBuy` for something he himself
+sells, and `3.0 x 0.7 = 2.1 > 1` no longer has anything to bite on. What he CHARGES still rises to the
+full 3.0x, and Wants are untouched -- the scarcity signal is intact everywhere it was meant to be.
+
+Before the Act this section reported 17 of 18 Wares profitable and a player walking off with Ingvar's
+whole purse on the first visit, with the shelves ending exactly where they started so nothing in the
+saved state showed it. Turn the knob off and this table comes back; that is the regression test.
 
 ## Verdict — what to keep and what to change
 
@@ -420,32 +409,25 @@ wreck a row. Keep it.
 **`StockHalfLifeGameDays` 1.** Every row damaged in scenarios 1 and 2 is back inside 5% of target within 6 game days
 (scenario 6), and a shelf emptied every single day settles at half target rather than collapsing. Keep it.
 
-**The pure core's bounds.** 519 settled deals out of ten thousand random ones, and not a single throw, negative
+**The pure core's bounds.** 537 settled deals out of ten thousand random ones, and not a single throw, negative
 stock, over-max shelf, negative purse, sub-1 price or repeated delivery id (scenario 8). The refusal order is the one
 the contract describes (scenario 7). This part is done.
 
 ### What looks off
 
-**1. RESOLVED 2026-09-07 (the Fair Market Act, `docs/DECISIONS-WUBARRK.md` §2). `MaxPriceMultiplier` 3.0 x `SpreadBuy`
-0.7 = 2.1, and 2.1 > 1: he buys his own wares back for more than he sold them.** Scenario 9. Buy a shelf out at the
-full-shelf price, sell it straight back at the empty-shelf price, and the coins come out of his purse — 800 coins on the
-first visit, on Iron, with the shelf left exactly where it started so nothing in the saved state shows it happened. It
-worked on every Ware whose target is 3 or more, which is 17 of the 18. This was the one finding I would not have shipped
-without a decision on; it now has one, and everything below this line is the analysis that decision was made on, kept
-as evidence, not as an open question.
+**1. RESOLVED 2026-09-07 — the round trip.** `MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1, and 2.1 > 1, so
+Ingvar used to buy his own Wares back for more than he sold them: 17 of the 18 were profitable to buy out and sell
+straight back, a player could walk off with his whole purse on the first visit, and the shelves ended exactly where
+they started so nothing in the saved state showed it.
 
-*The config-only fix is `MaxPriceMultiplier` 3.0 -> 1.4* (`1 / SpreadBuy` = 1.43 is the break-even), which also throws away
-most of the scarcity signal the mod is for. *The cheap code fix is one clause in `Market.Pays`*: when the offered row is a
-Ware, price the buy-back at `min(multiplier, 1.0)`, so he never pays more than `base x spread` for something he sells. A
-player who empties a shelf then repents still gets his coins back at the ordinary rate, and the pump dies. Either way it
-is a decision for DESIGN section 8, next to 'a bulk deal beats a drip-feed', which is where it comes from.
+Closed by the **Fair Market Act** (`Server.FairMarketAct`, synced and locked, default on): a Ware's buy-back
+multiplier is clamped at 1.0, so he never pays more than `base x SpreadBuy` for something he himself sells. What he
+CHARGES still rises to the full 3.0x and Wants are untouched, so the scarcity signal survives everywhere it was
+meant to be. The owners chose this over the config-only fix (`MaxPriceMultiplier` 3.0 -> 1.4, the 1/0.7 = 1.43
+break-even) precisely because that one would have thrown the signal away. Reasoning: `docs/DECISIONS-WUBARRK.md` 2.
 
-**Taken: the code fix.** `Market.PaysFor` now takes the row's `EntryKind` and clamps the buy-back multiplier at 1.0
-for a Ware exactly as proposed above; `MinPriceMultiplier`/`MaxPriceMultiplier` are untouched, so `PriceFor` still
-reaches the full 3.0x. `MarketRules.FairMarketAct` (`Server.FairMarketAct` in config), synced and locked, defaults
-on; an owner who wants the old, exploitable number back can turn it off. `tests/CoreTests/Program.cs`,
-"Market: the Fair Market Act (2026-09-07)", proves the round trip now loses money on a real Ware, that a Want is
-never clamped, that the charge side never moves, and that the old number returns exactly with the rule off.
+Scenario 9 above is the standing proof: all 18 Wares now LOSE the player coins. Turn the knob off and the pump
+table comes back — that is the regression test, and it is why the knob was kept rather than the clause hardcoded.
 
 **2. `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the 72 rows has `Max = 3 x Target`, so the
 lowest multiplier any shelf can reach by trading is `(1/3)^0.35 = 0.6808`; the floor would need `Max > 13.7 x Target`.

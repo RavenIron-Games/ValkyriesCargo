@@ -151,17 +151,35 @@ namespace ValkyriesCargo.EconSim
 
             md.H(3, "What looks off");
 
-            md.Line("**1. `MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1, and 2.1 > 1: he buys his own wares back for more than he sold");
-            md.Line("them.** Scenario 9. Buy a shelf out at the full-shelf price, sell it straight back at the empty-shelf price, and the coins");
-            md.Line("come out of his purse — " + Sim.Fact("s9.pervisit") + " coins on the first visit, on " + Sim.Fact("s9.best") + ", with the shelf left exactly where it started so nothing in");
-            md.Line("the saved state shows it happened. It works on every Ware whose target is 3 or more, which is 17 of the 18. This is the");
-            md.Line("one finding I would not ship without a decision on.");
-            md.Blank();
-            md.Line("*The config-only fix is `MaxPriceMultiplier` 3.0 -> 1.4* (`1 / SpreadBuy` = 1.43 is the break-even), which also throws away");
-            md.Line("most of the scarcity signal the mod is for. *The cheap code fix is one clause in `Market.Pays`*: when the offered row is a");
-            md.Line("Ware, price the buy-back at `min(multiplier, 1.0)`, so he never pays more than `base x spread` for something he sells. A");
-            md.Line("player who empties a shelf then repents still gets his coins back at the ordinary rate, and the pump dies. Either way it");
-            md.Line("is a decision for DESIGN section 8, next to 'a bulk deal beats a drip-feed', which is where it comes from.");
+            if (Sim.Fact("s9.best") == "none")
+            {
+                md.Line("**1. RESOLVED 2026-09-07 — the round trip.** `MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1, and 2.1 > 1, so");
+                md.Line("Ingvar used to buy his own Wares back for more than he sold them: 17 of the 18 were profitable to buy out and sell");
+                md.Line("straight back, a player could walk off with his whole purse on the first visit, and the shelves ended exactly where");
+                md.Line("they started so nothing in the saved state showed it.");
+                md.Blank();
+                md.Line("Closed by the **Fair Market Act** (`Server.FairMarketAct`, synced and locked, default on): a Ware's buy-back");
+                md.Line("multiplier is clamped at 1.0, so he never pays more than `base x SpreadBuy` for something he himself sells. What he");
+                md.Line("CHARGES still rises to the full 3.0x and Wants are untouched, so the scarcity signal survives everywhere it was");
+                md.Line("meant to be. The owners chose this over the config-only fix (`MaxPriceMultiplier` 3.0 -> 1.4, the 1/0.7 = 1.43");
+                md.Line("break-even) precisely because that one would have thrown the signal away. Reasoning: `docs/DECISIONS-WUBARRK.md` 2.");
+                md.Blank();
+                md.Line("Scenario 9 above is the standing proof: all 18 Wares now LOSE the player coins. Turn the knob off and the pump");
+                md.Line("table comes back — that is the regression test, and it is why the knob was kept rather than the clause hardcoded.");
+            }
+            else
+            {
+                md.Line("**1. `MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1, and 2.1 > 1: he buys his own wares back for more than he sold");
+                md.Line("them.** Scenario 9. Buy a shelf out at the full-shelf price, sell it straight back at the empty-shelf price, and the coins");
+                md.Line("come out of his purse — " + Sim.Fact("s9.pervisit") + " coins on the first visit, on " + Sim.Fact("s9.best") + ", with the shelf left exactly where it started so nothing in");
+                md.Line("the saved state shows it happened. This is the one finding I would not ship without a decision on.");
+                md.Blank();
+                md.Line("*The config-only fix is `MaxPriceMultiplier` 3.0 -> 1.4* (`1 / SpreadBuy` = 1.43 is the break-even), which also throws away");
+                md.Line("most of the scarcity signal the mod is for. *The cheap code fix is one clause in `Market.Pays`*: when the offered row is a");
+                md.Line("Ware, price the buy-back at `min(multiplier, 1.0)`, so he never pays more than `base x spread` for something he sells. A");
+                md.Line("player who empties a shelf then repents still gets his coins back at the ordinary rate, and the pump dies. Either way it");
+                md.Line("is a decision for DESIGN section 8, next to 'a bulk deal beats a drip-feed', which is where it comes from.");
+            }
             md.Blank();
             md.Line("**2. `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the 72 rows has `Max = 3 x Target`, so the");
             md.Line("lowest multiplier any shelf can reach by trading is `(1/3)^0.35 = " + Sim.Fact("floor.min") + "`; the floor would need `Max > 13.7 x Target`.");
