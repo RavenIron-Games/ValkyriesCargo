@@ -6,7 +6,22 @@ namespace RavenIron.ValkyriesCargo.Core
     /// <summary>What the server knows about one online player, read from their character ZDO (design 3.1).</summary>
     public sealed class Candidate
     {
+        /// <summary>
+        /// `zdo.GetOwner()`: the character ZDO's CURRENT owner, which for a player is the client's
+        /// `ZDOMan.m_sessionID` -- minted per WORLD JOIN, not per process (StormTest 2026-09-07: one Steam
+        /// id under three uids in an hour, two of them 12 s apart inside one client process). It is the
+        /// handle the admin wire and `Force` speak in, because it is what the peer's socket carries; it is
+        /// NOT an identity, and nothing that must outlive a relog may be keyed on it.
+        /// </summary>
         public long Uid;
+        /// <summary>
+        /// `ZDOVars.s_playerID` off the same ZDO: written once by `Player.SetPlayerID` beside the name and
+        /// the same long after every relog (docs/knowledge-base/PLAYER-IDENTITY-FACTS.md §1-2). Per
+        /// CHARACTER profile, not per human -- a second character on the same account is a different
+        /// key; the per-human platform id lives on the peer, not the ZDO. 0 for a character that has
+        /// not been given one yet (mid-load) and for the harness's bare stubs.
+        /// </summary>
+        public long PlayerId;
         public string Name = "";
         public float X, Y, Z;
         public int BaseValue;
@@ -14,6 +29,14 @@ namespace RavenIron.ValkyriesCargo.Core
         public int Comfort;
         public bool Alive = true;
         public bool Ready = true;
+
+        /// <summary>
+        /// What a per-player cooldown is stamped under and looked up by: the stable identity when the
+        /// ZDO carries one, the session uid when it does not. Keying on `Uid` alone is D2 of the
+        /// 2026-09-07 StormTest session (docs/AUDIT-STORMTEST-2026-09-07.md §3): three `cool` rows for one
+        /// player after two relogs, and a relog clearing the player half of the cooldown.
+        /// </summary>
+        public long CooldownKey => PlayerId != 0L ? PlayerId : Uid;
 
         public override string ToString() => (Name.Length > 0 ? Name : "uid " + Wire.Long(Uid));
     }
@@ -178,7 +201,7 @@ namespace RavenIron.ValkyriesCargo.Core
             }
             else d.Pilot = forced;
 
-            StampCooldown(d.Pilot.Uid, d.Pilot.X, d.Pilot.Z, now);
+            StampCooldown(d.Pilot.CooldownKey, d.Pilot.X, d.Pilot.Z, now);
             return Finish(d, (forced != null ? "forced visit: " : "visit: ") + d.Pilot + " at (" +
                              Wire.Float(d.Pilot.X) + ", " + Wire.Float(d.Pilot.Z) + "); " + Wire.Int(d.Eligible) + " eligible, " + Wire.Int(d.Tickets) + " ticket(s)");
         }
@@ -192,7 +215,7 @@ namespace RavenIron.ValkyriesCargo.Core
             if (c.Comfort < _rules.MinComfort) return LowComfort;
             if (c.BaseValue < _rules.MinBaseValue) return LowBase;
             if (c.Y >= SchedulerRules.DungeonY) return Dungeon;
-            if (!skipCooldowns && OnPlayerCooldown(c.Uid, now)) return OnCooldown;
+            if (!skipCooldowns && OnPlayerCooldown(c.CooldownKey, now)) return OnCooldown;
             if (!skipCooldowns && NearBaseCooldown(c.X, c.Z, now)) return NearCooldown;
             return -1;
         }
@@ -241,7 +264,13 @@ namespace RavenIron.ValkyriesCargo.Core
 
         // ---- cooldowns ----------------------------------------------------------------------
 
-        /// <summary>Stamped at dispatch, not at success, so a failed flight cannot be farmed.</summary>
+        /// <summary>
+        /// Stamped at dispatch, not at success, so a failed flight cannot be farmed. `uid` is the
+        /// candidate's `CooldownKey` (`s_playerID`, falling back to the session uid); the sidecar's
+        /// `cool` rows carry the same long. Rows saved before 2026-09-07 hold a dead session uid that no
+        /// live candidate will ever present again and expire on their own inside PlayerCooldownSeconds:
+        /// no format bump, no migration.
+        /// </summary>
         public void StampCooldown(long uid, float x, float z, double now)
         {
             _playerCooldownUntil[uid] = now + _rules.PlayerCooldownSeconds;

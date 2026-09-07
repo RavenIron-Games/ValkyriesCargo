@@ -74,6 +74,13 @@ namespace RavenIron.ValkyriesCargo.Net
             foreach (ZNetPeer peer in peers)
             {
                 if (peer == null || peer.m_rpc == null) continue;
+                // `ZNet.OnNewConnection` lists a peer at socket accept; its uid and name arrive with
+                // `RPC_PeerInfo`, ~7 s later on StormTest 2026-09-07, which is why the line below read
+                // `admin wire registered for ? (0)` on every connect (D4a). `IsReady()` is the engine's own
+                // "PeerInfo has arrived" (`m_uid != 0`). This sweep runs every tick, so waiting costs
+                // nothing -- and the gate sits ABOVE the count, so `_serverSide.Count > live` still
+                // means exactly "someone left".
+                if (!peer.IsReady()) continue;
                 live++;
                 if (_serverSide.Contains(peer.m_rpc)) continue;
                 peer.m_rpc.Register<string, string>(Request, OnRequest);

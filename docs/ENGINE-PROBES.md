@@ -443,6 +443,7 @@ row the registry already covered before this pass.
 | `Character.GetHoverText()` / `GetHoverName()`, "`Character` still implements `Hoverable`" | `character` — the hover patch's targets and `NeedInterface(Character, Hoverable)` (F2, PR #37) |
 | `Character.IsOnGround()` | `merchant` (was) |
 | `Character.GetSEMan()`, `SEMan.HaveStatusEffect(int)` | `character` / `comfort` (was) |
+| `ZDOVars.s_playerID` (`"playerID"`; a long written by `Player.SetPlayerID`) | `comfort` — the cooldown key since D2 (docs/AUDIT-STORMTEST-2026-09-07.md §3, 2026-09-07); read by `VisitDirector.Gather` |
 | `MonsterAI.MakeTame()` first line | `character` (was) for the call; `awake_order` (was) for the body |
 | `BaseAI.Awake` assigns `m_character` | `merchant_awake` (was); `awake_order` (was) |
 | `MonsterAI.SetFollowTarget` / `GetFollowTarget` | `merchant` |

@@ -670,6 +670,10 @@ namespace RavenIron.ValkyriesCargo.Server
                 list.Add(new Candidate
                 {
                     Uid = zdo.GetOwner(),
+                    // The identity, not the session (D2, docs/AUDIT-STORMTEST-2026-09-07.md §3): the
+                    // cooldown is keyed on this; `Uid` stays the handle the admin wire speaks in.
+                    // Probed at boot beside s_playerName (EngineCheck.CheckComfort).
+                    PlayerId = zdo.GetLong(ZDOVars.s_playerID, 0L),
                     Name = zdo.GetString(ZDOVars.s_playerName, ""),
                     X = p.x, Y = p.y, Z = p.z,
                     BaseValue = zdo.GetInt(ZDOVars.s_baseValue, 0),
@@ -687,7 +691,7 @@ namespace RavenIron.ValkyriesCargo.Server
         {
             return c + " (uid " + Wire.Long(c.Uid) + "): rested=" + (c.Rested ? "yes" : "no") + " comfort=" + c.Comfort + " base=" + c.BaseValue +
                    " y=" + Wire.Float((float)Math.Round(c.Y)) + (c.Alive ? "" : " DEAD") +
-                   (_scheduler.OnPlayerCooldown(c.Uid, now) ? " on cooldown" : "") + (_scheduler.NearBaseCooldown(c.X, c.Z, now) ? " near a base on cooldown" : "");
+                   (_scheduler.OnPlayerCooldown(c.CooldownKey, now) ? " on cooldown" : "") + (_scheduler.NearBaseCooldown(c.X, c.Z, now) ? " near a base on cooldown" : "");
         }
     }
 }

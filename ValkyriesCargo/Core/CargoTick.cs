@@ -180,7 +180,8 @@ namespace RavenIron.ValkyriesCargo.Core
         private void EndSession()
         {
             _live = false;
-            if (_director != null) _director.Flush("session end", force: true);
+            bool hadDirector = _director != null;         // only a server has one, and only a server has a sidecar (D4b)
+            if (hadDirector) _director.Flush("session end", force: true);
             _director = null;
             _transport = null;
             _inboxLoaded = false;
@@ -191,7 +192,9 @@ namespace RavenIron.ValkyriesCargo.Core
             DealWire.Reset();
             AdminRpc.Reset();
             CargoRpc.EndSession();
-            ValkyriesCargo.Log.LogInfo("session ended: sidecar flushed; director, wire, reporter, routed RPCs and the terminal surface dropped");
+            ValkyriesCargo.Log.LogInfo("session ended: " +
+                (hadDirector ? "sidecar flushed; director, " : "no director on this machine (a client keeps no sidecar); ") +
+                "wire, reporter, routed RPCs and the terminal surface dropped");
         }
 
         /// <summary>

@@ -1826,6 +1826,20 @@ namespace ValkyriesCargo.Tests
             Check(!cool.OnPlayerCooldown(21, 5100), "Prune drops the expired player cooldown");
             Check(!cool.NearBaseCooldown(0f, 0f, 5100), "and the expired base cooldown with it");
 
+            // ---- D2 (StormTest 2026-09-07): the cooldown is keyed on the character, not the session ----
+            // One player, two joins, two session uids (the real ones from the log), one s_playerID.
+            Scheduler relog = new Scheduler(SchedulerRules.Default);
+            Candidate before = Player(-794915846, "Nomadtest", 0f, 0f); before.PlayerId = 4242;
+            Candidate after = Player(860278520, "Nomadtest", 0f, 0f); after.PlayerId = 4242;
+            relog.StampCooldown(before.CooldownKey, 0f, 0f, 1000);
+            Check(relog.OnPlayerCooldown(after.CooldownKey, 1000),
+                  "a relog does NOT clear the cooldown: the key is s_playerID, not the per-join session uid (three cool rows for one player)");
+            Check(!relog.OnPlayerCooldown(after.Uid, 1000), "and the session uid is no longer a key at all");
+            Check(Player(77, "Sigrun", 0f, 0f).CooldownKey == 77, "a character with no s_playerID yet falls back to the session uid, so nothing regresses mid-load");
+            relog.Arm(0);
+            Check(relog.Tick(1500, new List<Candidate> { after }, false, true, Rolls(0.0)).Reason.Contains("1 on cooldown"),
+                  "and the roll sees the relogged player as on cooldown, by the player bucket, not the base one");
+
             // ---- tickets -----------------------------------------------------------------
 
             var near = new List<Candidate> { Player(31, "A", 0f, 0f), Player(32, "B", 30f, 0f) };
