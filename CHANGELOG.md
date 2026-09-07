@@ -117,6 +117,21 @@ merchant are not built, and the custom body has its loader but no baked bundle.*
   at `Assets\valkyriescargo_kit` grew the DLL by exactly its size and appeared as the resource
   `ValkyriesCargo.valkyriescargo_kit`.
 
+### After P8: the audit, the runbook and the simulation (PRs #10, #11, #12)
+
+- **The client-path audit** (`docs\CLIENT-AUDIT.md`): 57 engine members on the never-run client paths checked
+  against the real assemblies; six defects fixed. `cargo terminal demo` from the main menu drew but never ticked
+  (Escape dead, every buy refused `coins_short`); Tab and M closed the terminal AND opened the inventory or map;
+  a deal the pack refused was acked anyway (now the transports ack only what `DealApplier` applied, and the
+  inbox mark is taken back with `DealInbox.Forget`); a destroyed merchant switched the 5 m rule off instead of
+  closing; the focus tokens leaked on plugin destroy; Escape was read through legacy `Input`. **1039 checks.**
+- **The proof runbook** (`docs\PROOF-CLIENT.md`): CLAUDE.md items 2 to 20 in one sitting, each with the line the
+  code writes; `tools\deploy-test.ps1`, `tools\tail-log.ps1`, `tools\set-test-config.ps1`.
+- **The economy simulation** (`tests\EconSim`, `docs\ECONOMY-SIM.md`, `tools\run-econsim.ps1`): nine seeded
+  scenarios against the real market. Finding for the owners: the buy-out-and-sell-back round trip is profitable
+  (`MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1) and drains the purse on the first visit; a decision for DESIGN
+  section 8 before anyone trades. No default changed.
+
 ### Verification
 
 **Headless-proven on a dedicated server.** Server-side only; there was no client in any of these

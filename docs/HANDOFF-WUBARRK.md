@@ -66,7 +66,14 @@ Don merges everything; nothing below asks you to merge.
    are the seam you code against; README is rewritten as a truth pass), then the runbook
    (`docs/PROOF-CLIENT.md` with `tools/deploy-test.ps1`, `tail-log.ps1`, `set-test-config.ps1`), the
    economy simulation (`docs/ECONOMY-SIM.md`) and the client audit (`docs/CLIENT-AUDIT.md`). The runbook
-   is the checklist for your two-client evening once P5 stands.
+   is the checklist for your two-client evening once P5 stands. (All four landed: PRs #9 to #12, main at
+   1039 checks.)
+
+6. **One decision for the two of you, from the simulation** (`docs/ECONOMY-SIM.md`, verdict item 1): buying a
+   shelf out and selling it straight back is profitable, because `MaxPriceMultiplier` 3.0 times `SpreadBuy` 0.7 is
+   2.1, and it drains his whole purse on the first visit with the shelf left where it started. The cheap fix is one
+   clause in `Market.Pays`: a Ware he sells is bought back at par at most. The config fix is the multiplier down to
+   1.4, which flattens the scarcity signal. Say which; it goes into DESIGN section 8 and one of us builds it.
 
 ## 1. Where things are
 

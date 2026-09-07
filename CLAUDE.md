@@ -218,9 +218,10 @@ ValkyriesCargo/
   Libs/ServerSync.cs         NOT OURS: blaxxun ConfigSync.cs, compiled in as shared source
   Libs/SharedUI/GiltFrameTheme.cs, UIFocus.cs   NOT OURS: Wu'barrk's VikingOS 0.9.8 shared source, MIT (PR #2)
 tests/CoreTests/             net8.0 harness; compiles the REAL Core sources against stubs
-tools/                       fetch-libs, run-tests, package; setup-ingvar-unity.ps1, build_ingvar.py, preview_ingvar.py, unity/IngvarBundleBuilder.cs (the bake, Wu'barrk's)
+tests/EconSim/               the economy simulation: nine seeded scenarios on the real Core; writes docs/ECONOMY-SIM.md
+tools/                       fetch-libs, run-tests, package, deploy-test, tail-log, set-test-config, run-econsim; setup-ingvar-unity.ps1, build_ingvar.py, preview_ingvar.py, unity/IngvarBundleBuilder.cs (the bake, Wu'barrk's)
 libs/                        gitignored; populated by fetch-libs.ps1
-docs/                        DESIGN, TLDR, CATALOGUE, WORKSPLIT, RELEASE, HANDOFF-CLAUDE, HANDOFF-WUBARRK, REVIEW-v5, data/items table, the partner's drafts
+docs/                        DESIGN, TLDR, CATALOGUE, WORKSPLIT, RELEASE, PROOF-CLIENT (the verify runbook), CLIENT-AUDIT, ECONOMY-SIM, HANDOFF-CLAUDE, HANDOFF-WUBARRK, REVIEW-v5, data/items table, the partner's drafts
 models/                      Ingvar's source art (ingvar.fbx + ingvar_albedo.png, the one binary exception) and the bake docs (Wu'barrk's)
 ```
 
@@ -286,6 +287,7 @@ owner overwrites next frame).
 | Deals | Direct peer `ZRpc`, server-validated, nonce ring, the prices the player saw; inventory touched only after the answer |
 | Departure | The Odin vanish (`Odin.m_despawn`), once per screen; 300 s event clock or Shift+E twice |
 | Price-change policy | Reconfirm (provisional; `Teardown` behind config) |
+| The round trip | OPEN (2026-09-07, from `docs/ECONOMY-SIM.md`): `MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1, so buying a shelf out and selling it back drains his purse; pay a Ware bought back at most par, or lower the multiplier. Owners decide before anyone trades |
 | 0.1 body | `Dverger`, tamed, following, immortal |
 | Console prefix / GUID / namespace | `cargo` / `com.raveniron.valkyriescargo` / `RavenIron.ValkyriesCargo` |
 
@@ -335,7 +337,10 @@ owner overwrites next frame).
 
 ## What to verify in-game
 
-Item 1 is done. Items 2 to 20 have never been run.
+Item 1 is done. Items 2 to 20 have never been run. **The runbook is `docs/PROOF-CLIENT.md`**: the order, the exact
+command for each, the line the code writes, and `tools/deploy-test.ps1` / `tail-log.ps1` / `set-test-config.ps1`.
+The client audit (`docs/CLIENT-AUDIT.md`, PR #11) fixed six defects on these paths before anyone ran them; its
+section (c) lists what only a screen can settle.
 
 1. ~~**Boot line, dedicated server**~~ **DONE 2026-09-06** (see Status): the DLL sits in CairnTest's
    `BepInEx\plugins\`; a headless boot shows the loaded line with `patches=10, catalogue=72 entries`,
