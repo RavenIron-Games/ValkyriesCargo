@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using RavenIron.ValkyriesCargo.Core;
 using RavenIron.ValkyriesCargo.Net;
+using RavenIron.ValkyriesCargo.Client.Terminal;
 
 namespace ValkyriesCargo.Tests
 {
@@ -51,6 +52,7 @@ namespace ValkyriesCargo.Tests
             SidecarTests();
             OwedLedgerTests();
             SessionRowTests();
+            TrayModelTests();
             CargoRpcTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
@@ -2241,6 +2243,148 @@ namespace ValkyriesCargo.Tests
             Check(d.Resume("session\t5\t1\tn\t0\t0\t0\t0\t1\t0\t0\tNone", 0, null) != null && d.Phase == VisitPhase.Flying, "a row claiming phase None resumes as Flying");
             VisitSession e = new VisitSession();
             Check(e.Resume("session\t5\t1\tn\t0\t0\t0\t500\t300\t0\t0\tFlying", 0, null) != null && e.Clock.EndWorldTime == 500.0, "an end before the start is clamped to the start");
+        }
+
+        private static void TrayModelTests()
+        {
+            Section("TrayModel (the terminal's staging tray)");
+
+            DemoMarket demo = DemoMarket.Default();
+            MarketSnapshot m = demo.Market;
+            MarketRow iron = m.Find("Iron"), bronze = m.Find("Bronze"), wood = m.Find("Wood"), amber = m.Find("Amber");
+            var carry = new Dictionary<string, int> { { "Wood", 40 }, { "Amber", 3 }, { "Iron", 2 } };
+            Func<string, int> has = pf => carry.ContainsKey(pf) ? carry[pf] : 0;
+
+            TrayModel t = new TrayModel();
+            Check(t.IsEmpty && t.Net == 0 && !t.AnyAmber, "a fresh tray is empty, even, and not amber");
+            Equal(DealReason.EmptyDeal, t.Validate(m, 1000, has), "an empty tray validates as empty_deal");
+            Check(TrayModel.Words(DealReason.EmptyDeal).Contains("Nothing in the tray"), "with words for the footer");
+
+            // Buying.
+            Check(t.StageBuy(iron, 2), "a ware stages");
+            Equal("Iron", t.Wanted.Prefab, "as the wanted line");
+            Equal(2, t.Wanted.Count, "with its count");
+            Equal(25, t.Wanted.UnitPriceSeen, "at the price on screen");
+            Equal(50, (int)t.Price, "so the price is count x unit");
+            Check(t.StageBuy(iron, 3), "staging the same ware again");
+            Equal(5, t.Wanted.Count, "adds to it");
+            Check(t.StageBuy(bronze, 1), "staging another ware");
+            Equal("Bronze", t.Wanted.Prefab, "replaces the wanted line: one wanted per deal");
+            Check(!t.StageBuy(wood, 1), "a Want cannot be bought");
+            Check(!t.StageBuy(iron, 0), "nor a count of 0");
+            t.Clear();
+            Check(t.StageBuy(iron, 999), "a count beyond his stock");
+            Equal(20, t.Wanted.Count, "is clamped to it");
+            t.Unstage("Iron", 5);
+            Equal(15, t.Wanted.Count, "right-click takes some back");
+            t.Unstage("Iron", 100);
+            Check(t.Wanted == null, "and all of it empties the line");
+
+            // Offering.
+            Check(t.StageOffer(wood, 10, has("Wood")), "goods the player carries stage as an offer");
+            Equal(10, t.Offered[0].Count, "with the count");
+            Equal(1, t.Offered[0].UnitPriceSeen, "at what he pays");
+            Check(t.StageOffer(wood, 100, has("Wood")), "more than the player carries");
+            Equal(40, t.Offered[0].Count, "is clamped to what they carry");
+            Check(!t.StageOffer(iron, 1, 0), "nothing carried, nothing offered");
+            MarketRow fullRow = new MarketRow { Prefab = "Full", Kind = EntryKind.Want, Stock = 10, Max = 10, Sell = 5 };
+            Check(!t.StageOffer(fullRow, 1, 50), "a full shelf refuses");
+            Check(t.StageOffer(amber, 2, has("Amber")), "a ware can be offered back");
+            Equal(2, t.Offered.Count, "two offered lines");
+            Equal(40 * 1 + 2 * 5, (int)t.OfferedValue, "their value at his prices");
+            Equal(-50, (int)t.Net, "a pure sell is a negative net: he pays");
+            Equal(0, t.CoinsOffered, "and no coins on the table");
+            t.Unstage("Wood", 40);
+            Equal(1, t.Offered.Count, "taking a whole offer back removes the line");
+            t.Clear();
+
+            // Validate, in the server's order.
+            t.StageBuy(iron, 2);
+            Check(t.Validate(m, 50, has) == null, "2 Iron at 25 with 50 coins can go");
+            Equal(DealReason.CoinsShort, t.Validate(m, 49, has), "with 49 it is coins_short");
+            carry["Amber"] = 1;
+            t.StageOffer(amber, 1, 1);
+            carry["Amber"] = 0;
+            Equal("missing_items", t.Validate(m, 1000, has), "an offer the player no longer carries is missing_items");
+            carry["Amber"] = 1;
+            Check(t.Validate(m, 1000, has) == null, "and fine again once they do");
+            Equal(45, (int)t.Net, "50 for the iron less 5 for the amber");
+            Equal(45, t.CoinsOffered, "is what goes on the table");
+            Deal d = t.Build(7);
+            Equal(7, d.VisitId, "Build carries the visit id");
+            Check(d.Nonce != 0, "and a nonce");
+            Equal("Iron", d.Wanted.Prefab, "the wanted line");
+            Equal(25, d.Wanted.UnitPriceSeen, "at the price seen now");
+            Equal(1, d.Offered.Count, "the offered line");
+            Equal(5, d.Offered[0].UnitPriceSeen, "at his price now");
+            Equal(45, d.CoinsOffered, "and the coins");
+            Check(d.IsBarter, "a wanted line plus an offer is a barter");
+            t.Clear();
+
+            // Amber: the price moved under the tray.
+            t.StageBuy(iron, 2);
+            demo.Tick("Iron", true);
+            MarketSnapshot moved = demo.Market;
+            Check(moved.Find("Iron").Buy == 26, "the demo moved Iron to 26");
+            Check(!t.Wanted.Amber, "the tray does not know yet");
+            t.Refresh(moved);
+            Check(t.Wanted.Amber && t.AnyAmber, "after Refresh the line is amber");
+            Equal(26, t.Wanted.UnitPriceNow, "showing the new price");
+            Equal(25, t.Wanted.UnitPriceSeen, "and remembering the old");
+            Equal(52, (int)t.Price, "the tray totals at the price shown NOW");
+            Deal d2 = t.Build(7);
+            Equal(26, d2.Wanted.UnitPriceSeen, "confirming sends the price the player is looking at");
+            Check(!t.Wanted.Amber, "and clears the amber: the new price is accepted");
+
+            // Answers.
+            DealResult ok = new DealResult { Ok = true, Nonce = 4, DeliveryId = "demo-1-1", ItemsToAdd = new List<DealLine> { d2.Wanted } };
+            Check(t.Answer(ok, moved), "an accepted answer returns true");
+            Check(t.IsEmpty, "and empties the tray");
+            Equal(Lines.Buy[4 % Lines.Buy.Length], t.Message, "and he speaks a buy line picked by the nonce");
+            t.StageOffer(moved.Find("Wood"), 5, 40);
+            DealResult okSell = new DealResult { Ok = true, Nonce = 1, DeliveryId = "demo-1-2", ItemsToRemove = new List<DealLine> { new DealLine { Prefab = "Wood", Count = 5, UnitPriceSeen = 1 } } };
+            t.Answer(okSell, moved);
+            Equal(Lines.Sell[1], t.Message, "a sell gets a sell line");
+
+            t.StageBuy(moved.Find("Iron"), 1);
+            demo.Tick("Iron", true);
+            MarketSnapshot moved2 = demo.Market;
+            DealResult pc = DealResult.Refuse(9, DealReason.PriceChanged, moved2.Encode());
+            Check(!t.Answer(pc, moved2), "price_changed returns false");
+            Check(!t.IsEmpty && t.Wanted.Amber, "keeps the tray and turns the line amber");
+            Equal(Lines.PriceChanged, t.Message, "with his line about the wind");
+            Check(!t.Answer(DealResult.Refuse(9, DealReason.PurseEmpty), moved2), "a refusal returns false");
+            Equal(Lines.RefusePurse, t.Message, "with his words for it");
+            Check(!t.IsEmpty, "and the tray is kept");
+            Check(!t.Answer(null, moved2), "a null answer is refused");
+
+            // A vanished row drops out on Refresh.
+            MarketSnapshot small = MarketSnapshot.Parse("v1;1;800;Bronze:Ware:20:20:60:15:11:0", null);
+            t.Refresh(small);
+            Check(t.Wanted == null, "a wanted line whose row vanished is dropped");
+
+            // AutoFill: highest of his prices first, until the wanted line is covered; change in coins.
+            TrayModel b = new TrayModel { Mode = PayMode.Barter };
+            MarketSnapshot m2 = DemoMarket.Default().Market;
+            b.StageBuy(m2.Find("Iron"), 1);                      // 25c
+            var goods = new Dictionary<string, int> { { "Wood", 100 }, { "Amber", 3 }, { "Honey", 10 } };   // pays 1, 5, 1
+            Func<string, int> hasB = pf => goods.ContainsKey(pf) ? goods[pf] : 0;
+            int touched = b.AutoFill(m2, hasB);
+            Check(touched >= 2, "it took more than one kind");
+            Equal("Amber", b.Offered[0].Prefab, "the dearest first");
+            Equal(3, b.Offered[0].Count, "all three he carries");
+            Check(b.OfferedValue >= b.Price, "and enough to cover the iron");
+            Check(b.Net <= 0, "so the player pays no coins");
+            Equal(0, b.CoinsOffered, "none on the table");
+            Check(b.Offered.Count <= 3, "and it stopped once covered");
+            TrayModel c = new TrayModel();
+            Equal(0, c.AutoFill(m2, hasB), "nothing wanted, nothing filled");
+
+            // The offered-lines cap.
+            TrayModel capped = new TrayModel();
+            int added = 0;
+            foreach (MarketRow r in m2.Rows) if (capped.StageOffer(r, 1, 5)) added++;
+            Equal(TrayModel.MaxOfferedLines, added, "no more than MaxOfferedLines offered lines");
         }
 
         private static void CargoRpcTests()

@@ -27,6 +27,11 @@
   `Core\VisitClock` (a retargetable countdown mirror); `DemoMarket` is the real Market with a
   price-driven `Tick`. 714 off-game checks, mutation-proven. `cargo status` prints the EnvMan day
   length. Docs corrected from the review: CATALOGUE section 5, DESIGN sections 3.1/3.4/3.5/3.7/8.
+- P7, the Cargo Terminal: an IMGUI window on the vendored VikingOS gilt theme; wares and wants with icons,
+  a staging tray at the prices on screen (amber where they moved), Confirm at the price seen now, barter
+  auto-fill, Send him off twice; opened by `cargo terminal demo` on the in-process market or
+  `cargo terminal open` on a running visit, and by the merchant once P5 exists. The pure tray model has
+  74 checks. 926 off-game checks. The window has not been seen on a screen yet.
 - P6, the deal wire and persistence: `vc_open/close/deal/ack/claim/dismiss` on each peer's own ZRpc,
   `vc_dealt` back; the client transport behind `CargoRpc` (a listen host trades in-process); the owed
   ledger by platform id, redelivered on `vc_claim`, cleared on `vc_ack`; `DealApplier`, the one inventory
@@ -44,4 +49,4 @@
   director, the visit and every candidate. Headless-verified on StormTest: 13 patches, the event registered,
   the day length read from the engine (1800 s), the first roll held by a live storm. 769 off-game checks.
 
-Not yet built: the flight, the merchant, the terminal. Nothing has been seen from a client yet. See `docs\DESIGN.md` section 9 for the order.
+Not yet built: the flight, the merchant, the body loader. Nothing has been seen from a client yet. See `docs\DESIGN.md` section 9 for the order.

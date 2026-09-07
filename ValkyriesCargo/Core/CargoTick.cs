@@ -1,4 +1,5 @@
 using RavenIron.ValkyriesCargo.Client;
+using RavenIron.ValkyriesCargo.Client.Terminal;
 using RavenIron.ValkyriesCargo.Config;
 using RavenIron.ValkyriesCargo.Net;
 using RavenIron.ValkyriesCargo.Server;
@@ -58,6 +59,20 @@ namespace RavenIron.ValkyriesCargo.Core
             if (Instance == this) Instance = null;
         }
 
+        /// <summary>The ONE OnGUI in the mod: the terminal draws here and nowhere else (design 3.4).</summary>
+        private void OnGUI()
+        {
+            if (!ValkyriesCargo.HasRenderer || CargoTerminal.Instance == null) return;
+            try
+            {
+                CargoTerminal.Instance.Draw();
+            }
+            catch (System.Exception ex)
+            {
+                if (_throws++ < 3) ValkyriesCargo.Log.LogError("OnGUI threw: " + ex);
+            }
+        }
+
         private void Update()
         {
             try
@@ -107,6 +122,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 _reporter.Tick(dt);
                 PilotLine();
                 ClientWire(znet);
+                if (CargoTerminal.Instance != null) CargoTerminal.Instance.Tick(dt);
             }
         }
 
@@ -123,6 +139,7 @@ namespace RavenIron.ValkyriesCargo.Core
             }
             var remote = _transport as CargoTransport;
             if (remote == null) { remote = new CargoTransport(); _transport = remote; CargoRpc.UseTransport(remote); }
+            else if (!CargoRpc.IsDemo && !CargoRpc.Ready && remote.Ready) CargoRpc.UseTransport(remote);   // the demo let go of the surface
             remote.EnsureRegistered(znet);
             remote.ClaimOnce();
         }
@@ -159,6 +176,7 @@ namespace RavenIron.ValkyriesCargo.Core
             _hostClaimed = false;
             _pilotLineShownFor = 0;
             _reporter.Reset();
+            if (CargoTerminal.Instance != null) CargoTerminal.Instance.Reset();
             DealWire.Reset();
             AdminRpc.Reset();
             CargoRpc.EndSession();
