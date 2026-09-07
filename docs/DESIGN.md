@@ -113,8 +113,8 @@ clamps a 1.0 anyway so chance 100 always visits.
 
 **Admin.** `cargo visit` forces a roll for the caller at chance 100, ignoring the cooldowns (the admin asked) but not
 rested, comfort, baseValue or the dungeon bound, gated by `ZNet.IsAdmin(hostName)` through RavenEye's
-`AdminGate` shape (public API, fail closed). `cargo dismiss`, `cargo stock`, `cargo reset` are admin too; `cargo status`
-and `cargo prefab <name>` are not. Console commands are not config: `LockConfiguration` does not touch them.
+`AdminGate` shape (public API, fail closed). `cargo dismiss`, `cargo reset`, `cargo save` and `cargo catalogue
+add|remove|reset` are admin too; `cargo status`, `cargo stock`, `cargo catalogue list` and `cargo prefab <name>` are not. Console commands are not config: `LockConfiguration` does not touch them.
 
 ### 3.2 Authoring the flight — `Server/Spawner.cs`, `Client/CargoFlight.cs`, `Patches/Patch_Valkyrie_Awake.cs`
 
@@ -305,7 +305,12 @@ Use, when the inventory or map opens, when the local player dies, and when `Visi
 Catalogue lines `Prefab:BasePrice:TargetStock:MaxStock:Kind` (`Ware` = he sells and buys, `Want` = buys only); the defaults,
 their reasons and the item data they were checked against are in `docs/CATALOGUE.md` and `docs/data/`. Unknown prefab
 names at boot are dropped with one log line, never a crash; the off-game tests validate the defaults against the item
-table so a misspelling fails on the desk. Price `= base × clamp((target / max(1, stock))^α, MinMult, MaxMult)`, `α = 0.35`, clamps 0.4 / 3.0; `sell = base ×
+table so a misspelling fails on the desk. The line is editable on a running server (2026-09-07: `cargo catalogue
+add|remove|reset`, or Configuration Manager as an admin): the director rebuilds the market as soon as no visit is
+running, through `Market.WithCatalogue`, carrying stock and drift stamps by prefab, the purse, this visit's baseline,
+the visit number and the delivery sequence; a new row starts at target, a dropped row goes, a lowered max clamps. The
+nonce ring does not carry, which is why a running visit makes the change wait. A prefab the game has no item for
+(`ZNetScene.GetPrefab`, `ItemDrop`) is dropped with one log line at boot and on every edit, and refused by `add` in words. Price `= base × clamp((target / max(1, stock))^α, MinMult, MaxMult)`, `α = 0.35`, clamps 0.4 / 3.0; `sell = base ×
 multiplier × SpreadBuy` (0.7) rounded once, never the rounded price times 0.7. **The Fair Market Act** (2026-09-07,
 §8, `docs/DECISIONS-WUBARRK.md` §2): for a `Ware`, the multiplier on the sell side only is capped at 1.0 before
 `SpreadBuy` is applied — `MaxMultiplier` (3.0) × `SpreadBuy` (0.7) = 2.1 > 1 otherwise, so an empty shelf paid more
@@ -378,7 +383,7 @@ audio; it is not the summon horn.
 | `VCargo_say` | server → all in range | routed, object-targeted | line index | cosmetic |
 | `VCargo_vanish` | server → all in range | routed, object-targeted | none | cosmetic + owner effect |
 | `SetEvent` | server → all | vanilla routed | name, time, pos | vanilla |
-| `VCargo_admin` | client → server | routed | verb, arg (`visit <name>`, `dismiss`) | the SERVER checks `ZNet.IsAdmin(hostName)`, fail closed; the request is never trusted |
+| `VCargo_admin` | client → server | routed | verb, arg (`visit <name>`, `dismiss`, `reset`, `save`, `catalogue add|remove|reset …`) | the SERVER checks `ZNet.IsAdmin(hostName)`, fail closed; the request is never trusted |
 | `VCargo_reply` | server → client | routed | answer text | cosmetic (printed in the caller's console) |
 | config | server → all | ServerSync | entries | locked; admins exempt |
 
@@ -467,7 +472,9 @@ FlightTurnRate               45        5-360; ours, not the prefab's 20; read on
 Catalogue                    (72 entries; the authoritative list with every number's reason is docs/CATALOGUE.md,
                              built from docs/data/items-valheim-2026-07-31.tsv: 18 Wares he sells and buys back,
                              54 Wants he only buys. Bases anchored so he pays Haldor's rate for the four vanilla
-                             valuables at target stock; every prefab name verified against the dump.)
+                             valuables at target stock; every prefab name verified against the dump.
+                             Editable live: cargo catalogue add|remove|reset (admin); applied as soon as
+                             no visit is running (2026-09-07).)
 PriceElasticity              0.35
 MinPriceMultiplier           0.4
 MaxPriceMultiplier           3.0
@@ -549,7 +556,8 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | Forced visits | `cargo visit` ignores cooldowns, keeps every other gate | proposed (review 2026-09-06) |
 | Build | net472, `libs\` via fetch-libs, `ILRepack.targets`, `AllowUnsafeBlocks` false; Unity project as a sibling directory; Editor 6000.0.61f1 for bundles | proposed |
 | Where bundles get built | Wu'barrk bakes it: he is the Unity side and holds 6000.0.61f1. The bake is reproducible from the repo's source art on any machine with that Editor (`tools/setup-ingvar-unity.ps1`, then the Editor menu or the `unity` CLI, then `-Embed`), so nothing depends on one box | locked (owner, 2026-09-06: "wubarrk is also the unity guy") |
-| Console prefix | `cargo` — `status`, `version`, `prefab <name>`; admin: `visit [player]`, `dismiss` (built, P3), `stock`, `reset` (planned). From a client the admin verbs ride `VCargo_admin`; a dedicated console names the player | built (P3) |
+| Console prefix | `cargo` — `status`, `version`, `engine`, `prefab <name>`, `body`, `stock`, `deal`, `claim`, `terminal`, `catalogue list`; admin: `visit [player]`, `dismiss`, `reset`, `save`, `catalogue add|remove|reset`. From a client the admin verbs ride `VCargo_admin`; a dedicated console names the player | built (P3, P7; catalogue 2026-09-07) |
+| Catalogue edits on a running server | `cargo catalogue add|remove|reset` (admin) edit the synced `Server.Catalogue` entry itself, so the sync, the lock, the cfg file and the export follow; the director rebuilds the market as soon as no visit is running through `Market.WithCatalogue` (stock, drift stamps, purse, visit number and delivery sequence carried by the sidecar's own rows; the nonce ring is not, which is why a running visit makes the change wait, once in the log and always in `cargo status`); a prefab the game has no item for is dropped, with one log line, at boot and on every edit. No sell-only kind | locked (owner, 2026-09-07: "no sell kind"); built |
 | Dependencies | BepInExPack only. Re-affirmed by the owner 2026-09-07: P12's `ValheimModding-JsonDotNET` dependency (two serializer calls) was replaced the same day by the pure `Core/Json.cs`, a writer and never a reader | locked |
 
 ---

@@ -33,7 +33,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             try
             {
                 new Terminal.ConsoleCommand("cargo",
-                    "Valkyrie's Cargo: status | version | engine | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] | deal buy|sell <prefab> [count] | claim | terminal demo|open|close | visit [player] | dismiss | reset | save", Run);
+                    "Valkyrie's Cargo: status | version | engine | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] | deal buy|sell <prefab> [count] | claim | terminal demo|open|close | catalogue list|add|remove|reset | visit [player] | dismiss | reset | save", Run);
             }
             catch (Exception ex)
             {
@@ -57,6 +57,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                     case "dismiss": Admin(args, "dismiss", ""); return;
                     case "reset":   Admin(args, "reset", ""); return;
                     case "save":    Admin(args, "save", ""); return;
+                    case "catalogue": CatalogueCommand(args); return;
                     case "stock":   Stock(args, args.Args.Length > 2 ? args.Args[2] : ""); return;
                     case "deal":    DealCommand(args); return;
                     case "claim":   Claim(args); return;
@@ -92,6 +93,10 @@ namespace RavenIron.ValkyriesCargo.Patches
             Say(args, "cargo dismiss         - ADMIN: end the running visit now");
             Say(args, "cargo reset           - ADMIN: forget every cooldown");
             Say(args, "cargo save            - ADMIN: write the world sidecar now");
+            Say(args, "cargo catalogue list  - what he sells and buys, as this machine last heard it (Prefab base target/max)");
+            Say(args, "cargo catalogue add <Prefab:Base:Target:Max:Kind>  - ADMIN: add an item, or change one already there (Kind: Ware = sells and buys back, Want = only buys)");
+            Say(args, "cargo catalogue remove <Prefab>  - ADMIN: take an item off the shelf");
+            Say(args, "cargo catalogue reset - ADMIN: back to the shipped catalogue. Every change applies as soon as no visit is running, and lands in the cfg file");
         }
 
         private static void Version(Terminal.ConsoleEventArgs args)
@@ -131,6 +136,50 @@ namespace RavenIron.ValkyriesCargo.Patches
                 return;
             }
             Say(args, AdminRpc.Send(verb, arg));
+        }
+
+        /// <summary>
+        /// `cargo catalogue` (2026-09-07). `list` is anyone's and local: the synced line every machine
+        /// holds, in words. `add`, `remove` and `reset` are admin verbs that edit that line where the world
+        /// runs (`CargoTick.Admin`; through `AdminRpc` from a client), so the sync, the lock, the file on
+        /// disk and the export all follow, and the director applies the change between visits.
+        /// </summary>
+        private static void CatalogueCommand(Terminal.ConsoleEventArgs args)
+        {
+            string sub = args.Args.Length > 2 ? args.Args[2].ToLowerInvariant() : "list";
+            string rest = args.Args.Length > 3 ? string.Join(" ", args.Args, 3, args.Args.Length - 3) : "";
+            if (sub == "list")
+            {
+                Catalogue cat = ModConfig.CatalogueParsed;
+                int refused = ModConfig.CatalogueProblems.Count;
+                Say(args, "catalogue: " + cat.Count + " entries (" + cat.CountOf(EntryKind.Ware) + " wares, " + cat.CountOf(EntryKind.Want) + " wants)" +
+                          (refused > 0 ? "; " + refused + " entr" + (refused == 1 ? "y" : "ies") + " refused, first: " + ModConfig.CatalogueProblems[0] : "") +
+                          "; each row is Prefab base target/max");
+                ListKind(args, cat, EntryKind.Ware, "wares (he sells these and buys them back)");
+                ListKind(args, cat, EntryKind.Want, "wants (he only buys these)");
+                return;
+            }
+            if (sub != "add" && sub != "remove" && sub != "reset")
+            {
+                Say(args, "cargo catalogue list | add <Prefab:Base:Target:Max:Kind> | remove <Prefab> | reset");
+                return;
+            }
+            Admin(args, "catalogue", (sub + " " + rest).Trim());
+        }
+
+        private static void ListKind(Terminal.ConsoleEventArgs args, Catalogue cat, EntryKind kind, string title)
+        {
+            Say(args, "  " + title + ":");
+            var line = new StringBuilder();
+            int n = 0;
+            foreach (CatalogueEntry e in cat.Entries)
+            {
+                if (e.Kind != kind) continue;
+                if (line.Length > 0) line.Append(", ");
+                line.Append(e.Prefab).Append(' ').Append(e.BasePrice).Append(' ').Append(e.TargetStock).Append('/').Append(e.MaxStock);
+                if (++n % 6 == 0) { Say(args, "    " + line); line.Length = 0; }
+            }
+            if (line.Length > 0) Say(args, "    " + line);
         }
 
         /// <summary>The shelf as this machine last heard it through MarketState; the same rows the terminal renders.</summary>
@@ -324,6 +373,8 @@ namespace RavenIron.ValkyriesCargo.Patches
                       " left" + (s.Clock.Warned ? ", one-minute warning given" : "") + ", " + s.Republishes + " clock republish(es)"
                     : "none" + (s.LastVisitId > 0 ? "; last #" + s.LastVisitId + " ended: " + s.LastEndReason + ", takings " + d.LastTakings + " coins" : "")) +
                     "; purse " + d.Market.Purse + ", next visit #" + d.Market.NextVisitId + (d.Session.Resumed ? " (resumed after a restart)" : ""));
+                if (d.CatalogueWaiting != null)
+                    Say(args, "  catalogue: a change waits (" + d.CatalogueWaiting + "); it applies as soon as no visit is running");
                 Say(args, "  " + Spawner.Describe() + (Spawner.Active
                     ? "; " + F(FlightPlan.MinimumStartDistance, "0") + " m is the shortest flight worth flying, " +
                       F(FlightPlan.EdgeMargin, "0") + " m the margin kept inside the block"

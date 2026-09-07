@@ -32,7 +32,7 @@ namespace RavenIron.ValkyriesCargo.Server
         public const int RefusalsLogged = 3;
 
         private readonly Scheduler _scheduler;
-        private readonly Market _market;
+        private Market _market;   // rebuilt by SwapCatalogue (2026-09-07); otherwise fixed for the director's life
         private readonly VisitSession _session = new VisitSession();
         private readonly OwedLedger _ledger = new OwedLedger();
         private readonly TraderLedger _traders = new TraderLedger();
@@ -60,9 +60,15 @@ namespace RavenIron.ValkyriesCargo.Server
         private bool _dirty;
         private int _throws;
         private int _mirrorThrows;
+        /// <summary>The `ModConfig.CatalogueVersion` the live market was built from; a newer one is a swap waiting to happen.</summary>
+        private int _catalogueVersion;
+        private string _catalogueWaiting;
+        private bool _catalogueWaitingLogged;
 
         public Scheduler Scheduler => _scheduler;
         public Market Market => _market;
+        /// <summary>Why a changed catalogue has not been applied yet ("visit #3 is running"), or null when nothing waits. `cargo status` prints it.</summary>
+        public string CatalogueWaiting => _catalogueWaiting;
         public VisitSession Session => _session;
         public OwedLedger Ledger => _ledger;
         /// <summary>Per-player trade totals this session, for barrkbot_cargo_traders.json (BARRKBOT_CONTRACT.md). New: not persisted, not in the sidecar.</summary>
@@ -103,7 +109,10 @@ namespace RavenIron.ValkyriesCargo.Server
             try { salt = "w" + znet.GetWorldUID().ToString("x", CultureInfo.InvariantCulture); }
             catch (Exception ex) { problems.Add("world uid unreadable (" + ex.GetType().Name + "); delivery ids salted 'w0'"); }
 
-            var d = new VisitDirector(ModConfig.CatalogueParsed, mr, sr, znet.GetTimeSeconds(), salt) { DayLengthFromEngine = fromEngine };
+            string unknown;
+            Catalogue catalogue = KnownEntries(ModConfig.CatalogueParsed, out unknown);
+            if (unknown != null) ValkyriesCargo.Log.LogWarning("catalogue: dropped, no item prefab of that name in this game: " + unknown);
+            var d = new VisitDirector(catalogue, mr, sr, znet.GetTimeSeconds(), salt) { DayLengthFromEngine = fromEngine, _catalogueVersion = ModConfig.CatalogueVersion };
             d.Store = MarketStore.Resolve(znet);
             d.LoadSidecar(now, problems);
             d.Problems = string.Join("; ", problems.ToArray());
@@ -167,6 +176,9 @@ namespace RavenIron.ValkyriesCargo.Server
             {
                 ModConfig.FillMarketRules(_market.Rules, null);
                 ModConfig.FillSchedulerRules(_scheduler.Rules, null);
+
+                // A changed Server.Catalogue (2026-09-07), by whatever route it arrived: applied here, between visits.
+                if (ModConfig.CatalogueVersion != _catalogueVersion) SwapCatalogue(worldTime);
 
                 // F3's grace period (Spawner.VanishGraceSeconds after End sent Keys.Vanish): independent
                 // of everything below, on purpose, so a RandEventSystem hiccup or "no visit active" never
@@ -536,6 +548,85 @@ namespace RavenIron.ValkyriesCargo.Server
 
         /// <summary>The whole market, after a visit starts and after every accepted deal.</summary>
         public void PublishMarket() { ModConfig.MarketState.AssignLocalValue(_market.Snapshot().Encode()); }
+
+        // ---- the catalogue swap (2026-09-07) --------------------------------------------------------
+
+        /// <summary>
+        /// Apply a changed `Server.Catalogue` to the live market: `cargo catalogue add|remove|reset`, an
+        /// admin's Configuration Manager, a listen host's own file - every route ends in
+        /// `ModConfig.CatalogueVersion` moving, and the tick calls this when it has. BETWEEN VISITS ONLY:
+        /// `Market.WithCatalogue` carries everything the sidecar carries and nothing else, and the nonce
+        /// ring is not in the sidecar, so a swap mid-visit could settle a deal twice. While a visit runs,
+        /// a saved one waits for its event, or a departure is still finishing, the change waits - once in
+        /// the log, always in `cargo status` - and the first idle tick applies it. The new shelf is
+        /// published and saved at once, so a client's `cargo stock`, the sidecar and the log agree.
+        /// Returns one sentence for whoever asked.
+        /// </summary>
+        public string SwapCatalogue(double worldTime)
+        {
+            if (ModConfig.CatalogueVersion == _catalogueVersion) return "catalogue unchanged";
+            string busy = _session.Active ? "visit #" + _session.VisitId + " is running"
+                        : _pendingSessionRow != null ? "a saved visit is waiting for its event"
+                        : _pendingVanishVisitId != 0 ? "visit #" + _pendingVanishVisitId + " is still departing"
+                        : null;
+            if (busy != null)
+            {
+                _catalogueWaiting = busy;
+                string waiting = "catalogue change waits: " + busy + "; it applies as soon as no visit is running";
+                if (!_catalogueWaitingLogged) { _catalogueWaitingLogged = true; ValkyriesCargo.Log.LogInfo(waiting); }
+                return waiting;
+            }
+            string unknown;
+            Catalogue catalogue = KnownEntries(ModConfig.CatalogueParsed, out unknown);
+            string summary;
+            _market = _market.WithCatalogue(catalogue, worldTime, out summary);
+            _catalogueVersion = ModConfig.CatalogueVersion;
+            _catalogueWaiting = null;
+            _catalogueWaitingLogged = false;
+            if (unknown != null) summary += "; dropped, no item prefab of that name in this game: " + unknown;
+            int refused = ModConfig.CatalogueProblems.Count;
+            if (refused > 0) summary += "; " + refused + " entr" + (refused == 1 ? "y" : "ies") + " did not parse (cargo status names the first)";
+            _dirty = true;
+            PublishMarket();
+            Flush("catalogue");
+            ValkyriesCargo.Log.LogInfo(summary);
+            return summary;
+        }
+
+        /// <summary>
+        /// True when this game has a prefab of that exact name and it is an item (`ItemDrop`), which is
+        /// what a deal can put in an inventory. `why` says which test failed. Public `ZNetScene.GetPrefab`,
+        /// a null for a name it does not know. Without a scene - too early, or off-game - nothing is known.
+        /// </summary>
+        public static bool IsItemPrefab(string prefab, out string why)
+        {
+            why = null;
+            ZNetScene scene = ZNetScene.instance;
+            if (scene == null) { why = "no scene to ask (is the world loaded?)"; return false; }
+            if (!Catalogue.IsPrefabName(prefab)) { why = "'" + prefab + "' is not a prefab name (letters, digits and underscores only)"; return false; }
+            GameObject go;
+            try { go = scene.GetPrefab(prefab); }
+            catch (Exception ex) { why = "ZNetScene.GetPrefab threw " + ex.GetType().Name; return false; }
+            if (go == null) { why = "this game has no prefab named '" + prefab + "' (names are exact, and case matters)"; return false; }
+            if (go.GetComponent<ItemDrop>() == null) { why = "'" + prefab + "' is a prefab but not an item (no ItemDrop), so it could never be delivered"; return false; }
+            return true;
+        }
+
+        /// <summary>The catalogue minus every entry `IsItemPrefab` refuses; `unknown` names them, or is null. With no scene to ask, the catalogue as it is.</summary>
+        private static Catalogue KnownEntries(Catalogue catalogue, out string unknown)
+        {
+            unknown = null;
+            if (catalogue == null || ZNetScene.instance == null) return catalogue;
+            var drop = new List<string>();
+            foreach (CatalogueEntry e in catalogue.Entries)
+            {
+                string why;
+                if (!IsItemPrefab(e.Prefab, out why)) drop.Add(e.Prefab);
+            }
+            if (drop.Count == 0) return catalogue;
+            unknown = string.Join(", ", drop.ToArray());
+            return catalogue.Without(drop);
+        }
 
         /// <summary>Write the sidecar now if anything changed (or always, when forced). Never throws.</summary>
         public bool Flush(string why, bool force = false)

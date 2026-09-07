@@ -179,6 +179,18 @@ Catalogue = Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Silver:40:12:36:Ware, Blac
 Seventy-two entries. `MarketState` at ~40 bytes a row is under 3 KB, below ServerSync's compression floor, so it goes
 uncompressed on every change.
 
+**Editing it on a running server (2026-09-07).** The line is the config entry `Server.Catalogue`, synced and locked,
+so it can change three ways: the cfg file on the server (a restart reads it), Configuration Manager on an admin's
+client (ServerSync accepts a locked value from anyone on the admin list), or the console — `cargo catalogue add
+Prefab:Base:Target:Max:Kind` (add, or change an entry already there, in place), `cargo catalogue remove Prefab`,
+`cargo catalogue reset`, all admin, from any console; `cargo catalogue list` prints it and needs no admin. The console
+verbs edit the entry itself, so the sync, the lock, the cfg file and the BarrkBOT export all follow. However it
+changed, the director applies it as soon as no visit is running: stock and drift stamps carry by prefab, a new row
+starts at target, a dropped row goes, a lowered max clamps, and the purse, the visit number and the delivery sequence
+carry (`Market.WithCatalogue`, in the harness). While a visit runs the change waits, once in the log and always in
+`cargo status`, because the settled-deal ring does not carry. A prefab this game has no item for is refused by `add` in
+words, and dropped from a hand-edited line with one log line.
+
 ---
 
 ## 5. Worked numbers, so the curve is felt before it is played

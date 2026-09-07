@@ -196,7 +196,7 @@ itself is what arms the lock.
 | `FlightDescentDistance` | `50` | 10-200 | Metres out at which the descent leg begins. |
 | `FlightSpeed` | `8` | 2-40 | Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. Read on the **client that owns the bird**, synced from the server; the server never reads it. |
 | `FlightTurnRate` | `45` | 5-360 | Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the **client that owns the bird**, synced from the server. |
-| `Catalogue` | 72 entries | | What Ingvar sells and buys: `Prefab:BasePrice:TargetStock:MaxStock:Kind` entries separated by commas; `Kind` is `Ware` (sells and buys back) or `Want` (buys only). The default is 18 wares and 54 wants; every number's reason is in `docs/CATALOGUE.md`. An unknown prefab name is dropped with one log line and the rest still loads. |
+| `Catalogue` | 72 entries | | What Ingvar sells and buys: `Prefab:BasePrice:TargetStock:MaxStock:Kind` entries separated by commas; `Kind` is `Ware` (sells and buys back) or `Want` (buys only). The default is 18 wares and 54 wants; every number's reason is in `docs/CATALOGUE.md`. A prefab the game has no item for is dropped with one log line and the rest still loads. Editable on a running server with `cargo catalogue add|remove|reset` (admin) or Configuration Manager as an admin; a change applies as soon as no visit is running (`docs/CATALOGUE.md` §4). |
 | `PriceElasticity` | `0.35` | 0.05-1.5 | Exponent of (target / stock) in the price; higher is steeper. |
 | `MinPriceMultiplier` | `0.4` | 0.05-1 | Floor on the price multiplier when he is flooded. |
 | `MaxPriceMultiplier` | `3` | 1-10 | Ceiling on the price multiplier when he is out. |
@@ -237,10 +237,14 @@ Prefix `cargo`. Console commands are not config: `LockConfiguration` does not to
 | `cargo dismiss` | **Admin.** End the running visit now. |
 | `cargo reset` | **Admin.** Forget every cooldown. |
 | `cargo save` | **Admin.** Write the world sidecar now. |
+| `cargo catalogue list` | What he sells and buys, as this machine last heard it: `Prefab base target/max`, wares then wants. |
+| `cargo catalogue add <Prefab:Base:Target:Max:Kind>` | **Admin.** Add an item, or change one already there (same prefab, in place). The server checks the prefab exists and is an item before anything changes. The edit lands in the cfg file, reaches every client, and applies as soon as no visit is running. |
+| `cargo catalogue remove <Prefab>` | **Admin.** Take an item off the shelf. Same path. |
+| `cargo catalogue reset` | **Admin.** Back to the shipped 72 entries. Same path. |
 | `cargo body` | The body loader's state: where the bundle came from (embedded, a file beside the DLL, or none), the prefab, the six clips and their lengths, the mesh and the ground offset. Answers on a dedicated server too. |
 | `cargo body preview` | Stand Ingvar 2.5 m in front of you, facing you, on the ground, with no merchant and no server: the way to see the body. `cargo body walk` toggles his walk on the spot, `cargo body clip <Hello\|Talk\|Shrug\|Nod>` plays a gesture, `cargo body clear` takes him away. Needs a baked bundle. |
 
-The four admin verbs run in place on a server or a listen host. From a client they ride the
+The admin verbs run in place on a server or a listen host. From a client they ride the
 `VCargo_admin` routed RPC to the server, where vanilla's own `ZNet.IsAdmin` decides — fail closed — and
 the answer comes back on `VCargo_reply` and prints in the caller's console.
 
