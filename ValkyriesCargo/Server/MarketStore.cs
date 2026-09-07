@@ -27,6 +27,19 @@ namespace RavenIron.ValkyriesCargo.Server
         public DateTime LastSaveUtc { get; private set; }
         public bool Quarantined { get; private set; }
 
+        /// <summary>
+        /// P10b, "refuse rather than corrupt". The file on disk claims a sidecar format this build does
+        /// not know: it was written by a NEWER Valkyrie's Cargo, and it is somebody's market, not
+        /// garbage. While this is set the store is READ-ONLY - `Load` answers nothing, `Save` writes
+        /// nothing, `Quarantine` renames nothing - so a player who rolls the mod back and starts the
+        /// world still has their purse when they roll forward again. Before P10b the first cadence save
+        /// overwrote it and the format branch renamed it to `.corrupt`.
+        /// </summary>
+        public bool Held { get; private set; }
+
+        /// <summary>Why the store is held, in words, for the log and `cargo status`. "" when it is not.</summary>
+        public string HoldReason { get; private set; } = "";
+
         /// <summary>Resolve where this world's sidecar lives. Path is null (with Detail saying why) when it cannot be known.</summary>
         public static MarketStore Resolve(ZNet znet)
         {
@@ -45,14 +58,32 @@ namespace RavenIron.ValkyriesCargo.Server
             return s;
         }
 
-        /// <summary>The file's text, or null when there is none (a fresh world) or it cannot be read (quarantined, logged).</summary>
+        /// <summary>
+        /// The file's text, or null when there is none (a fresh world), when it cannot be read
+        /// (quarantined, logged), or when it is from a NEWER build (held, logged, and left exactly as it
+        /// was found). The format peek happens HERE rather than at the caller so that no caller can
+        /// reach the quarantine branch with a newer file in its hand.
+        /// </summary>
         public string Load()
         {
             if (Path == null) return null;
             try
             {
                 if (!File.Exists(Path)) return null;
-                return File.ReadAllText(Path, Utf8NoBom);
+                string text = File.ReadAllText(Path, Utf8NoBom);
+                int format = Sidecar.PeekFormat(text);
+                if (format > Sidecar.FormatVersion)
+                {
+                    Held = true;
+                    HoldReason = "the file says format " + Wire.Int(format) + " and this build reads format " +
+                                 Wire.Int(Sidecar.FormatVersion) + "; it was written by a NEWER Valkyrie's Cargo";
+                    ValkyriesCargo.Log.LogError(
+                        "sidecar: REFUSING " + System.IO.Path.GetFileName(Path) + " - " + HoldReason +
+                        ". The file is left exactly as it is (no .corrupt, no overwrite) and this session will not save: " +
+                        "that is somebody's market, not a corrupt file. Run the newer build, or move the file aside yourself.");
+                    return null;
+                }
+                return text;
             }
             catch (Exception ex)
             {
@@ -62,10 +93,16 @@ namespace RavenIron.ValkyriesCargo.Server
             }
         }
 
-        /// <summary>A file with content and nothing readable in it is evidence: keep it as .corrupt, never overwrite it.</summary>
+        /// <summary>
+        /// A file with content and nothing readable in it is evidence: keep it as .corrupt, never
+        /// overwrite it. A HELD file is not that - it is readable by a build that is not this one - so
+        /// this refuses to rename it however it is called. The check is here rather than only at the
+        /// call sites because `Quarantine` is public and the caller that reaches it is not ours.
+        /// </summary>
         public void Quarantine()
         {
             if (Path == null) return;
+            if (Held) { ValkyriesCargo.Log.LogWarning("sidecar: not quarantining " + System.IO.Path.GetFileName(Path) + " - " + HoldReason); return; }
             try
             {
                 string dead = Path + ".corrupt";
@@ -76,10 +113,19 @@ namespace RavenIron.ValkyriesCargo.Server
             catch { /* the load already degraded safely */ }
         }
 
-        /// <summary>Write the whole text atomically. Never throws; false (logged) on failure.</summary>
+        /// <summary>Write the whole text atomically. Never throws; false (logged) on failure, and never at all while held.</summary>
         public bool Save(string text)
         {
             if (Path == null) return false;
+            if (Held)
+            {
+                // Once, and then quietly: the director saves on a 30 s cadence and would otherwise fill
+                // the log with the same refusal every half minute for the life of the session.
+                if (Failures++ == 0)
+                    ValkyriesCargo.Log.LogError("sidecar: NOT saving - " + HoldReason +
+                                                ". Nothing this session traded is persisted, and the file on disk is untouched.");
+                return false;
+            }
             string tmp = Path + ".tmp";
             string bak = Path + ".bak";
             try

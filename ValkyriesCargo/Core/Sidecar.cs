@@ -25,6 +25,41 @@ namespace RavenIron.ValkyriesCargo.Core
 
         public bool FormatMatches => Format == FormatVersion;
 
+        /// <summary>
+        /// A file written by a NEWER build of this mod. P10b's "refuse rather than corrupt": this is not
+        /// junk, it is somebody's market, written by a version that knows rows we do not. Renaming it to
+        /// `.corrupt` and starting fresh would be the loudest possible way to lose a purse, and it is
+        /// what a plain "format mismatch" branch does. A newer format is REFUSED, not quarantined.
+        /// </summary>
+        public bool FormatIsNewer => Format > FormatVersion;
+
+        /// <summary>An older format (or none): ours to upgrade or to quarantine. Today it quarantines, as before.</summary>
+        public bool FormatIsOlder => Format < FormatVersion;
+
+        /// <summary>
+        /// The format number a file claims, without parsing anything else: the first `format` row's
+        /// value, or 0 when there is none and -1 when there is one that does not parse. Pure, allocates
+        /// nothing but the lines it walks, and stops at the first answer - the store calls it before it
+        /// decides whether it may touch the file at all.
+        /// </summary>
+        public static int PeekFormat(string text)
+        {
+            if (string.IsNullOrEmpty(text)) return 0;
+            foreach (string raw in text.Split('\n'))
+            {
+                string line = raw.TrimEnd('\r');
+                if (line.Length == 0 || line[0] == '#') continue;
+                int tab = line.IndexOf('\t');
+                if (tab < 0 || line.Substring(0, tab) != FormatTag) continue;
+                int v;
+                return Wire.TryInt(line.Substring(tab + 1), out v) ? v : -1;
+            }
+            return 0;
+        }
+
+        /// <summary>True when a file claims a format this build does not know how to read yet.</summary>
+        public static bool IsNewerFormat(string text) => PeekFormat(text) > FormatVersion;
+
         /// <summary>Route every row to its owner. Never throws. A missing or foreign format line is reported.</summary>
         public static Sidecar Split(string text, List<string> problems)
         {
