@@ -27,6 +27,14 @@
   `Core\VisitClock` (a retargetable countdown mirror); `DemoMarket` is the real Market with a
   price-driven `Tick`. 714 off-game checks, mutation-proven. `cargo status` prints the EnvMan day
   length. Docs corrected from the review: CATALOGUE section 5, DESIGN sections 3.1/3.4/3.5/3.7/8.
+- P6, the deal wire and persistence: `vc_open/close/deal/ack/claim/dismiss` on each peer's own ZRpc,
+  `vc_dealt` back; the client transport behind `CargoRpc` (a listen host trades in-process); the owed
+  ledger by platform id, redelivered on `vc_claim`, cleared on `vc_ack`; `DealApplier`, the one inventory
+  writer; the applied-delivery inbox on disk. The world sidecar `valkyriescargo_{uid}.dat` (Cairn's
+  discipline) carries stock, purse, visit numbers, cooldowns, the running session and the owed rows; a
+  restart mid-visit resumes the visit the engine restored. Console: `cargo stock`, `cargo deal buy|sell`,
+  `cargo claim`, admin `cargo reset`, `cargo save`. Headless-verified: the file written on first boot,
+  76 rows loaded on the next. 852 off-game checks.
 - P3, eligibility and the event: the client writes `vc_rested`/`vc_comfort` on its own character ZDO every
   2 s; the vanilla event `valkyries_cargo` is registered on every machine (`RandEventSystem.Awake` prefix);
   the server's director reads every character ZDO into the pure Scheduler once a second, starts the event
@@ -36,5 +44,4 @@
   director, the visit and every candidate. Headless-verified on StormTest: 13 patches, the event registered,
   the day length read from the engine (1800 s), the first roll held by a live storm. 769 off-game checks.
 
-Not yet built: the flight, the merchant, the terminal, the persistence layer (a restart forgets stock,
-purse, cooldowns and visit numbers), the deal wire, `cargo stock | reset`. Nothing has been seen from a client yet. See `docs\DESIGN.md` section 9 for the order.
+Not yet built: the flight, the merchant, the terminal. Nothing has been seen from a client yet. See `docs\DESIGN.md` section 9 for the order.

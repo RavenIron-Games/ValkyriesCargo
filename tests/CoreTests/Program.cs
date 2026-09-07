@@ -48,6 +48,9 @@ namespace ValkyriesCargo.Tests
             DemoMarketKnobTests();
             MarketReviewFixTests();
             VisitSessionTests();
+            SidecarTests();
+            OwedLedgerTests();
+            SessionRowTests();
             CargoRpcTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
@@ -87,6 +90,13 @@ namespace ValkyriesCargo.Tests
         }
 
         private static void Section(string name) => Console.WriteLine(name);
+
+        private static void CollectionsEqual(IList<string> expected, IList<string> actual, string what)
+        {
+            bool same = expected.Count == actual.Count;
+            for (int i = 0; same && i < expected.Count; i++) same = expected[i] == actual[i];
+            Check(same, what);
+        }
 
         // ---- helpers -------------------------------------------------------------------
 
@@ -2067,6 +2077,170 @@ namespace ValkyriesCargo.Tests
             Check(Lines.ArrivalFor(0) == Lines.Arrival[0] && Lines.ArrivalFor(5) == Lines.Arrival[1], "the seed indexes the arrival lines");
             Check(Lines.ArrivalFor(-3) == Lines.Arrival[1], "a negative seed still lands inside the table");
             Check(Lines.ArrivalFor(int.MinValue).Length > 0, "even int.MinValue");
+        }
+
+        private static void SidecarTests()
+        {
+            Section("Sidecar (the world file's bundles)");
+
+            Market m = NewMarket(0);
+            m.StartVisit(3, 0, 100);
+            Check(m.Settle(new Deal { VisitId = 3, Nonce = 1, Wanted = new DealLine { Prefab = "Iron", Count = 2, UnitPriceSeen = 25 } }, 1000, 0).Ok, "a deal so the market is not the default");
+            Scheduler sch = new Scheduler(SchedulerRules.Default);
+            sch.StampCooldown(42, 5f, 6f, 100);
+            VisitSession vs = new VisitSession();
+            vs.Begin(3, 42L, "Don", 5f, 30f, 6f, 1000.0, 300f, m.Purse, 77);
+            OwedLedger led = new OwedLedger();
+            led.Add("steam1", new DealResult { Ok = true, DeliveryId = "v-3-1", Nonce = 1, CoinsDelta = -50, ItemsToAdd = new List<DealLine> { new DealLine { Prefab = "Iron", Count = 2, UnitPriceSeen = 25 } } });
+
+            string text = Sidecar.Compose(m.EncodeState(), sch.EncodeCooldowns(100), vs.EncodeSessionRow(), led.EncodeRows());
+            Check(text.StartsWith("format\t1\n"), "the file opens with the format line");
+            Check(text.EndsWith("\n"), "and ends with a newline");
+            Check(text.Contains("\nstock\tIron\t18\t") && text.Contains("\npurse\t") && text.Contains("\ncool\t42\t") && text.Contains("\ncoolbase\t5\t6\t") &&
+                  text.Contains("\nsession\t3\t42\tDon\t") && text.Contains("\nowed\tsteam1\tv-3-1\t"), "every owner's rows are in it");
+
+            var problems = new List<string>();
+            Sidecar sc = Sidecar.Split(text, problems);
+            Equal(0, problems.Count, "what Compose wrote splits with no problems");
+            Check(sc.FormatMatches, "the format matches");
+            Equal(m.EncodeState(), sc.MarketRows, "the market rows come back byte for byte");
+            Equal(sch.EncodeCooldowns(100), sc.CooldownRows, "and the cooldown rows");
+            Equal(vs.EncodeSessionRow(), sc.SessionRow, "and the session row");
+            Equal(1, sc.OwedRows.Count, "and the owed row");
+            Equal(0, sc.UnknownRows, "nothing unknown");
+
+            // Each owner rebuilds itself from its bundle.
+            Market m2 = NewMarket(0);
+            m2.ApplyState(sc.MarketRows, problems);
+            Equal(m.EncodeState(), m2.EncodeState(), "a fresh market rebuilt from the bundle encodes the same");
+            Equal(4, m2.NextVisitId, "including the visit counter");
+            Scheduler sch2 = new Scheduler(SchedulerRules.Default);
+            sch2.ApplyCooldowns(sc.CooldownRows, 100, problems);
+            Check(sch2.OnPlayerCooldown(42, 100) && sch2.NearBaseCooldown(5f, 6f, 100), "the cooldowns rebuilt");
+            OwedLedger led2 = new OwedLedger();
+            Equal(1, led2.ApplyRows(sc.OwedRows, problems), "the ledger rebuilt");
+            Equal(0, problems.Count, "all without a problem");
+
+            // Robustness.
+            problems.Clear();
+            Sidecar empty = Sidecar.Split("", problems);
+            Check(!empty.FormatMatches && problems.Count == 1, "an empty file is reported and does not match the format");
+            problems.Clear();
+            Sidecar noFormat = Sidecar.Split("stock\tIron\t5\t0\n", problems);
+            Check(!noFormat.FormatMatches && problems.Count == 1 && problems[0].Contains("no format line"), "a file without a format line is reported");
+            Equal("stock\tIron\t5\t0", noFormat.MarketRows, "but its rows are still routed");
+            problems.Clear();
+            Sidecar foreign = Sidecar.Split("format\t7\nstock\tIron\t5\t0\n", problems);
+            Check(!foreign.FormatMatches && foreign.Format == 7 && problems.Count == 1, "a foreign format is reported with its number");
+            problems.Clear();
+            Sidecar junk = Sidecar.Split("format\t1\n# a comment\nwhatever\tx\n\r\nsession\ta\nsession\tb\nformat\tx\n", problems);
+            Equal(1, junk.UnknownRows, "an unknown row is counted");
+            Equal("session\ta", junk.SessionRow, "the first session row wins");
+            Equal(3, problems.Count, "unknown row, second session row and a bad format line are each reported");
+            Check(junk.FormatMatches, "and the good format line stands");
+            Equal("", Sidecar.Split("format\t1\n", null).MarketRows, "a header-only file has empty bundles and tolerates a null problem list");
+        }
+
+        private static void OwedLedgerTests()
+        {
+            Section("OwedLedger (deliveries the server still owes)");
+
+            OwedLedger l = new OwedLedger(perPlayer: 3, total: 5);
+            DealResult ok(string id, int coins) => new DealResult { Ok = true, DeliveryId = id, Nonce = 9, CoinsDelta = coins, NewMarketState = "v1;1;800;", ItemsToAdd = new List<DealLine> { new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 25 } } };
+
+            Check(l.Add("steam1", ok("w-1-1", -25)), "an accepted result is recorded");
+            Check(l.Owes("w-1-1"), "and owed");
+            Check(!l.Add("steam1", ok("w-1-1", -25)), "the same id twice is refused");
+            Check(!l.Add("steam1", DealResult.Refuse(1, DealReason.SoldOut)), "a refusal is never owed");
+            Check(!l.Add("steam1", new DealResult { Ok = true, DeliveryId = "" }), "nor an accepted result without an id");
+            Check(!l.Add("bad;key", ok("w-1-2", -1)), "a key that is not a wire token is refused");
+            Check(!l.Add("", ok("w-1-3", -1)), "and so is an empty one");
+            Equal(1, l.Count, "one row so far");
+            Equal("", l.For("steam1")[0].NewMarketState, "the stored copy drops NewMarketState");
+            Equal(1, l.For("steam1")[0].ItemsToAdd.Count, "but keeps the goods");
+
+            Check(!l.Ack("steam2", "w-1-1"), "another player cannot ack it");
+            Check(l.Owes("w-1-1"), "so it is still owed");
+            Check(!l.Ack("steam1", "nope"), "an unknown id acks nothing");
+            Check(l.Ack("steam1", "w-1-1"), "the owner acks it");
+            Check(!l.Owes("w-1-1") && l.Count == 0, "and it is gone");
+            Check(!l.Ack("steam1", "w-1-1"), "a second ack finds nothing");
+
+            // Per-player cap: the oldest of that player's rows goes.
+            l.Add("steam1", ok("a1", -1)); l.Add("steam1", ok("a2", -1)); l.Add("steam1", ok("a3", -1)); l.Add("steam1", ok("a4", -1));
+            Equal(3, l.CountFor("steam1"), "a player holds at most perPlayer rows");
+            Check(!l.Owes("a1") && l.Owes("a4"), "the oldest was evicted");
+            Equal(1, l.Evictions, "and counted");
+            List<DealResult> mine = l.For("steam1");
+            Check(mine[0].DeliveryId == "a2" && mine[2].DeliveryId == "a4", "For is oldest first");
+
+            // Total cap across players.
+            l.Add("steam2", ok("b1", -1)); l.Add("steam2", ok("b2", -1)); l.Add("steam3", ok("c1", -1));
+            Equal(5, l.Count, "the ledger holds at most total rows");
+            Check(!l.Owes("a2"), "the oldest overall went first");
+
+            // Rows round-trip; bad rows are reported and skipped.
+            List<string> rows = l.EncodeRows();
+            Equal(5, rows.Count, "one row per owed delivery");
+            Check(rows[0].StartsWith("owed\t") && rows[0].Split('\t').Length == 4, "owed, player, id, result");
+            OwedLedger l2 = new OwedLedger(perPlayer: 3, total: 5);
+            var problems = new List<string>();
+            Equal(5, l2.ApplyRows(rows, problems), "every row applies");
+            Equal(0, problems.Count, "with no problems");
+            Check(l2.Owes("a4") && l2.Owes("b2") && l2.Owes("c1"), "the same deliveries are owed");
+            CollectionsEqual(rows, l2.EncodeRows(), "and encode identically");
+            problems.Clear();
+            OwedLedger l3 = new OwedLedger();
+            Equal(0, l3.ApplyRows(new List<string> { "owed\tsteam1", "owed\tbad;key\tx\tv1;1;x;1;ok;0;;;", "owed\tsteam1\tx\tv1;1;y;1;ok;0;;;", "owed\tsteam1\tz\tv1;1;z;0;sold_out;0;;;", "junk" }, problems),
+                  "a short row, a bad key, an id that does not match its result, a refusal and junk all apply nothing");
+            Equal(5, problems.Count, "and each is reported");
+            l3.Clear();
+            Equal(0, l3.ApplyRows(null, null), "null rows and a null problem list are tolerated");
+        }
+
+        private static void SessionRowTests()
+        {
+            Section("VisitSession: the sidecar row and Resume");
+
+            VisitSession a = new VisitSession();
+            Equal("", a.EncodeSessionRow(), "no visit, no row");
+            a.Begin(5, 4242L, "Don\tTab", 1f, 2f, 3f, 1000.0, 300f, 900, 7);
+            string row = a.EncodeSessionRow();
+            Check(row.StartsWith("session\t5\t4242\tDon Tab\t1\t2\t3\t1000\t1300\t900\t7\tFlying"), "the row carries id, pilot, a tab-cleaned name, drop, clock, purse, seed, phase: " + row);
+            a.SetPhase(VisitPhase.Trading);
+            Check(a.EncodeSessionRow().EndsWith("\tTrading"), "and follows the phase");
+
+            VisitSession b = new VisitSession();
+            var problems = new List<string>();
+            string state = b.Resume(a.EncodeSessionRow(), 1100.0, problems);
+            Check(state != null && problems.Count == 0, "the row resumes cleanly");
+            Check(b.Active && b.Resumed, "the session is active and marked resumed");
+            Equal(5, b.VisitId, "same visit");
+            Equal(4242L, b.PilotUid, "same pilot");
+            Equal("Don Tab", b.PilotName, "same name");
+            Equal(VisitPhase.Trading, b.Phase, "same phase");
+            Equal(900, b.Purse, "same purse");
+            Equal(7, b.Seed, "same seed, so the lines match");
+            Equal(1300.0, b.Clock.EndWorldTime, "the saved deadline");
+            Equal(200.0, b.Clock.Remaining(1100.0), "with 200 s left at the resume time");
+            Check(!b.Clock.Warned, "the warning is not counted as given");
+            VisitSnapshot v = VisitSnapshot.Parse(state, null);
+            Check(v.VisitId == 5 && v.Phase == VisitPhase.Trading && v.EndWorldTime == 1300.0 && v.DropX == 1f, "what Resume returns is the VisitState to publish");
+            Check(b.Sync(1100.0, 150.0) != null && b.Clock.EndWorldTime == 1250.0, "the event's own remainder then corrects the clock");
+            Equal(5, b.LastVisitId, "LastVisitId follows the resumed visit");
+
+            // Bad rows.
+            foreach (string bad in new[] { "", "session\t5", "session\tx\t1\tn\t0\t0\t0\t0\t1\t0\t0\tFlying", "session\t0\t1\tn\t0\t0\t0\t0\t1\t0\t0\tFlying",
+                                          "session\t5\t1\tn\ta\t0\t0\t0\t1\t0\t0\tFlying", "session\t5\t1\tn\t0\t0\t0\tNaN\t1\t0\t0\tFlying", "session\t5\t1\tn\t0\t0\t0\t0\t1\t-1\t0\tFlying", "visit\t5" })
+            {
+                problems.Clear();
+                VisitSession c = new VisitSession();
+                Check(c.Resume(bad, 0, problems) == null && problems.Count == 1 && !c.Active, "a bad row resumes nothing and reports once: " + bad.Replace("\t", " "));
+            }
+            VisitSession d = new VisitSession();
+            Check(d.Resume("session\t5\t1\tn\t0\t0\t0\t0\t1\t0\t0\tNone", 0, null) != null && d.Phase == VisitPhase.Flying, "a row claiming phase None resumes as Flying");
+            VisitSession e = new VisitSession();
+            Check(e.Resume("session\t5\t1\tn\t0\t0\t0\t500\t300\t0\t0\tFlying", 0, null) != null && e.Clock.EndWorldTime == 500.0, "an end before the start is clamped to the start");
         }
 
         private static void CargoRpcTests()

@@ -13,9 +13,9 @@ namespace RavenIron.ValkyriesCargo.Core
     /// It decides the role once per world session and logs it. Readiness is COMPUTED from live
     /// objects, never tracked with a flag set by an event (a flag has to be right on every path
     /// that could change it; a computed property cannot desync). Per session it registers the
-    /// routed RPCs, runs the director where the world runs (server, listen host) and the comfort
-    /// report where a player is drawn (client, listen host), and tears everything down when ZNet
-    /// goes away.
+    /// routed RPCs, runs the director and the deal wire where the world runs (server, listen host),
+    /// the comfort report and the client transport where a player is drawn (client, listen host),
+    /// and tears everything down, flushing the sidecar, when ZNet goes away.
     /// </summary>
     public sealed class CargoTick : MonoBehaviour
     {
@@ -38,16 +38,25 @@ namespace RavenIron.ValkyriesCargo.Core
 
         public static VisitDirector Director => Instance != null ? Instance._director : null;
         public static ComfortReporter Reporter => Instance != null ? Instance._reporter : null;
+        public static ICargoTransport Transport => Instance != null ? Instance._transport : null;
 
         private readonly ComfortReporter _reporter = new ComfortReporter();
         private VisitDirector _director;
+        private ICargoTransport _transport;
         private string _loggedRole;
         private bool _live;
+        private bool _inboxLoaded;
+        private bool _hostClaimed;
         private int _pilotLineShownFor;
         private int _throws;
 
         private void Awake() { Instance = this; }
-        private void OnDestroy() { if (Instance == this) Instance = null; }
+
+        private void OnDestroy()
+        {
+            if (_director != null) _director.Flush("shutdown", force: true);
+            if (Instance == this) Instance = null;
+        }
 
         private void Update()
         {
@@ -85,15 +94,48 @@ namespace RavenIron.ValkyriesCargo.Core
             {
                 // The director needs the scene the world runs in: the event system and the zone system.
                 if (_director == null && RandEventSystem.instance != null && ZNetScene.instance != null)
-                    _director = VisitDirector.Create(znet);
-                if (_director != null) _director.Tick(dt, Time.time, znet.GetTimeSeconds());
+                    _director = VisitDirector.Create(znet, Time.time);
+                if (_director != null)
+                {
+                    _director.Tick(dt, Time.time, znet.GetTimeSeconds());
+                    DealWire.Tick(znet);
+                }
             }
 
             if (ValkyriesCargo.HasRenderer)
             {
                 _reporter.Tick(dt);
                 PilotLine();
+                ClientWire(znet);
             }
+        }
+
+        /// <summary>Where a player is drawn: the inbox from disk, then the transport the terminal talks through.</summary>
+        private void ClientWire(ZNet znet)
+        {
+            if (!_inboxLoaded) { CargoRpc.LoadInbox(InboxStore.Load()); _inboxLoaded = true; }
+            if (znet.IsServer())
+            {
+                var local = _transport as LocalTransport;
+                if (local == null) { local = new LocalTransport(HostKey()); _transport = local; CargoRpc.UseTransport(local); }
+                if (!_hostClaimed && _director != null && Player.m_localPlayer != null) { _hostClaimed = true; local.ClaimOnce(); }
+                return;
+            }
+            var remote = _transport as CargoTransport;
+            if (remote == null) { remote = new CargoTransport(); _transport = remote; CargoRpc.UseTransport(remote); }
+            remote.EnsureRegistered(znet);
+            remote.ClaimOnce();
+        }
+
+        /// <summary>The listen host's own ledger key: its profile id, stable across sessions like a platform id.</summary>
+        private static string HostKey()
+        {
+            try
+            {
+                PlayerProfile profile = Game.instance != null ? Game.instance.GetPlayerProfile() : null;
+                return profile != null ? "host" + Wire.Long(profile.GetPlayerID()) : "host";
+            }
+            catch { return "host"; }
         }
 
         /// <summary>The pilot's private line at dispatch (design 7), once per visit, on the chosen player's screen only.</summary>
@@ -110,12 +152,17 @@ namespace RavenIron.ValkyriesCargo.Core
         private void EndSession()
         {
             _live = false;
+            if (_director != null) _director.Flush("session end", force: true);
             _director = null;
+            _transport = null;
+            _inboxLoaded = false;
+            _hostClaimed = false;
             _pilotLineShownFor = 0;
             _reporter.Reset();
+            DealWire.Reset();
             AdminRpc.Reset();
             CargoRpc.EndSession();
-            ValkyriesCargo.Log.LogInfo("session ended: director, reporter, routed RPCs and the terminal surface dropped");
+            ValkyriesCargo.Log.LogInfo("session ended: sidecar flushed; director, wire, reporter, routed RPCs and the terminal surface dropped");
         }
 
         /// <summary>
@@ -146,6 +193,10 @@ namespace RavenIron.ValkyriesCargo.Core
                 }
                 case "dismiss":
                     return "cargo: " + d.Dismiss("admin" + (string.IsNullOrEmpty(senderName) ? "" : " " + senderName));
+                case "reset":
+                    return "cargo: " + d.ResetCooldowns();
+                case "save":
+                    return "cargo: sidecar " + (d.Flush("admin", force: true) ? "written" : "NOT written (see the log)");
                 default:
                     return "cargo: unknown admin verb '" + verb + "'";
             }
