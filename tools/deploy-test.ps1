@@ -2,6 +2,7 @@
 #
 #   .\tools\deploy-test.ps1 -Build -Client            # build, then server + Steam client
 #   .\tools\deploy-test.ps1 -GaleProfile raveniron    # server + that Gale profile
+#   .\tools\deploy-test.ps1 -Client -ClientOnly       # the client alone (the version wall)
 #   .\tools\deploy-test.ps1 -Server CairnTest -Force  # CairnTest needs -Force: it is in use
 #   .\tools\deploy-test.ps1 -WhatIf                   # say what it would do, touch nothing
 #
@@ -28,6 +29,10 @@ param(
 
     # Copy to this Gale profile's plugins folder INSTEAD of the Steam client's.
     [string]$GaleProfile,
+
+    # Client only, leaving the server's DLL alone. This is how the version wall (CLAUDE.md
+    # item 3) is set up: build a different version, put it on ONE side, try to join.
+    [switch]$ClientOnly,
 
     # Run the Release build first.
     [switch]$Build,
@@ -81,12 +86,19 @@ if (-not $haveSrc) {
 }
 
 # --- destinations ---------------------------------------------------------------------
+if ($ClientOnly -and -not ($Client -or $GaleProfile)) {
+    Write-Host '-ClientOnly needs -Client or -GaleProfile: there would be nowhere to copy to.' -ForegroundColor Red
+    exit 1
+}
+
 $destinations = @()
-$destinations += [pscustomobject]@{
-    What = "server $Server"
-    Dir  = Join-Path $ServerRoots[$Server] "BepInEx\plugins\$PluginDir"
-    Root = $ServerRoots[$Server]
-    Kind = 'server'
+if (-not $ClientOnly) {
+    $destinations += [pscustomobject]@{
+        What = "server $Server"
+        Dir  = Join-Path $ServerRoots[$Server] "BepInEx\plugins\$PluginDir"
+        Root = $ServerRoots[$Server]
+        Kind = 'server'
+    }
 }
 
 if ($GaleProfile) {
