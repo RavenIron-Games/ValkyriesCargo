@@ -17,13 +17,21 @@ namespace RavenIron.ValkyriesCargo.Core
     ///
     /// So the branch is here, in three lines with three checks on them, and the patch is left with
     /// nothing but a component lookup.
+    ///
+    /// Since the same audit's F6, this same decision also guards `Character.ApplyDamage`
+    /// (`Patch_Character_ApplyDamage`, the same file) -- `SE_Burning`/`SE_Poison`/`SE_Smoke` reach the
+    /// merchant's health directly, never through `RPC_Damage`. The three inputs below never named
+    /// "RPC_Damage" or "ApplyDamage" in the first place -- "run the original, how many merchants are
+    /// live, is this character one of them" is the same question regardless of which vanilla method is
+    /// asking it -- so both prefixes call this one function unmodified.
     /// </summary>
     public static class Immortality
     {
         /// <summary>
-        /// Should vanilla's `Character.RPC_Damage` run for this character? `isMerchant` is "this
-        /// character carries our `CargoMerchant`". The ONLY case that cancels is our own merchant:
-        /// everything else in the world takes its damage exactly as it always did.
+        /// Should vanilla's damage method run for this character -- `Character.RPC_Damage` or
+        /// `Character.ApplyDamage`, both prefixed the same way in `Patches/Patch_Character_Damage.cs`.
+        /// `isMerchant` is "this character carries our `CargoMerchant`". The ONLY case that cancels is
+        /// our own merchant: everything else in the world takes its damage exactly as it always did.
         /// </summary>
         public static bool RunOriginal(bool runOriginal, int liveCount, bool isMerchant)
         {

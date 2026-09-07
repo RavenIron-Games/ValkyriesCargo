@@ -37,13 +37,10 @@ every bake reaches Don as a release asset (section 2, first item).
 - [x] **PR #17** (the `VALHEIM-API-REFERENCE` snapshot, docs only): merged 2026-09-07.
 - [ ] **The store.** No upload until the loop below has been seen (`docs/RELEASE.md` step 5; issue #23).
       **And never the rc1 tag**: it carries F1 (fixed on main by PR #30, not in the tag); the next cut replaces it.
-- [ ] **F11, from the P4/P5 audit (raised by Wu'barrk 2026-09-07, section 2):** a tamed Ingvar is a legal
-      target for every hostile (`BaseAI.IsEnemy` treats a tamed creature as a player's side), and he can
-      neither die nor be staggered, so a raid parks on him for the visit's five minutes. Two shapes:
-      **faction-only** — keep `m_faction = Dverger` (not an enemy of `Players`, `AnimalsVeg` or `Boss`)
-      and drop the tame, losing what the tame gives (`AvoidFire`, the tamed target-clearing) — or
-      **tamed-and-aggro-magnet** — as built, accepted and documented. Say which; the fix is his, in
-      `CargoMerchant`, and the audit's F11 has the decompiled lines.
+- [x] **F11, from the P4/P5 audit:** a tamed Ingvar is a legal target for every hostile and cannot die or
+      be staggered, so a raid parks on him. **DECIDED 2026-09-07: ghost mode** — Ingvar is to hostiles what
+      a player in vanilla's `ghost` mode is: not a target, not a threat. Neither faction-only nor the aggro
+      magnet. The mechanism is Wu'barrk's ("he knows how"); moved to section 2.
 
 ### Screen proofs — the Windows client against StormTest
 
@@ -87,6 +84,9 @@ step 4).
 ---
 
 ## 2. Wu'barrk — flight, merchant, body, sweeps, export
+
+- [x] ~~F11, decided by the owner 2026-09-07: ghost mode.~~ **Taken by Track A** (owner, the same evening:
+      Wu'barrk is loaded with F2–F10) — PR #37; see section 3. Nothing of Track B's is touched.
 
 - [ ] **The P4/P5 audit's findings (`docs/AUDIT-P4P5-2026-09-07.md`, issue #29).** **F1 DONE** — PR #30
       merged 2026-09-07: `Core/Immortality.RunOriginal`, pure, seven checks, the exact rc1 line restored as
@@ -163,6 +163,11 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       DONE 2026-09-07 (owner's word): 3,845,930 bytes; a build here is 4,181,504 bytes with Ingvar in it.
 - [ ] **The audit's probe rows into P10b's registry** (`docs/AUDIT-P4P5-2026-09-07.md` §2), now that
       PR #28 is in; and item 24 run on a real machine.
+- [x] **F11 ghost mode — PR #37, merged 2026-09-07.** The owner's decision, built here because
+      Track B is loaded: a `Priority.Low` prefix on the static `BaseAI.IsEnemy(a, b)`, any pair with the
+      merchant in it answers "not enemies" while a visit runs; `Core/Ghost.Decide` pure, 11 checks, three
+      mutations caught; the `character_ai` probe resolves the static overload; DESIGN §8 row; CLAUDE.md
+      verify item 25 is the screen proof (a raid walks past him; no enemy bar; he never swings).
 - [ ] **After the proofs, if the screen shows it** (`docs/CLIENT-AUDIT.md` report-only findings): the game
       menu opening behind the terminal (finding 7, `Patch_Menu_Update`), the negative icon cache
       (finding 9), the full-pack deal check (finding 10, `CanApply`), `HasRenderer` as a cached field
