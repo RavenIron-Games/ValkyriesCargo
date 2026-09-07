@@ -24,7 +24,20 @@ namespace RavenIron.ValkyriesCargo.Core
         // straight back pumps the purse for free (docs/ECONOMY-SIM.md §9). On: PaysFor caps a Ware's buy-back
         // multiplier at 1.0. Off: the pre-fix number, for an owner who wants it back.
         public bool FairMarketAct = true;
-        public double HalfLifeGameDays = 1.0;   // stock drifts back to target with this half-life
+        /// <summary>
+        /// The drift, one half-life per kind, in game days (2026-09-07, the owner: "wares never, wants 3").
+        /// Between visits each row's stock moves toward its target by 1 - 0.5^(days / halfLife) of the gap;
+        /// 0 is NEVER, the row keeps exactly what trading left, for ever. A Ware at 0 makes his shelf what
+        /// players sell him plus what an admin's target says (`cargo catalogue add` raises the level that
+        /// holds), instead of a shelf that restocks itself overnight. A Want at 3 keeps him buying: he passes
+        /// on what he was sold, so a flooded row is half cleared in three game days (1.5 real hours of server
+        /// uptime) and he never fills up for good, which a Want at 0 would do (docs/ECONOMY-SIM.md section 10:
+        /// with both kinds at "never" he refused 27 of 30 supplying visits). Ceiling MaxHalfLifeGameDays.
+        /// </summary>
+        public double WareHalfLifeGameDays = 0.0;
+        public double WantHalfLifeGameDays = 3.0;
+        /// <summary>365 game days is about a real week of server uptime: as good as never, and still a number.</summary>
+        public const double MaxHalfLifeGameDays = 365.0;
         public double SecondsPerGameDay = DefaultSecondsPerGameDay;   // EnvMan.instance.m_dayLengthSec, read once at boot
         /// <summary>
         /// The pure core's own baseline, and NOT what ships: `ModConfig.FillMarketRules` overwrites this
@@ -47,13 +60,23 @@ namespace RavenIron.ValkyriesCargo.Core
             MinMultiplier = Clamp(MinMultiplier, 0.05, 1.0, "MinMultiplier", problems);
             MaxMultiplier = Clamp(MaxMultiplier, 1.0, 10.0, "MaxMultiplier", problems);
             Spread = Clamp(Spread, 0.1, 1.0, "Spread", problems);
-            HalfLifeGameDays = Clamp(HalfLifeGameDays, 0.1, 30.0, "HalfLifeGameDays", problems);
+            WareHalfLifeGameDays = ClampHalfLife(WareHalfLifeGameDays, 0.0, "WareHalfLifeGameDays", problems);
+            WantHalfLifeGameDays = ClampHalfLife(WantHalfLifeGameDays, 3.0, "WantHalfLifeGameDays", problems);
             SecondsPerGameDay = Clamp(SecondsPerGameDay, 60.0, 86400.0, "SecondsPerGameDay", problems);
             if (PurseCoins < 0) { PurseCoins = 0; Wire.Report(problems, "PurseCoins clamped to 0"); }
             if (PurseCoins > MaxPurseCoins) { PurseCoins = MaxPurseCoins; Wire.Report(problems, "PurseCoins clamped to " + Wire.Int(MaxPurseCoins)); }
             if (PurseCarryPercent < 0 || PurseCarryPercent > 100) { PurseCarryPercent = Math.Max(0, Math.Min(100, PurseCarryPercent)); Wire.Report(problems, "PurseCarryPercent clamped to 0..100"); }
             if (PurseCapMultiple < 1) { PurseCapMultiple = 1; Wire.Report(problems, "PurseCapMultiple clamped to 1"); }
             if (PurseCapMultiple > MaxPurseCapMultiple) { PurseCapMultiple = MaxPurseCapMultiple; Wire.Report(problems, "PurseCapMultiple clamped to " + Wire.Int(MaxPurseCapMultiple)); }
+        }
+
+        /// <summary>A half-life: 0 is never; a negative is 0; above MaxHalfLifeGameDays is that; not a number is the shipped value for that kind.</summary>
+        private static double ClampHalfLife(double v, double shipped, string name, List<string> problems)
+        {
+            if (double.IsNaN(v) || double.IsInfinity(v)) { Wire.Report(problems, name + " was not a number; using " + Wire.Double(shipped)); return shipped; }
+            if (v < 0) { Wire.Report(problems, name + " clamped up to 0 (never)"); return 0; }
+            if (v > MaxHalfLifeGameDays) { Wire.Report(problems, name + " clamped down to " + Wire.Double(MaxHalfLifeGameDays)); return MaxHalfLifeGameDays; }
+            return v;
         }
 
         private static double Clamp(double v, double lo, double hi, string name, List<string> problems)
@@ -263,18 +286,22 @@ namespace RavenIron.ValkyriesCargo.Core
         /// away from zero so a gap of one unit closes within a half-life. Never overshoots: |round(gap × f)| ≤ |gap|
         /// for f &lt; 1. An item whose share of the elapsed time is not yet a whole unit KEEPS its stamp, so calling
         /// this often never throws the time away; a clock that ran backwards moves nothing and keeps its stamp too.
+        /// One half-life per kind (2026-09-07): a Ware uses `WareHalfLifeGameDays`, a Want `WantHalfLifeGameDays`,
+        /// and a kind at 0 never moves at all - the row keeps its stock and its stamp exactly as trading left them.
         /// </summary>
         public void Relax(double worldTime)
         {
-            if (Rules.HalfLifeGameDays <= 0 || Rules.SecondsPerGameDay <= 0) return;
+            if (Rules.SecondsPerGameDay <= 0) return;
             foreach (MarketItem it in _items)
             {
+                double halfLife = it.Kind == EntryKind.Ware ? Rules.WareHalfLifeGameDays : Rules.WantHalfLifeGameDays;
+                if (halfLife <= 0) continue;   // never
                 double dt = worldTime - it.UpdatedWorldTime;
                 if (dt <= 0) continue;
                 int gap = it.Entry.TargetStock - it.Stock;
                 if (gap == 0) { it.UpdatedWorldTime = worldTime; continue; }
                 double days = dt / Rules.SecondsPerGameDay;
-                double fraction = 1.0 - Math.Pow(0.5, days / Rules.HalfLifeGameDays);
+                double fraction = 1.0 - Math.Pow(0.5, days / halfLife);
                 int move = (int)Math.Round(gap * fraction, MidpointRounding.AwayFromZero);
                 if (move == 0) continue;
                 it.Stock += move;
@@ -304,7 +331,7 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>
         /// Settle a deal in the server's order (design 3.4): malformed, empty, stale visit, duplicate nonce; the
         /// wanted line (unknown or not a ware, bad count, sold out, price changed); each offered line
-        /// (unknown, bad count, over max, price changed); coins short; purse empty; then commit stock and
+        /// (unknown, bad count, over max - counted across every line of the same prefab, price changed); coins short; purse empty; then commit stock and
         /// purse and answer. A refusal does not spend the nonce. The whole quantity is priced at the moment
         /// of the deal (count × the unit the player saw); stock moves after. Never throws.
         /// </summary>
@@ -331,13 +358,20 @@ namespace RavenIron.ValkyriesCargo.Core
             long offeredValue = 0;
             var offered = new List<MarketItem>(d.Offered.Count);
             var offeredPays = new List<int>(d.Offered.Count);
+            // Room on a shelf is spent across EVERY line of the same prefab, not per line: two lines of 60
+            // into a shelf with room for 100 are over max together, though each fits alone. Found by EconSim
+            // scenario 8 on 2026-09-07, once the Ware drift stopped pulling flooded rows back under max.
+            var pending = new Dictionary<string, long>(StringComparer.Ordinal);
             for (int i = 0; i < d.Offered.Count; i++)
             {
                 DealLine line = d.Offered[i];
                 MarketItem it = Find(line.Prefab);
                 if (it == null) return Refuse(d, DealReason.UnknownItem);
                 if (line.Count < 1) return Refuse(d, DealReason.BadCount);
-                if ((long)it.Stock + line.Count > it.Entry.MaxStock) return Refuse(d, DealReason.OverMax);
+                long already;
+                pending.TryGetValue(it.Prefab, out already);
+                if ((long)it.Stock + already + line.Count > it.Entry.MaxStock) return Refuse(d, DealReason.OverMax);
+                pending[it.Prefab] = already + line.Count;
                 int pays = Pays(it);
                 if (pays != line.UnitPriceSeen) return Refuse(d, DealReason.PriceChanged, Snapshot().Encode());
                 offeredValue += (long)line.Count * pays;

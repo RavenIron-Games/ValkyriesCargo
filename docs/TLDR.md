@@ -70,8 +70,9 @@ scrap iron 22, silver ore 36, black metal scrap 50, flametal ore 90), none of wh
 and mistlands parts; eight common trophies.
 
 **Stock.** Targets are two to four stacks for commons, half a stack for metals, a handful for rare goods; he refuses
-above three times target ("I've all the linen a man can carry"). Stock drifts back to target with a one-game-day
-half-life. Purse 1500 plus half of the coins that came IN last visit (the gross, not the net — a visit where he
+above three times target ("I've all the linen a man can carry"). A Want's stock drifts back to target with a three-game-day
+half-life; a Ware's never does (what he sells is what players sold him and what an admin's target says, the owner's
+2026-09-07 call). Purse 1500 plus half of the coins that came IN last visit (the gross, not the net — a visit where he
 sells as much as he buys still earns a carry), capped at a multiple of the base purse.
 
 **Where the numbers came from.** Wu'barrk's TheEye dump of every item field and all 365 recipes (2026-07-31). Every

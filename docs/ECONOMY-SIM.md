@@ -22,7 +22,7 @@ the last section proposes, the owners decide.
 | `MinPriceMultiplier` / `MaxPriceMultiplier` | 0.4 / 3.0 | `ModConfig` defaults |
 | `SpreadBuy` | 0.7 | `ModConfig` default |
 | `FairMarketAct` | on | `ModConfig` default |
-| `StockHalfLifeGameDays` | 1.0 | `ModConfig` default |
+| `WareHalfLifeGameDays` / `WantHalfLifeGameDays` | never / 3.0 | `ModConfig` defaults (the owner, 2026-09-07: wares never, wants 3; scenario 10) |
 | `PurseCoins` / `PurseCarryPercent` / cap | 1500 / 50% of the GROSS / 3x | `ModConfig` defaults |
 | a game day | 1800 s | `EnvMan.m_dayLengthSec`, verified on StormTest 2026-09-06 |
 
@@ -59,20 +59,20 @@ of 24 or more. Amber (30) reaches it on its last unit; Iron (20) tops out at 2.8
 | visit | game day | on the shelf (after drift) | units bought | unit price | top multiplier | coins spent | his purse at the end |
 |---|---|---|---|---|---|---|---|
 | 1 | 0.0 | 30 | 30 | 7 -> 21 | 3.00 | 301 | 1801 |
-| 2 | 1.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1836 |
-| 3 | 2.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
-| 4 | 3.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
-| 5 | 4.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
-| 6 | 5.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
-| 7 | 6.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
-| 8 | 7.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
-| 9 | 8.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
-| 10 | 9.0 | 15 | 15 | 9 -> 21 | 3.00 | 185 | 1778 |
+| 2 | 1.0 | 0 | 0 | 0 -> 0 | 0.00 | 0 | 1651 |
+| 3 | 2.0 | 0 | 0 | 0 -> 0 | 0.00 | 0 | 1500 |
+| 4 | 3.0 | 0 | 0 | 0 -> 0 | 0.00 | 0 | 1500 |
+| 5 | 4.0 | 0 | 0 | 0 -> 0 | 0.00 | 0 | 1500 |
+| 6 | 5.0 | 0 | 0 | 0 -> 0 | 0.00 | 0 | 1500 |
+| 7 | 6.0 | 0 | 0 | 0 -> 0 | 0.00 | 0 | 1500 |
+| 8 | 7.0 | 0 | 0 | 0 -> 0 | 0.00 | 0 | 1500 |
+| 9 | 8.0 | 0 | 0 | 0 -> 0 | 0.00 | 0 | 1500 |
+| 10 | 9.0 | 0 | 0 | 0 -> 0 | 0.00 | 0 | 1500 |
 
-A day of drift closes half the gap (`1 - 0.5^(1/1)`), so an emptied 30-shelf comes back as 15 and no
-further: the second visit onward is a **steady state at half target**. The shelf never recovers to target while it is emptied every day.
-The player's cost per unit rises with every visit (a half-empty shelf starts at 9 coins, not 7), so
-the buy-out punishes itself. Coins spent over the ten visits: 1966 coins for 165 amber.
+`WareHalfLifeGameDays` is 0 (the owner, 2026-09-07): a Ware does not restock itself. The first visit empties the shelf and
+every visit after it finds 0 amber, until a player sells him some back or an admin raises the target (neither happens in this run).
+The buy-out is final rather than self-punishing: 301 coins for 30 amber over the ten visits, all of it on visit one.
+Section 10 has the same run at every half-life from half a day to never, which is where this number was decided.
 
 ## 2. Flood — 200 of one Want into a full shelf
 
@@ -133,7 +133,7 @@ max stock, so flooding them changes nothing a player can see:
 ## 3. The purse — exhaustion, carry, and twenty visits
 
 The purse is `min(PurseCoins x PurseCapMultiple, PurseCoins + round(lastTakings x PurseCarryPercent/100))`,
-i.e. 800 + half of last visit's takings, capped at 2400 (Market.StartVisit). `Takings` is `Purse - purseAtVisitStart`,
+i.e. 1500 + half of last visit's takings, capped at 4500 (Market.StartVisit). `Takings` is `Purse - purseAtVisitStart`,
 **floored at zero**: a visit in which he only bought pays nothing forward.
 
 ### Selling until he cannot pay
@@ -151,7 +151,7 @@ smelter (CATALOGUE section 1). One player, one visit, one unit at a time, into t
 | FlametalOreNew | 90 | 20 | 63 -> 43 | 1019 | 481 | `over_max` | 0 |
 
 **Takings are 0 in every one of those visits.** `Takings` is `Purse - purseAtVisitStart` floored at zero, so a visit in
-which players only sold him things pays nothing forward: the next purse is the bare 800 again.
+which players only sold him things pays nothing forward: the next purse is the bare 1500 again.
 
 ### Twenty visits, two kinds of server
 
@@ -162,20 +162,21 @@ market, same twenty game days; the only difference is whether anybody sells him 
 | visit | purse (shoppers only) | takings | carry | purse (shoppers and sellers) | he paid out | takings | carry |
 |---|---|---|---|---|---|---|---|
 | 1 | 1500 | 6099 | 3000 | 1500 | 7599 | 0 | 0 |
-| 2 | 4500 | 3946 | 1973 | 1500 | 5445 | 0 | 0 |
-| 3 | 3473 | 3946 | 1973 | 1500 | 5446 | 0 | 0 |
-| 4 | 3473 | 3946 | 1973 | 1500 | 5445 | 0 | 0 |
-| 5 | 3473 | 3946 | 1973 | 1500 | 5446 | 0 | 0 |
-| 6 | 3473 | 3946 | 1973 | 1500 | 5446 | 0 | 0 |
+| 2 | 4500 | 0 | 0 | 1500 | 1499 | 0 | 0 |
+| 3 | 1500 | 0 | 0 | 1500 | 1499 | 0 | 0 |
+| 4 | 1500 | 0 | 0 | 1500 | 1499 | 0 | 0 |
+| 5 | 1500 | 0 | 0 | 1500 | 1499 | 0 | 0 |
+| 6 | 1500 | 0 | 0 | 1500 | 1499 | 0 | 0 |
 | ... |  |  |  |  |  |  |  |
-| 20 | 3473 | 3946 | 1973 | 1500 | 5446 | 0 | 0 |
+| 20 | 1500 | 0 | 0 | 1500 | 1500 | 0 | 0 |
 
-**Shoppers only: the cap engages on 1 of the 20 visits** and the purse sits at its 2400 ceiling from then on. Emptying
-eighteen Ware shelves puts thousands of coins in his hand, and half of that is over the cap on its own.
+**Shoppers only: the cap engages on 1 of the 20 visits.** Emptying eighteen Ware shelves on the first visit puts
+thousands of coins in his hand and half of that is over the cap on its own; with `WareHalfLifeGameDays` 0 there is nothing left
+to buy from the second visit on, so the takings fall to zero and the purse is back to its base by the third.
 
 **Shoppers and sellers: the cap engages on 0 visits and the carry is 0 every single time.** The same player who put
 thousands in takes more back out before he leaves, so the visit's NET takings are zero and the next purse is the bare
-800. That is the shape of a real server — people sell him more than they buy, because he is how you turn ore into
+1500. That is the shape of a real server — people sell him more than they buy, because he is how you turn ore into
 coin. **Carry as written rewards a shopping server and does nothing at all for a supplying one**, and a supplying
 server is the one the catalogue was built for.
 
@@ -231,41 +232,44 @@ Deals tried: 32, settled 32. Refusals: none.
 
 | row | kind | stock: dawn / dusk / next dawn | price at dawn | at dusk | after a day of drift |
 |---|---|---|---|---|---|
-| BlackCore | Ware | 2 / 1 / 2 | 300 | 382 | 300 |
-| AmberPearl | Ware | 20 / 13 / 17 | 14 | 16 | 15 |
-| BlackMetal | Ware | 10 / 9 / 10 | 60 | 62 | 60 |
-| Eitr | Ware | 10 / 9 / 10 | 45 | 47 | 45 |
-| SilverNecklace | Ware | 8 / 9 / 8 | 43 | 41 | 43 |
-| Carapace | Want | 40 / 55 / 47 | 7 | 6 | 7 |
-| MeadTasty | Ware | 10 / 8 / 9 | 10 | 11 | 10 |
-| Silver | Ware | 12 / 11 / 12 | 40 | 41 | 40 |
+| BlackCore | Ware | 2 / 1 / 1 | 300 | 382 | 382 |
+| AmberPearl | Ware | 20 / 12 / 12 | 14 | 17 | 17 |
+| BlackMetal | Ware | 10 / 9 / 9 | 60 | 62 | 62 |
+| Eitr | Ware | 10 / 9 / 9 | 45 | 47 | 47 |
+| Carapace | Want | 40 / 58 / 54 | 7 | 6 | 6 |
+| MeadTasty | Ware | 10 / 7 / 7 | 10 | 11 | 11 |
+| Silver | Ware | 12 / 11 / 11 | 40 | 41 | 41 |
 
-Of the 72 rows, **8 moved a coin** over a full day of four players trading. A day's drift then takes back
-half the gap on every row that moved. This is the number that matters for the first real visit: on a small server
-the market is quiet, and the prices a player sees on day two are close to the prices on day one.
+Of the 72 rows, **7 moved a coin** over a full day of four players trading. A day's drift then takes back
+a fifth of the gap (`1 - 0.5^(1/3)`) on every Want that moved and nothing on a Ware (`WareHalfLifeGameDays` 0: what the
+players bought stays bought). This is the number that matters for the first real visit: on a small server the
+market is quiet, and the prices a player sees on day two are close to the prices on day one.
 
 ## 6. Drift — how long the damage lasts
 
 A market that has taken scenario 1's buy-out (Amber and Iron emptied) and scenario 2's flood (four Wants filled
-toward max), then nobody trades. `Relax` closes `1 - 0.5^(days / 1)` of each row's gap and rounds away from zero.
+toward max), then nobody trades. `Relax` closes `1 - 0.5^(days / halfLife)` of each row's gap and rounds away from zero,
+with one half-life per kind: `WareHalfLifeGameDays` 0 (never) and `WantHalfLifeGameDays` 3 (the owner, 2026-09-07).
 
 **The server calls `Relax` exactly once a visit** (`VisitDirector.Begin` -> `Market.StartVisit`), so the honest question is
 'if the next visit is N days later, how close is the shelf?'. The last column answers the other one — a visit every day —
 and the two differ, because rounding away from zero moves at least one unit per call.
 
-| row | stock after the damage | target | off target | days (one visit, N days later) | days (a visit every day) |
-|---|---|---|---|---|---|
-| Iron | 0 | 20 | -100% | 4 | 4 |
-| Amber | 0 | 30 | -100% | 5 | 4 |
-| Wood | 600 | 200 | 200% | 6 | 6 |
-| DeerHide | 180 | 60 | 200% | 6 | 5 |
-| IronScrap | 90 | 30 | 200% | 6 | 5 |
-| FlametalOreNew | 30 | 10 | 200% | 6 | 5 |
+| row | kind | stock after the damage | target | off target | days (one visit, N days later) | days (a visit every day) |
+|---|---|---|---|---|---|---|
+| Iron | Ware | 0 | 20 | -100% | never | never |
+| Amber | Ware | 0 | 30 | -100% | never | never |
+| Wood | Want | 600 | 200 | 200% | 16 | 16 |
+| DeerHide | Want | 180 | 60 | 200% | 16 | 16 |
+| IronScrap | Want | 90 | 30 | 200% | 16 | 16 |
+| FlametalOreNew | Want | 30 | 10 | 200% | 16 | 14 |
 
-**Every damaged row is back inside 5% of target within 6 game days** either way; the slowest row is Wood.
-A game day is 1800 real seconds, so that is **3.0 real hours** of server uptime — and at a 25% roll every 25 real
-minutes, a couple of visits. In practice a shelf a player empties is whole again by the visit after next, and a flood
-is forgotten just as fast. The half-life does its job.
+**The Wares never recover** (Iron, Amber): `WareHalfLifeGameDays` is 0, so an emptied shelf stays
+empty until a player sells him that item back, or an admin raises its target (`cargo catalogue add`). That is the
+decision: his stock is what the server's players put in his hands, not a shelf that fills itself overnight.
+**Every damaged Want is back inside 5% of target within 16 game days** either way; the slowest row is Wood.
+A game day is 1800 real seconds, so that is **8.0 real hours** of server uptime: a flood is
+forgotten within a real day of play, and he never fills up for good. That is what the Want half-life is for.
 
 ## 7. Edge sweep — the refusal order, asserted
 
@@ -324,24 +328,24 @@ and a new visit every 500 deals. What came back:
 | answer | deals | share |
 |---|---|---|
 | `bad_count` | 199 | 2.0% |
-| `coins_short` | 3 | 0.0% |
+| `coins_short` | 6 | 0.1% |
 | `empty_deal` | 1496 | 15.0% |
-| `ok` | 642 | 6.4% |
-| `over_max` | 1312 | 13.1% |
-| `price_changed` | 376 | 3.8% |
-| `purse_empty` | 467 | 4.7% |
-| `sold_out` | 721 | 7.2% |
+| `ok` | 623 | 6.2% |
+| `over_max` | 1613 | 16.1% |
+| `price_changed` | 313 | 3.1% |
+| `purse_empty` | 267 | 2.7% |
+| `sold_out` | 709 | 7.1% |
 | `stale_visit` | 777 | 7.8% |
-| `unknown_item` | 4007 | 40.1% |
+| `unknown_item` | 3997 | 40.0% |
 
 | invariant | violations |
 |---|---|
 | `Settle` threw | 0 |
 | an answer that is not a `DealReason` token | 0 |
-| a repeated delivery id (642 issued) | 0 |
+| a repeated delivery id (623 issued) | 0 |
 | stock outside 0..Max, purse negative, price below 1, or a multiplier that is not a number | 0 |
 
-**Ten thousand deals, 642 of them settled, and not one violation.** The pure core holds its bounds under nonsense.
+**Ten thousand deals, 623 of them settled, and not one violation.** The pure core holds its bounds under nonsense.
 
 ## 9. The round trip — buying a shelf out and selling it straight back
 
@@ -382,6 +386,77 @@ Before the Act this section reported 17 of 18 Wares profitable and a player walk
 whole purse on the first visit, with the shelves ending exactly where they started so nothing in the
 saved state showed it. Turn the knob off and this table comes back; that is the regression test.
 
+## 10. The half-life sweep — one knob per kind, and why
+
+The same market run at ONE half-life for both kinds, from half a game day to never, and then at the shipped pair.
+This is the table behind the owner's 2026-09-07 decision: a single number cannot serve both kinds, because a Ware only
+leaves the shelf when someone buys it and a Want only arrives when someone sells it, so 'never' empties the one and
+fills the other for good. A game day is 1800 real seconds of server uptime; a Relax every game day.
+
+### Iron (a Ware: target 20, max 60) emptied at day 0. Stock at the visit N days later
+
+| half-life (both kinds) | day 1 (30 min) | day 2 (1.0 h) | day 3 (1.5 h) | day 7 (3.5 h) | day 14 (7.0 h) | day 30 (15.0 h) |
+|---|---|---|---|---|---|---|
+| 0.5 | 15 | 19 | 20 | 20 | 20 | 20 |
+| 1.0 | 10 | 15 | 18 | 20 | 20 | 20 |
+| 3.0 | 4 | 7 | 10 | 16 | 20 | 20 |
+| 7.0 | 2 | 4 | 6 | 10 | 16 | 20 |
+| 30.0 | 0 | 1 | 1 | 3 | 7 | 13 |
+| never | 0 | 0 | 0 | 0 | 0 | 0 |
+
+### Wood (a Want: target 200, max 600) flooded to 600 at day 0. Stock at the visit N days later
+
+| half-life (both kinds) | day 1 (30 min) | day 2 (1.0 h) | day 3 (1.5 h) | day 7 (3.5 h) | day 14 (7.0 h) | day 30 (15.0 h) |
+|---|---|---|---|---|---|---|
+| 0.5 | 300 | 225 | 206 | 200 | 200 | 200 |
+| 1.0 | 400 | 300 | 250 | 203 | 200 | 200 |
+| 3.0 | 517 | 452 | 400 | 279 | 216 | 200 |
+| 7.0 | 562 | 528 | 497 | 400 | 300 | 221 |
+| 30.0 | 591 | 582 | 573 | 540 | 489 | 400 |
+| never | 600 | 600 | 600 | 600 | 600 | 600 |
+
+### A shopping server: 30 visits one game day apart; each visit one player buys the whole Iron and Amber shelves
+
+| half-life (both kinds) | Iron units sold | Iron coins | visits Iron was empty | Amber units | Amber coins | visits Amber was empty | his purse at the end |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 455 | 12680 | 0 | 697 | 5546 | 0 | 2406 |
+| 1.0 | 310 | 9780 | 0 | 465 | 4125 | 0 | 2183 |
+| 3.0 | 136 | 5604 | 0 | 204 | 2298 | 0 | 1872 |
+| 7.0 | 78 | 3748 | 0 | 117 | 1602 | 0 | 1740 |
+| 30.0 | 34 | 1494 | 15 | 59 | 819 | 0 | 1567 |
+| never | 20 | 500 | 29 | 30 | 210 | 29 | 1500 |
+
+The longer the shelf remembers, the less of a shop he is: at never he sells each shelf once and stands empty for the
+other 29 visits. That is the trade the owner made for Wares, on purpose: what he sells is what the server's players
+sold him and what an admin's target says, not a shelf that fills itself overnight.
+
+### A supplying server: 30 visits one game day apart; each visit one player sells 50 Wood and 20 IronScrap, or what still fits
+
+| half-life (both kinds) | Wood bought | coins paid for wood | first visit Wood was full | IronScrap bought | coins paid for scrap | first visit scrap was full | visits he refused something |
+|---|---|---|---|---|---|---|---|
+| 0.5 | 1500 | 1500 | never | 600 | 8440 | never | 0 |
+| 1.0 | 1500 | 1500 | never | 600 | 7860 | never | 0 |
+| 3.0 | 1500 | 1500 | never | 393 | 4483 | never | 0 |
+| 7.0 | 1310 | 1310 | never | 227 | 2637 | never | 0 |
+| 30.0 | 626 | 626 | never | 88 | 1108 | never | 0 |
+| never | 400 | 400 | 9 | 60 | 780 | 4 | 27 |
+
+A Want only ever arrives, so at never every Want fills to its max and he stops buying: **27 of 30 visits refused**.
+That is why the Want knob is not 0. At 3 he passes on what he was sold fast enough that nobody is refused and the price
+he pays stays near par; at 30 nobody is refused either, but scrap sits at the flooded price for the whole month.
+
+### The shipped pair: wares never, wants 3
+
+| row | day 1 (30 min) | day 2 (1.0 h) | day 3 (1.5 h) | day 7 (3.5 h) | day 14 (7.0 h) | day 30 (15.0 h) |
+|---|---|---|---|---|---|---|
+| Iron emptied (Ware, never) | 0 | 0 | 0 | 0 | 0 | 0 |
+| Wood flooded to 600 (Want, 3) | 517 | 452 | 400 | 279 | 216 | 200 |
+| Iron set to 60 by an admin, target 20 (Ware, never) | 60 | 60 | 60 | 60 | 60 | 60 |
+
+**An admin's stock edit lives as long as the drift lets it**, which for a Ware is now for ever, and for a Want a few days.
+The lever that persists on either kind is the TARGET (`cargo catalogue add Iron:25:60:60:Ware` holds 60 at any half-life,
+because the gap is 0); a stock edit is an event. No stock verb was asked for, and none was built.
+
 ## Verdict — what to keep and what to change
 
 Proposals only. No shipping default was changed to produce this report.
@@ -404,10 +479,12 @@ That is the whole argument for walking to the merchant, and it survives the roun
 15 -> 11 as it fills (scenario 2). Big enough to notice in a session, small enough that two or three deals do not
 wreck a row. Keep it.
 
-**`StockHalfLifeGameDays` 1.** Every row damaged in scenarios 1 and 2 is back inside 5% of target within 6 game days
-(scenario 6), and a shelf emptied every single day settles at half target rather than collapsing. Keep it.
+**`WareHalfLifeGameDays` 0 and `WantHalfLifeGameDays` 3** (the owner, 2026-09-07). A Ware keeps what trading left: an
+emptied shelf stays empty until a player sells it back or an admin raises the target (scenario 6, and scenario 1 from
+its second visit on). A Want is back inside 5% of target within 16 game days (scenario 6), so he keeps
+buying; with both kinds at never he refused 27 of 30 supplying visits (scenario 10). Keep them.
 
-**The pure core's bounds.** 642 settled deals out of ten thousand random ones, and not a single throw, negative
+**The pure core's bounds.** 623 settled deals out of ten thousand random ones, and not a single throw, negative
 stock, over-max shelf, negative purse, sub-1 price or repeated delivery id (scenario 8). The refusal order is the one
 the contract describes (scenario 7). This part is done.
 
@@ -477,7 +554,7 @@ the price — or raise it to `BlackCore:300:3:9`*, which makes the last one cost
   pure core cannot fix this: the check belongs on the server side of the wire, against the peer's inventory.
 - **A Want asked for as a Ware answers `unknown_item`** (Market.cs 272), so the terminal cannot say 'he only buys those'.
 - **`Relax` is path-dependent.** Rounding away from zero moves at least one unit per call, so N daily calls close a gap
-  faster than one call N days later (scenario 6's two columns). The server calls it once a visit, so this is a difference
+  faster than one call N days later (scenario 6's two columns, on the Wants; a Ware at half-life 0 never moves). The server calls it once a visit, so this is a difference
   between a busy server and a quiet one, not a bug — but a shelf recovers faster on the server people play on.
 - **A market that has never started a visit will settle a deal numbered 0** (`VisitId` starts at 0). Unreachable through
   `VisitDirector`, which refuses `visit_over` first.

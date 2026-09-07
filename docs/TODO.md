@@ -28,9 +28,13 @@ every bake reaches Don as a release asset (section 2, first item).
       in history stay. Built on Track A (section 3).
 - [x] **Catalogue edits by an admin.** DECIDED 2026-09-07: build the `cargo catalogue list|add|remove|reset`
       verbs and a hot swap of the live market between visits; **no sell-only kind**. Built on Track A
-      (section 3). Still open from the same discussion, undecided: `cargo stock set` / a drop-in stock file
-      for admins with server access, and `StockHalfLifeGameDays` allowing 0 (never drift) with a longer
-      default — a number for the economy sim first.
+      (section 3).
+- [x] **How long the shelf remembers.** DECIDED 2026-09-07, from the half-life sweep (`docs/ECONOMY-SIM.md`
+      §10): **two knobs, wares never, wants 3** — `WareHalfLifeGameDays` 0 (a Ware keeps what trading left;
+      what he sells is what players sold him and what an admin's target says) and `WantHalfLifeGameDays` 3
+      (he keeps buying; a flood half-clears in 1.5 real hours). `StockHalfLifeGameDays` is gone. Built on
+      Track A (section 3). With the target as the lever that persists, a `cargo stock set` verb would be an
+      event tool, not persistence: not asked for, not built.
 - [ ] **Client-asserted comfort numbers.** The client writes `VCargo_rested` / `VCargo_comfort` on its own
       ZDO and the server believes them (`docs/HANDOFF-CLAUDE.md` "Decisions still for the two owners").
       P11 proposes "accept; worst case an undeserved visit". Yes, or ask for a server-side check.
@@ -192,3 +196,9 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       drops prefabs the game has no item for, at boot and on every edit; `cargo catalogue list|add|remove|reset`,
       the admin half through `VCargo_admin`; `cargo status` says when a change waits. **Not yet seen on a
       machine**: CLAUDE.md verify item 26 (StormTest, from an admin client).
+- [ ] **The two drift knobs** (owner, 2026-09-07; one PR after #44, on the same branch line): `MarketRules.WareHalfLifeGameDays`
+      0 / `WantHalfLifeGameDays` 3 replace `HalfLifeGameDays`; `Relax` per kind, 0 = never; `Sanitize` 0–365 for
+      both; `Server.WareHalfLifeGameDays` / `Server.WantHalfLifeGameDays` replace `Server.StockHalfLifeGameDays`;
+      the demo market keeps a one-day half-life on both kinds so its walk still moves; EconSim scenario 10 is
+      the sweep and `docs/ECONOMY-SIM.md` is regenerated; harness checks for the shipped knobs and the clamps.
+      **Not yet seen on a machine**: a Ware bought out on StormTest still empty at the next visit.

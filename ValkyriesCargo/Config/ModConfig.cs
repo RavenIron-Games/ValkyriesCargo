@@ -50,7 +50,8 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<float>  MaxPriceMultiplier;
         public static ConfigEntry<float>  SpreadBuy;
         public static ConfigEntry<bool>   FairMarketAct;
-        public static ConfigEntry<float>  StockHalfLifeGameDays;
+        public static ConfigEntry<float>  WareHalfLifeGameDays;
+        public static ConfigEntry<float>  WantHalfLifeGameDays;
         public static ConfigEntry<int>    PurseCoins;
         public static ConfigEntry<int>    PurseCarryPercent;
         public static ConfigEntry<bool>   EnableBarter;
@@ -170,9 +171,12 @@ namespace RavenIron.ValkyriesCargo.Config
                 new AcceptableValueRange<float>(0.1f, 1f));
             FairMarketAct = S(cfg, "Server", "FairMarketAct", true,
                 "Caps what he pays to buy back a Ware at par (base x SpreadBuy), so MaxPriceMultiplier x SpreadBuy > 1 can never turn buying a shelf out and selling it straight back into free coins. Read on the SERVER.");
-            StockHalfLifeGameDays = S(cfg, "Server", "StockHalfLifeGameDays", 1f,
-                "Between visits his stock drifts back toward target with this half-life, in world days. Read on the SERVER.",
-                new AcceptableValueRange<float>(0.1f, 30f));
+            WareHalfLifeGameDays = S(cfg, "Server", "WareHalfLifeGameDays", 0f,
+                "Between visits a WARE's stock (what he sells) drifts back toward its target with this half-life, in game days; a game day is 30 real minutes of server uptime. 0 = never: the shelf keeps exactly what trading left, so what he has to sell is what players sold him plus what an admin's target says (cargo catalogue add Prefab:Base:Target:Max:Ware raises the level that holds). The shipped 0 is the owner's 2026-09-07 decision; the sweep behind it is docs/ECONOMY-SIM.md section 10. Read on the SERVER.",
+                new AcceptableValueRange<float>(0f, 365f));
+            WantHalfLifeGameDays = S(cfg, "Server", "WantHalfLifeGameDays", 3f,
+                "Between visits a WANT's stock (what he only buys) drifts back toward its target with this half-life, in game days: he passes on what he was sold, so a flooded row half-clears in this many days and he never fills up for good. 0 = never, and then every Want fills to its max and he stops buying it (docs/ECONOMY-SIM.md section 10: 27 of 30 supplying visits refused). Read on the SERVER.",
+                new AcceptableValueRange<float>(0f, 365f));
             PurseCoins = S(cfg, "Server", "PurseCoins", 1500,
                 "Coins he arrives with. 800 was thin for what this mod is for: one visit bought 39 silver ore " +
                 "for 795 and left him with 5, and a dozen flametal ore was the whole purse. Read on the SERVER.",
@@ -234,7 +238,8 @@ namespace RavenIron.ValkyriesCargo.Config
             r.MaxMultiplier = MaxPriceMultiplier.Value;
             r.Spread = SpreadBuy.Value;
             r.FairMarketAct = FairMarketAct.Value;
-            r.HalfLifeGameDays = StockHalfLifeGameDays.Value;
+            r.WareHalfLifeGameDays = WareHalfLifeGameDays.Value;
+            r.WantHalfLifeGameDays = WantHalfLifeGameDays.Value;
             r.PurseCoins = PurseCoins.Value;
             r.PurseCarryPercent = PurseCarryPercent.Value;
             r.PurseCapMultiple = 3;

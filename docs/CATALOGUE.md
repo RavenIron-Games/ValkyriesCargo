@@ -35,7 +35,9 @@ there is no `Silk`; `Flametal` is the *old* flametal (`$item_flametal_old`), the
 
 Price at any moment: `base × clamp((target / max(1, stock))^0.35, 0.4, 3.0)`; he pays 0.7 × that — for a Ware, capped
 so the multiplier on this side never exceeds 1.0 (the Fair Market Act, §5): he can buy back below par when flooded,
-never above it when short. Stock drifts back to target with a one-game-day half-life between visits. Purse 800 coins
+never above it when short. Between visits a Want's stock drifts back to target with a three-game-day half-life; a Ware's
+does not drift at all (`WareHalfLifeGameDays` 0, the owner's 2026-09-07 call: what he sells is what players sold him and
+what an admin's target says; `docs/ECONOMY-SIM.md` §10). Purse 800 coins
 plus half of last visit's takings.
 
 ---

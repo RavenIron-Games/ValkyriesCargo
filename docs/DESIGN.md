@@ -319,7 +319,9 @@ free (`docs/ECONOMY-SIM.md` §9). The buy price and every `Want` are untouched; 
 (`Server.FairMarketAct`), synced+locked, defaults on. A deal is priced as a whole at the moment
 of settlement, `count × unit` at the current price, and stock moves after (§8: a bulk deal beats a drip-feed, by
 design). Bought units decrement, sold units increment, refused above `max`, `0` is SOLD OUT. Drift between visits:
-`stock += (target − stock) × (1 − 0.5^(days / StockHalfLifeGameDays))` in world time, a day being
+`stock += (target − stock) × (1 − 0.5^(days / halfLife))` in world time, one half-life per kind (`WareHalfLifeGameDays` 0 = never, `WantHalfLifeGameDays` 3: the
+owner, 2026-09-07, from the sweep in `docs/ECONOMY-SIM.md` §10 — a Ware keeps what trading left, a Want half-clears in three
+days so he never fills up for good), a day being
 `EnvMan.instance.m_dayLengthSec` read once at boot (the compiled default is 1200; the scene is expected to say 1800 and
 `cargo status` prints what it found; 1800 is assumed only with no `EnvMan`). Purse: `PurseCoins` + `PurseCarryPercent`
 of last takings, capped at 3×. Integer coins, min 1, never negative, never NaN; the rules are sanitized into their
@@ -481,7 +483,8 @@ MaxPriceMultiplier           3.0
 SpreadBuy                    0.7
 FairMarketAct                true      caps a Ware's buy-back at base x SpreadBuy (the Fair Market Act, §8);
                                        off restores the pre-2026-09-07 number, MaxPriceMultiplier x SpreadBuy
-StockHalfLifeGameDays        1.0
+WareHalfLifeGameDays         0         0-365; 0 = never (the owner, 2026-09-07): a Ware keeps what trading left
+WantHalfLifeGameDays         3         0-365; a flooded Want half-clears in three game days, so he keeps buying
 PurseCoins                   1500      was 800 until 2026-09-07 (docs/DECISIONS-WUBARRK.md); the carry is
                                        measured on the GROSS coins a visit took in, not the net
 PurseCarryPercent            50

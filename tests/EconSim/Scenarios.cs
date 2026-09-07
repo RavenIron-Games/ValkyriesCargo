@@ -38,7 +38,7 @@ namespace ValkyriesCargo.EconSim
             int lastTakings = 0;
             var rows = new List<string[]>();
             bool everRecovered = false;
-            int grandTotal = 0, grandUnits = 0, secondVisitFirstPrice = 0;
+            int grandTotal = 0, grandUnits = 0, secondVisitFirstPrice = 0, secondVisitStock = 0;
             for (int v = 1; v <= 10; v++)
             {
                 double t = (v - 1) * Sim.Day;
@@ -65,7 +65,7 @@ namespace ValkyriesCargo.EconSim
                 lastTakings = m.Takings;
                 grandTotal += spent;
                 grandUnits += units;
-                if (v == 2) secondVisitFirstPrice = first;
+                if (v == 2) { secondVisitFirstPrice = first; secondVisitStock = atStart; }
                 rows.Add(new[]
                 {
                     Sim.N(v), Sim.F(t / Sim.Day, 1), Sim.N(atStart), Sim.N(units), Sim.N(first) + " -> " + Sim.N(last),
@@ -76,12 +76,12 @@ namespace ValkyriesCargo.EconSim
             Sim.Note("s1.v2first", Sim.N(secondVisitFirstPrice));
             Sim.Note("s1.total", Sim.N(grandTotal) + " coins for " + Sim.N(grandUnits) + " amber");
 
-            // Where the shelf settles when it is emptied every day.
-            md.Line("A day of drift closes half the gap (`1 - 0.5^(1/1)`), so an emptied 30-shelf comes back as 15 and no");
-            md.Line("further: the second visit onward is a **steady state at half target**. " +
-                    (everRecovered ? "The shelf did recover to target at least once." : "The shelf never recovers to target while it is emptied every day."));
-            md.Line("The player's cost per unit rises with every visit (a half-empty shelf starts at " + Sim.Fact("s1.v2first") + " coins, not 7), so");
-            md.Line("the buy-out punishes itself. Coins spent over the ten visits: " + Sim.Fact("s1.total") + ".");
+            // Where the shelf settles when it is emptied every day: with WareHalfLifeGameDays 0, nowhere.
+            md.Line("`WareHalfLifeGameDays` is 0 (the owner, 2026-09-07): a Ware does not restock itself. The first visit empties the shelf and");
+            md.Line("every visit after it finds " + Sim.N(secondVisitStock) + " amber, until a player sells him some back or an admin raises the target " +
+                    (everRecovered ? "(it did recover to target at least once here, which means somebody did)." : "(neither happens in this run)."));
+            md.Line("The buy-out is final rather than self-punishing: " + Sim.Fact("s1.total") + " over the ten visits, all of it on visit one.");
+            md.Line("Section 10 has the same run at every half-life from half a day to never, which is where this number was decided.");
             Sim.Note("s1.recovered", everRecovered ? "yes" : "no");
         }
 
@@ -307,7 +307,7 @@ namespace ValkyriesCargo.EconSim
             md.H(2, "3. The purse — exhaustion, carry, and twenty visits");
 
             md.Line("The purse is `min(PurseCoins x PurseCapMultiple, PurseCoins + round(lastTakings x PurseCarryPercent/100))`,");
-            md.Line("i.e. 800 + half of last visit's takings, capped at 2400 (Market.StartVisit). `Takings` is `Purse - purseAtVisitStart`,");
+            md.Line("i.e. 1500 + half of last visit's takings, capped at 4500 (Market.StartVisit). `Takings` is `Purse - purseAtVisitStart`,");
             md.Line("**floored at zero**: a visit in which he only bought pays nothing forward.");
 
             md.H(3, "Selling until he cannot pay");
@@ -348,7 +348,7 @@ namespace ValkyriesCargo.EconSim
             }
             md.Table(new[] { "row", "base", "units before he stops", "he paid, a unit", "coins to the player", "purse left", "stopped by", "takings" }, oreRows);
             md.Line("**Takings are 0 in every one of those visits.** `Takings` is `Purse - purseAtVisitStart` floored at zero, so a visit in");
-            md.Line("which players only sold him things pays nothing forward: the next purse is the bare 800 again.");
+            md.Line("which players only sold him things pays nothing forward: the next purse is the bare 1500 again.");
             md.Blank();
             md.H(3, "Twenty visits, two kinds of server");
 
@@ -371,12 +371,13 @@ namespace ValkyriesCargo.EconSim
             Sim.Note("s3.caphits", Sim.N(capBuyOnly));
             Sim.Note("s3.capboth", Sim.N(capBoth));
 
-            md.Line("**Shoppers only: the cap engages on " + Sim.N(capBuyOnly) + " of the 20 visits** and the purse sits at its 2400 ceiling from then on. Emptying");
-            md.Line("eighteen Ware shelves puts thousands of coins in his hand, and half of that is over the cap on its own.");
+            md.Line("**Shoppers only: the cap engages on " + Sim.N(capBuyOnly) + " of the 20 visits.** Emptying eighteen Ware shelves on the first visit puts");
+            md.Line("thousands of coins in his hand and half of that is over the cap on its own; with `WareHalfLifeGameDays` 0 there is nothing left");
+            md.Line("to buy from the second visit on, so the takings fall to zero and the purse is back to its base by the third.");
             md.Blank();
             md.Line("**Shoppers and sellers: the cap engages on " + Sim.N(capBoth) + " visits and the carry is 0 every single time.** The same player who put");
             md.Line("thousands in takes more back out before he leaves, so the visit's NET takings are zero and the next purse is the bare");
-            md.Line("800. That is the shape of a real server — people sell him more than they buy, because he is how you turn ore into");
+            md.Line("1500. That is the shape of a real server — people sell him more than they buy, because he is how you turn ore into");
             md.Line("coin. **Carry as written rewards a shopping server and does nothing at all for a supplying one**, and a supplying");
             md.Line("server is the one the catalogue was built for.");
         }
@@ -625,8 +626,9 @@ namespace ValkyriesCargo.EconSim
             }
             md.Table(new[] { "row", "kind", "stock: dawn / dusk / next dawn", "price at dawn", "at dusk", "after a day of drift" }, movers);
             md.Line("Of the 72 rows, **" + Sim.N(scored.Count) + " moved a coin** over a full day of four players trading. A day's drift then takes back");
-            md.Line("half the gap on every row that moved. This is the number that matters for the first real visit: on a small server");
-            md.Line("the market is quiet, and the prices a player sees on day two are close to the prices on day one.");
+            md.Line("a fifth of the gap (`1 - 0.5^(1/3)`) on every Want that moved and nothing on a Ware (`WareHalfLifeGameDays` 0: what the");
+            md.Line("players bought stays bought). This is the number that matters for the first real visit: on a small server the");
+            md.Line("market is quiet, and the prices a player sees on day two are close to the prices on day one.");
             Sim.Note("s5.movers", Sim.N(scored.Count));
             Sim.Note("s5.takings", Sim.N(lastTakings));
         }
@@ -654,7 +656,8 @@ namespace ValkyriesCargo.EconSim
             md.H(2, "6. Drift — how long the damage lasts");
 
             md.Line("A market that has taken scenario 1's buy-out (Amber and Iron emptied) and scenario 2's flood (four Wants filled");
-            md.Line("toward max), then nobody trades. `Relax` closes `1 - 0.5^(days / 1)` of each row's gap and rounds away from zero.");
+            md.Line("toward max), then nobody trades. `Relax` closes `1 - 0.5^(days / halfLife)` of each row's gap and rounds away from zero,");
+            md.Line("with one half-life per kind: `WareHalfLifeGameDays` 0 (never) and `WantHalfLifeGameDays` 3 (the owner, 2026-09-07).");
             md.Blank();
             md.Line("**The server calls `Relax` exactly once a visit** (`VisitDirector.Begin` -> `Market.StartVisit`), so the honest question is");
             md.Line("'if the next visit is N days later, how close is the shelf?'. The last column answers the other one — a visit every day —");
@@ -689,28 +692,36 @@ namespace ValkyriesCargo.EconSim
             var rows = new List<string[]>();
             int worstOneCall = 0, worstStepped = 0;
             string worstRow = "";
+            var stuck = new List<string>();
             foreach (MarketItem it in damaged.Items)
             {
                 if (it.Stock == it.Entry.TargetStock) continue;
                 int oneCall = DaysToRecover(state, it.Prefab, false);
                 int stepped = DaysToRecover(state, it.Prefab, true);
-                if (oneCall > worstOneCall) { worstOneCall = oneCall; worstRow = it.Prefab; }
-                if (stepped > worstStepped) worstStepped = stepped;
+                if (oneCall < 0) stuck.Add(it.Prefab);
+                else
+                {
+                    if (oneCall > worstOneCall) { worstOneCall = oneCall; worstRow = it.Prefab; }
+                    if (stepped > worstStepped) worstStepped = stepped;
+                }
                 rows.Add(new[]
                 {
-                    it.Prefab, Sim.N(it.Stock), Sim.N(it.Entry.TargetStock),
+                    it.Prefab, it.Kind == EntryKind.Ware ? "Ware" : "Want", Sim.N(it.Stock), Sim.N(it.Entry.TargetStock),
                     Sim.Pct((double)(it.Stock - it.Entry.TargetStock) / it.Entry.TargetStock, 0),
-                    Sim.N(oneCall), Sim.N(stepped),
+                    oneCall < 0 ? "never" : Sim.N(oneCall), stepped < 0 ? "never" : Sim.N(stepped),
                 });
             }
-            md.Table(new[] { "row", "stock after the damage", "target", "off target", "days (one visit, N days later)", "days (a visit every day)" }, rows);
-            md.Line("**Every damaged row is back inside 5% of target within " + Sim.N(worstOneCall) + " game days**" +
+            md.Table(new[] { "row", "kind", "stock after the damage", "target", "off target", "days (one visit, N days later)", "days (a visit every day)" }, rows);
+            md.Line("**The Wares never recover** (" + string.Join(", ", stuck.ToArray()) + "): `WareHalfLifeGameDays` is 0, so an emptied shelf stays");
+            md.Line("empty until a player sells him that item back, or an admin raises its target (`cargo catalogue add`). That is the");
+            md.Line("decision: his stock is what the server's players put in his hands, not a shelf that fills itself overnight.");
+            md.Line("**Every damaged Want is back inside 5% of target within " + Sim.N(worstOneCall) + " game days**" +
                     (worstStepped == worstOneCall ? " either way" : ", or " + Sim.N(worstStepped) + " when he is visited every day") + "; the slowest row is " + worstRow + ".");
-            md.Line("A game day is 1800 real seconds, so that is **" + Sim.F(worstOneCall * 0.5, 1) + " real hours** of server uptime — and at a 25% roll every 25 real");
-            md.Line("minutes, a couple of visits. In practice a shelf a player empties is whole again by the visit after next, and a flood");
-            md.Line("is forgotten just as fast. The half-life does its job.");
+            md.Line("A game day is 1800 real seconds, so that is **" + Sim.F(worstOneCall * 0.5, 1) + " real hours** of server uptime: a flood is");
+            md.Line("forgotten within a real day of play, and he never fills up for good. That is what the Want half-life is for.");
             Sim.Note("s6.days", Sim.N(worstOneCall));
             Sim.Note("s6.stepped", Sim.N(worstStepped));
+            Sim.Note("s6.stuck", string.Join(", ", stuck.ToArray()));
         }
 
         /// <summary>First whole day count at which this row is within 5% of target, from the saved state.</summary>
@@ -847,6 +858,150 @@ namespace ValkyriesCargo.EconSim
             md.Line("The player's profit equals the purse drain exactly, so **one player can walk off with Ingvar's entire purse every visit**");
             md.Line("(" + Sim.Fact("s9.pervisit") + " coins on the first visit above) without gathering anything, and the shelves end the visit exactly where they");
             md.Line("started, so nothing in the market state shows it happened.");
+        }
+
+        // =====================================================================================
+        // 10. The half-life sweep (2026-09-07: one knob per kind, and why wares never / wants 3)
+        // =====================================================================================
+
+        private static readonly double[] SweepHalfLives = { 0.5, 1, 3, 7, 30, 0 };
+        private static readonly int[] SweepDays = { 1, 2, 3, 7, 14, 30 };
+
+        private static string HalfLifeName(double hl) => hl <= 0 ? "never" : Sim.F(hl, 1);
+
+        private static string RealTime(int days)
+        {
+            double h = days * Sim.Day / 3600.0;
+            return h < 1 ? Sim.F(h * 60, 0) + " min" : Sim.F(h, 1) + " h";
+        }
+
+        private static Market SweepMarket(double ware, double want)
+        {
+            MarketRules r = Sim.Shipped;
+            r.WareHalfLifeGameDays = ware;
+            r.WantHalfLifeGameDays = want;
+            return Sim.NewMarket(r, 0);
+        }
+
+        /// <summary>One row's stock at each of SweepDays, a Relax every game day (the server's own cadence on a busy server).</summary>
+        private static string[] DriftRow(string label, Market m, string prefab, int stockAtZero)
+        {
+            MarketItem it = m.Find(prefab);
+            it.Stock = stockAtZero; it.UpdatedWorldTime = 0;
+            var row = new List<string> { label };
+            int di = 0;
+            for (int day = 1; day <= 30; day++)
+            {
+                m.Relax(day * Sim.Day);
+                if (di < SweepDays.Length && SweepDays[di] == day) { row.Add(Sim.N(it.Stock)); di++; }
+            }
+            return row.ToArray();
+        }
+
+        public static void Ten(Md md, long seed)
+        {
+            md.H(2, "10. The half-life sweep — one knob per kind, and why");
+            md.Line("The same market run at ONE half-life for both kinds, from half a game day to never, and then at the shipped pair.");
+            md.Line("This is the table behind the owner's 2026-09-07 decision: a single number cannot serve both kinds, because a Ware only");
+            md.Line("leaves the shelf when someone buys it and a Want only arrives when someone sells it, so 'never' empties the one and");
+            md.Line("fills the other for good. A game day is 1800 real seconds of server uptime; a Relax every game day.");
+            md.Blank();
+
+            var head = new List<string> { "half-life (both kinds)" };
+            foreach (int d in SweepDays) head.Add("day " + Sim.N(d) + " (" + RealTime(d) + ")");
+
+            md.H(3, "Iron (a Ware: target 20, max 60) emptied at day 0. Stock at the visit N days later");
+            var rows = new List<string[]>();
+            foreach (double hl in SweepHalfLives) rows.Add(DriftRow(HalfLifeName(hl), SweepMarket(hl, hl), "Iron", 0));
+            md.Table(head.ToArray(), rows);
+            md.Blank();
+
+            md.H(3, "Wood (a Want: target 200, max 600) flooded to 600 at day 0. Stock at the visit N days later");
+            rows = new List<string[]>();
+            foreach (double hl in SweepHalfLives) rows.Add(DriftRow(HalfLifeName(hl), SweepMarket(hl, hl), "Wood", 600));
+            md.Table(head.ToArray(), rows);
+            md.Blank();
+
+            md.H(3, "A shopping server: 30 visits one game day apart; each visit one player buys the whole Iron and Amber shelves");
+            rows = new List<string[]>();
+            foreach (double hl in SweepHalfLives)
+            {
+                Market m = SweepMarket(hl, hl);
+                int ironUnits = 0, ironCoins = 0, ironEmpty = 0, amberUnits = 0, amberCoins = 0, amberEmpty = 0;
+                for (int v = 1; v <= 30; v++)
+                {
+                    double t = v * Sim.Day;
+                    m.StartVisit(v, t, m.Coined);
+                    foreach (string prefab in new[] { "Iron", "Amber" })
+                    {
+                        MarketItem it = m.Find(prefab);
+                        if (it.Stock <= 0) { if (prefab == "Iron") ironEmpty++; else amberEmpty++; continue; }
+                        int count = it.Stock, unit = m.Charge(it);
+                        DealResult r = m.Settle(Sim.Buy(m.Snapshot(), prefab, count, 1000000), 1000000, t);
+                        if (!r.Ok) continue;
+                        if (prefab == "Iron") { ironUnits += count; ironCoins += count * unit; } else { amberUnits += count; amberCoins += count * unit; }
+                    }
+                }
+                rows.Add(new[] { HalfLifeName(hl), Sim.N(ironUnits), Sim.N(ironCoins), Sim.N(ironEmpty), Sim.N(amberUnits), Sim.N(amberCoins), Sim.N(amberEmpty), Sim.N(m.Purse) });
+            }
+            md.Table(new[] { "half-life (both kinds)", "Iron units sold", "Iron coins", "visits Iron was empty", "Amber units", "Amber coins", "visits Amber was empty", "his purse at the end" }, rows);
+            md.Line("The longer the shelf remembers, the less of a shop he is: at never he sells each shelf once and stands empty for the");
+            md.Line("other 29 visits. That is the trade the owner made for Wares, on purpose: what he sells is what the server's players");
+            md.Line("sold him and what an admin's target says, not a shelf that fills itself overnight.");
+            md.Blank();
+
+            md.H(3, "A supplying server: 30 visits one game day apart; each visit one player sells 50 Wood and 20 IronScrap, or what still fits");
+            rows = new List<string[]>();
+            int neverRefused = 0;
+            foreach (double hl in SweepHalfLives)
+            {
+                Market m = SweepMarket(hl, hl);
+                int wood = 0, woodCoins = 0, woodFull = 0, scrap = 0, scrapCoins = 0, scrapFull = 0, refusedVisits = 0;
+                for (int v = 1; v <= 30; v++)
+                {
+                    double t = v * Sim.Day;
+                    m.StartVisit(v, t, m.Coined);
+                    bool refused = false;
+                    foreach (string prefab in new[] { "Wood", "IronScrap" })
+                    {
+                        int ask = prefab == "Wood" ? 50 : 20;
+                        MarketItem it = m.Find(prefab);
+                        int count = Math.Min(ask, it.Entry.MaxStock - it.Stock);
+                        if (count <= 0)
+                        {
+                            refused = true;
+                            if (prefab == "Wood" && woodFull == 0) woodFull = v;
+                            if (prefab == "IronScrap" && scrapFull == 0) scrapFull = v;
+                            continue;
+                        }
+                        int unit = m.Pays(it);
+                        DealResult r = m.Settle(Sim.Sell(m.Snapshot(), prefab, count, 0), 0, t);
+                        if (!r.Ok) { refused = true; continue; }
+                        if (prefab == "Wood") { wood += count; woodCoins += count * unit; } else { scrap += count; scrapCoins += count * unit; }
+                    }
+                    if (refused) refusedVisits++;
+                }
+                if (hl <= 0) neverRefused = refusedVisits;
+                rows.Add(new[] { HalfLifeName(hl), Sim.N(wood), Sim.N(woodCoins), woodFull == 0 ? "never" : Sim.N(woodFull), Sim.N(scrap), Sim.N(scrapCoins), scrapFull == 0 ? "never" : Sim.N(scrapFull), Sim.N(refusedVisits) });
+            }
+            md.Table(new[] { "half-life (both kinds)", "Wood bought", "coins paid for wood", "first visit Wood was full", "IronScrap bought", "coins paid for scrap", "first visit scrap was full", "visits he refused something" }, rows);
+            Sim.Note("s10.neverRefused", Sim.N(neverRefused));
+            md.Line("A Want only ever arrives, so at never every Want fills to its max and he stops buying: **" + Sim.N(neverRefused) + " of 30 visits refused**.");
+            md.Line("That is why the Want knob is not 0. At 3 he passes on what he was sold fast enough that nobody is refused and the price");
+            md.Line("he pays stays near par; at 30 nobody is refused either, but scrap sits at the flooded price for the whole month.");
+            md.Blank();
+
+            md.H(3, "The shipped pair: wares never, wants 3");
+            rows = new List<string[]>();
+            rows.Add(DriftRow("Iron emptied (Ware, never)", Sim.NewMarket(0), "Iron", 0));
+            rows.Add(DriftRow("Wood flooded to 600 (Want, 3)", Sim.NewMarket(0), "Wood", 600));
+            rows.Add(DriftRow("Iron set to 60 by an admin, target 20 (Ware, never)", Sim.NewMarket(0), "Iron", 60));
+            var head2 = new List<string> { "row" };
+            foreach (int d in SweepDays) head2.Add("day " + Sim.N(d) + " (" + RealTime(d) + ")");
+            md.Table(head2.ToArray(), rows);
+            md.Line("**An admin's stock edit lives as long as the drift lets it**, which for a Ware is now for ever, and for a Want a few days.");
+            md.Line("The lever that persists on either kind is the TARGET (`cargo catalogue add Iron:25:60:60:Ware` holds 60 at any half-life,");
+            md.Line("because the gap is 0); a stock edit is an event. No stock verb was asked for, and none was built.");
         }
     }
 }

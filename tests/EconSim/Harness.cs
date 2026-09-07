@@ -156,6 +156,8 @@ namespace ValkyriesCargo.EconSim
                 var r = MarketRules.Default;
                 r.PurseCoins = 1500;          // Server.PurseCoins
                 r.PurseCarryPercent = 50;     // Server.PurseCarryPercent, now measured on the GROSS
+                r.WareHalfLifeGameDays = 0;   // Server.WareHalfLifeGameDays: never (the owner, 2026-09-07; scenario 10)
+                r.WantHalfLifeGameDays = 3;   // Server.WantHalfLifeGameDays
                 return r;
             }
         }
