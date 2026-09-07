@@ -111,7 +111,7 @@ namespace RavenIron.ValkyriesCargo.Client
                     _nview.Register(Keys.Vanish, RPC_Vanish);
                 }
 
-                Reassert();
+                Reassert(fromAwake: true);
                 LiveCount++;
                 ValkyriesCargo.Log.LogInfo("cargo merchant #" + _visitId + ": awake as " +
                     MerchantPlan.Name(_state) + ", " + (_nview.IsOwner() ? "ours" : "watching") +
@@ -119,8 +119,12 @@ namespace RavenIron.ValkyriesCargo.Client
             }
             catch (Exception ex)
             {
-                ValkyriesCargo.Log.LogError("cargo merchant: Awake threw: " + ex);
-                enabled = false;
+                // NOT `enabled = false`: this component IS the merchant, and switching it off leaves a
+                // vanilla Dverger standing in a visit with nothing driving it. Whatever failed here,
+                // `Reassert` runs again at 0.5 s, 1 s, 3 s and then every 5 s, and the state machine
+                // recovers from a missed setup far better than the visit recovers from no merchant.
+                ValkyriesCargo.Log.LogError("cargo merchant: Awake threw, carrying on so the stagger can " +
+                                            "recover it: " + ex);
             }
         }
 
@@ -133,7 +137,17 @@ namespace RavenIron.ValkyriesCargo.Client
         /// Everything vanilla might undo. Owner only: these are all writes to shared state, and a
         /// non-owner writing them is the silent desync the house rule is about.
         /// </summary>
-        private void Reassert()
+        /// <param name="fromAwake">
+        /// True only for the call inside `Awake`, where vanilla's own `Awake`s have NOT all run yet.
+        /// `MonsterAI.MakeTame()` opens with `m_character.SetTamed(true)` and `BaseAI.m_character` is
+        /// assigned in `BaseAI.Awake`, so calling it from here throws a NullReferenceException out of
+        /// vanilla -- which the catch in `Awake` then turned into `enabled = false`, killing the merchant
+        /// outright. Every visit P5 has ever run did this. Found on the first integrated in-game visit,
+        /// 2026-09-07. `m_character` is `protected`, so there is nothing legitimate to test it with
+        /// (house rule 5); the honest fix is not to call it before vanilla is up, and to let the stagger
+        /// do it 0.5 s later, which is what the stagger is for.
+        /// </param>
+        private void Reassert(bool fromAwake = false)
         {
             if (_nview == null || !_nview.IsValid() || !_nview.IsOwner()) return;
 
@@ -154,7 +168,7 @@ namespace RavenIron.ValkyriesCargo.Client
             }
             if (_ai != null)
             {
-                _ai.MakeTame();
+                if (!fromAwake) _ai.MakeTame();   // see fromAwake: vanilla's BaseAI.Awake has not run yet
                 _ai.m_aggravatable = false;
                 _ai.m_passiveAggresive = false;
                 _ai.m_alertRange = 0f;
