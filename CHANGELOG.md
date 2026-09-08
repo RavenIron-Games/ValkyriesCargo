@@ -93,6 +93,13 @@ after the rest of this log was written.
   one, so the mod arriving swaps nothing out). One log line at director up says what was found and what it does
   to the shelf, and `cargo status` repeats it. The backpack on his body is the other half, and Wu'barrk's.
   **Not seen on a machine.**
+- **The body goes with the smoke (branch `a/vanish-hide`; the owner's eyes 2026-09-08: the vanish was LATE, taken
+  from Track B at his word).** He stood in his own despawn smoke until the server's `Clear` landed,
+  `Spawner.VanishGraceSeconds` (2 s) after the RPC; vanilla `Odin.Update` creates the effect and destroys in the
+  same frame. The grace stays (it is what lets the RPC land before the ZDO goes): `CargoMerchant.RPC_Vanish` now
+  calls `HideForGood` on every screen it reaches — every renderer under him off, every LOD group off, the collider
+  off, the AI stood down on the owner — and logs `cargo merchant #N: into the mist: K renderer(s) off with the
+  smoke; the Clear follows in 2 s`. Nothing of ours enables a renderer, so he stays gone. **Not seen on a screen.**
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 

@@ -738,7 +738,8 @@ namespace RavenIron.ValkyriesCargo.Client
                 }
 
                 Say(Lines.Farewell, large: true);
-                Vanish();   // owner-gated inside (the effect rule): only the owner creates vfx_odin_despawn
+                Vanish();       // owner-gated inside (the effect rule): only the owner creates vfx_odin_despawn
+                HideForGood();  // every screen: the body goes with the smoke, not two seconds after it
             }
             catch (Exception ex)
             {
@@ -780,6 +781,46 @@ namespace RavenIron.ValkyriesCargo.Client
             catch (Exception ex)
             {
                 if (_throws++ < 3) ValkyriesCargo.Log.LogWarning("cargo merchant #" + _visitId + ": the vanish threw: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// The vanish was LATE on a screen (the owner, 2026-09-08): the smoke played and he stood in it until
+        /// the server's `Clear` landed, `Spawner.VanishGraceSeconds` (2 s) after the RPC. Vanilla `Odin.Update`
+        /// creates the despawn effect and calls `m_nview.Destroy()` in the SAME frame, so Odin is never in his
+        /// own smoke. The grace stays - it is what lets this RPC land on every screen before the ZDO goes -
+        /// and the BODY goes now instead: every renderer under him off (Ingvar's and the stand-in's alike),
+        /// every LOD group off so a level transition cannot switch one back on, the collider off so nobody
+        /// bumps into an invisible man during the grace, and the AI stood down on the owner. Runs on every
+        /// machine the RPC reaches; nothing here replicates or needs to. `BodyLoader.HideStandIn` only ever
+        /// disables, so nothing of ours turns him back on before the Clear.
+        /// </summary>
+        private void HideForGood()
+        {
+            try
+            {
+                int off = 0;
+                Renderer[] renderers = GetComponentsInChildren<Renderer>(true);
+                for (int i = 0; i < renderers.Length; i++)
+                {
+                    Renderer r = renderers[i];
+                    if (r != null && r.enabled) { r.enabled = false; off++; }
+                }
+                LODGroup[] groups = GetComponentsInChildren<LODGroup>(true);
+                for (int i = 0; i < groups.Length; i++) if (groups[i] != null) groups[i].enabled = false;
+                CapsuleCollider capsule = GetComponent<CapsuleCollider>();
+                if (capsule != null) capsule.enabled = false;
+                if (_ai != null && _nview != null && _nview.IsValid() && _nview.IsOwner())
+                {
+                    _ai.SetFollowTarget(null);
+                    _ai.StopMoving();
+                }
+                ValkyriesCargo.Log.LogInfo("cargo merchant #" + _visitId + ": into the mist: " + off + " renderer(s) off with the smoke; the Clear follows in " +
+                                           Wire.Float(Spawner.VanishGraceSeconds) + " s");
+            }
+            catch (Exception ex)
+            {
+                if (_throws++ < 3) ValkyriesCargo.Log.LogWarning("cargo merchant #" + _visitId + ": hiding for the vanish threw: " + ex.Message);
             }
         }
 

@@ -23,9 +23,12 @@ save-path resolver**. `v0.1.0-rc1` is marked superseded and still must not reach
 ServerSync gate does not tell the cuts apart (all are 0.1.0), so every copy is replaced by hand. Issue #23 is
 closed. The owner's conditions for the next cut (2026-09-08 00:40: the ownership fix in, a first approach that
 reaches) are met but for the vanish being watched; the cut itself is on his word — rc3, or 0.1.0 proper.
-**Watched on 2026-09-08 by the owner: the arrival banner works, and the vanish plays but is "not timed perfectly"**
-(`Spawner.VanishGraceSeconds`, your owner's file; what it looked like is asked). **And his word after the day's
-five merges (main 43149bb): no release yet.**
+**Watched on 2026-09-08 by the owner: the arrival banner works, and the vanish plays but LATE** — he stood in
+his own smoke until the server's `Clear`, `Spawner.VanishGraceSeconds` (2 s) after the RPC; vanilla Odin destroys
+in the same frame as his effect. **Built on `a/vanish-hide`** (your owner's file, at the owner's word):
+`CargoMerchant.HideForGood` from `RPC_Vanish` hides him on every screen the RPC reaches (renderers, LOD groups,
+the collider; the AI stood down on the owner) and the grace is untouched. Unseen on a screen. **And his word
+after the day's five merges (main 43149bb): no release yet.**
 
 **Valheim 1.0, verified from Don's machine and HELD by the owner.** Your #55 sweep holds on every point that could
 be checked here: Steam's `public-test` branch is password-protected and hidden from the branch list (that is why
