@@ -44,6 +44,9 @@ every bake reaches Don as a release asset (section 2, first item).
 - [x] **PR #17** (the `VALHEIM-API-REFERENCE` snapshot, docs only): merged 2026-09-07.
 - [ ] **The store.** No upload until the loop below has been seen (`docs/RELEASE.md` step 5; issue #23).
       **And never the rc1 tag**: it carries F1 (fixed on main by PR #30, not in the tag); the next cut replaces it.
+      **OWNER 2026-09-08, after the day's five merges (main 43149bb): "no release."** Open before one: a two-client
+      session on main's build (the count box, the leash hold with a second player, the hover key, the backpack shelf
+      line, the daylight backdrop), the vanish's timing, and the Valheim 1.0 stop-ships, which are held.
 - [x] **F11, from the P4/P5 audit:** a tamed Ingvar is a legal target for every hostile and cannot die or
       be staggered, so a raid parks on him. **DECIDED 2026-09-07: ghost mode** — Ingvar is to hostiles what
       a player in vanilla's `ghost` mode is: not a target, not a threat. Neither faction-only nor the aggro
@@ -86,7 +89,10 @@ step 4).
       `dropped at` near 12 m, a smooth glide on the second client; **the edges** (22): the `flight:` line
       in `cargo status`, the pilot leaving the block, dismiss mid-flight, a real intro Valkyrie untouched.
 - [ ] **The loop, once, end to end:** glide, drop, the walk-up *completing*, the callout, the terminal, a
-      trade, the vanish. This is the item that gates the store.
+      trade, the vanish. This is the item that gates the store. **Seen so far by the owner's eyes (2026-09-08):
+      the arrival banner works; the vanish plays but is "not timed perfectly"** (`Spawner.VanishGraceSeconds` 2 s,
+      Wu'barrk's) — what "not perfectly" looked like is still to be said. The walk-up completing on the first
+      approach is in the log (visits 13–15, 19).
 
 ---
 

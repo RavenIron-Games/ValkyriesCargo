@@ -16,7 +16,9 @@ the bundle attached, a pre-release, uploaded to no store — **it carries neithe
 not tell the cuts apart (all are 0.1.0), so every copy is replaced by hand. Your rc1 note (issue #23) is closed.
 `Assets/valkyriescargo_kit` is attached to both releases, so Don's builds carry Ingvar. **The owner's conditions
 for the next cut (2026-09-08 00:40) are met but for the vanish being watched**; the cut is on his word, rc3 or
-0.1.0 proper.
+0.1.0 proper. **Watched by him on 2026-09-08: the arrival banner works; the vanish plays but is "not timed
+perfectly"** — `Spawner.VanishGraceSeconds` (2 s) is yours; what it looked like is being asked. **His word after
+the day's five merges (main 43149bb): no release yet.**
 
 **Valheim 1.0: your sweep verified from Don's machine, and HELD by the owner.** The `public-test` branch is
 password-protected and hidden from the branch list — that is why it read as absent last night, not because it

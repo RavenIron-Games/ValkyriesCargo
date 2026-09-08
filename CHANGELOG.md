@@ -17,9 +17,11 @@ and no exception from the mod on either side; the record is `docs/proofs/2026-09
 Proven off-game across 1701 checks and a ten-scenario economy simulation. Never yet seen: every fix
 merged since the audit (its six, then D1 to D4 and the half-turn; `docs/AUDIT-STORMTEST-2026-09-07.md`
 §5 says what would exercise each), the
-two-client items, and the screen questions (the release over the drop point, the vanish, the callout
-bubble, the hover prompt). The runbook is `docs/PROOF-CLIENT.md` and what remains is listed in
-CLAUDE.md's "what to verify in-game". Treat 0.1.0 as a first playable, not as a settled one.
+two-client items, and the screen questions (the release over the drop point, the callout bubble, the
+hover prompt). On 2026-09-08 the owner watched two of them: **the arrival banner works, and the vanish plays
+but is not timed perfectly** (`Spawner.VanishGraceSeconds`, Track B's). The runbook is `docs/PROOF-CLIENT.md`
+and what remains is listed in CLAUDE.md's "what to verify in-game". Treat 0.1.0 as a first playable, not as
+a settled one; **the owner's word on 2026-09-08 after the day's five merges: no release yet.**
 
 Entries are in build order, except the five sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.

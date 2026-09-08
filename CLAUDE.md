@@ -89,7 +89,8 @@ running: the hold works against a real foreign event). No exception from us in t
 only on change, so a quiet log after that line is the loop holding, not the loop dead. Not yet seen ON THAT DAY: a
 player's report in `cargo status`, a forced visit, the banner, the timer ending a visit; all need a client (see
 "What to verify in-game"). Since: the report and a forced visit on 2026-09-07 (the first client run and the
-integrated run below); **the banner has still never been seen.** CairnTest was in use by the owner for another mod
+integrated run below); **the arrival banner was SEEN by the owner on 2026-09-08** (visit 19; "arrival banner works").
+CairnTest was in use by the owner for another mod
 at the time and was not touched.
 
 **P6 deal wire and persistence, 2026-09-06 (branch `a/p6-deal-wire`).** `Net/DealWire.cs` registers `VCargo_open`,
@@ -903,7 +904,8 @@ P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormT
    `roll: forced visit: Nomadtest at (-51.59098, 57.8753242); 1 eligible, 1 ticket(s)` → `visit #2 begins: pilot
    Nomadtest (uid -794915846) at (…), 300 s, purse 800, seed 1707749962`, and on the client `server answered:
    cargo visit Nomadtest: forced visit: …`. A NATURAL roll had already started visit 1 at 11:00
-   (`roll: visit: Nomadtest at (…); 1 eligible, 1 ticket(s)`). The banner and `cargo status` not read. As
+   (`roll: visit: Nomadtest at (…); 1 eligible, 1 ticket(s)`). **The arrival banner SEEN 2026-09-08** (the owner,
+   visit 19, main's terminal-and-busy build); `cargo status` not read. As
    written: from the client: the console prints `asked the server`, then the server's answer
    (`cargo visit <name>: forced visit: <name> at (x, z); ...`); the server log shows `visit #1 begins`; the pilot
    sees "Wings beat in the upper skies..." and, once inside 96 m of where they stood, the centre banner
@@ -913,7 +915,10 @@ P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormT
    sleep half not run. As written: walk more than 96 m away for a minute, come back: the countdown resumed where it paused and
    the server log counted a clock republish; sleep through a night mid-visit: the countdown did not jump.
 10. **The end** — server half 2026-09-07 11:05: `visit #1 ended: timer; takings 0 coins, purse 800, 0 clock
-    republish(es), 0 owed deliveries` (and visit 6 the same at 11:36); the banner and `cargo status` not read. As
+    republish(es), 0 owed deliveries` (and visit 6 the same at 11:36); the end banner and `cargo status` not read.
+    **The vanish itself was WATCHED by the owner on 2026-09-08**: it plays, "but not timed perfectly" — his words;
+    the number that times it is `Spawner.VanishGraceSeconds` (2 s: the Vanish RPC, then the Clear), Track B's
+    file, and what "not perfectly" looked like is asked below. As
     written: after 300 s the server log shows `visit #1 ended: timer; takings 0 coins`, the banner
     "Ingvar has gone back to the mist" shows, `cargo status` shows `visit: none; last #1 ended: timer`.
 11. **`cargo dismiss`** — admin half **DONE 2026-09-07**: `visit #2 ended: admin Nomadtest; takings 0 coins, …`,
