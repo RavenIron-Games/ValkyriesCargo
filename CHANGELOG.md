@@ -8,13 +8,15 @@ prices for five minutes, and vanishes the way Odin does. Every player sees the s
 server owns the market.
 
 **What has been seen on a screen, and what has not.** On 2026-09-07 the owner's Windows client ran six
-visits against a dedicated server: the flight and the drop within a second of the simulation every time,
+visits against a dedicated server, then three more that evening on the audit's fixes: the flight and
+the drop within a second of the simulation every time,
 Ingvar in his own body, the walk-up (finishing on every visit, but never on the first attempt -- the
 walk-up defect below), the terminal opened on the merchant, twenty deals with the price curve, the
 Fair Market Act, both drift knobs and the purse carry correct to the coin, dismissals, a relog mid-visit,
 and no exception from the mod on either side; the record is `docs/proofs/2026-09-07-stormtest-session.md`.
-Proven off-game across 1701 checks and a ten-scenario economy simulation. Never yet seen: six of the
-merged audit fixes (`docs/AUDIT-STORMTEST-2026-09-07.md` §5 says what would exercise each), the
+Proven off-game across 1701 checks and a ten-scenario economy simulation. Never yet seen: every fix
+merged since the audit (its six, then D1 to D4 and the half-turn; `docs/AUDIT-STORMTEST-2026-09-07.md`
+§5 says what would exercise each), the
 two-client items, and the screen questions (the release over the drop point, the vanish, the callout
 bubble, the hover prompt). The runbook is `docs/PROOF-CLIENT.md` and what remains is listed in
 CLAUDE.md's "what to verify in-game". Treat 0.1.0 as a first playable, not as a settled one.
@@ -22,10 +24,13 @@ CLAUDE.md's "what to verify in-game". Treat 0.1.0 as a first playable, not as a 
 Entries are in build order, except the four sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
 
-### Since 0.1.0-rc1 — 2026-09-07, the day the first visits flew (PRs #24 to #48)
+### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 
 `v0.1.0-rc1` was cut at 09:37 that morning and **must not reach a tester**: it carries the F1 blocker
-fixed three hours later. Everything below is on `main` and goes into the next cut.
+fixed three hours later. `v0.1.0-rc2` replaces it, cut from `main` after PR #53 the same evening with
+everything below in it; the store zip and the bundle are its release assets, it is a pre-release, and
+it is uploaded to no store. Both cuts are version 0.1.0, so the ServerSync gate does not tell them
+apart: an rc1 client connects to an rc2 server and brings F1 with it. Replace every copy by hand.
 
 - **F1, the blocker (PR #30, 1427 checks).** The immortality prefix on `Character.RPC_Damage` returned
   `false` whenever no merchant was instanced, so with no visit running nothing in the world could take
@@ -78,8 +83,23 @@ fixed three hours later. Everything below is on `main` and goes into the next cu
   the per-join session uid, with the two probe rows that go with it; the admin and deal wires register
   a peer once its identity has arrived; a client's session-end line no longer claims a sidecar.
 
-Known and open at this cut: the walk-up's first approach (D1, above) and the sweep's double count (D3),
-both with diffs written in `docs/AUDIT-STORMTEST-2026-09-07.md`.
+- **D1's entry reset (PR #50, Track B).** The ZDO-driven change to `approaching` runs the same
+  `EnterState` as Decide's own, so F5's scaled budget runs on the first approach at last; the
+  transition is logged with the carrier's state, the distance to the player, whose client owns him and
+  the budget, and the drop's silent miss is a warning.
+- **D3's deferred sweep (PR #51, Track B).** The belt-and-braces sweep runs one director tick after
+  the reclaim, so a reclaim that works is no longer counted as a stranded ZDO; a clean end logs the
+  reclaim and no sweep line.
+- **The half-turn at the attach (PR #53, 1701).** Ingvar walked backward on every live visit: his body
+  is a half-turn off the carry frame. `Client.BodyYawDegrees` (local, default 180) turns him at the
+  attach and in the preview.
+
+Known and open at this cut: **the pilot's client loses ownership of the merchant during the carry.**
+On the last visit of the day (visit 9, on this build) the drop happened with the merchant no longer
+owned by the pilot's client, so no Decide ran and Ingvar never woke; every late give-up of the session
+reads the same way (`docs/AUDIT-STORMTEST-2026-09-07.md` §1.3). The fix is in Track B's file and is not
+in this cut. D1's entry reset, D3's deferred sweep and the half-turn are built and have not yet been
+watched on a screen.
 
 ### Phase 4-5 — the flight and the merchant
 

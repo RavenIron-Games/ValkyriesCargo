@@ -5,15 +5,17 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.0-rc1`, first playable.** PR #22 merged the flight, the merchant, the Cargo Terminal,
-> Ingvar's own body and the BarrkBOT export; the tag is cut, the store zip is built, and the upload is
-> deliberately held back (see Status). The plugin boots on a client and a dedicated server, the
-> director runs, the market persists, and Ingvar's own body loads out of the bundle. A full visit is
-> proven off-game across 1301 checks and a nine-scenario economy simulation, and is still being proven
-> in-game: one live visit has landed Ingvar in his own body, but no run has yet watched the walk-up
-> finish, the terminal open, a trade settle or the vanish. `docs/PROOF-CLIENT.md` is the runbook and
-> CLAUDE.md lists what remains. This file is the developer's README; the store page is
-> `HexiumDist/README.md`.
+> **Status: `v0.1.0-rc2`, first playable, still a pre-release.** Cut 2026-09-07 evening from `main`
+> after PR #53; the store zip and the bundle are attached to the release, and the upload is still held
+> back (see Status). That day the owner's Windows client ran nine visits against a dedicated server:
+> the flight and the drop within a second of the simulation every time, Ingvar in his own body, the
+> walk-up finishing (never on the first approach), the Cargo Terminal open on him, twenty deals settled
+> at the price curve, dismissals, and a relog mid-visit. Proven off-game across 1701 checks and a
+> ten-scenario economy simulation. Not yet seen: the vanish and the release over the drop point, the
+> callout bubble, the hover prompt, the two-client items, and every fix merged since the audit. One
+> defect is open: the pilot's client loses ownership of the merchant during the carry.
+> `docs/PROOF-CLIENT.md` is the runbook and CLAUDE.md lists what remains. This file is the developer's
+> README; the store page is `HexiumDist/README.md`. **`v0.1.0-rc1` carries a blocker; do not install it.**
 
 ---
 
@@ -24,8 +26,8 @@ base, the server may send Ingvar the Far-Travelled your way: a Valkyrie will fly
 talons, drop him beside your hearth, and he will walk up and call out. Everyone nearby will see all
 of it. Never on command: the visit is a roll every 25 minutes at 25%, and a summon horn is a later,
 earned feature. The roll, the eligibility gates, the event, the flight and the merchant are all built
-now, and have flown and landed together once, live: Ingvar arrived in his own body, stopped short of
-your hearth and called out from where he stood (see Status).
+now, and have flown nine live visits on 2026-09-07: Ingvar arrives in his own body and walks up to
+you, though never yet on his first attempt (see Status).
 
 **The trade.** Press E on him for the Cargo Terminal: his wares on one side, the goods he wants on
 the other, a staging tray in between. He carries a live stock of 72 catalogue entries — 18 he sells
@@ -34,10 +36,11 @@ him and he pays less; a game day later it has drifted back. He pays coins, or ta
 barter at his live buy price, and he arrives with a purse of 1500 coins, so nobody can dump a
 warehouse on him. If a price moves while you are staging, the line turns amber and you confirm once
 more; nothing leaves your inventory until the server has answered. The market, the wire and the
-window are all built; the window has never been drawn on a screen.
+window are all built; the window has been opened on him and twenty deals have settled through it.
 
 **The departure.** Five minutes, or Shift+E twice to send him off. He speaks a farewell and vanishes
-in Odin's own effect. Built (`Client/CargoMerchant.cs`); not yet watched on a screen.
+in Odin's own effect. Built (`Client/CargoMerchant.cs`); the timer and the dismissal have ended
+visits on a screen, the farewell and the vanish effect have not been watched.
 
 ## What it will not do
 
@@ -48,7 +51,7 @@ from our own interact handler. Nothing happens on command except an admin's `car
 
 ## Status
 
-Truth pass against `main` at commit `8453b65` (PR #22 merged, `v0.1.0-rc1` tagged), 2026-09-07. The
+Truth pass against `main` at the `v0.1.0-rc2` cut (after PR #53), 2026-09-07 evening. The
 log lines below are the ones recorded in `CLAUDE.md` "Status" by whoever saw them.
 
 ### Built and proven headless, on a dedicated server
@@ -97,51 +100,50 @@ machine, the body's blend model and the BarrkBOT export among them), plus `Net\C
 terminal's tray model — against stubs, never a copy. Mutation-proven throughout: every fix in this
 history has a test recorded to fail without it.
 
-### Built, and mostly still unseen
+### Seen on a screen, 2026-09-07, and what has not been
 
-Most of this compiles and has never been run with a renderer attached. A few items below have now
-been run once, live, on a listen host; one run proves far less than a repeatable one, and none of
-these is repeatable yet. A clean build proves nothing about a game member either way.
+Nine visits on StormTest (dedicated, port 2476) from the owner's Windows client: six in the morning on
+PR #46's build, three in the evening on the audit's fixes. The record is
+`docs/proofs/2026-09-07-stormtest-session.md`, with every line the mod wrote in the `.log.txt` files
+beside it. No exception from the mod on either side, all day.
 
-- **The Cargo Terminal** — the IMGUI window itself: the two panes, the icons, the staging tray, the
-  amber price line, Confirm, Fill from my goods, Send him off. `cargo terminal demo` draws it on an
-  in-process market with no server and no merchant; nobody has run that command yet, and the one live
-  visit below ended before anyone pressed E on Ingvar to open it the real way.
-- **The client boot line** (`renderer=True`) and `cargo status` answering on a client have both been
-  seen once, on a listen host, 2026-09-07. Still not seen: the ServerSync version wall, the config
-  lock on a client that is not also the host, and the `cargo prefab` dumps.
-- **The comfort report**: `Client\ComfortReporter.cs` writing `VCargo_rested` / `VCargo_comfort` has
-  been seen once in a client's own `cargo status`. Not yet confirmed: those same numbers appearing
-  side by side in the server's candidate list.
-- **A forced visit**: `cargo visit`, the pilot's private line, the centre banner, the countdown, the
-  clock pausing when everyone walks out of range, the timer ending the visit, `cargo dismiss`, and a
-  non-admin being refused.
-- **A deal over the wire**: `cargo deal buy Iron 2` moving an inventory and a price on every machine,
-  a redelivery after a disconnect, a visit resumed after a mid-visit restart, and each refusal
-  reason.
-- **The body loader**: `cargo body` and `cargo body preview` have both been run and watched. Five
-  real bake defects were found this way and are fixed at the source (a stray sphere, an unlinked
-  albedo, a bind-pose bounding box that lied about the up-axis, Valheim's refusal to light Unity's
-  `Standard` shader, and a donor material's emission glow left behind) — the full account is
-  `docs/knowledge-base/SKINNED-CHARACTER-BUNDLE-FACTS.md`. Ingvar now stands textured, upright and
-  correctly lit in preview. Not yet seen: how he reads in daylight (the only preview run was at
-  night) and the walk and one-shot clips playing.
-- **The flight** (`Server/Spawner.cs`, `Client/CargoFlight.cs`, `Patches/Patch_Valkyrie_Awake.cs`,
-  Wu'barrk's P4): the server authors the Valkyrie for the pilot's client to fly, straight in from
-  about 90 m out and 120 m up over about 17 s, and now carries the merchant (P5). Flown once, live —
-  Ingvar landed in his own body — and not yet watched from two screens at once.
+- **The flight**: the Valkyrie flies straight in and drops him within a second of the off-game
+  simulation every time (16.0 to 17.0 s), and Ingvar wears his own body every time. Not yet watched
+  from two screens at once.
+- **The walk-up finished on every visit** that had one, and never on the first approach: the first
+  attempt gave up (D1, fixed by PR #50, unseen since), the trading leash walked him back and the
+  second reached the player. He walked backward all day — a half-turn at the attach, fixed by PR #53
+  and not yet seen. On the last visit he never woke: the pilot's client lost ownership of him during
+  the carry. That is the open defect at this cut.
+- **The Cargo Terminal** opened on him with E and closed on use and on the inventory: twenty deals
+  settled over the wire — sells, buys, a four-line barter — at the price curve, with the Fair Market
+  Act clamp, both drift knobs and the purse carry correct to the coin, and `purse_empty` refused twice
+  then counted. `cargo terminal demo` drew the window on an in-process market first.
+- **Visits begin and end**: natural rolls and forced ones; of the morning's six, three ended by the
+  timer and three by dismissal (`cargo dismiss` and "Send him off"); the eligibility refusals
+  (`not rested`, `comfort < 4`, `on cooldown`) echoed to the client; the clock paused with nobody near;
+  and a relog mid-visit that the persistent merchant survived. Not yet seen: the centre banner and a
+  non-admin refused.
+- **The sidecar and the export**: stock, purse, visit, cooldown and session rows written on every
+  save, and the BarrkBOT trader and visit rows on the next cycle. The restart-mid-visit half is still
+  to run.
+- **The boot lines** on both sides: `renderer=True, patches 18/18 applied, catalogue=72 entries,
+  engine: same build … probes 18/18 ok, 7 not probeable`; the moved-version direction proven offline
+  against 0.221.4.
 
-The full numbered list is `CLAUDE.md`, "What to verify in-game", items 2 to 23 (P4's flight and the
-BarrkBOT export each added their own beyond the original 20). A client has since booted and run one
-visit; `docs/PROOF-CLIENT.md` is the runbook for the rest of the list, and each proof gets pasted back
-into `CLAUDE.md` as it happens.
+Never yet seen on a screen: the release over the drop point and the vanish in Odin's effect, the
+callout bubble, the hover prompt, the ServerSync version wall, the two-client items, and every fix
+merged since the audit (its six, then D1 to D4 and the half-turn; `docs/AUDIT-STORMTEST-2026-09-07.md`
+§5 says what would exercise each).
 
-So today a visit puts Ingvar himself in the yard, flown in and landed in his own body — proven once,
-live, on a listen host. He stopped short of the walk-up and called out instead, and nobody has yet
-watched one visit's whole loop, glide to vanish, in a single sitting. That is why the tag is
-`v0.1.0-rc1` and not yet a store upload: `docs/RELEASE.md` step 5 holds the upload back until that
-loop is seen.
+The full numbered list is `CLAUDE.md`, "What to verify in-game"; `docs/PROOF-CLIENT.md` is the
+runbook, and each proof gets pasted back into `CLAUDE.md` as it happens.
 
+So today a visit puts Ingvar in the yard, walks him up on the second attempt and trades through the
+terminal, proven on one screen against a dedicated server. Nobody has yet watched a first approach
+succeed, a vanish, or two screens at once, and one carry in nine lost him. That is why the tag is
+`v0.1.0-rc2` and not yet a store upload: `docs/RELEASE.md` step 5 holds the upload back until the
+whole loop, glide to vanish, is seen.
 ---
 
 ## Installing
