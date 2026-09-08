@@ -103,8 +103,9 @@ step 4).
       owner: "vanish looked great."** The walk-up completing on the first approach is in the log (visits 13–15, 19,
       20). **Visit 20 also seen**: the new tray settling a deal on the wire (a Flametal on the 40-item shelf for
       five Eitr, +28 coins, to the coin on both sides), the leash-hold line on your own terminal, and the backpack
-      boot line with `shelf 40 of 72`. Still unseen: the count box typed into (say so if you typed), the leash hold
-      with a SECOND player at the terminal, the hover reading the key, the backdrop in daylight.
+      boot line with `shelf 40 of 72`. **The owner on the rest, the same hour: "all that looks fine"** — the count
+      box, the hover key and the backdrop, seen. Still unseen: the leash hold with a SECOND player at the terminal
+      (needs Wu'barrk in), and the tray at `TerminalScale` 2.
 
 ---
 
@@ -439,9 +440,9 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       window on the theme's near-black panel at `Client.TerminalBackdropAlpha` (0.4 = the 40 % translucent black
       asked for) with both text tones a step brighter, through `ThemeOptions` (the vendored theme untouched).
       While a count box has the keyboard, Use/Tab/M do not close the window (`UIFocus.SetHasTextFocus` raised
-      from Tick); Enter or a click elsewhere hands it back. 1841 checks, 0 warnings. **Unseen on a screen**: the
-      box taking keystrokes in the game (IMGUI text fields do take keys in Valheim — UIFocus exists because they
-      did — but this one has not been typed into yet), the backdrop's contrast in daylight, the tray at scale 2.
+      from Tick); Enter or a click elsewhere hands it back. 1841 checks, 0 warnings. **SEEN on visit 20 (2026-09-08,
+      main): the tray settled a deal on the wire, and the owner on the box, the backdrop and the rest: "all that
+      looks fine."** Unseen: the tray at `TerminalScale` 2.
       Items 1, 2 (needs Wu'barrk's client log) and 3 (a one-line `Localize` in his `GetHoverText`) and the backpack
       test are his: issue #59.
 - [x] **Items 2 and 3 taken from Track B** (owner, 2026-09-08: "take the first two on a branch"). **BUILT on
@@ -452,7 +453,8 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       nothing, `CargoMerchant.Busy()` = the local terminal or the server's count for this visit, one log line per
       flip; `GetHoverText` through `Localization.instance.Localize`. 1862 checks, 0 warnings. **Unseen on a
       machine**: `cargo merchant #N: a terminal is open on him (K on the wire): the leash holds` on the owner while a
-      SECOND player trades, the hover reading `[E] Trade`, and whether the walk-off was the leash at all (his log).
+      SECOND player trades, and whether the walk-off was the leash at all (his log). The hover key: **seen, the
+      owner 2026-09-08 ("all that looks fine")**; the hold line on his own terminal: seen on visits 19 and 20.
       **Backpacks 1.3.8 is installed on StormTest and Don's client** (GUID `org.bepinex.plugins.backpacks`,
       confirmed off the DLL; Thunderstore, the owner's download OK) — the backpack test can run from here.
 - [ ] **The buy-anything extension** (owner, 2026-09-08, the same message): Ingvar buys ANY item a player offers,
