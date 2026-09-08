@@ -407,7 +407,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       the shelf on a branch"): `Core/Shelf.cs` (pure), `Market.KindOf` as the one place the effective kind is decided,
       `Server.ShelfSize` 20 / `Server.ShelfRotationGameDays` 2, the director's roll-when-idle with its two log lines,
       `not_on_shelf`, the `cargo status` line; 1818 checks, 0 warnings, economy scenario 11, `docs/CATALOGUE.md` §7.
-      The PR is open on the branch and waits for the word; **unseen on a machine** (the first boot must print
+      PR #57 is open and waits for the word; **unseen on a machine** (the first boot must print
       `director up: …; shelf 20 of 72, period N, …` and the first idle tick after a period `shelf rolled: …`).
 - [ ] **The buy-anything extension** (owner, 2026-09-08, the same message): Ingvar buys ANY item a player offers,
       on the shelf or not; a sale of an uncatalogued item forces a new persistent entry, classed common or rare by
