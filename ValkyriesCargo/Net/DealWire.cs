@@ -16,7 +16,7 @@ namespace RavenIron.ValkyriesCargo.Net
     /// </summary>
     public static class DealWire
     {
-        public const string Open = Keys.Open, Close = Keys.Close, DealName = Keys.Deal, Ack = Keys.Ack, Claim = Keys.Claim, Dismiss = Keys.Dismiss, Dealt = Keys.Dealt;
+        public const string Open = Keys.Open, Close = Keys.Close, DealName = Keys.Deal, Ack = Keys.Ack, Claim = Keys.Claim, Dismiss = Keys.Dismiss, Dealt = Keys.Dealt, Dismissed = Keys.Dismissed;
 
         private static readonly HashSet<ZRpc> _registered = new HashSet<ZRpc>();
         private static readonly HashSet<long> _open = new HashSet<long>();
@@ -169,16 +169,22 @@ namespace RavenIron.ValkyriesCargo.Net
                 ZNetPeer peer = PeerFor(rpc);
                 VisitDirector d = CargoTick.Director;
                 if (d == null || peer == null) return;
-                if (!d.Session.Active || d.Session.VisitId != visitId) return;
-                if (!AtTheVisit(peer, d.Session))
+                if (!d.Session.Active || d.Session.VisitId != visitId) { Answer(rpc, DealReason.StaleVisit); return; }
+                bool live;
+                UnityEngine.Vector3 anchor = VisitAnchor.Of(d.Session, out live);
+                float distance = DistanceXZ(peer, anchor);
+                if (distance > VisitorRange)
                 {
                     if (_farDismissals++ < 3)
-                        ValkyriesCargo.Log.LogWarning("refused " + Dismiss + " from " + Who(peer) + ": " + Wire.Float(DistanceToVisit(peer, d.Session)) +
-                                                      " m from visit #" + visitId + "'s drop point, and a visitor is within " + Wire.Float(VisitorRange) + " m" +
+                        ValkyriesCargo.Log.LogWarning("refused " + Dismiss + " from " + Who(peer) + ": " + Wire.Float(distance) + " m from " +
+                                                      (live ? "the merchant" : "visit #" + visitId + "'s drop point (no merchant bound)") +
+                                                      ", and a visitor is within " + Wire.Float(VisitorRange) + " m" +
                                                       (_farDismissals == 3 ? "; further refusals are silent" : ""));
+                    Answer(rpc, DealReason.TooFar);
                     return;
                 }
                 ValkyriesCargo.Log.LogInfo(Dismiss + " from " + Who(peer) + ": " + d.Dismiss("dismissed by " + Who(peer)));
+                Answer(rpc, DealReason.Ok);
             }
             catch (Exception ex)
             {
@@ -201,14 +207,18 @@ namespace RavenIron.ValkyriesCargo.Net
         /// </summary>
         public const float VisitorRange = 96f;
 
-        private static bool AtTheVisit(ZNetPeer peer, VisitSession session)
-            => DistanceToVisit(peer, session) <= VisitorRange;
-
-        private static float DistanceToVisit(ZNetPeer peer, VisitSession session)
+        private static float DistanceXZ(ZNetPeer peer, UnityEngine.Vector3 anchor)
         {
             UnityEngine.Vector3 at = peer.GetRefPos();
-            float dx = at.x - session.DropX, dz = at.z - session.DropZ;
+            float dx = at.x - anchor.x, dz = at.z - anchor.z;
             return (float)Math.Sqrt(dx * dx + dz * dz);
+        }
+
+        /// <summary>The one answer to a dismiss, on the caller's own socket; the client's terminal waits on it.</summary>
+        private static void Answer(ZRpc rpc, string reason)
+        {
+            try { rpc.Invoke(Dismissed, reason); }
+            catch (Exception ex) { if (_throws++ < 3) ValkyriesCargo.Log.LogError(Dismissed + " send threw: " + ex); }
         }
 
         // ---- helpers --------------------------------------------------------------------------------

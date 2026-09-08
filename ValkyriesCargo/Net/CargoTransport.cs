@@ -38,6 +38,7 @@ namespace RavenIron.ValkyriesCargo.Net
             try
             {
                 rpc.Register<string>(DealWire.Dealt, OnDealt);
+                rpc.Register<string>(DealWire.Dismissed, OnDismissed);
                 _rpc = rpc;
                 _pending.Clear();
                 _claimed = false;
@@ -117,6 +118,12 @@ namespace RavenIron.ValkyriesCargo.Net
             }
         }
 
+        private void OnDismissed(ZRpc rpc, string reason)
+        {
+            ValkyriesCargo.Log.LogInfo(DealWire.Dismissed + ": " + reason);
+            CargoRpc.AnswerDismiss(reason);
+        }
+
         public void AckNow(string deliveryId)
         {
             if (!Ready || string.IsNullOrEmpty(deliveryId)) return;
@@ -142,7 +149,11 @@ namespace RavenIron.ValkyriesCargo.Net
         {
             VisitDirector d = CargoTick.Director;
             if (d != null && d.Session.Active && d.Session.VisitId == visitId)
+            {
                 ValkyriesCargo.Log.LogInfo(d.Dismiss("dismissed by " + (Player.m_localPlayer != null ? Player.m_localPlayer.GetPlayerName() : "host")));
+                CargoRpc.AnswerDismiss(DealReason.Ok);
+            }
+            else CargoRpc.AnswerDismiss(DealReason.StaleVisit);
         }
 
         public void Send(Deal deal, Action<DealResult> onAnswer)

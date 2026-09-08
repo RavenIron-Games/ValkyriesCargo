@@ -54,6 +54,7 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string Claim = "VCargo_claim";
         public const string Dismiss = "VCargo_dismiss";
         public const string Dealt = "VCargo_dealt";
+        public const string Dismissed = "VCargo_dismissed";   // string: the answer to a dismiss (DealReason.Ok / TooFar / StaleVisit)
 
         // Object RPCs (Client/CargoMerchant.cs): `ZNetView.Register`, scoped to the merchant's own
         // object. The low-risk end of the collision issue, but renamed with the rest for one prefix.

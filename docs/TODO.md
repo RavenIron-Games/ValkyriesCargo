@@ -479,3 +479,8 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       org.bepinex.plugins.backpacks 1.3.8 loaded; shelf x2 (Server.BackpackShelfMultiplier)`, then `director up: …;
       shelf 40 of 72, period 14 …` with forty names on `shelf now:` and no re-roll after; visit 20 bought a Flametal
       that is on the shelf only by the multiplier. The body half stays his.
+- [ ] **`a/dismiss-at-merchant` — the dismiss measured against him and answered (2026-09-08, 1885 checks).** PR
+      open, unmerged, undeployed. Proof wanted on the next session: a leash walk past 96 m from the drop point, then
+      Send him off from beside him → server `VCargo_dismiss from Nomadtest: visit #N dismissed`, client
+      `VCargo_dismissed: ok` then `terminal closed: sent him off`; and NO `Received 0 configs and 1 custom values`
+      every 2 s while trading beside him after the walk.

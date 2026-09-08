@@ -15,6 +15,7 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string OneMinute = "Hurry your bargaining, friend! The Valkyrie's horn sounds in the wind.";
         public const string DismissFirst = "Send me off, then? Ask once more and I'll go.";
         public const string Farewell = "The Allfather calls me back to the mist!";
+        public const string DismissSent = "So be it. I wait on the Allfather's word.";
 
         public static readonly string[] Arrival =
         {
@@ -110,6 +111,8 @@ namespace RavenIron.ValkyriesCargo.Core
                 case DealReason.VisitOver: return "The Valkyrie is already circling; the bargaining is done.";
                 case DealReason.StaleVisit: return "That was another visit, friend.";
                 case DealReason.NotConnected: return "No word reaches him from here.";
+                case DealReason.TooFar: return "Stand beside me if you would send me off, friend.";
+                case DealReason.NoAnswer: return "No word came back on that. Ask me again.";
                 default: return reason ?? "";
             }
         }

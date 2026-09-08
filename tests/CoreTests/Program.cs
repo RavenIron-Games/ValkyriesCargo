@@ -3622,6 +3622,26 @@ namespace ValkyriesCargo.Tests
             CargoRpc.Send(deal, r => result = r);
             Check(result != null && result.Reason == DealReason.NotConnected, "Send with no transport returns not_connected");
 
+            // The dismiss answer (2026-09-08, visit 21): no transport answers not_connected at once; a
+            // transport's answer reaches the caller exactly once; nobody waiting drops it.
+            string dismissed = null; int answers = 0;
+            CargoRpc.Dismiss(1, r => { dismissed = r; answers++; });
+            Check(dismissed == DealReason.NotConnected && answers == 1, "Dismiss with no transport answers not_connected");
+            CargoRpc.UseTransport(new FakeTransport(new DealResult { Ok = false, Reason = DealReason.SoldOut }));
+            dismissed = null;
+            CargoRpc.Dismiss(2, r => { dismissed = r; answers++; });
+            Check(dismissed == null && answers == 1, "A dismiss on a silent transport waits for its answer");
+            CargoRpc.AnswerDismiss(DealReason.TooFar);
+            Check(dismissed == DealReason.TooFar && answers == 2, "The transport's answer reaches the caller once");
+            CargoRpc.AnswerDismiss(DealReason.Ok);
+            Check(answers == 2, "A second answer with nobody waiting is dropped");
+            CargoRpc.Dismiss(3, r => { dismissed = r; answers++; });
+            CargoRpc.AnswerDismiss("");
+            Check(dismissed == DealReason.Malformed && answers == 3, "An empty answer is reported as malformed");
+            Check(Lines.Refusal(DealReason.TooFar) != DealReason.TooFar && Lines.Refusal(DealReason.NoAnswer) != DealReason.NoAnswer, "He has words for too_far and no_answer");
+            CargoRpc.ResetForTests();
+            Check(!CargoRpc.Ready, "Reset after the dismiss tests: Ready is false again");
+
             // UseDemo(true) publishes Visit and Market events
             bool visitFired = false, marketFired = false;
             CargoRpc.VisitChanged += v => { visitFired = true; Check(v.Phase == VisitPhase.Trading, "Visit event has Trading phase"); };
@@ -3629,6 +3649,9 @@ namespace ValkyriesCargo.Tests
 
             CargoRpc.UseDemo(true);
             Check(CargoRpc.Ready, "After UseDemo(true), Ready is true");
+            string demoDismiss = null;
+            CargoRpc.Dismiss(CargoRpc.Visit.VisitId, r => demoDismiss = r);
+            Check(demoDismiss == DealReason.Ok, "The demo answers a dismiss ok at once");
             Check(visitFired, "VisitChanged event fired");
             Check(marketFired, "MarketChanged event fired");
             Check(CargoRpc.IsDemo, "CargoRpc.IsDemo is true");

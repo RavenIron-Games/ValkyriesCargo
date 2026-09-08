@@ -128,6 +128,8 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string EmptyDeal     = "empty_deal";
         public const string NotConnected  = "not_connected";
         public const string Malformed     = "malformed";
+        public const string TooFar        = "too_far";       // a dismiss from more than VisitorRange from him
+        public const string NoAnswer      = "no_answer";     // the client waited and nothing came back
     }
 
     /// <summary>

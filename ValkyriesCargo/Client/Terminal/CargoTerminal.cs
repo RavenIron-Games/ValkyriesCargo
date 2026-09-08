@@ -27,6 +27,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         public const string WindowId = "ValkyriesCargo_CargoTerminal";
         public const float CloseDistance = 5f;
         public const float DismissArmSeconds = 5f;
+        public const float DismissAnswerSeconds = 4f;   // how long the footer waits on VCargo_dismissed before it says so
         public const float CountRefreshSeconds = 0.25f;
         /// <summary>The tray shows this many lines a side before YOU GIVE scrolls; its height never moves.</summary>
         public const int TrayRows = 4;
@@ -60,6 +61,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         private float _openedAt;
         private float _countAge;
         private float _dismissArmedUntil;
+        private float _dismissSentAt;                     // > 0 while a dismiss is on the wire without its answer
         private bool _awaiting;
         private int _coins;
         private Rect _rect;
@@ -104,6 +106,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             _demo = demo;
             _openedAt = Time.time;
             _dismissArmedUntil = 0f;
+            _dismissSentAt = 0f;
             _awaiting = false;
             _countAge = CountRefreshSeconds;
             _tray.Clear();
@@ -189,6 +192,12 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
                 }
 
                 if (_dismissArmedUntil > 0f && Time.time > _dismissArmedUntil) { _dismissArmedUntil = 0f; }
+                if (_dismissSentAt > 0f && Time.time - _dismissSentAt > DismissAnswerSeconds)
+                {
+                    _dismissSentAt = 0f;
+                    _tray.Message = Lines.Refusal(DealReason.NoAnswer);
+                    ValkyriesCargo.Log.LogWarning("terminal: no answer to the dismiss in " + DismissAnswerSeconds + " s");
+                }
 
                 _countAge += dt;
                 if (_countAge >= CountRefreshSeconds)
@@ -577,7 +586,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             if (_tray.AnyAmber && balance.Length > 0) balance += "  <color=" + HexAmber + ">(a price moved)</color>";
             GUI.Label(new Rect(bx, r.y, Mathf.Max(0f, r.xMax - S(158f) - bx), bh), balance, GiltFrameTheme.SubTitle);
 
-            string dismiss = _dismissArmedUntil > 0f ? "Ask once more" : "Send him off";
+            string dismiss = _dismissSentAt > 0f ? "Sending him off" : _dismissArmedUntil > 0f ? "Ask once more" : "Send him off";
             if (GUI.Button(new Rect(r.xMax - S(150f), r.y, S(150f), bh), dismiss, GiltFrameTheme.Button)) DismissPressed();
         }
 
@@ -632,10 +641,26 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
                 _tray.Message = Lines.DismissFirst;
                 return;
             }
+            if (_dismissSentAt > 0f) return;                      // one is on the wire; its answer decides
             _dismissArmedUntil = 0f;
-            CargoRpc.Dismiss(_visitId);
-            _tray.Message = Lines.Farewell;
-            Close("sent him off");
+            _dismissSentAt = Time.time;
+            _tray.Message = Lines.DismissSent;
+            int visit = _visitId;
+            CargoRpc.Dismiss(visit, reason => OnDismissed(visit, reason));
+        }
+
+        /// <summary>
+        /// The server's one answer to the dismiss (VCargo_dismissed). Ok: the farewell and the window closes;
+        /// anything else stays open with his words for it. Until 2026-09-08 the window closed on trust and
+        /// said the farewell while the server was refusing (visit 21: 134 m from the drop point).
+        /// </summary>
+        private void OnDismissed(int visit, string reason)
+        {
+            if (!IsOpen || visit != _visitId) return;
+            _dismissSentAt = 0f;
+            if (reason == DealReason.Ok) { _tray.Message = Lines.Farewell; Close("sent him off"); return; }
+            _tray.Message = Lines.Refusal(reason);
+            ValkyriesCargo.Log.LogInfo("terminal: dismiss of visit #" + visit + " refused: " + reason);
         }
 
         // ---- helpers -----------------------------------------------------------------------------------

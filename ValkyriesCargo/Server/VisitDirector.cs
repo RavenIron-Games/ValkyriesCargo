@@ -253,6 +253,12 @@ namespace RavenIron.ValkyriesCargo.Server
                         if (flightState != null) { Publish(flightState); _dirty = true; }
                         if (note != null) ValkyriesCargo.Log.LogInfo(note);
 
+                        // The event's area follows him once he is down (visit 21, 2026-09-08): fixed at the
+                        // drop point it paused the clock beside a trading player after the leash walk,
+                        // republished VisitState every tick and had the deal wire refuse his dismiss.
+                        Vector3 him;
+                        if (_session.Phase != VisitPhase.Flying && VisitAnchor.MerchantAt(out him)) CargoEvent.Follow(res, him);
+
                         if (_session.Clock.OneMinuteWarningDue(worldTime))
                             ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + ": one minute left");   // P5: VCargo_say the line
                     }
