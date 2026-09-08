@@ -14,10 +14,12 @@ namespace RavenIron.ValkyriesCargo.Core
     }
 
     /// <summary>
-    /// The VisitState channel, parsed. "v1;visitId;phase;pilotUid;birdZdo;merchantZdo;dropX;dropY;dropZ;endWorldTime;purse;seed".
+    /// The VisitState channel, parsed. "v1;visitId;phase;pilotUid;birdZdo;merchantZdo;dropX;dropY;dropZ;endWorldTime;purse;seed[;terminalsOpen]".
     /// The server writes it at every phase change; every client reads it (the terminal for its
     /// countdown and its close-on-leaving rule, the merchant for its state, the pilot for the
     /// drop point). ZDO ids travel as "userId:id" text so this file stays game-free. PURE.
+    /// The 13th field (2026-09-08, issue #59) is OPTIONAL on the wire: a 12-field string from a side
+    /// that is behind still parses, with the count read as 0, and the format version does not move.
     /// </summary>
     public sealed class VisitSnapshot
     {
@@ -32,6 +34,13 @@ namespace RavenIron.ValkyriesCargo.Core
         public double EndWorldTime;
         public int Purse;
         public int Seed;
+        /// <summary>
+        /// How many terminals are open on him right now, counted by the server on the deal wire
+        /// (`VCargo_open` / `VCargo_close`, one per peer). The merchant's OWNER reads it: while it is
+        /// above zero he never walks (the trading leash holds), because the player at the terminal may
+        /// be one the owner's client has not even instanced. Never persisted.
+        /// </summary>
+        public int TerminalsOpen;
 
         public bool Active => Phase != VisitPhase.None;
 
@@ -42,15 +51,16 @@ namespace RavenIron.ValkyriesCargo.Core
             "v" + Wire.Int(FormatVersion) + Wire.Field + Wire.Int(VisitId) + Wire.Field + Phase + Wire.Field +
             Wire.Long(PilotUid) + Wire.Field + (BirdZdo ?? "") + Wire.Field + (MerchantZdo ?? "") + Wire.Field +
             Wire.Float(DropX) + Wire.Field + Wire.Float(DropY) + Wire.Field + Wire.Float(DropZ) + Wire.Field +
-            Wire.Double(EndWorldTime) + Wire.Field + Wire.Int(Purse) + Wire.Field + Wire.Int(Seed);
+            Wire.Double(EndWorldTime) + Wire.Field + Wire.Int(Purse) + Wire.Field + Wire.Int(Seed) + Wire.Field +
+            Wire.Int(Math.Max(0, TerminalsOpen));
 
         /// <summary>Never throws. Empty string = no visit (Phase None) with no problems.</summary>
         public static VisitSnapshot Parse(string s, List<string> problems)
         {
             var v = new VisitSnapshot();
             if (string.IsNullOrEmpty(s)) return v;
-            string[] f = Wire.Fields(s, 12);
-            if (f.Length != 12) { Wire.Report(problems, "visit: expected 12 fields, found " + f.Length); return v; }
+            string[] f = Wire.Fields(s, 13);
+            if (f.Length != 12 && f.Length != 13) { Wire.Report(problems, "visit: expected 12 or 13 fields, found " + f.Length); return v; }
             if (f[0] != "v" + Wire.Int(FormatVersion)) { Wire.Report(problems, "visit: format " + f[0] + " is not v" + FormatVersion + "; update the side that is behind"); return v; }
 
             var parsed = new VisitSnapshot();
@@ -66,6 +76,8 @@ namespace RavenIron.ValkyriesCargo.Core
             if (!Wire.TryDouble(f[9], out parsed.EndWorldTime)) { Wire.Report(problems, "visit: endWorldTime did not parse"); return v; }
             if (!Wire.TryInt(f[10], out parsed.Purse) || parsed.Purse < 0) { Wire.Report(problems, "visit: purse did not parse"); return v; }
             if (!Wire.TryInt(f[11], out parsed.Seed)) { Wire.Report(problems, "visit: seed did not parse"); return v; }
+            if (f.Length == 13 && (!Wire.TryInt(f[12], out parsed.TerminalsOpen) || parsed.TerminalsOpen < 0))
+            { Wire.Report(problems, "visit: terminalsOpen did not parse"); return v; }
             return parsed;
         }
 

@@ -85,6 +85,9 @@ namespace RavenIron.ValkyriesCargo.Client
         /// <summary>F5 part 3: the trading leash fires at most once a visit - see `MerchantPlan.Next`.</summary>
         private bool _leashSpent;
 
+        /// <summary>Issue #59: "a terminal is open on him", as last fed to the plan; logged when it flips.</summary>
+        private bool _busy;
+
         private int _reasserted;
         private bool _calledOut, _vanishing;
         private float _dismissArmedAt = -99f;
@@ -544,6 +547,23 @@ namespace RavenIron.ValkyriesCargo.Client
             }
         }
 
+        /// <summary>The server's count for THIS visit, off the VisitState channel; 0 for any other visit or none.</summary>
+        private int TerminalsOpenOnHim()
+        {
+            VisitSnapshot v = CargoRpc.Visit;
+            return v != null && v.Active && v.VisitId == _visitId ? v.TerminalsOpen : 0;
+        }
+
+        /// <summary>
+        /// Issue #59: is a terminal open on him, here or anywhere? The local terminal answers at once;
+        /// the server's count covers every other peer, including one this client has not instanced.
+        /// </summary>
+        private bool Busy()
+        {
+            bool local = CargoTerminalHost.Instance != null && CargoTerminalHost.Instance.IsOpen;
+            return local || TerminalsOpenOnHim() > 0;
+        }
+
         /// <summary>Owner only: measure, ask the plan, write what changed.</summary>
         private void Decide(float dt)
         {
@@ -559,8 +579,21 @@ namespace RavenIron.ValkyriesCargo.Client
             float movedSinceLastTick = Vector3.Distance(transform.position, _lastApproachPos);
             _lastApproachPos = transform.position;
 
+            // Issue #59 (2026-09-08): he never walks while a terminal is open on him. The server counts
+            // the open terminals on the deal wire and carries the count in VisitState (for the player at
+            // the terminal this client may never have instanced); this machine's own terminal counts at
+            // once, ahead of the round trip.
+            bool busy = Busy();
+            if (busy != _busy)
+            {
+                _busy = busy;
+                ValkyriesCargo.Log.LogInfo("cargo merchant #" + _visitId + ": " + (busy
+                    ? "a terminal is open on him (" + TerminalsOpenOnHim() + " on the wire): the leash holds"
+                    : "no terminal open on him: the leash is armed again"));
+            }
+
             _timeInState += dt;
-            if (_state == MerchantState.Trading) _farSeconds = MerchantPlan.AccumulateFar(_farSeconds, distance, dt);
+            if (_state == MerchantState.Trading) _farSeconds = MerchantPlan.AccumulateFar(_farSeconds, distance, dt, busy);
             if (_state == MerchantState.Approaching)
             {
                 _approachMoved += movedSinceLastTick;
@@ -569,7 +602,7 @@ namespace RavenIron.ValkyriesCargo.Client
 
             float approach = ModConfig.ApproachDistance != null ? ModConfig.ApproachDistance.Value : 3.5f;
             MerchantPlan.Step step = MerchantPlan.Next(_state, Pinned, grounded, distance, _timeInState, _farSeconds,
-                approach, _distanceAtApproachEntry, _progress.StuckSeconds, _leashSpent);
+                approach, _distanceAtApproachEntry, _progress.StuckSeconds, _leashSpent, busy);
 
             if (step.Follow && _ai != null)
                 _ai.SetFollowTarget(near != null ? near.gameObject : null);
@@ -757,9 +790,12 @@ namespace RavenIron.ValkyriesCargo.Client
         public string GetHoverText()
         {
             if (_state < MerchantState.Trading) return Lines.Title;
-            return Lines.Title + Countdown() +
-                   "\n[<color=yellow><b>$KEY_Use</b></color>] Trade" +
-                   "\n[<color=yellow><b>L Shift + $KEY_Use</b></color>] Send him on his way";
+            string text = Lines.Title + Countdown() +
+                          "\n[<color=yellow><b>$KEY_Use</b></color>] Trade" +
+                          "\n[<color=yellow><b>L Shift + $KEY_Use</b></color>] Send him on his way";
+            // A Hoverable localises its own text (Container.GetHoverText does); Hud does not do it for us.
+            // The playtest of 2026-09-08 saw the literal `$KEY_Use` (issue #59, item 3).
+            return Localization.instance != null ? Localization.instance.Localize(text) : text;
         }
 
         public bool Interact(Humanoid user, bool hold, bool alt)

@@ -43,11 +43,14 @@ owner joined by crossplay join code with Yggdrasil's Reckoning 0.1.1 on both sid
 **the three terminal ones (amounts, Coins/Barter, contrast) are built on `a/terminal-ux`** (branched off the
 shelf branch; its PR targets that branch until #57 merges): a count box, "all" and x on every staged line, no
 pay mode (YOU GET / YOU GIVE and one balance line; `EnableBarter=false` now refuses goods beside a ware on the
-client), a 40 % black backdrop with brighter text through `ThemeOptions`. **Your side is issue #59**: the
-flight's feel (which screen, which part; the two synced knobs to try), the walk-off (your client's
-`cargo merchant #N: … (entered: …)` lines settle it; we propose a `terminalsOpen` count in `VisitState` from
-our wire and a `busy` input to `MerchantPlan` from you), the one-line `Localize` in `GetHoverText`, and the
-Backpacks test with what to expect. `docs/TODO.md` §3 carries the build's own unseen list.
+client), a 40 % black backdrop with brighter text through `ThemeOptions`. **Your side is issue #59**, less the
+two the owner then took back for this side (`a/merchant-busy`, edits in your files with his word): the
+`terminalsOpen` count now rides in `VisitState` (optional 13th field, the director republishes on change, the
+wire forgets a dropped peer), `MerchantPlan.Next(..., busy)` and `AccumulateFar(..., busy)` hold the leash on the
+owner while any terminal is open on him, and `GetHoverText` localises. Still yours: the flight's feel (which
+screen, which part; the two synced knobs to try) and the walk-off's own log lines (`cargo merchant #N: …
+(entered: …)` from your client), which say whether it was the leash the hold now covers. Backpacks 1.3.8 is
+installed on StormTest and Don's client. `docs/TODO.md` §3 carries both builds' unseen lists.
 
 **The rotating shelf (issue #56) is BUILT on `a/rotating-shelf` and its PR waits for the word.** The owner's ask,
 2026-09-08: Ingvar's selling side stops being a fixed list — 20 of the 72 catalogue entries are on the shelf at a

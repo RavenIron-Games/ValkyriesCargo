@@ -68,6 +68,19 @@ after the rest of this log was written.
   brighter, all through `ThemeOptions` — the vendored theme is not edited. While a count box has the keyboard the
   text-focus token is raised (from Tick) and Use/Tab/M do not close the window; Enter or a click elsewhere hands
   it back. `TrayModel.SetCount` / `AllOf` / `Remove` are pure and checked. **Not seen on a screen.**
+- **He never walks while a terminal is open on him, and the hover localises (branch `a/merchant-busy`, 1862 checks;
+  issue #59 items 2 and 3, taken from Track B at the owner's word 2026-09-08).** The playtest saw him walk off with
+  two players trading. The server already counted open terminals on the deal wire; now `VisitState` carries the
+  count as an OPTIONAL 13th field (a 12-field string from a side that is behind still parses, the format version
+  does not move; never in the sidecar row), the director copies the wire's count every tick and republishes when it
+  moves, the wire forgets a peer that drops with its terminal open and clears at the visit's end. On the merchant's
+  owner, `busy` = the local terminal or the server's count for this visit; `MerchantPlan.Next(..., busy)` holds the
+  leash while it is true and `AccumulateFar(..., busy)` does not bank seconds behind the hold, so a close cannot
+  fire it on stale time. One log line each way: `cargo merchant #N: a terminal is open on him (K on the wire): the
+  leash holds` / `no terminal open on him: the leash is armed again`. `GetHoverText` now passes through
+  `Localization.instance.Localize`, so `$KEY_Use` reads as the bound key. What this does NOT settle: which
+  transition walked him — the log lines from the walk-off are still asked for on #59; vanilla's idle shuffle is
+  bounded to 1.5 m by `ReassertLocal` and would show no state change at all. **Not seen on a screen.**
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 

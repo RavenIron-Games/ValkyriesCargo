@@ -564,6 +564,21 @@ namespace ValkyriesCargo.Tests
             VisitSnapshot v2 = VisitSnapshot.Parse(encoded, problems);
             Equal(v.Encode(), v2.Encode(), "Encode(Parse(Demo)) == Demo");
 
+            // Issue #59 (2026-09-08): the count of terminals open on him rides as an OPTIONAL 13th field.
+            Check(v.TerminalsOpen == 0 && encoded.Split(';').Length == 13, "Demo carries 0 terminals open as a 13th field");
+            problems.Clear();
+            VisitSnapshot old = VisitSnapshot.Parse("v1;1;trading;1;;1:1;0;30;0;300;800;7", problems);
+            Check(problems.Count == 0 && old.Phase == VisitPhase.Trading && old.TerminalsOpen == 0,
+                  "a 12-field v1 string from a side that is behind still parses, with 0 open");
+            problems.Clear();
+            VisitSnapshot busy = VisitSnapshot.Parse("v1;1;trading;1;;1:1;0;30;0;300;800;7;2", problems);
+            Check(problems.Count == 0 && busy.TerminalsOpen == 2, "and a 13th field is the count");
+            Equal("v1;1;Trading;1;;1:1;0;30;0;300;800;7;2", busy.Encode(), "which round-trips");
+            problems.Clear();
+            VisitSnapshot.Parse("v1;1;trading;1;;1:1;0;30;0;300;800;7;-1", problems);
+            Check(problems.Count > 0, "a negative count is reported");
+            Check(new VisitSnapshot { Phase = VisitPhase.Trading, TerminalsOpen = -4 }.Encode().EndsWith(";0"), "and never encoded");
+
             // Phase case insensitivity
             problems.Clear();
             v = VisitSnapshot.Parse("v1;1;flying;1;;1:1;0;30;0;300;800;7", problems);
@@ -2640,6 +2655,16 @@ namespace ValkyriesCargo.Tests
             Equal(1300.0, s.PublishedEnd, "the published deadline is the clock's");
             Equal(7, s.LastVisitId, "LastVisitId follows Begin");
 
+            // Issue #59 (2026-09-08): the deal wire's count of open terminals rides in the state.
+            Equal(0, v.TerminalsOpen, "a visit begins with no terminal open on him");
+            Check(s.SetTerminalsOpen(0) == null, "the same count again publishes nothing");
+            string busyState = s.SetTerminalsOpen(2);
+            Check(busyState != null && VisitSnapshot.Parse(busyState, null).TerminalsOpen == 2, "two terminals open: the state carries the count");
+            Equal(2, s.TerminalsOpen, "and the session remembers it");
+            Check(s.SetTerminalsOpen(2) == null, "unchanged: nothing to send");
+            Check(s.SetTerminalsOpen(-1) != null && s.TerminalsOpen == 0, "a negative count reads as 0 (a change from 2)");
+            Equal(12, s.EncodeSessionRow().Split('\t').Length, "the sidecar row does not carry it: a restart starts at 0");
+
             // Sync: the event runs in real seconds; while world time keeps pace nothing is republished.
             Check(s.Sync(1001.0, 299.0) == null, "one second in, 299 s left: the deadline matches, nothing to send");
             Check(s.Sync(1010.0, 290.4) == null, "a drift of 0.4 s is within the threshold");
@@ -2683,11 +2708,13 @@ namespace ValkyriesCargo.Tests
             Equal(VisitPhase.Dropped, vd.Phase, "with the phase unchanged");
 
             // End.
+            Check(s.SetTerminalsOpen(1) != null, "(one terminal open as the visit ends)");
             Equal("", s.End("timer"), "End publishes the empty channel");
             Check(!s.Active, "and the session is inactive");
+            Equal(0, s.TerminalsOpen, "and no terminal is open on a visit that ended");
             Equal("timer", s.LastEndReason, "with the reason kept for cargo status");
             Equal(7, s.LastVisitId, "and the id of the visit that ended");
-            Check(s.Sync(9300.0, 10.0) == null && s.SetDrop(0f, 0f, 0f) == null, "nothing publishes after the end");
+            Check(s.Sync(9300.0, 10.0) == null && s.SetDrop(0f, 0f, 0f) == null && s.SetTerminalsOpen(3) == null, "nothing publishes after the end");
             s.Begin(8, 1L, "", 0f, 0f, 0f, 0.0, 300f, -5, 0);
             Equal(0, s.Purse, "a nonsense negative purse is floored at 0");
             Equal("", s.PilotName, "a null or empty name stays empty");
@@ -4164,6 +4191,17 @@ namespace ValkyriesCargo.Tests
             Check(s.State == 2 && !s.Changed, "already spent: the SAME 13 m/5 s that fired it before now does nothing");
             s = MerchantPlan.Next(2, false, true, distance: 13f, timeInState: 30f, farSeconds: 5f, approachDistance: 3.5f, leashSpent: false);
             Check(s.State == 1 && s.Changed && s.Follow && s.LeashFired, "not yet spent: it still fires, flagged so the caller knows to spend it");
+
+            // Issue #59 (2026-09-08): he never walks while a terminal is open on him.
+            s = MerchantPlan.Next(2, false, true, distance: 40f, timeInState: 30f, farSeconds: 9f, approachDistance: 3.5f, leashSpent: false, busy: true);
+            Check(s.State == 2 && !s.Changed && !s.LeashFired && !s.Follow, "a terminal open on him: the leash holds however far the nearest player reads");
+            Check(s.Why.Contains("terminal"), "and says why");
+            s = MerchantPlan.Next(2, false, true, distance: 40f, timeInState: 30f, farSeconds: 9f, approachDistance: 3.5f, leashSpent: false, busy: false);
+            Check(s.State == 1 && s.LeashFired, "the terminal closed: the same numbers fire it");
+            Check(MerchantPlan.AccumulateFar(4f, 40f, 1f, busy: true) == 0f, "the far timer does not run while busy, so a close cannot fire the leash on banked seconds");
+            Check(Math.Abs(MerchantPlan.AccumulateFar(4f, 40f, 1f) - 5f) < 0.001f, "(and runs as before when not)");
+            s = MerchantPlan.Next(1, false, true, distance: 40f, timeInState: 1f, farSeconds: 0f, approachDistance: 3.5f, busy: true);
+            Check(s.State == 1 && s.Follow, "busy means nothing on the approach: nobody can open a terminal on him before he trades");
 
             Section("MerchantPlan: leaving is terminal, and the restart rule");
 

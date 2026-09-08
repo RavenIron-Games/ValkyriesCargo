@@ -842,8 +842,14 @@ RavenIron-Games/YggdrasilsReckoning#1), and his playtest report came back in sev
 merchant walking off with two players trading, literal `$KEY_Use` in the hover, buying and selling working but
 click-per-unit staging unusable, Coins/Barter unreadable, the backpack test still to run, and the text contrast.
 **Items 4, 5 and 7 are BUILT on `a/terminal-ux`** (the P7 paragraph above, 1841 checks); items 1, 2, 3 and the
-backpack test are his, on issue #59, with the log lines that settle the walk-off and a proposed `terminalsOpen`
-busy input the two tracks would split. The owner's item spectrum ask is PR #58 (`docs/ITEM-VALUES.md`, 776 rows).
+backpack test went to him on issue #59, with the log lines that settle the walk-off and a proposed `terminalsOpen`
+busy input the two tracks would split. **Then the owner took items 2 and 3 back for this side ("take the first
+two on a branch"): `a/merchant-busy`, 1862 checks** — `VisitState` carries the deal wire's count of open
+terminals as an optional 13th field, the director republishes when it moves, the wire forgets a dropped peer and
+clears at the end, and on the merchant's owner `MerchantPlan.Next(..., busy)` holds the trading leash while any
+terminal is open on him (the local one at once, the server's count for the rest); the hover passes through
+`Localization.instance.Localize`. Backpacks 1.3.8 is installed on StormTest and Don's client for the backpack
+test. The owner's item spectrum ask is PR #58 (`docs/ITEM-VALUES.md`, 776 rows).
 
 ## What to verify in-game
 

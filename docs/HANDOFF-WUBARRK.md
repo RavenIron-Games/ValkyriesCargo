@@ -32,12 +32,15 @@ neither side starts without his word.** The client axis is unswept everywhere.
 (PR #57 still waits for the word), you joined by join code with Yggdrasil's Reckoning 0.1.1 on both sides, and
 your seven-item report is split on **issue #59**. Built on our side already, on `a/terminal-ux`: the count box and
 "all" on every staged line, the Coins/Barter switch gone (YOU GET / YOU GIVE, one balance line, "Cover it with
-my goods" whenever a ware is staged), and the 40 % black backdrop with brighter text. Yours: the flight's feel
-(say which screen and which part; try `Server.FlightSpeed` 12 / `Server.FlightTurnRate` 30 first, no build),
-the walk-off (attach your client log's `cargo merchant #N: … (entered: …)` lines; the fix we propose is "he never
-walks while a terminal is open on him" — `VisitState.terminalsOpen` from our wire, a `busy` input to
-`MerchantPlan` from you), the one-line `Localization.instance.Localize(...)` in `CargoMerchant.GetHoverText`, and
-the Smoothbrain Backpacks test with the expected behaviour written out.
+my goods" whenever a ware is staged), and the 40 % black backdrop with brighter text. **The owner then had this
+side take two of yours** (`a/merchant-busy`, in your files with his word): "he never walks while a terminal is
+open on him" — `VisitState` carries the wire's count of open terminals (an optional 13th field), and
+`MerchantPlan.Next(..., busy)` / `AccumulateFar(..., busy)` hold the leash on the owner while any terminal is
+open, the local one at once — and the `Localization.instance.Localize` in `GetHoverText`. Still yours: the
+flight's feel (say which screen and which part; try `Server.FlightSpeed` 12 / `Server.FlightTurnRate` 30 first,
+no build) and **the walk-off's own log lines** (`cargo merchant #N: … (entered: …)` from your client), because the
+hold assumes it was the leash and the log is what says so. Backpacks 1.3.8 is installed on StormTest and Don's
+client now, so the backpack test can run from either side.
 
 **The rotating shelf, issue #56, is BUILT on `a/rotating-shelf`; the PR waits for Don's word.** Your read came the
 same morning (two game days by default; the backpack add-on) and the owner said build. Ingvar's selling side stops
