@@ -94,6 +94,7 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>Rank 7. The three inventory calls a delivery is applied with.</summary>
         public const string InventoryOps = "inventory";
         /// <summary>Rank 8. Comfort and rested, which decide who gets a visit at all.</summary>
+        public const string SavePath = "save_path";
         public const string Comfort = "comfort";
         /// <summary>Rank 9. `EnvMan.m_dayLengthSec`, the day the market's drift counts.</summary>
         public const string DayLength = "daylength";
@@ -172,6 +173,8 @@ namespace RavenIron.ValkyriesCargo.Core
                                      "a delivery cannot be applied (DealApplier)");
             Declare(Comfort, 8, "Player.GetComfortLevel / m_localPlayer, SEMan.s_statusEffectRested / HaveStatusEffect, ZDOVars.s_baseValue / s_dead / s_playerName / s_playerID",
                                 "the client's eligibility report (ComfortReporter, Scheduler)");
+            Declare(SavePath, 8, "World.GetWorldSavePath (0.221.12) or SaveSystem.GetWorldsSaveRootPath (1.0 - it moved TYPE as well as name), and the FileHelpers.FileSource member named 'Local' (whose VALUE moved on 1.0: 0/1/2/3 became the bit flags 1/2/4/8)",
+                                 "the market sidecar has no path: nothing is loaded and nothing is saved, so the shelf resets every restart (MarketStore)");
             Declare(DayLength, 9, "EnvMan.instance, EnvMan.m_dayLengthSec (long), EnvMan.IsDay()",
                                   "the market's drift half-life falls back to the compiled 1200 s");
             Declare(AdminList, 10, "ZNet.IsAdmin(string), ZNet.GetUID / GetWorldUID / IsDedicated",

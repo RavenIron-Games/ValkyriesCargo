@@ -49,12 +49,15 @@ namespace RavenIron.ValkyriesCargo.Server
             try { uid = znet.GetWorldUID(); }
             catch (Exception ex) { s.Detail = "world uid unreadable: " + ex.GetType().Name; return s; }
             if (uid == 0) { s.Detail = "world uid is 0 (world not loaded yet?)"; return s; }
-            string dir;
-            try { dir = World.GetWorldSavePath(FileHelpers.FileSource.Local); }
-            catch (Exception ex) { s.Detail = "save path unreadable: " + ex.GetType().Name; return s; }
-            if (string.IsNullOrEmpty(dir)) { s.Detail = "world save directory came back empty"; return s; }
+            // NOT a compiled call to `World.GetWorldSavePath(FileHelpers.FileSource.Local)` any more.
+            // On 1.0 that method is renamed AND the enum member's value moved, and the try/catch that
+            // used to sit here could never have caught either - Mono resolves the member when THIS
+            // method is JIT-compiled, before its first instruction runs. See `WorldSavePath`.
+            string why;
+            string dir = WorldSavePath.Resolve(out why);
+            if (string.IsNullOrEmpty(dir)) { s.Detail = string.IsNullOrEmpty(why) ? "world save directory came back empty" : why; return s; }
             s.Path = System.IO.Path.Combine(dir, FileStem + "_" + uid.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".dat");
-            s.Detail = "uid " + uid + ", dir " + dir;
+            s.Detail = "uid " + uid + ", dir " + dir + " (" + why + ")";
             return s;
         }
 

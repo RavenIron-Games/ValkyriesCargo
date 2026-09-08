@@ -67,6 +67,7 @@ namespace RavenIron.ValkyriesCargo
             ProbeZdoAuthoring();
             ProbeZNetView();
             ProbeZoneMaths();
+            ProbeSavePath();
             ProbeVelocityCache();
             ProbeValkyrie();
             ProbeCharacter();
@@ -169,6 +170,50 @@ namespace RavenIron.ValkyriesCargo
         // One pair each. The Probe* half catches; the Check* half touches the game type and is never
         // inlined into it. A Check* returns the number of members it looked at and fills `bad` with
         // every one that is not what the design says it is.
+
+        /// <summary>
+        /// The sidecar's one call into the filesystem, and the only engine touch the market's whole
+        /// persistence layer makes. It had NO probe until 2026-09-08, which is how both of the 1.0
+        /// breaks in `Server/WorldSavePath.cs` reached a shipped build unnoticed: a renamed method and
+        /// an enum constant whose value moved under a baked literal. `WorldSavePath` resolves both by
+        /// name at runtime now, so this probe reports rather than gates - but it reports, which is the
+        /// half that was missing.
+        /// </summary>
+        private static void ProbeSavePath()
+        {
+            var bad = new List<string>();
+            int looked;
+            try { looked = CheckSavePath(bad); }
+            catch (Exception ex) { Threw(EngineProbes.SavePath, ex); return; }
+            Record(EngineProbes.SavePath, looked, bad);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static int CheckSavePath(List<string> bad)
+        {
+            int looked = 1;
+            // The SAME resolver the sidecar uses, deliberately - a probe that reimplemented the lookup
+            // could pass on a shape `WorldSavePath` would then refuse, which is the failure mode a probe
+            // is supposed to remove. Any of the candidates is a pass: 0.221.12 carries
+            // World.GetWorldSavePath, 1.0 carries SaveSystem.GetWorldsSaveRootPath. Only "none of them"
+            // is a break, so a version step is not reported as a loss.
+            MethodInfo found = Server.WorldSavePath.FindCandidate(typeof(World).Assembly);
+            if (found == null)
+            {
+                bad.Add("no static string method taking one enum, under any of: " + Server.WorldSavePath.Describe());
+                return looked;
+            }
+
+            // The member BY NAME. Its VALUE is deliberately not asserted - FileSource was 0/1/2/3 on
+            // 0.221.12 and is the bit flags 1/2/4/8 on 1.0, and pinning either is the bug this probe
+            // exists to have caught.
+            looked++;
+            Type sourceType = found.GetParameters()[0].ParameterType;
+            if (!Enum.IsDefined(sourceType, Server.WorldSavePath.SourceName))
+                bad.Add(sourceType.Name + " has no member named '" + Server.WorldSavePath.SourceName + "'");
+
+            return looked;
+        }
 
         private static void ProbeRandEvent()
         {

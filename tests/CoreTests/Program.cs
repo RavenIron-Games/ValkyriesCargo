@@ -4483,7 +4483,7 @@ namespace ValkyriesCargo.Tests
             var p = new EngineProbes();
 
             // ---- the shape of the registry ----
-            Equal(25, p.All.Count, "twenty-five engine facts are registered");
+            Equal(26, p.All.Count, "twenty-six engine facts are registered (save_path added 2026-09-08 with the 1.0 fix)");
             var names = new HashSet<string>();
             bool unique = true, ordered = true;
             int last = 0;
@@ -4508,6 +4508,19 @@ namespace ValkyriesCargo.Tests
             Equal(6, p.Find(EngineProbes.AwakeOrder).Rank, "and the ordering inside those Awakes");
             Equal(6, p.Find(EngineProbes.Merchant).Rank, "and the rest of the merchant's surface");
             Check(p.Find("no such probe") == null, "an unregistered name simply is not there");
+            Equal(8, p.Find(EngineProbes.SavePath).Rank, "rank 8 is the world save path the sidecar resolves");
+
+            // The save_path row exists at all because it did NOT, and that is how both 1.0 breaks in
+            // World.GetWorldSavePath reached a shipped build: a renamed method and an enum member whose
+            // value moved under a baked literal, on the market's only call into the filesystem. The row
+            // must name BOTH method names, or a version step reads as a break instead of a rename.
+            Check(p.Find(EngineProbes.SavePath) != null, "the save path is a registered engine fact, not an unguarded call");
+            Check(p.Find(EngineProbes.SavePath).What.Contains("World.GetWorldSavePath") &&
+                  p.Find(EngineProbes.SavePath).What.Contains("SaveSystem.GetWorldsSaveRootPath"),
+                  "and it names both HOMES, 0.221.12's World and 1.0's SaveSystem — the method moved type, not just name");
+            Check(p.Find(EngineProbes.SavePath).Degrades.Contains("sidecar"),
+                  "what it costs is said in the row: the sidecar has no path, so the shelf resets every restart");
+
 
             // The audit's rows (docs/AUDIT-P4P5-2026-09-07.md section 2), folded in on 2026-09-07: three
             // probes and three body facts, each at the rank of the surface it belongs to.
@@ -4594,7 +4607,7 @@ namespace ValkyriesCargo.Tests
             Equal("probes 1/3 ok, 7 not probeable, FAILED: zdo_authoring, body", p.Encode(),
                   "and the failures are listed worst rank FIRST, whatever order they were recorded in");
             Equal("zdo_authoring", p.Failed[0].Name, "the Failed list is in rank order too");
-            Equal(25, p.Report().Count, "cargo engine prints one line per registered fact");
+            Equal(26, p.Report().Count, "cargo engine prints one line per registered fact");
             Check(p.Report()[0].StartsWith("[1] randevent: PASSED"), "worst first, with the rank, the name and the state");
             Check(p.Report()[0].Contains("; checks ") && p.Report()[0].Contains("; on failure "),
                   "and each line says what it looked at and what turns itself off");
