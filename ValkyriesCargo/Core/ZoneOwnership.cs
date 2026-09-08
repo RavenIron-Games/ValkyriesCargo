@@ -22,6 +22,18 @@ namespace RavenIron.ValkyriesCargo.Core
     /// Nothing here reads a game type; the zone maths is `ZoneSystem.GetZone` (`asm:99674`), which
     /// hardcodes the 64 m grid and the +32 offset rather than reading `m_zoneSize`, so this mirror is
     /// exact rather than approximate.
+    ///
+    /// CHECKED AGAINST THE 1.0 PLAYTEST, 2026-09-07 (build 23105022 / 0.221.13, the dedicated-server
+    /// assembly in `libs-Tools/DECOMPILED-PLAYTEST-build23105022/`): `ReleaseNearbyZDOS` is the same
+    /// method statement for statement - the `!Persistent` skip, `activatedArea = m_activeArea - 1`, the
+    /// `SetOwner(0L)` strip and the grant branch all unchanged - and `GetZone` still computes
+    /// `FloorToInt((v + 32.0) / 64.0)` on both axes. What moved is only the TYPE: `GetZone` returns
+    /// `Vector2s` and the three `ZNetScene.InActiveArea` overloads take it, where 0.221.12 had
+    /// `Vector2i`. Because this file is arithmetic over plain ints rather than a call into either, D5's
+    /// mechanism and this mirror both survive the version step untouched. The typed surface does not:
+    /// `EngineCheck.cs`'s three `InActiveArea` probe rows name `Vector2i` explicitly and will report
+    /// FAILED on 1.0, which is P10b behaving exactly as designed - a probe is a veto, and this is the
+    /// stop-ship signal firing. See `docs/TODO.md` §2, the 1.0 sweep.
     /// </summary>
     public static class ZoneOwnership
     {
