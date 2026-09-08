@@ -415,6 +415,11 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       sold or on an extended timer. DESIGNED in the shelf PR's body (six decisions: the price source for an
       uncatalogued item, the common/rare classifier, the sidecar row and its expiry, whether rares count inside
       `ShelfSize`, `cargo catalogue reset`, a cap on walk-in rows for the synced payload); NOT built, by the word.
+      **DECIDED 2026-09-08 (owner), two of the six:** a common walk-in row lives **2 visits without a sale**, then
+      rotates off the shelf; and the price source is a **full item value table** built against the Valheim wiki —
+      every player item assessed for rarity and complexity, valued 2–600, with 800–1200 reserved for the ultra
+      complex or rare (`docs/ITEM-VALUES.md` + `docs/data/item-values-2026-09-08.tsv`, Track A, in progress).
 - [ ] **The backpack add-on** (Wu'barrk, 2026-09-08): shelf ×2–4 when a backpack mod is detected at server load,
-      and a backpack on his body. Needs the plugin GUID(s) to detect (his call); the multiplier is capped at 3× by
-      the pool (60 of 72; 4× is the whole catalogue); the body half is his bake. Not built.
+      and a backpack on his body. **DECIDED 2026-09-08 (owner): Smoothbrain's Backpacks** (BepInEx GUID
+      `org.bepinex.plugins.backpacks`; confirm off the DLL's `BepInPlugin` attribute at deploy); the multiplier is
+      capped at 3× by the pool (60 of 72; 4× is the whole catalogue); the body half is his bake. Not built.
