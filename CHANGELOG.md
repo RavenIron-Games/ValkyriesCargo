@@ -43,6 +43,17 @@ after the rest of this log was written.
   two stop-ships, neither fixed (the one-argument `GetStableHashCode` is gone; `GetAllCharacterZDOS` returns empty on
   a dedicated server). Verified from Track A's machine against the fetched playtest build. **1.0 work is held by the
   owner.**
+- **The rotating shelf (branch `a/rotating-shelf`, Track A, 1818 checks; issue #56, the owner's 2026-09-08 change,
+  Wu'barrk's two-day default).** The fixed Ware list goes away: `Server.ShelfSize` (20) entries of the whole 72 are
+  on sale at a time, chosen by the pure `Core/Shelf.cs` from the world's salt and a period index that moves every
+  `Server.ShelfRotationGameDays` (2) game days, returned in catalogue order. On the shelf an entry trades as a Ware
+  did (sold at the curve, bought back at par under the Fair Market Act, the Ware half-life); off it, as a Want
+  (bought only, the Want half-life). `Market.KindOf` is the one place that decides, and every snapshot row carries
+  the effective kind, so the terminal's panes follow with no client change; a buy of an off-shelf entry is refused
+  with the new `not_on_shelf` and a line of Ingvar's for it. The director re-rolls on the first idle tick of a new
+  period, never under a visit (`shelf rolled: …` / `shelf roll waits: …`), and republishes the market; nothing is
+  persisted, so a restart mid-period shows the same twenty. `0` keeps the old fixed shelf. `docs/CATALOGUE.md` §7,
+  `docs/ECONOMY-SIM.md` §11. **Not seen on a machine.**
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 

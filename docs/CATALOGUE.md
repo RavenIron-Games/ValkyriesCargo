@@ -230,3 +230,56 @@ The charge side and every Want are untouched.
 default prefab exists there with a positive stack size, that no Ware's base is below its vanilla value / 0.7, that
 every Want with a vanilla value of 0 has a base ≥ 1, and that `Max ≥ Target > 0` throughout. A catalogue edit that
 misspells a prefab fails the test on the desk, not in someone's world.
+
+## 7. The rotating shelf (2026-09-08; issue #56)
+
+The owner's change of 2026-09-08: **the fixed Ware list goes away.** `Server.ShelfSize` (shipped 20) entries of the
+WHOLE catalogue — the 18 of section 2 and the 54 of section 3 alike — are on sale at a time, and the shelf is
+re-rolled every `Server.ShelfRotationGameDays` (shipped 2, Wu'barrk's read) game days. The `Kind` in the config
+line keeps its meaning only while `ShelfSize` is `0`: then the shelf is fixed and sections 2 and 3 say exactly
+what he sells and what he only buys, as they did before this date.
+
+**What "on the shelf" means.** An entry on the shelf trades exactly as a Ware did: sold at the curve
+(`PriceFor`), bought back at par at most under the Fair Market Act, drifting on `WareHalfLifeGameDays`. Every
+other entry trades as a Want: bought only, drifting on `WantHalfLifeGameDays`. The market decides this in ONE
+place, `Market.KindOf(item)`, and every price, drift, refusal, snapshot row and export row reads it; nothing reads
+the catalogue's own kind directly any more. The snapshot the clients draw carries the effective kind, so the
+terminal's two panes follow the shelf with no client change. A buy of an entry that is in the catalogue but not
+on the shelf is refused with its own reason, `not_on_shelf` ("Not in this load, friend. Ask me again in a few
+days."), so a pane that is a period stale says why rather than `unknown_item`.
+
+**The roll** (`Core/Shelf.cs`, pure). World time — `ZNet.GetTimeSeconds()`, the same seconds the drift counts in,
+which stop while the server is empty — is cut into periods of `ShelfRotationGameDays × SecondsPerGameDay`; the
+period index and the world's salt seed an xorshift64* generator (FNV-1a of `salt#period`; NOT the engine's
+`GetStableHashCode`, on purpose), a partial Fisher–Yates over the catalogue's order takes `ShelfSize` positions,
+and the result is returned **in catalogue order**, so the pane never reorders under a player and two machines
+list the same shelf the same way. Nothing is persisted and nothing is sent for the shelf: the same salt, clock
+and catalogue roll the same shelf on every boot, which is why a restart mid-period shows the same twenty.
+Because the swaps are sequential, a bigger shelf for the same period is a superset of the smaller one, so
+raising `ShelfSize` mid-period adds entries and never swaps one out.
+
+**When it rolls.** The director asks the market once a second whether a roll is due (the period moved, or an
+admin changed `ShelfSize` or the rotation live) and rolls on the first tick with **no visit running** — the same
+busy rule as a catalogue swap: not under a running visit, not while a saved visit waits for its event, not while
+a merchant is still departing — logging `shelf roll waits: …` once and `shelf rolled: shelf 20 of 72, period N,
+…: <the names>` when it happens, then republishing the market. `cargo status` carries the same line and says
+when a roll is due and waiting. A catalogue edit re-rolls on the new pool for the same period (a price-only edit
+keeps the same shelf; a dropped entry changes it).
+
+**What stock does at the boundary.** An entry keeps its stock when it leaves or joins the shelf; only the rule
+it trades under changes. So a Want that has been flooded to its max lands on the shelf with all of it for sale at
+the flooded (low) price, and a Ware that leaves the shelf emptied drifts back on the Want knob. Those are the
+open economy questions for the first live shelf, listed in the PR that built this and in `docs/ECONOMY-SIM.md`
+section 11, which also carries the first fifteen shelves for the simulation's salt and thirty days of trade on
+the rotating rules.
+
+**The core tests** (`tests/CoreTests`, "Shelf.Roll" through "Market.EncodeState / ApplyState carry no shelf row"):
+the roll is deterministic per salt and period, exactly `ShelfSize` distinct names in catalogue order, different
+for the next period and for another world, a superset when the size grows, the whole pool when the size covers
+it, empty for a size of 0 or no pool, never a throw; every entry is shown over 200 periods and none is starved
+or favoured; the period arithmetic at the boundaries, negative and NaN times, a zero day; the knobs' clamps; the
+fixed shelf (`ShelfSize 0`) behaving exactly as the market of the day before; on the rotating shelf exactly twenty
+Ware rows in the snapshot, an off-shelf Ware trading as a Want and an on-shelf Want as a Ware, the `not_on_shelf`
+refusal against an `unknown_item` for a stranger, the Fair Market Act clamp following the shelf, the drift knobs
+following the shelf, the roll moving with the period, the size and the rotation, the switch-off, the catalogue
+swap, and the sidecar rows carrying nothing for it.

@@ -1003,5 +1003,151 @@ namespace ValkyriesCargo.EconSim
             md.Line("The lever that persists on either kind is the TARGET (`cargo catalogue add Iron:25:60:60:Ware` holds 60 at any half-life,");
             md.Line("because the gap is 0); a stock edit is an event. No stock verb was asked for, and none was built.");
         }
+
+        // =====================================================================================
+        // 11. The rotating shelf (2026-09-08)
+        // =====================================================================================
+
+        public static void Eleven(Md md, long seed)
+        {
+            md.H(2, "11. The rotating shelf — twenty of seventy-two, re-rolled every two game days");
+            md.Line("The owner's 2026-09-08 change (issue #56): the fixed Ware list goes away. `Server.ShelfSize` (20) entries of the WHOLE");
+            md.Line("catalogue are on sale at a time, chosen by `Shelf.Roll` from the world's salt and the period index, re-rolled every");
+            md.Line("`Server.ShelfRotationGameDays` (2). An entry on the shelf is sold at the curve, bought back under the Fair Market Act and");
+            md.Line("drifts on the Ware half-life; every other entry is bought only and drifts on the Want half-life. Nothing is persisted and");
+            md.Line("nothing is sent for it: a restart rolls the same shelf. Wu'barrk asked for the two-day default.");
+            md.Blank();
+
+            MarketRules rules = Sim.Shipped; rules.ShelfSize = 20; rules.ShelfRotationGameDays = 2;
+            Market m = Sim.NewMarket(rules, 0);
+            var pool = new List<string>();
+            foreach (MarketItem it in m.Items) pool.Add(it.Prefab);
+
+            md.H(3, "The first fifteen shelves (thirty game days) for the salt `" + Sim.Salt + "`");
+            var rows = new List<string[]>();
+            var seen = new HashSet<string>(StringComparer.Ordinal);
+            for (long p = 0; p < 15; p++)
+            {
+                List<string> names = Shelf.Roll(Sim.Salt, p, pool, 20);
+                int oldWares = 0;
+                foreach (string n in names) { seen.Add(n); if (m.Find(n).Entry.Kind == EntryKind.Ware) oldWares++; }
+                rows.Add(new[] { Sim.N(p), Sim.N(p * 2) + "–" + Sim.N(p * 2 + 2), Sim.N(oldWares) + " of 18", Sim.N(seen.Count) + " of 72", string.Join(", ", names) });
+            }
+            md.Table(new[] { "period", "game days", "old-list Wares on it", "entries seen so far", "the shelf, in catalogue order" }, rows);
+            md.Blank();
+
+            bool sameTwice = true, exact = true;
+            var shown = new Dictionary<string, int>(StringComparer.Ordinal);
+            for (long p = 0; p < 200; p++)
+            {
+                List<string> a = Shelf.Roll(Sim.Salt, p, pool, 20), b = Shelf.Roll(Sim.Salt, p, pool, 20);
+                if (string.Join(",", a) != string.Join(",", b)) sameTwice = false;
+                if (a.Count != 20 || new HashSet<string>(a).Count != 20) exact = false;
+                foreach (string n in a) { int c; shown.TryGetValue(n, out c); shown[n] = c + 1; }
+            }
+            string least = null, most = null; int leastN = int.MaxValue, mostN = -1;
+            foreach (var kv in shown)
+            {
+                if (kv.Value < leastN) { leastN = kv.Value; least = kv.Key; }
+                if (kv.Value > mostN) { mostN = kv.Value; most = kv.Key; }
+            }
+            bool fair = shown.Count == 72 && leastN >= 30 && mostN <= 85;
+            if (!sameTwice || !exact || !fair) Checks.AllPassed = false;
+            md.Line("Over 200 periods (400 game days, 200 real hours of uptime with somebody online): the same roll twice " +
+                    (sameTwice ? "**every time**" : "**NOT every time — FAIL**") + "; every shelf exactly twenty distinct entries: " +
+                    (exact ? "**yes**" : "**NO — FAIL**") + "; every entry shown at least once: " + (shown.Count == 72 ? "**yes**" : "**NO — FAIL**") +
+                    ". A fair roll shows each entry near 56 times in 200; the least-shown is " + least + " (" + Sim.N(leastN) + "), the most-shown " +
+                    most + " (" + Sim.N(mostN) + ")" + (fair ? "." : " — **outside 30..85, FAIL**."));
+            Sim.Note("shelf-roll", "deterministic " + (sameTwice ? "yes" : "NO") + ", exact " + (exact ? "yes" : "NO") + ", least " + Sim.N(leastN) + " / most " + Sim.N(mostN) + " of 200");
+            md.Blank();
+
+            md.H(3, "Thirty game days of trade, one visit a day, on the shipped rules with the shelf rotating");
+            md.Line("Each visit: a shopper with 5000 coins buys out two entries on the shelf, chosen by the seed; a supplier sells him up to 20 of");
+            md.Line("two entries that are OFF the shelf (the old Wants' role, now any entry's turn); and on the first visit after every roll the");
+            md.Line("shopper tries once to buy an entry that was on the shelf last visit and is not now — a stale pane, which the server must");
+            md.Line("refuse `not_on_shelf` rather than sell. `UpdateShelf` runs before each visit, which is what the director's idle tick does.");
+            md.Blank();
+            var rng = new Rng(seed ^ 0x11);
+            rows = new List<string[]>();
+            int stale = 0, staleRefused = 0, otherRefusals = 0, boughtUnits = 0, boughtCoins = 0, soldUnits = 0, soldCoins = 0, rolls = 0;
+            long lastPeriod = -1; List<string> lastShelf = null;
+            for (int v = 1; v <= 30; v++)
+            {
+                double t = v * Sim.Day;
+                bool rolled = m.UpdateShelf(t);
+                if (rolled) rolls++;
+                m.StartVisit(v, t, m.Coined);
+                List<string> shelf = m.ShelfNames();
+                string staleNote = "";
+                if (lastShelf != null && m.ShelfPeriod != lastPeriod)
+                    foreach (string old in lastShelf)
+                        if (!m.OnShelf(old))
+                        {
+                            stale++;
+                            DealResult sr = m.Settle(Sim.Buy(m.Snapshot(), old, 1, 5000), 5000, t);
+                            if (!sr.Ok && sr.Reason == DealReason.NotOnShelf) staleRefused++;
+                            staleNote = old + " → `" + sr.Reason + "`";
+                            break;
+                        }
+                int vBought = 0, vCoins = 0; var boughtNames = new List<string>();
+                for (int k = 0; k < 2 && shelf.Count > 0; k++)
+                {
+                    string prefab = shelf[rng.Next(0, shelf.Count)];
+                    MarketItem it = m.Find(prefab);
+                    if (it.Stock <= 0) continue;
+                    int count = it.Stock;
+                    DealResult r = m.Settle(Sim.Buy(m.Snapshot(), prefab, count, 5000), 5000, t);
+                    while (!r.Ok && r.Reason == DealReason.CoinsShort && count > 1)
+                    {
+                        count /= 2;
+                        r = m.Settle(Sim.Buy(m.Snapshot(), prefab, count, 5000), 5000, t);
+                    }
+                    if (r.Ok) { vBought += count; vCoins += -r.CoinsDelta; boughtNames.Add(prefab + " x" + Sim.N(count)); }
+                    else otherRefusals++;
+                }
+                int vSold = 0, vSoldCoins = 0; var soldNames = new List<string>();
+                for (int k = 0; k < 2; k++)
+                {
+                    string prefab = null;
+                    for (int tries = 0; tries < 20 && prefab == null; tries++)
+                    {
+                        string c = pool[rng.Next(0, pool.Count)];
+                        if (!m.OnShelf(c)) prefab = c;
+                    }
+                    if (prefab == null) continue;
+                    string stop;
+                    int n = Sim.LargestSale(m, prefab, 20, 0, t, out stop);
+                    if (n <= 0) { otherRefusals++; continue; }
+                    DealResult r = m.Settle(Sim.Sell(m.Snapshot(), prefab, n, 0), 0, t);
+                    if (r.Ok) { vSold += n; vSoldCoins += r.CoinsDelta; soldNames.Add(prefab + " x" + Sim.N(n)); }
+                    else otherRefusals++;
+                }
+                boughtUnits += vBought; boughtCoins += vCoins; soldUnits += vSold; soldCoins += vSoldCoins;
+                rows.Add(new[]
+                {
+                    Sim.N(v), Sim.N(m.ShelfPeriod) + (rolled ? " (rolled)" : ""),
+                    vBought > 0 ? string.Join(", ", boughtNames) + " for " + Sim.N(vCoins) : "—",
+                    vSold > 0 ? string.Join(", ", soldNames) + " for " + Sim.N(vSoldCoins) : "—",
+                    staleNote, Sim.N(m.Purse)
+                });
+                lastPeriod = m.ShelfPeriod; lastShelf = shelf;
+            }
+            md.Table(new[] { "visit (day)", "period", "the shopper bought", "the supplier sold", "the stale pane", "purse after" }, rows);
+            md.Blank();
+            bool staleOk = stale > 0 && staleRefused == stale;
+            if (!staleOk) Checks.AllPassed = false;
+            md.Line("Rolls seen across the thirty visits: " + Sim.N(rolls) + " (one every second visit, as the two-day clock says). Stale-pane buys tried " +
+                    Sim.N(stale) + ", refused `not_on_shelf` " + Sim.N(staleRefused) + (staleOk ? " — **every one**." : " — **NOT every one, FAIL**.") +
+                    " Other refusals " + Sim.N(otherRefusals) + ". Bought " + Sim.N(boughtUnits) + " units for " + Sim.N(boughtCoins) +
+                    " coins; sold him " + Sim.N(soldUnits) + " units for " + Sim.N(soldCoins) + " coins; purse at the end " + Sim.N(m.Purse) + ".");
+            Sim.Note("shelf-trade", "stale refused " + Sim.N(staleRefused) + "/" + Sim.N(stale) + ", bought " + Sim.N(boughtUnits) + " for " + Sim.N(boughtCoins) + ", sold " + Sim.N(soldUnits) + " for " + Sim.N(soldCoins));
+            md.Blank();
+            md.Line("**What this says.** The shelf is a pure function of salt, clock and catalogue (the first table is the same on every machine");
+            md.Line("and after every restart), the pane the client draws follows the snapshot's kind so no client code moved, and a player");
+            md.Line("holding yesterday's pane is refused with a reason that names the shelf. What it does NOT say: whether twenty is the right");
+            md.Line("number for a server of eight, whether two days is too quick for a solo player who visits once a week, and what a Want's");
+            md.Line("stock does over a month of being sold-and-then-on-the-shelf (it is bought out when it lands on the shelf and refilled when it");
+            md.Line("leaves; the drift knobs switch with the kind). Those are the questions for the first live shelf.");
+        }
     }
 }

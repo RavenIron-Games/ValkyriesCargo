@@ -45,6 +45,7 @@ namespace ValkyriesCargo.Tests
             MarketSettleTests();
             MarketStateTests();
             MarketCatalogueSwapTests();
+            ShelfTests();
             NonceRingTests();
             SchedulerTests();
             VisitClockTests();
@@ -1624,6 +1625,197 @@ namespace ValkyriesCargo.Tests
 
             // The nonce ring does NOT carry: the director only swaps between visits for exactly this reason.
             Check(!d.Nonces.Contains(11), "the settled nonce is not in the new market (why the swap waits for an idle market)");
+        }
+
+        // ---- the rotating shelf (2026-09-08, issue #56) ----------------------------------------
+
+        private static string Names(IEnumerable<string> names) => string.Join(",", names);
+
+        private static List<string> PoolOf(Market m)
+        {
+            var pool = new List<string>();
+            foreach (MarketItem it in m.Items) pool.Add(it.Prefab);
+            return pool;
+        }
+
+        private static void ShelfTests()
+        {
+            Section("Shelf.Roll (the rotating shelf, 2026-09-08)");
+            Catalogue cat = Catalogue.Parse(Catalogue.DefaultLine, null);
+            var pool = new List<string>();
+            foreach (CatalogueEntry e in cat.Entries) pool.Add(e.Prefab);
+            Equal(72, pool.Count, "the pool is the whole shipped catalogue, Wares and Wants alike");
+
+            List<string> a = Shelf.Roll("w4790ce", 26, pool, 20);
+            Equal(20, a.Count, "twenty of seventy-two");
+            Equal(20, new HashSet<string>(a).Count, "no name twice");
+            Equal(Names(a), Names(Shelf.Roll("w4790ce", 26, pool, 20)), "the same salt and period roll the same shelf");
+            bool ordered = true; int last = -1;
+            foreach (string s in a) { int i = pool.IndexOf(s); if (i <= last) ordered = false; last = i; }
+            Check(ordered, "returned in catalogue order, so the pane never reorders under a player");
+            Check(Names(a) != Names(Shelf.Roll("w4790ce", 27, pool, 20)), "the next period rolls a different shelf");
+            Check(Names(a) != Names(Shelf.Roll("other", 26, pool, 20)), "another world rolls a different shelf");
+            Check(new HashSet<string>(a).IsSupersetOf(Shelf.Roll("w4790ce", 26, pool, 10)),
+                  "a bigger shelf for the same period is a superset of the smaller (raising ShelfSize swaps nothing out)");
+            Equal(72, Shelf.Roll("w4790ce", 1, pool, 72).Count, "a size covering the pool is the pool");
+            Equal(72, Shelf.Roll("w4790ce", 1, pool, 500).Count, "and so is a bigger one");
+            Equal(0, Shelf.Roll("w4790ce", 1, pool, 0).Count, "size 0 is empty");
+            Equal(0, Shelf.Roll("w4790ce", 1, pool, -4).Count, "a negative size is empty");
+            Equal(0, Shelf.Roll("w4790ce", 1, null, 5).Count, "no pool is empty, not a throw");
+            Equal(0, Shelf.Roll(null, 1, new List<string>(), 5).Count, "an empty pool likewise, and a null salt is a salt");
+            var seen = new HashSet<string>();
+            var shown = new Dictionary<string, int>();
+            for (long p = 0; p < 200; p++)
+                foreach (string s in Shelf.Roll("w4790ce", p, pool, 20)) { seen.Add(s); int n; shown.TryGetValue(s, out n); shown[s] = n + 1; }
+            Equal(72, seen.Count, "over two hundred periods every entry has been on the shelf");
+            int least = int.MaxValue, most = 0;
+            foreach (int n in shown.Values) { if (n < least) least = n; if (n > most) most = n; }
+            Check(least >= 30 && most <= 85, "and no entry is starved or favoured (expected 56 of 200; least " + least + ", most " + most + ")");
+
+            Section("Shelf.Period (the game-day clock)");
+            Equal(0L, Shelf.Period(0, 1800, 2), "period 0 at the start of the world");
+            Equal(0L, Shelf.Period(3599.9, 1800, 2), "still 0 just under two game days");
+            Equal(1L, Shelf.Period(3600, 1800, 2), "1 at exactly two game days");
+            Equal(26L, Shelf.Period(26 * 3600 + 5, 1800, 2), "26 a little into the twenty-seventh");
+            Equal(2L, Shelf.Period(3600, 1800, 1), "a one-day rotation: 2 at the same world time");
+            Equal(0L, Shelf.Period(-50, 1800, 2), "a negative world time is period 0, never negative");
+            Equal(0L, Shelf.Period(double.NaN, 1800, 2), "NaN is 0");
+            Equal(0L, Shelf.Period(5000, 0, 2), "a zero day length is 0: nothing ever rolls");
+            Equal(0L, Shelf.Period(5000, 1800, 0), "a zero rotation likewise");
+            Equal(3600.0, Shelf.NextRollAt(0, 1800, 2), "the next roll after period 0 is at 3600 s");
+            Equal(0.0, Shelf.NextRollAt(0, 0, 2), "no roll at all with no day");
+            Check(Shelf.Seed("a", 1) != Shelf.Seed("a", 2) && Shelf.Seed("a", 1) != Shelf.Seed("b", 1), "the seed hears both salt and period");
+            Check(Shelf.Seed(null, 0) != 0 && Shelf.Seed("", 0) != 0, "never 0");
+
+            Section("MarketRules.Sanitize: the shelf knobs");
+            var probs = new List<string>();
+            MarketRules r = MarketRules.Default; r.ShelfSize = -3; r.ShelfRotationGameDays = 0; r.Sanitize(probs);
+            Equal(0, r.ShelfSize, "a negative size is 0");
+            Equal(Shelf.MinRotationDays, r.ShelfRotationGameDays, "a zero rotation is the floor");
+            Equal(2, probs.Count, "both reported");
+            probs.Clear();
+            r = MarketRules.Default; r.ShelfSize = 999; r.ShelfRotationGameDays = 1000; r.Sanitize(probs);
+            Equal(Shelf.MaxSize, r.ShelfSize, "too big is the cap");
+            Equal(Shelf.MaxRotationDays, r.ShelfRotationGameDays, "too long is the cap");
+            Equal(0, MarketRules.Default.ShelfSize, "the core's own baseline is the fixed shelf, so every older check reads against it");
+            Equal(2.0, MarketRules.Default.ShelfRotationGameDays, "and the rotation baseline is the owner's two days");
+
+            Section("Market: the fixed shelf (ShelfSize 0) is exactly the market of yesterday");
+            Market f = NewMarket(100);
+            Check(!f.Rotating, "not rotating");
+            Equal(0, f.ShelfCount, "no shelf");
+            Equal(-1L, f.ShelfPeriod, "no period");
+            Check(!f.ShelfDue(100000), "never due");
+            Check(!f.UpdateShelf(100000), "UpdateShelf is a no-op");
+            Equal("shelf fixed (ShelfSize 0: the catalogue's own kinds)", f.DescribeShelf(100), "and says so");
+            Equal(EntryKind.Ware, f.KindOf(f.Find("Iron")), "Iron is the Ware the catalogue says");
+            Equal(EntryKind.Want, f.KindOf(f.Find("Wood")), "Wood the Want");
+            Equal(EntryKind.Want, f.KindOf(null), "no item is a Want (never a throw)");
+            int wares = 0; foreach (MarketRow row in f.Snapshot().Rows) if (row.Kind == EntryKind.Ware) wares++;
+            Equal(18, wares, "the snapshot carries the catalogue's 18 wares");
+            f.StartVisit(1, 100, 0);
+            Equal(DealReason.UnknownItem, f.Settle(new Deal { VisitId = 1, Nonce = 5, Wanted = new DealLine { Prefab = "Wood", Count = 1, UnitPriceSeen = 1 } }, 100, 100).Reason,
+                  "buying a Want is unknown_item, as it always was");
+
+            Section("Market: the rotating shelf (ShelfSize 20, two game days)");
+            MarketRules rules = MarketRules.Default; rules.ShelfSize = 20; rules.ShelfRotationGameDays = 2;
+            var m = new Market(cat, rules, 100, "w4790ce");
+            Check(m.Rotating, "rotating");
+            Equal(20, m.ShelfCount, "twenty on the shelf straight from the constructor");
+            Equal(0L, m.ShelfPeriod, "period 0 at world time 100");
+            Equal(Names(Shelf.Roll("w4790ce", 0, pool, 20)), Names(m.ShelfNames()), "the shelf IS Shelf.Roll for the salt and the period");
+            int onShelf = 0, wareRows = 0;
+            foreach (MarketItem it in m.Items) if (m.OnShelf(it.Prefab)) onShelf++;
+            foreach (MarketRow row in m.Snapshot().Rows) if (row.Kind == EntryKind.Ware) wareRows++;
+            Equal(20, onShelf, "OnShelf says yes for exactly twenty");
+            Equal(20, wareRows, "the snapshot carries exactly twenty Ware rows: the terminal's left pane, with no client change");
+            Check(!m.OnShelf(null) && !m.OnShelf("") && !m.OnShelf("Nonsense"), "and no for nothing, nothing and a stranger");
+            Check(m.DescribeShelf(100).StartsWith("shelf 20 of 72, period 0, rolls every ") && m.DescribeShelf(100).Contains("next in "), "the status line: " + m.DescribeShelf(100));
+            string offWare = null, onWant = null;
+            foreach (MarketItem it in m.Items)
+            {
+                if (offWare == null && it.Entry.Kind == EntryKind.Ware && !m.OnShelf(it.Prefab)) offWare = it.Prefab;
+                if (onWant == null && it.Entry.Kind == EntryKind.Want && m.OnShelf(it.Prefab)) onWant = it.Prefab;
+            }
+            Check(offWare != null && onWant != null, "this roll has a catalogue Ware off the shelf and a catalogue Want on it (" + offWare + " / " + onWant + ")");
+            Equal(EntryKind.Want, m.KindOf(m.Find(offWare)), "an off-shelf Ware trades as a Want");
+            Equal(EntryKind.Ware, m.KindOf(m.Find(onWant)), "an on-shelf Want trades as a Ware");
+            m.StartVisit(1, 100, 0);
+            MarketItem off = m.Find(offWare), on = m.Find(onWant);
+            DealResult res = m.Settle(new Deal { VisitId = 1, Nonce = 21, Wanted = new DealLine { Prefab = offWare, Count = 1, UnitPriceSeen = m.Charge(off) } }, 100000, 100);
+            Equal(DealReason.NotOnShelf, res.Reason, "buying an off-shelf entry is refused not_on_shelf (its own reason, so a stale pane says why)");
+            res = m.Settle(new Deal { VisitId = 1, Nonce = 22, Wanted = new DealLine { Prefab = onWant, Count = 1, UnitPriceSeen = m.Charge(on) } }, 100000, 100);
+            Check(res.Ok, "buying an on-shelf entry goes through (" + res.Reason + ")");
+            res = m.Settle(new Deal { VisitId = 1, Nonce = 23, Wanted = new DealLine { Prefab = "Nonsense", Count = 1, UnitPriceSeen = 1 } }, 100000, 100);
+            Equal(DealReason.UnknownItem, res.Reason, "a stranger is still unknown_item, not not_on_shelf");
+            off.Stock = 0;
+            Equal(Market.PaysFor(off.Entry.BasePrice, off.Entry.TargetStock, 0, EntryKind.Want, m.Rules), m.Pays(off), "what he pays for an off-shelf entry follows the Want rule (no par clamp)");
+            on.Stock = 0;
+            Equal(Market.PaysFor(on.Entry.BasePrice, on.Entry.TargetStock, 0, EntryKind.Ware, m.Rules), m.Pays(on), "and for an on-shelf entry the Ware rule (the Fair Market Act clamps at par)");
+            Check(m.Pays(on) <= (int)Math.Round(on.Entry.BasePrice * m.Rules.Spread) + 1, "so an emptied on-shelf entry is bought back at par at most");
+            Equal("Not in this load, friend. Ask me again in a few days.", Lines.Refusal(DealReason.NotOnShelf), "and he has words for it");
+
+            Section("Market.Relax follows the shelf, not the catalogue");
+            MarketRules r2 = MarketRules.Default; r2.ShelfSize = 20; r2.ShelfRotationGameDays = 2; r2.WareHalfLifeGameDays = 0; r2.WantHalfLifeGameDays = 3;
+            var m2 = new Market(cat, r2, 0, "w4790ce");
+            MarketItem off2 = m2.Find(offWare), on2 = m2.Find(onWant);
+            off2.Stock = 0; on2.Stock = 0;
+            m2.Relax(3 * 1800);
+            Check(off2.Stock > 0 && off2.Stock < off2.Entry.TargetStock, "an emptied off-shelf Ware drifts back on the Want half-life (stock " + off2.Stock + " of " + off2.Entry.TargetStock + ")");
+            Equal(0, on2.Stock, "an emptied on-shelf Want never drifts (the Ware knob is 0)");
+
+            Section("Market.UpdateShelf: the period moves, the size moves, the switch goes off");
+            Check(!m.ShelfDue(3599), "not due before two game days");
+            Check(m.ShelfDue(3600), "due at two game days");
+            List<string> first = m.ShelfNames();
+            Check(m.UpdateShelf(3600), "the roll changes the set");
+            Equal(1L, m.ShelfPeriod, "period 1");
+            Equal(20, m.ShelfCount, "still twenty");
+            Check(Names(first) != Names(m.ShelfNames()), "a different twenty");
+            Check(!m.ShelfDue(3700) && !m.UpdateShelf(3700), "nothing to do inside the period");
+            List<string> twenty = m.ShelfNames();
+            m.Rules.ShelfSize = 30;
+            Check(m.ShelfDue(3700), "a live size change is due");
+            Check(m.UpdateShelf(3700), "and rolls");
+            Equal(30, m.ShelfCount, "thirty now");
+            Check(new HashSet<string>(m.ShelfNames()).IsSupersetOf(twenty), "the thirty contain the twenty: nothing swapped out mid-period");
+            m.Rules.ShelfSize = 20;
+            Check(m.UpdateShelf(3700), "back to twenty");
+            Equal(Names(twenty), Names(m.ShelfNames()), "the same twenty");
+            m.Rules.ShelfRotationGameDays = 1;
+            Check(m.ShelfDue(3700), "a rotation change moves the period, so it is due");
+            Check(m.UpdateShelf(3700), "and rolls");
+            Equal(2L, m.ShelfPeriod, "period 2 on a one-day clock at 3700 s");
+            m.Rules.ShelfSize = 0;
+            Check(m.ShelfDue(3700), "switching the shelf off is due");
+            Check(m.UpdateShelf(3700), "and clears it");
+            Equal(0, m.ShelfCount, "fixed again");
+            Equal(-1L, m.ShelfPeriod, "no period");
+            Equal(EntryKind.Ware, m.KindOf(m.Find("Iron")), "Iron is a Ware again by the catalogue line");
+            Check(!m.ShelfDue(99999), "and nothing is due any more");
+
+            Section("Market.WithCatalogue and the shelf");
+            MarketRules r3 = MarketRules.Default; r3.ShelfSize = 20; r3.ShelfRotationGameDays = 2;
+            var m3 = new Market(cat, r3, 100, "w4790ce");
+            List<string> before = m3.ShelfNames();
+            string line = Catalogue.Upsert(Catalogue.DefaultLine, "Iron:99:20:60:Ware", out _);   // a price edit only
+            string summary;
+            Market m4 = m3.WithCatalogue(Catalogue.Parse(line, null), 100, out summary);
+            Equal(Names(before), Names(m4.ShelfNames()), "a price edit keeps the same shelf (the pool did not change)");
+            line = Catalogue.Remove(Catalogue.DefaultLine, "Iron", out _);
+            Market m5 = m3.WithCatalogue(Catalogue.Parse(line, null), 100, out summary);
+            Equal(20, m5.ShelfCount, "a dropped entry still leaves twenty on the shelf");
+            Check(!m5.OnShelf("Iron") && m5.Find("Iron") == null, "and the dropped one is not among them");
+            Equal(Names(Shelf.Roll("w4790ce", 0, PoolOf(m5), 20)), Names(m5.ShelfNames()), "rolled on the new pool for the same period");
+
+            Section("Market.EncodeState / ApplyState carry no shelf row (nothing to persist)");
+            string state = m3.EncodeState();
+            Check(state.IndexOf("shelf", StringComparison.Ordinal) < 0, "no shelf row in the sidecar rows");
+            var m6 = new Market(cat, r3, 100, "w4790ce");
+            var ap = new List<string>();
+            m6.ApplyState(state, ap);
+            Equal(0, ap.Count, "and the state applies clean");
+            Equal(Names(m3.ShelfNames()), Names(m6.ShelfNames()), "the same shelf on both, from the salt and the clock alone");
         }
 
         private static void NonceRingTests()

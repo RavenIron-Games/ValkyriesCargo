@@ -375,6 +375,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                     "; purse " + d.Market.Purse + ", next visit #" + d.Market.NextVisitId + (d.Session.Resumed ? " (resumed after a restart)" : ""));
                 if (d.CatalogueWaiting != null)
                     Say(args, "  catalogue: a change waits (" + d.CatalogueWaiting + "); it applies as soon as no visit is running");
+                Say(args, "  " + d.Market.DescribeShelf(world) + (d.Market.Rotating && d.Market.ShelfDue(world) ? " (a roll is due and waits for the visit)" : ""));
                 Say(args, "  " + Spawner.Describe() + (Spawner.Active
                     ? "; " + F(FlightPlan.MinimumStartDistance, "0") + " m is the shortest flight worth flying, " +
                       F(FlightPlan.EdgeMargin, "0") + " m the margin kept inside the block"

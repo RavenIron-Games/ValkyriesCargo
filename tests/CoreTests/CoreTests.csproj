@@ -33,6 +33,7 @@
     <Compile Include="..\..\ValkyriesCargo\Core\Json.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\DemoMarket.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Market.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\Shelf.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Scheduler.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\VisitClock.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\FlightPlan.cs" />

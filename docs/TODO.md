@@ -401,5 +401,20 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       sides; StormTest booted 19/19 on 0.221.12 and RESUMED visit 15 (item 15's server half + F4's rebind SEEN).
 - [ ] **1.0: HELD** (owner, "dont change anything for 1.0"). The two stop-ships stay findings; the fix designs are in
       the handoffs. Do not start without the word.
-- [ ] **The rotating shelf** (owner, 2026-09-08): 20 of the 72, re-rolled every couple of game days, the fixed Ware
-      list goes away; issue #56 carries the design and the four economy questions; WAITS for Wu'barrk's read.
+- [x] **The rotating shelf** (owner, 2026-09-08): 20 of the 72, re-rolled every couple of game days, the fixed Ware
+      list goes away; issue #56 carries the design and the four economy questions. Wu'barrk's read came back the
+      same morning (two-day default; a backpack add-on). **BUILT on `a/rotating-shelf` 2026-09-08** (the owner: "build
+      the shelf on a branch"): `Core/Shelf.cs` (pure), `Market.KindOf` as the one place the effective kind is decided,
+      `Server.ShelfSize` 20 / `Server.ShelfRotationGameDays` 2, the director's roll-when-idle with its two log lines,
+      `not_on_shelf`, the `cargo status` line; 1818 checks, 0 warnings, economy scenario 11, `docs/CATALOGUE.md` §7.
+      The PR is open on the branch and waits for the word; **unseen on a machine** (the first boot must print
+      `director up: …; shelf 20 of 72, period N, …` and the first idle tick after a period `shelf rolled: …`).
+- [ ] **The buy-anything extension** (owner, 2026-09-08, the same message): Ingvar buys ANY item a player offers,
+      on the shelf or not; a sale of an uncatalogued item forces a new persistent entry, classed common or rare by
+      value; common rows rotate as normal inventory with a timed persistence (say 2 visits), rare rows stay until
+      sold or on an extended timer. DESIGNED in the shelf PR's body (six decisions: the price source for an
+      uncatalogued item, the common/rare classifier, the sidecar row and its expiry, whether rares count inside
+      `ShelfSize`, `cargo catalogue reset`, a cap on walk-in rows for the synced payload); NOT built, by the word.
+- [ ] **The backpack add-on** (Wu'barrk, 2026-09-08): shelf ×2–4 when a backpack mod is detected at server load,
+      and a backpack on his body. Needs the plugin GUID(s) to detect (his call); the multiplier is capped at 3× by
+      the pool (60 of 72; 4× is the whole catalogue); the body half is his bake. Not built.

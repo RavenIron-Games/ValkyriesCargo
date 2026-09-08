@@ -53,6 +53,7 @@ namespace ValkyriesCargo.EconSim
             Checks.Eight(md, seed);
             Scenarios.Nine(md, seed);
             Scenarios.Ten(md, seed);
+            Scenarios.Eleven(md, seed);
             Verdict(md, seed);
 
             string text = md.Render();

@@ -312,6 +312,7 @@ ValkyriesCargo/
   Core/Catalogue.cs          PURE: the catalogue line parser and the 72 defaults
   Core/Wire.cs Core/MarketSnapshot.cs Core/VisitSnapshot.cs Core/Deal.cs   PURE: the contract (PR #1)
   Core/Market.cs             PURE: rules, price curve, purse, drift, settlement, sidecar rows
+  Core/Shelf.cs              PURE: the rotating shelf (2026-09-08): the period clock and the seeded roll, in catalogue order
   Core/Scheduler.cs          PURE: eligibility, the roll, tickets, cooldowns and their rows
   Core/VisitClock.cs         PURE: the countdown mirror (world seconds; the server retargets it)
   Core/DemoMarket.cs         PURE: the real Market behind `cargo terminal demo`, plus Tick and Advance
@@ -814,8 +815,18 @@ server half and F4's rebind, seen. **OWNER: "dont change anything for 1.0"** —
 `Core/StableHash.cs` exposed as an extension method inside our namespace so C# rebinds all 13 sites without an
 edit; a peer-list gather; both version names; the zone type resolved at runtime; a ServerSync-namespace shim
 flagged as his call) and NOT built. **OWNER: the rotating shelf** — 20 of the 72 on the shelf, re-rolled every
-couple of game days, the fixed Ware list goes away — designed in issue #56 and WAITING FOR WU'BARRK'S READ; nothing
-built. Thorium and Wu'barrk are the same person.
+couple of game days, the fixed Ware list goes away — designed in issue #56; Wu'barrk's read came back the same
+morning (the two-day default, a backpack add-on), and at the owner's word ("build the shelf on a branch") it is
+**BUILT on `a/rotating-shelf`, 2026-09-08**: `Core/Shelf.cs` (pure: the period clock, the seeded roll in
+catalogue order), `Market.KindOf` as the ONE place the effective kind is decided (every price, drift, refusal,
+snapshot row and export row reads it; the client is untouched because the snapshot carries the effective kind),
+`Server.ShelfSize` 20 and `Server.ShelfRotationGameDays` 2 (0 = the fixed shelf of before), the director's
+roll on the first idle tick of a new period under the catalogue swap's busy rule (`shelf rolled: …`, `shelf roll
+waits: …`), the `not_on_shelf` refusal with a line of Ingvar's, one line in `cargo status` and in `director up`;
+1818 checks, 0 warnings, economy scenario 11, `docs/CATALOGUE.md` §7. The PR waits for the word and **nothing of it
+has been seen on a machine**. The owner's second ask in the same message — Ingvar buys ANY item a player offers
+and an uncatalogued sale forces a persistent common-or-rare entry — is DESIGNED in that PR's body and NOT built
+(six decisions listed there). Thorium and Wu'barrk are the same person.
 
 ## What to verify in-game
 

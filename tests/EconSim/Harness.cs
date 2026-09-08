@@ -239,6 +239,7 @@ namespace ValkyriesCargo.EconSim
         {
             string state = m.EncodeState();
             var probe = new Market(DefaultCatalogue(), m.Rules, 0, Salt);
+            probe.UpdateShelf(worldTime);   // the rotating shelf (2026-09-08): the probe must price against THIS period's shelf
             int lo = 0, hi = want;
             string reason = DealReason.Ok;
             while (lo < hi)

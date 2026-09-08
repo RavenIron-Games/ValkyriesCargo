@@ -68,6 +68,7 @@ namespace RavenIron.ValkyriesCargo.Server
         private int _catalogueVersion;
         private string _catalogueWaiting;
         private bool _catalogueWaitingLogged;
+        private bool _shelfWaitingLogged;   // the rotating shelf (2026-09-08): a due roll that waits logs once
 
         public Scheduler Scheduler => _scheduler;
         public Market Market => _market;
@@ -139,6 +140,7 @@ namespace RavenIron.ValkyriesCargo.Server
                                        ", roll every " + Wire.Float(sr.IntervalSeconds) + " s at " + Wire.Float(sr.ChancePercent) + "%, first roll one interval from now; sidecar " +
                                        (d.Store.Path != null ? System.IO.Path.GetFileName(d.Store.Path) + " (" + (d.Loaded > 0 ? d.Loaded + " rows loaded" : "fresh world") +
                                        (d._pendingSessionRow != null ? ", a saved visit waits for its event" : "") + ")" : "NOT AVAILABLE: " + d.Store.Detail) +
+                                       "; " + d._market.DescribeShelf(znet.GetTimeSeconds()) +
                                        (problems.Count > 0 ? "; problems: " + d.Problems : ""));
             return d;
         }
@@ -183,6 +185,7 @@ namespace RavenIron.ValkyriesCargo.Server
 
                 // A changed Server.Catalogue (2026-09-07), by whatever route it arrived: applied here, between visits.
                 if (ModConfig.CatalogueVersion != _catalogueVersion) SwapCatalogue(worldTime);
+                RollShelfIfDue(worldTime);
 
                 // D3 (docs/AUDIT-STORMTEST-2026-09-07.md §2): a visit that finished its departure LAST
                 // tick gets its sweep THIS tick, once ZDOMan.Update has actually removed what Clear
@@ -591,6 +594,36 @@ namespace RavenIron.ValkyriesCargo.Server
         /// published and saved at once, so a client's `cargo stock`, the sidecar and the log agree.
         /// Returns one sentence for whoever asked.
         /// </summary>
+        /// <summary>
+        /// The rotating shelf (the owner, 2026-09-08; issue #56). The period moved, or an admin changed
+        /// `Server.ShelfSize` live: re-roll and republish the market so every terminal's panes follow. The
+        /// same busy rule as the catalogue swap - never under a running visit, a saved one waiting for its
+        /// event, or a merchant still departing - so the pane never changes under an open terminal; the wait
+        /// is logged once. Nothing is persisted: the same salt, period and catalogue roll the same shelf on
+        /// every boot, which is why a restart mid-period shows the same twenty.
+        /// </summary>
+        private void RollShelfIfDue(double worldTime)
+        {
+            if (!_market.ShelfDue(worldTime)) return;
+            string busy = _session.Active ? "visit #" + _session.VisitId + " is running"
+                        : _pendingSessionRow != null ? "a saved visit is waiting for its event"
+                        : _pendingVanishVisitId != 0 ? "visit #" + _pendingVanishVisitId + " is still departing"
+                        : null;
+            if (busy != null)
+            {
+                if (!_shelfWaitingLogged)
+                {
+                    _shelfWaitingLogged = true;
+                    ValkyriesCargo.Log.LogInfo("shelf roll waits: " + busy + "; it rolls as soon as no visit is running");
+                }
+                return;
+            }
+            _shelfWaitingLogged = false;
+            if (!_market.UpdateShelf(worldTime)) return;
+            PublishMarket();
+            ValkyriesCargo.Log.LogInfo("shelf rolled: " + _market.DescribeShelf(worldTime) + ": " + string.Join(", ", _market.ShelfNames()));
+        }
+
         public string SwapCatalogue(double worldTime)
         {
             if (ModConfig.CatalogueVersion == _catalogueVersion) return "catalogue unchanged";

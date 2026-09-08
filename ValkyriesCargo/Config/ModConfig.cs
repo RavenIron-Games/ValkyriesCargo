@@ -52,6 +52,8 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<bool>   FairMarketAct;
         public static ConfigEntry<float>  WareHalfLifeGameDays;
         public static ConfigEntry<float>  WantHalfLifeGameDays;
+        public static ConfigEntry<int>    ShelfSize;               // the rotating shelf (2026-09-08): 0 = fixed
+        public static ConfigEntry<float>  ShelfRotationGameDays;
         public static ConfigEntry<int>    PurseCoins;
         public static ConfigEntry<int>    PurseCarryPercent;
         public static ConfigEntry<bool>   EnableBarter;
@@ -186,6 +188,12 @@ namespace RavenIron.ValkyriesCargo.Config
             WantHalfLifeGameDays = S(cfg, "Server", "WantHalfLifeGameDays", 3f,
                 "Between visits a WANT's stock (what he only buys) drifts back toward its target with this half-life, in game days: he passes on what he was sold, so a flooded row half-clears in this many days and he never fills up for good. 0 = never, and then every Want fills to its max and he stops buying it (docs/ECONOMY-SIM.md section 10: 27 of 30 supplying visits refused). Read on the SERVER.",
                 new AcceptableValueRange<float>(0f, 365f));
+            ShelfSize = S(cfg, "Server", "ShelfSize", 20,
+                "The rotating shelf (2026-09-08, issue #56). How many catalogue entries he SELLS at a time, drawn from the whole catalogue - Wares and Wants alike - by a roll every ShelfRotationGameDays; an entry on the shelf is sold at the curve, bought back under the Fair Market Act and drifts on WareHalfLifeGameDays, every other entry is bought only and drifts on WantHalfLifeGameDays. The roll is a function of the world, the game time and the catalogue, so a restart shows the same shelf. 0 = the fixed shelf: the Ware/Want kinds in the Catalogue line decide, as they did before. Changing it with a visit running applies when the visit ends. Read on the SERVER.",
+                new AcceptableValueRange<int>(0, 200));
+            ShelfRotationGameDays = S(cfg, "Server", "ShelfRotationGameDays", 2f,
+                "How many game days one shelf lasts before it is re-rolled; a game day is 30 real minutes of server uptime with somebody online. The roll happens on the first tick of a new period with no visit running, never under an open terminal. Read on the SERVER.",
+                new AcceptableValueRange<float>(0.1f, 365f));
             PurseCoins = S(cfg, "Server", "PurseCoins", 1500,
                 "Coins he arrives with. 800 was thin for what this mod is for: one visit bought 39 silver ore " +
                 "for 795 and left him with 5, and a dozen flametal ore was the whole purse. Read on the SERVER.",
@@ -254,6 +262,8 @@ namespace RavenIron.ValkyriesCargo.Config
             r.FairMarketAct = FairMarketAct.Value;
             r.WareHalfLifeGameDays = WareHalfLifeGameDays.Value;
             r.WantHalfLifeGameDays = WantHalfLifeGameDays.Value;
+            r.ShelfSize = ShelfSize.Value;
+            r.ShelfRotationGameDays = ShelfRotationGameDays.Value;
             r.PurseCoins = PurseCoins.Value;
             r.PurseCarryPercent = PurseCarryPercent.Value;
             r.PurseCapMultiple = 3;

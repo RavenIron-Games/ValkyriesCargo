@@ -36,12 +36,22 @@ the zone type resolved at runtime; for ServerSync's three sites a shim declared 
 flagged as the owner's call) — **and the owner said "dont change anything for 1.0"**. Nothing is built. Neither
 side starts 1.0 work without his word; the client axis is unswept everywhere.
 
-**The rotating shelf (issue #56) waits for your read.** The owner's ask, 2026-09-08: Ingvar's selling side stops
-being a fixed list — 20 of the 72 catalogue entries are on the shelf at a time, re-rolled every couple of game
-days, seeded, the fixed Ware list gone; on the shelf an entry behaves as a Ware, off it as a Want, stock persists
-across rolls, a due roll waits for no visit. The issue carries the four economy questions that are yours (the
-Haldor anchors sold as well as bought, the round trip across a changing twenty, the purse against a shelf of
-wood and hide, buying-side bases becoming selling prices). Nothing is built until you answer.
+**The rotating shelf (issue #56) is BUILT on `a/rotating-shelf` and its PR waits for the word.** The owner's ask,
+2026-09-08: Ingvar's selling side stops being a fixed list — 20 of the 72 catalogue entries are on the shelf at a
+time, re-rolled every couple of game days, seeded, the fixed Ware list gone; on the shelf an entry behaves as a
+Ware, off it as a Want, stock persists across rolls, a due roll waits for no visit. Wu'barrk's read came the same
+morning (two game days by default; a backpack add-on) and the owner said build. What landed: `Core/Shelf.cs` (pure:
+the period clock, the seeded roll returned in catalogue order, FNV-1a + xorshift64*, not the engine's hash),
+`Market.KindOf` as the ONE place the effective kind is decided, `Server.ShelfSize` 20 / `Server.ShelfRotationGameDays`
+2 (0 = the fixed shelf of before), the director's roll on the first idle tick of a new period under the catalogue
+swap's busy rule, `not_on_shelf`, a `cargo status` line; the client is untouched because the snapshot carries the
+effective kind. 1818 checks, economy scenario 11, `docs/CATALOGUE.md` §7. **Nothing touches your files.** The four
+economy questions in the issue are still yours (the Haldor anchors sold as well as bought, the round trip across a
+changing twenty, the purse against a shelf of wood and hide, buying-side bases becoming selling prices), and the PR
+adds two more the build raised: a flooded Want landing on the shelf sells all of it at the flooded price (cap a
+landing entry at its target?), and whether a roll should be announced to players. The owner's second ask — Ingvar
+buys ANY item offered, an uncatalogued sale forces a persistent common-or-rare entry — is designed in the PR body
+and NOT built; the backpack add-on needs the plugin GUID(s) from you and the body half is your bake.
 
 **Fifteen visits have now flown on the owner's Windows client against the dedicated server StormTest**: six in the
 morning (10:39–11:38, PR #46's build), twenty deals over the wire, no exception from the mod on either side; three
@@ -125,8 +135,8 @@ F3's two-second vanish grace does not show in the log (end to reclaim 6 / 0 / 0 
 and a dismiss), which is `End` → `FinishDeparture` in your `VisitDirector`. The record of the night's six visits is
 `docs/proofs/2026-09-07-stormtest-night.md`.
 
-**What Don's side wants from yours, in order:** **your read on issue #56, the rotating shelf** (nothing is built
-until then); the first-reclaim line and a look at the grace (above); ~~the ownership fix~~ done (#54); ~~D1 and
+**What Don's side wants from yours, in order:** **your read of the shelf PR on `a/rotating-shelf`** (built; the
+two new economy questions in its body, and the backpack mod's plugin GUID for the add-on); the first-reclaim line and a look at the grace (above); ~~the ownership fix~~ done (#54); ~~D1 and
 D3; your `docs/TODO.md` §2~~ done (#50, #51, #52); the animator parameter names and item 23 on your server, still
 yours; ~~issue #23 (your rc1 note)~~ closed with rc2; and your commits under one author name — today's arrived as
 `t <t@l>`, `trial <trial@local>` and one merge authored as the model, which is what blame and the release notes
