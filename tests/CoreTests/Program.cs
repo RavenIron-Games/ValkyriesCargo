@@ -3501,8 +3501,8 @@ namespace ValkyriesCargo.Tests
             t.Refresh(small);
             Check(t.Wanted == null, "a wanted line whose row vanished is dropped");
 
-            // AutoFill: highest of his prices first, until the wanted line is covered; change in coins.
-            TrayModel b = new TrayModel { Mode = PayMode.Barter };
+            // AutoFill ("Cover it with my goods"): highest of his prices first, until the wanted line is covered; change in coins.
+            TrayModel b = new TrayModel();
             MarketSnapshot m2 = DemoMarket.Default().Market;
             b.StageBuy(m2.Find("Iron"), 1);                      // 25c
             var goods = new Dictionary<string, int> { { "Wood", 100 }, { "Amber", 3 }, { "Honey", 10 } };   // pays 1, 5, 1
@@ -3517,6 +3517,47 @@ namespace ValkyriesCargo.Tests
             Check(b.Offered.Count <= 3, "and it stopped once covered");
             TrayModel c = new TrayModel();
             Equal(0, c.AutoFill(m2, hasB), "nothing wanted, nothing filled");
+
+            // The count box and the "all" button (2026-09-08, the playtest's item 4).
+            TrayModel e = new TrayModel();
+            MarketRow ironRow = m2.Find("Iron");
+            MarketRow woodRow = m2.Find("Wood");
+            Check(e.StageBuy(ironRow, 1), "stage one iron");
+            Equal(7, e.SetCount(m2, "Iron", 7, hasB), "the box sets the wanted count");
+            Equal(7, e.Wanted.Count, "on the line");
+            Equal(ironRow.Stock, e.SetCount(m2, "Iron", 999, hasB), "clamped to his stock");
+            Equal(ironRow.Stock, e.SetCount(m2, "Iron", 0, hasB), "0 leaves the line as it is: the box is being typed in");
+            Equal(ironRow.Stock, e.SetCount(m2, "Iron", -3, hasB), "and so does a negative");
+            Equal(0, e.SetCount(m2, "Wood", 5, hasB), "a prefab not in the tray answers 0 and stages nothing");
+            Check(e.FindOffered("Wood") == null, "(nothing offered)");
+            int afford = 100 / ironRow.Buy;
+            Equal(Math.Max(1, Math.Min(ironRow.Stock, afford)), e.AllOf(m2, "Iron", hasB, 100), "all = what he has and the player can pay for");
+            Equal(1, e.AllOf(m2, "Iron", hasB, 0), "with no coins, all is still 1 so the refusal is coins_short, not an empty tray");
+            Check(e.StageOffer(woodRow, 1, hasB("Wood")), "offer one wood");
+            int room = woodRow.Max - woodRow.Stock;
+            Equal(Math.Min(hasB("Wood"), room), e.AllOf(m2, "Wood", hasB, 0), "all for an offer = what the player carries, within the room on his shelf");
+            Equal(Math.Min(3, Math.Min(hasB("Wood"), room)), e.SetCount(m2, "Wood", 3, hasB), "the box sets an offer");
+            Equal(Math.Min(hasB("Wood"), room), e.SetCount(m2, "Wood", 100000, hasB), "clamped to carry and room");
+            e.Remove("Wood");
+            Check(e.FindOffered("Wood") == null, "x removes an offer");
+            e.Remove("Iron");
+            Check(e.Wanted == null && e.IsEmpty, "and the wanted line");
+            e.Remove("Iron");
+            Check(e.IsEmpty, "removing twice is harmless");
+
+            // EnableBarter off (item 5): goods beside a ware are refused on the client, and nothing else is.
+            TrayModel f = new TrayModel();
+            f.StageBuy(ironRow, 1);
+            f.StageOffer(woodRow, 2, 100);
+            Equal(TrayModel.BarterOff, f.Validate(m2, 1000, hasB, false), "barter off refuses goods beside a ware");
+            Check(f.Validate(m2, 1000, hasB, true) == null, "and on, the same tray can go");
+            Check(f.Validate(m2, 1000, hasB) == null, "(on is the default)");
+            Check(TrayModel.Words(TrayModel.BarterOff).Contains("Coins"), "with his words for it");
+            f.Remove("Iron");
+            Check(f.Validate(m2, 0, hasB, false) == null, "a plain sell is fine with barter off");
+            TrayModel g = new TrayModel();
+            g.StageBuy(ironRow, 1);
+            Check(g.Validate(m2, 1000, hasB, false) == null, "and so is a plain buy");
 
             // The offered-lines cap.
             TrayModel capped = new TrayModel();

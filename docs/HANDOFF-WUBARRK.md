@@ -28,6 +28,17 @@ namespace, a peer-list gather, both version names, the zone type at runtime; a S
 three sites, flagged as the owner's call). **The owner said "dont change anything for 1.0": nothing is built, and
 neither side starts without his word.** The client axis is unswept everywhere.
 
+**Later the same morning: your playtest, and what is yours from it.** The shelf rolled on StormTest as designed
+(PR #57 still waits for the word), you joined by join code with Yggdrasil's Reckoning 0.1.1 on both sides, and
+your seven-item report is split on **issue #59**. Built on our side already, on `a/terminal-ux`: the count box and
+"all" on every staged line, the Coins/Barter switch gone (YOU GET / YOU GIVE, one balance line, "Cover it with
+my goods" whenever a ware is staged), and the 40 % black backdrop with brighter text. Yours: the flight's feel
+(say which screen and which part; try `Server.FlightSpeed` 12 / `Server.FlightTurnRate` 30 first, no build),
+the walk-off (attach your client log's `cargo merchant #N: … (entered: …)` lines; the fix we propose is "he never
+walks while a terminal is open on him" — `VisitState.terminalsOpen` from our wire, a `busy` input to
+`MerchantPlan` from you), the one-line `Localization.instance.Localize(...)` in `CargoMerchant.GetHoverText`, and
+the Smoothbrain Backpacks test with the expected behaviour written out.
+
 **The rotating shelf, issue #56, is BUILT on `a/rotating-shelf`; the PR waits for Don's word.** Your read came the
 same morning (two game days by default; the backpack add-on) and the owner said build. Ingvar's selling side stops
 being a fixed list — 20 of the 72 catalogue entries on the shelf at a time, re-rolled every two game days, seeded
