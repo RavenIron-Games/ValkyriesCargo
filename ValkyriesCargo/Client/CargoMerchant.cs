@@ -96,6 +96,23 @@ namespace RavenIron.ValkyriesCargo.Client
         private Transform _pin;          // the bird's attach point, while it resolves
         private Vector3 _pinOffset;
 
+        /// <summary>
+        /// True while THIS machine flies the bird carrying him, i.e. this is the pilot's client. Set
+        /// from `ResolveCarrier` beside `Pinned`, because it is the same resolution. It is the gate on
+        /// the ownership claim below: exactly one machine may claim, or two watchers fight over him.
+        /// </summary>
+        private bool _flyingCarrier;
+
+        /// <summary>Counted so the claim can say how often it had to fire, without logging per step.</summary>
+        private int _reclaims;
+
+        /// <summary>
+        /// True when he is standing where the server's sweep would strip an owner's claim (D5). Set in
+        /// `EnterState`, reported in the transition line: on a healthy visit the drop is metres from the
+        /// pilot and this reads false, so a true here names the cause without anyone reconstructing it.
+        /// </summary>
+        private bool _inStripBand;
+
         /// <summary>True while the carry pin owns his transform. Read by `Patch_Character_InIntro`.</summary>
         public bool Pinned { get; private set; }
 
@@ -168,7 +185,7 @@ namespace RavenIron.ValkyriesCargo.Client
 
                 Reassert(fromAwake: true);
                 ValkyriesCargo.Log.LogInfo("cargo merchant #" + _visitId + ": awake as " +
-                    MerchantPlan.Name(_state) + ", " + (_nview.IsOwner() ? "ours" : "watching") +
+                    MerchantPlan.Name(_state) + ", " + OwnerTag(_nview.GetZDO()) +
                     ", body=" + (_ingvar != null ? "Ingvar" : "the stand-in"));
             }
             catch (Exception ex)
@@ -344,6 +361,7 @@ namespace RavenIron.ValkyriesCargo.Client
                 }
 
                 ResolveCarrier();
+                HoldTheCarry();
                 if (Pinned) PinToTalon();            // physics step: beat the Rigidbody
                 if (_nview.IsOwner()) Decide(dt);
             }
@@ -351,6 +369,63 @@ namespace RavenIron.ValkyriesCargo.Client
             {
                 if (_throws++ < 3) ValkyriesCargo.Log.LogError("cargo merchant #" + _visitId + " threw: " + ex);
             }
+        }
+
+        /// <summary>
+        /// D5, the ownership loss during the carry (StormTest 2026-09-07, visit 9; the line PR #50 added
+        /// printed `carrier none, 135.7 m from the player, watching` at a drop 13 m from the pilot).
+        ///
+        /// THE MECHANISM, read out of the decompile rather than inferred. `ZDOMan.Update` runs
+        /// `ReleaseZDOS` only `if (ZNet.instance.IsServer())` (`asm:65095`), every 2 s (`asm:65155`), and
+        /// for each peer calls `ReleaseNearbyZDOS(peer.m_refPos, peer.m_uid)` (`asm:65164`). That method
+        /// skips `!Persistent` ZDOs (`asm:65189`) and then, for one the peer already owns, does
+        /// (`asm:65195`):
+        ///
+        ///     if (!ZNetScene.InActiveArea(sector, zone, m_activeArea - 1)) zdo.SetOwner(0L);
+        ///
+        /// `m_activeArea` reads 2 live, so the keep-window is `activatedArea = 1` - a 3x3 zone block,
+        /// 64 m zones. `Spawner` authors the merchant owned by the pilot at the FLIGHT START, ~90 m out,
+        /// which is squarely in that strip band. So within 2 s of every visit beginning the server takes
+        /// the pilot's claim away and leaves him owned by NOBODY.
+        ///
+        /// And it is a one-way door, which is why it never recovered on its own. Only an owner writes a
+        /// ZDO's position, so an unowned merchant's SECTOR freezes where the strip caught him; the grant
+        /// branch below the strip (`asm:65199`) tests that frozen sector, so it cannot hand him to the
+        /// pilot the bird is carrying him toward. He is instead handed over only if somebody physically
+        /// walks near the point he froze at. That is every symptom the session recorded: `watching` at
+        /// the drop, a distance measured from the frozen point rather than the talon, `Decide` never
+        /// running (`FixedUpdate` gates it on `IsOwner`) so the walk-up never started, the late give-ups
+        /// on visits 4-8 when the pilot happened to wander back within a zone, the 150-600 m "moved" as
+        /// one chord from the frozen point when `ZSyncTransform`'s non-owner path finally snapped him,
+        /// and visit 9's outright no-show when nobody ever went there.
+        ///
+        /// It also explains what did NOT break: the bird flew perfectly on all nine visits because it is
+        /// non-persistent and `ReleaseNearbyZDOS` never looks at it at all.
+        ///
+        /// THE FIX. Take the claim back while the talons hold him. `ZNetView.ClaimOwnership` is
+        /// `if (!IsOwner()) m_zdo.SetOwner(ZDOMan.GetSessionID())` (`asm:70222`) and `ZDO.SetOwner` is
+        /// itself a no-op when the owner already matches (`asm:63483`), so calling this every physics
+        /// step costs nothing on the steps we already own - which is all of them but the one after each
+        /// 2 s strip. That beats the treadmill by design: the strip fires at 0.5 Hz and the reclaim at
+        /// the physics rate, so his position can freeze for at most a step instead of forever, and once
+        /// the bird has carried him inside the pilot's own 3x3 block the strip stops firing entirely.
+        /// The staggered `Reassert` (0.5 s, 1 s, 3 s, then every 5 s) is deliberately NOT the place for
+        /// this: a 5 s cadence against a 2 s strip is the "claim-then-act-next-tick loop that never
+        /// catches an owning tick" the family already paid for once
+        /// (`docs/knowledge-base/IMPLEMENTATIONS/ZoneAnchor.md`, the LetItGrow addendum of 2026-08-26).
+        ///
+        /// Only the pilot's client may do this - `_flyingCarrier` - or every watcher claims him in turn
+        /// and they fight. Owning him during the carry is the state this code always believed it had:
+        /// the pin runs from FixedUpdate and LateUpdate, and `Patch_Character_InIntro` holds `InIntro`
+        /// true while `Pinned` so an owned Rigidbody never accumulates a fall (the physics warning in
+        /// ZoneAnchor.md's ownership section).
+        /// </summary>
+        private void HoldTheCarry()
+        {
+            if (!Pinned || !_flyingCarrier) return;
+            if (_nview.IsOwner()) return;
+            _nview.ClaimOwnership();
+            _reclaims++;
         }
 
         /// <summary>
@@ -378,13 +453,14 @@ namespace RavenIron.ValkyriesCargo.Client
 
             ZDOID carrier = zdo.GetZDOID(Spawner.CarrierKey);
             GameObject bird = (carrier.IsNone() || ZNetScene.instance == null) ? null : ZNetScene.instance.FindInstance(carrier);
-            if (bird == null) { Pinned = false; _pin = null; }
+            if (bird == null) { Pinned = false; _pin = null; _flyingCarrier = false; }
             else
             {
                 CargoFlight flight = bird.GetComponent<CargoFlight>();
                 _pin = flight != null ? flight.AttachPoint : bird.transform;
                 _pinOffset = flight != null ? flight.AttachOffset : new Vector3(0f, 0.3f, 0.4f);
                 Pinned = MerchantPlan.ShouldPin(_state, true);
+                _flyingCarrier = flight != null && flight.Flying;   // D5: only the pilot's client claims
             }
 
             // A state the PLAN did not choose arrived through the ZDO: the bird's drop
@@ -400,10 +476,25 @@ namespace RavenIron.ValkyriesCargo.Client
                 ValkyriesCargo.Log.LogInfo("cargo merchant #" + _visitId + ": " + MerchantPlan.Name(was) + " -> " +
                     MerchantPlan.Name(_state) + " via the ZDO, " + Wire.Float(_age) + " s after waking; carrier " +
                     (carrier.IsNone() ? "none" : (bird != null ? "still instanced" : "gone")) + ", " +
-                    Wire.Float(distance) + " m from the player, " + (_nview.IsOwner() ? "ours" : "watching") +
+                    Wire.Float(distance) + " m from the player, " + OwnerTag(zdo) +
+                    ", " + _reclaims + " reclaim(s) during the carry" +
+                    (_inStripBand ? ", IN THE STRIP BAND (the server's sweep would release him here)" : "") +
                     ", grounded " + (_character == null || _character.IsOnGround() ? "yes" : "no") +
                     (_state == MerchantState.Approaching ? "; walk-up budget " + Wire.Float(MerchantPlan.ApproachBudget(distance)) + " s" : ""));
             }
+        }
+
+        /// <summary>
+        /// Who holds him, not just whether it is us (asked for on PR #50: "print `zdo.GetOwner()` beside
+        /// `ours|watching`"). `ZDO.GetOwner` answers 0 for an unowned ZDO (`asm:63464` returns 0 unless
+        /// `Owned`), and 0 is the whole of D5 - it distinguishes "the server's strip released him" from
+        /// "another peer took him", which the bare `watching` could not.
+        /// </summary>
+        private string OwnerTag(ZDO zdo)
+        {
+            long owner = zdo != null ? zdo.GetOwner() : 0L;
+            return (_nview.IsOwner() ? "ours" : "watching") +
+                   " (owner " + owner + (owner == 0L ? " - nobody" : "") + ")";
         }
 
         /// <summary>
@@ -417,6 +508,16 @@ namespace RavenIron.ValkyriesCargo.Client
         {
             Player near = Player.GetClosestPlayer(transform.position, 9999f);
             float distance = near != null ? Vector3.Distance(transform.position, near.transform.position) : float.MaxValue;
+
+            // D5: is he standing where the server's 2 s sweep would take a claim away? Measured against
+            // the nearest player rather than the pilot's `m_refPos`, which no client can read - close
+            // enough to diagnose, since it is the pilot the bird is flying toward. `m_activeArea` is read
+            // live because the scene overrides the compiled default (it reads 2, the default is 1).
+            int activeArea = ZoneSystem.instance != null ? ZoneSystem.instance.m_activeArea : ZoneOwnership.LiveActiveArea;
+            _inStripBand = near != null && ZoneOwnership.WouldStripClaim(
+                transform.position.x, transform.position.z,
+                near.transform.position.x, near.transform.position.z, activeArea);
+
             _timeInState = 0f;
             _farSeconds = 0f;
             _approachMoved = 0f;

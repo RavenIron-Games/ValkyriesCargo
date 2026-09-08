@@ -122,6 +122,38 @@ step 4).
       right, the caller fed it stale numbers. The retry in `Drop` and the `IsOnGround()` clock gate were both
       refuted by the audit and are deliberately absent. Build 0/0, harness 1701. *What closes it:* the line on a
       screen, and whether visits 4-6's second regime (§1.3, unexplained by the code) shows up again.
+- [ ] **D5 — the server strips the pilot's claim on the merchant during the carry** (found by Don on
+      StormTest visit 9, 2026-09-07, off the line PR #50 added; the one defect open at the rc2 cut).
+      `ZDOMan.Update` runs `ReleaseZDOS` only `if (ZNet.instance.IsServer())` (`asm:65095`), every 2 s,
+      and for each peer `ReleaseNearbyZDOS(peer.m_refPos, peer.m_uid)` (`asm:65164`) does, for a
+      PERSISTENT ZDO that peer owns: `if (!InActiveArea(sector, zone, m_activeArea - 1)) SetOwner(0L)`
+      (`asm:65193`). `m_activeArea` reads 2 live, so the keep-window is a 3x3 block of 64 m zones —
+      and `Spawner` authors the merchant owned by the pilot at the FLIGHT START, ~90 m out, right on
+      that edge. It is a one-way door: only an owner writes position, so an unowned merchant's SECTOR
+      freezes where the strip caught him and the grant branch (`asm:65199`), which tests that frozen
+      sector, can never hand him back to the pilot he is being flown toward. That is `watching` at the
+      drop, the 135.7 m, `Decide` never running (`FixedUpdate` gates it on `IsOwner`), the late
+      give-ups on visits 4-8, the 150-600 m "moved" as one chord from the frozen point, and visit 9's
+      no-show. It also explains what did NOT break: the bird is non-persistent and
+      `ReleaseNearbyZDOS` skips `!Persistent` outright (`asm:65189`), so the flight was perfect on all
+      nine visits. **BUILT — this branch**: `HoldTheCarry` calls `ZNetView.ClaimOwnership` every
+      physics step while `Pinned`, gated on `CargoFlight.Flying` so only the pilot's client claims and
+      two watchers never fight. `ClaimOwnership` is a no-op when already owner (`asm:70222`) and
+      `ZDO.SetOwner` no-ops on an unchanged owner (`asm:63483`), so the real cost is ~1 write per 2 s
+      strip; the reclaim runs at the physics rate against a 0.5 Hz strip, so his position can freeze
+      for a step instead of forever, and once the bird carries him inside the pilot's own block the
+      strip stops firing. Deliberately NOT on the `Reassert` cadence: 5 s against a 2 s strip is the
+      "claim-then-act-next-tick loop that never catches an owning tick"
+      (`docs/knowledge-base/IMPLEMENTATIONS/ZoneAnchor.md`, the LetItGrow addendum of 2026-08-26).
+      Both log lines now carry `zdo.GetOwner()` as PR #50 asked (`ours|watching (owner N - nobody)` —
+      0 distinguishes "the sweep released him" from "another peer took him"), the transition line adds
+      `N reclaim(s) during the carry` and `IN THE STRIP BAND` from the new pure `Core/ZoneOwnership.cs`.
+      Build 0/0, harness **1718** (17 new: the zone grid, the Chebyshev block, the same 90 m surviving
+      or stripped depending only on grid alignment, the 95/97 m cliff edge, and the compiled-default
+      trap; two mutations re-run by hand — truncate-instead-of-floor and a forgotten `- 1` — each
+      caught). *What closes it:* one visit where the transition line reads `ours (owner <pilot>)` at
+      the drop, and the walk-up starting from there — which is also what finally closes the walk-up
+      and F5 above.
 - [ ] **D3 — the reclaim works; the sweep double-counts it** (`docs/AUDIT-STORMTEST-2026-09-07.md` §2; reporting
       only). `FinishDeparture` ran `ClearIfStillOurs` and `Sweep` in one synchronous call, and `ZDOMan.DestroyZDO`
       in 0.221.12 only queues into `m_destroySendList` — removal happens in `HandleDestroyedZDO` on the next
