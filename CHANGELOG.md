@@ -99,7 +99,9 @@ after the rest of this log was written.
   same frame. The grace stays (it is what lets the RPC land before the ZDO goes): `CargoMerchant.RPC_Vanish` now
   calls `HideForGood` on every screen it reaches — every renderer under him off, every LOD group off, the collider
   off, the AI stood down on the owner — and logs `cargo merchant #N: into the mist: K renderer(s) off with the
-  smoke; the Clear follows in 2 s`. Nothing of ours enables a renderer, so he stays gone. **Not seen on a screen.**
+  smoke; the Clear follows in 2 s`. Nothing of ours enables a renderer, so he stays gone. **Seen on visit 20,
+  2026-09-08, on the owner's dismiss: `into the mist: 1 renderer(s) off with the smoke`, and his word for the
+  screen: "vanish looked great."**
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 

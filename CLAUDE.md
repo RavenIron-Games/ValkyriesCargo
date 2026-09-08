@@ -860,8 +860,12 @@ confirmed off the DLL) is installed on StormTest and Don's client. `Server/Backp
 sized, and once a second after — and `FillMarketRules` ships `Shelf.Scaled(ShelfSize, Server.BackpackShelfMultiplier
 (2, 1–4), present)`: 0 stays the fixed shelf, the product is capped at 200, and the scaled shelf for a period is a
 superset of the unscaled one. One log line at director up names what was found and what it does to the shelf;
-`cargo status` repeats it. 1831 checks. **Not seen on a machine**: the boot must print `backpack mod: … 1.3.8
-loaded; shelf x2 …` then `director up: …; shelf 40 of 72`. The backpack on his body is Wu'barrk's bake.
+`cargo status` repeats it. 1831 checks. **SEEN on StormTest 2026-09-08 10:26, the first boot on main after the
+merges**: `backpack mod: org.bepinex.plugins.backpacks 1.3.8 loaded; shelf x2 (Server.BackpackShelfMultiplier)`,
+then `director up: …; shelf 40 of 72, period 14, …` with forty names on the `shelf now:` line and no re-roll
+after it; and on visit 20 the owner bought a Flametal that is on the shelf only by the multiplier
+(`deal w4790ce-20-1 with Nomadtest: sold 1 FlametalNew at 127, bought 5 Eitr at 31, coins +28 to the player`).
+The backpack on his body is Wu'barrk's bake.
 
 ## What to verify in-game
 
@@ -923,7 +927,11 @@ P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormT
     (every `Renderer` under the merchant off, the AI stopped) on every screen the RPC reaches, and keep the grace,
     which exists so the RPC lands before the ZDO goes. **BUILT on `a/vanish-hide` at the owner's word**
     (`HideForGood`: renderers, LOD groups and the collider off, the AI stood down on the owner; the line
-    `cargo merchant #N: into the mist: K renderer(s) off with the smoke; the Clear follows in 2 s`); not yet seen. As
+    `cargo merchant #N: into the mist: K renderer(s) off with the smoke; the Clear follows in 2 s`). **SEEN 2026-09-08
+    ~10:33, visit 20, the owner's dismiss**: the client printed `cargo merchant #20: into the mist: 1 renderer(s) off
+    with the smoke; the Clear follows in 2 s` (the one renderer is Ingvar's own body; the stand-in's were already
+    off), the server `visit #20 ended: admin Nomadtest … merchant and bird reclaimed`, and **the owner's word on the
+    screen: "vanish looked great."** The departure is watched and right. As
     written: after 300 s the server log shows `visit #1 ended: timer; takings 0 coins`, the banner
     "Ingvar has gone back to the mist" shows, `cargo status` shows `visit: none; last #1 ended: timer`.
 11. **`cargo dismiss`** — admin half **DONE 2026-09-07**: `visit #2 ended: admin Nomadtest; takings 0 coins, …`,

@@ -98,9 +98,13 @@ step 4).
       the grace go on protecting the RPC's delivery invisibly. Not the grace itself: shortening it races the
       RPC, which is the thing F3 put the grace there for. **BUILT on `a/vanish-hide` at the owner's word ("take it
       on a branch")**: `CargoMerchant.HideForGood` from `RPC_Vanish` (renderers, LOD groups, the collider off;
-      the AI stood down on the owner; one log line `into the mist: K renderer(s) off with the smoke`). Unseen: the
-      next vanish must show him gone AS the smoke starts. The walk-up completing on the first approach is in the
-      log (visits 13–15, 19).
+      the AI stood down on the owner; one log line `into the mist: K renderer(s) off with the smoke`). **SEEN on
+      visit 20 (2026-09-08 ~10:33, the owner's dismiss): `into the mist: 1 renderer(s) off with the smoke`, and the
+      owner: "vanish looked great."** The walk-up completing on the first approach is in the log (visits 13–15, 19,
+      20). **Visit 20 also seen**: the new tray settling a deal on the wire (a Flametal on the 40-item shelf for
+      five Eitr, +28 coins, to the coin on both sides), the leash-hold line on your own terminal, and the backpack
+      boot line with `shelf 40 of 72`. Still unseen: the count box typed into (say so if you typed), the leash hold
+      with a SECOND player at the terminal, the hover reading the key, the backdrop in daylight.
 
 ---
 
@@ -469,6 +473,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       `Server.BackpackShelfMultiplier` 2 (1–4) and `Server.BackpackModGuid`, `Server/BackpackMod.cs` reading the
       chainloader at director up (before the market is sized) and every tick, `Shelf.Scaled` pure (0 stays fixed,
       cap 200, superset of the unscaled shelf), `FillMarketRules` applying it, one log line and a `cargo status`
-      line. 1831 checks. **Unseen on a machine**: the boot must print `backpack mod: org.bepinex.plugins.backpacks
-      1.3.8 loaded; shelf x2 (Server.BackpackShelfMultiplier)` and then `director up: …; shelf 40 of 72 …`, with the
-      forty names on the `shelf now:` line. The body half stays his.
+      line. 1831 checks. **SEEN on StormTest 2026-09-08 10:26** (the first boot on main): `backpack mod:
+      org.bepinex.plugins.backpacks 1.3.8 loaded; shelf x2 (Server.BackpackShelfMultiplier)`, then `director up: …;
+      shelf 40 of 72, period 14 …` with forty names on `shelf now:` and no re-roll after; visit 20 bought a Flametal
+      that is on the shelf only by the multiplier. The body half stays his.

@@ -27,8 +27,10 @@ reaches) are met but for the vanish being watched; the cut itself is on his word
 his own smoke until the server's `Clear`, `Spawner.VanishGraceSeconds` (2 s) after the RPC; vanilla Odin destroys
 in the same frame as his effect. **Built on `a/vanish-hide`** (your owner's file, at the owner's word):
 `CargoMerchant.HideForGood` from `RPC_Vanish` hides him on every screen the RPC reaches (renderers, LOD groups,
-the collider; the AI stood down on the owner) and the grace is untouched. Unseen on a screen. **And his word
-after the day's five merges (main 43149bb): no release yet.**
+the collider; the AI stood down on the owner) and the grace is untouched. **Merged (#63) and SEEN on visit 20,
+2026-09-08: `into the mist: 1 renderer(s) off with the smoke`, and the owner: "vanish looked great."** The same
+boot proved the backpack shelf (`backpack mod: … 1.3.8 loaded; shelf x2`, `shelf 40 of 72`) and the new tray
+settled a deal on the wire. **And his word after the day's merges: no release yet.**
 
 **Valheim 1.0, verified from Don's machine and HELD by the owner.** Your #55 sweep holds on every point that could
 be checked here: Steam's `public-test` branch is password-protected and hidden from the branch list (that is why

@@ -22,8 +22,11 @@ plays and Ingvar stands in it until your `Clear` lands, `VanishGraceSeconds` (2 
 own smoke. The fix is on receive, in `CargoMerchant.RPC_Vanish`, and **the owner had this side build it**
 (`a/vanish-hide`, your file with his word): `HideForGood` switches every `Renderer` and LOD group under him off,
 the collider off, stands the AI down on the owner, and logs `into the mist: K renderer(s) off with the smoke`;
-the grace is untouched (it is there so the RPC lands before the ZDO goes; shortening it races that). Unseen on a
-screen. **His word after the day's five merges (main 43149bb): no release yet.**
+the grace is untouched (it is there so the RPC lands before the ZDO goes; shortening it races that). **Merged (#63)
+and SEEN on visit 20, 2026-09-08: `into the mist: 1 renderer(s) off with the smoke`, and the owner: "vanish looked
+great."** The same boot proved your backpack add-on's shelf half (`backpack mod: org.bepinex.plugins.backpacks 1.3.8
+loaded; shelf x2`, `shelf 40 of 72`, a Flametal bought off the widened shelf). **His word after the day's merges:
+no release yet.**
 
 **Valheim 1.0: your sweep verified from Don's machine, and HELD by the owner.** The `public-test` branch is
 password-protected and hidden from the branch list — that is why it read as absent last night, not because it
