@@ -28,6 +28,24 @@ namespace RavenIron.ValkyriesCargo.Core
         public const double MinRotationDays = 0.1;
         public const double MaxRotationDays = 365.0;
 
+        /// <summary>The most a backpack mod can multiply the shelf by (Wu'barrk's "x2 to x4", 2026-09-08).</summary>
+        public const int MaxBackpackMultiplier = 4;
+
+        /// <summary>
+        /// The shelf size that ships when a backpack mod is on the server (the backpack add-on, 2026-09-08):
+        /// players who can carry more get more to buy. `shelfSize` times `multiplier`, clamped to MaxSize
+        /// (the roll clamps to the catalogue on its own). 0 stays 0 - the fixed shelf is not a size to scale;
+        /// no backpack mod, or a multiplier below 1, is x1; above MaxBackpackMultiplier is MaxBackpackMultiplier.
+        /// </summary>
+        public static int Scaled(int shelfSize, int multiplier, bool backpackMod)
+        {
+            if (shelfSize <= 0) return 0;
+            if (!backpackMod) return Math.Min(shelfSize, MaxSize);
+            int m = Math.Max(1, Math.Min(multiplier, MaxBackpackMultiplier));
+            long scaled = (long)shelfSize * m;
+            return (int)Math.Min(scaled, MaxSize);
+        }
+
         /// <summary>Seconds in one period, or 0 when either number is unusable (then nothing ever rolls).</summary>
         public static double PeriodSeconds(double secondsPerGameDay, double rotationDays)
         {

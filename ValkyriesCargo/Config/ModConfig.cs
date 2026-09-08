@@ -54,6 +54,8 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<float>  WantHalfLifeGameDays;
         public static ConfigEntry<int>    ShelfSize;               // the rotating shelf (2026-09-08): 0 = fixed
         public static ConfigEntry<float>  ShelfRotationGameDays;
+        public static ConfigEntry<int>    BackpackShelfMultiplier; // the backpack add-on (2026-09-08): shelf x this when the mod is loaded
+        public static ConfigEntry<string> BackpackModGuid;
         public static ConfigEntry<int>    PurseCoins;
         public static ConfigEntry<int>    PurseCarryPercent;
         public static ConfigEntry<bool>   EnableBarter;
@@ -195,6 +197,11 @@ namespace RavenIron.ValkyriesCargo.Config
             ShelfRotationGameDays = S(cfg, "Server", "ShelfRotationGameDays", 2f,
                 "How many game days one shelf lasts before it is re-rolled; a game day is 30 real minutes of server uptime with somebody online. The roll happens on the first tick of a new period with no visit running, never under an open terminal. Read on the SERVER.",
                 new AcceptableValueRange<float>(0.1f, 365f));
+            BackpackShelfMultiplier = S(cfg, "Server", "BackpackShelfMultiplier", 2,
+                "The backpack add-on (2026-09-08). When the backpack mod named by BackpackModGuid is loaded on the server, the shelf is ShelfSize times this, capped at 200 and at the catalogue: players who can carry more get more to buy. Nothing changes without the mod, and 0 in ShelfSize stays the fixed shelf. Read on the SERVER.",
+                new AcceptableValueRange<int>(1, 4));
+            BackpackModGuid = S(cfg, "Server", "BackpackModGuid", "org.bepinex.plugins.backpacks",
+                "The BepInEx GUID of the backpack mod to look for (Smoothbrain's Backpacks by default), looked up on the server at director up and once a second after, so it can be changed live. Empty = never look. Read on the SERVER.");
             PurseCoins = S(cfg, "Server", "PurseCoins", 1500,
                 "Coins he arrives with. 800 was thin for what this mod is for: one visit bought 39 silver ore " +
                 "for 795 and left him with 5, and a dozen flametal ore was the whole purse. Read on the SERVER.",
@@ -267,13 +274,19 @@ namespace RavenIron.ValkyriesCargo.Config
             r.FairMarketAct = FairMarketAct.Value;
             r.WareHalfLifeGameDays = WareHalfLifeGameDays.Value;
             r.WantHalfLifeGameDays = WantHalfLifeGameDays.Value;
-            r.ShelfSize = ShelfSize.Value;
+            // The backpack add-on: the shelf the mod ships is ShelfSize times the multiplier when the named
+            // backpack mod is loaded here (Server/BackpackMod.cs decides that, at director up and every tick).
+            r.ShelfSize = Shelf.Scaled(ShelfSize.Value, BackpackShelfMultiplier.Value, Server.BackpackMod.Present);
             r.ShelfRotationGameDays = ShelfRotationGameDays.Value;
             r.PurseCoins = PurseCoins.Value;
             r.PurseCarryPercent = PurseCarryPercent.Value;
             r.PurseCapMultiple = 3;
             r.Sanitize(problems);
         }
+
+        /// <summary>The backpack multiplier as the shelf applies it (clamped the way `Shelf.Scaled` clamps), for the log and `cargo status`.</summary>
+        public static int EffectiveBackpackMultiplier()
+            => BackpackShelfMultiplier == null ? 1 : System.Math.Max(1, System.Math.Min(BackpackShelfMultiplier.Value, Shelf.MaxBackpackMultiplier));
 
         public static SchedulerRules BuildSchedulerRules(List<string> problems)
         {

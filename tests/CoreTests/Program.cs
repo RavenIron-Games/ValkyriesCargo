@@ -1687,6 +1687,22 @@ namespace ValkyriesCargo.Tests
             foreach (int n in shown.Values) { if (n < least) least = n; if (n > most) most = n; }
             Check(least >= 30 && most <= 85, "and no entry is starved or favoured (expected 56 of 200; least " + least + ", most " + most + ")");
 
+            Section("Shelf.Scaled (the backpack add-on, 2026-09-08)");
+            Equal(20, Shelf.Scaled(20, 2, false), "no backpack mod: the shelf is ShelfSize");
+            Equal(40, Shelf.Scaled(20, 2, true), "with one, ShelfSize times the multiplier");
+            Equal(80, Shelf.Scaled(20, 4, true), "up to x4");
+            Equal(80, Shelf.Scaled(20, 9, true), "a multiplier above MaxBackpackMultiplier is MaxBackpackMultiplier");
+            Equal(20, Shelf.Scaled(20, 0, true), "below 1 is x1");
+            Equal(20, Shelf.Scaled(20, -3, true), "and so is a negative");
+            Equal(0, Shelf.Scaled(0, 4, true), "0 stays 0: the fixed shelf is not a size to scale");
+            Equal(0, Shelf.Scaled(-5, 2, true), "a negative size is 0");
+            Equal(Shelf.MaxSize, Shelf.Scaled(150, 2, true), "the product is capped at MaxSize");
+            Equal(Shelf.MaxSize, Shelf.Scaled(999, 1, false), "as is a bare size beyond it");
+            Equal(Shelf.MaxSize, Shelf.Scaled(int.MaxValue, 4, true), "without overflowing");
+            Check(new HashSet<string>(Shelf.Roll("w4790ce", 26, pool, Shelf.Scaled(20, 2, true))).IsSupersetOf(Shelf.Roll("w4790ce", 26, pool, 20)),
+                  "the scaled shelf for a period is a superset of the unscaled one: the mod arriving swaps nothing out");
+            Equal(72, Shelf.Roll("w4790ce", 26, pool, Shelf.Scaled(20, 4, true)).Count, "x4 on the shipped catalogue is the whole catalogue");
+
             Section("Shelf.Period (the game-day clock)");
             Equal(0L, Shelf.Period(0, 1800, 2), "period 0 at the start of the world");
             Equal(0L, Shelf.Period(3599.9, 1800, 2), "still 0 just under two game days");

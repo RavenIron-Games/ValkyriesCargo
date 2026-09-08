@@ -108,6 +108,9 @@ namespace RavenIron.ValkyriesCargo.Server
             if (EnvMan.instance != null && EnvMan.instance.m_dayLengthSec > 0) { day = EnvMan.instance.m_dayLengthSec; fromEngine = true; }
 
             var problems = new List<string>();
+            // The backpack add-on: looked up BEFORE the market is sized, so the shelf is built at its
+            // scaled size and does not re-roll one tick after "director up". Every plugin has loaded by now.
+            BackpackMod.Detect(ModConfig.BackpackModGuid.Value);
             MarketRules mr = ModConfig.BuildMarketRules(day, problems);
             SchedulerRules sr = ModConfig.BuildSchedulerRules(problems);
 
@@ -185,6 +188,7 @@ namespace RavenIron.ValkyriesCargo.Server
             _gather = 0f;
             try
             {
+                BackpackMod.Detect(ModConfig.BackpackModGuid.Value);   // one dictionary read; a live knob change lands here
                 ModConfig.FillMarketRules(_market.Rules, null);
                 ModConfig.FillSchedulerRules(_scheduler.Rules, null);
 

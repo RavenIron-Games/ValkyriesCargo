@@ -81,6 +81,16 @@ after the rest of this log was written.
   `Localization.instance.Localize`, so `$KEY_Use` reads as the bound key. What this does NOT settle: which
   transition walked him — the log lines from the walk-off are still asked for on #59; vanilla's idle shuffle is
   bounded to 1.5 m by `ReassertLocal` and would show no state change at all. **Not seen on a screen.**
+- **The backpack add-on, the shelf half (branch `a/backpack-shelf`, Track A, 1831 checks; Wu'barrk's design of
+  2026-09-08, the owner's "take the shelf multiplier on a branch").** A server running Smoothbrain's Backpacks
+  (`Server.BackpackModGuid`, shipped `org.bepinex.plugins.backpacks`, changeable live) sells from a shelf of
+  `ShelfSize × Server.BackpackShelfMultiplier` (shipped 2, range 1–4; capped at 200 and at the catalogue): players
+  who can carry more get more to buy. `Server/BackpackMod.cs` reads BepInEx's chainloader on the server at
+  director up — before the market is sized, so nothing re-rolls a tick later — and once a second after;
+  `Shelf.Scaled` is pure (0 stays the fixed shelf; the scaled shelf for a period is a superset of the unscaled
+  one, so the mod arriving swaps nothing out). One log line at director up says what was found and what it does
+  to the shelf, and `cargo status` repeats it. The backpack on his body is the other half, and Wu'barrk's.
+  **Not seen on a machine.**
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 

@@ -449,5 +449,12 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       complex or rare (`docs/ITEM-VALUES.md` + `docs/data/item-values-2026-09-08.tsv`, Track A, in progress).
 - [ ] **The backpack add-on** (Wu'barrk, 2026-09-08): shelf ×2–4 when a backpack mod is detected at server load,
       and a backpack on his body. **DECIDED 2026-09-08 (owner): Smoothbrain's Backpacks** (BepInEx GUID
-      `org.bepinex.plugins.backpacks`; confirm off the DLL's `BepInPlugin` attribute at deploy); the multiplier is
-      capped at 3× by the pool (60 of 72; 4× is the whole catalogue); the body half is his bake. Not built.
+      `org.bepinex.plugins.backpacks`, **confirmed off the 1.3.8 DLL** the same day, installed on StormTest and
+      Don's client); ×4 is the whole shipped catalogue, ×3 is 60 of 72; the body half is his bake.
+      **The shelf half is BUILT on `a/backpack-shelf`** (the owner: "take the shelf multiplier on a branch"):
+      `Server.BackpackShelfMultiplier` 2 (1–4) and `Server.BackpackModGuid`, `Server/BackpackMod.cs` reading the
+      chainloader at director up (before the market is sized) and every tick, `Shelf.Scaled` pure (0 stays fixed,
+      cap 200, superset of the unscaled shelf), `FillMarketRules` applying it, one log line and a `cargo status`
+      line. 1831 checks. **Unseen on a machine**: the boot must print `backpack mod: org.bepinex.plugins.backpacks
+      1.3.8 loaded; shelf x2 (Server.BackpackShelfMultiplier)` and then `director up: …; shelf 40 of 72 …`, with the
+      forty names on the `shelf now:` line. The body half stays his.
