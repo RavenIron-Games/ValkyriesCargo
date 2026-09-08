@@ -90,9 +90,14 @@ step 4).
       in `cargo status`, the pilot leaving the block, dismiss mid-flight, a real intro Valkyrie untouched.
 - [ ] **The loop, once, end to end:** glide, drop, the walk-up *completing*, the callout, the terminal, a
       trade, the vanish. This is the item that gates the store. **Seen so far by the owner's eyes (2026-09-08):
-      the arrival banner works; the vanish plays but is "not timed perfectly"** (`Spawner.VanishGraceSeconds` 2 s,
-      Wu'barrk's) — what "not perfectly" looked like is still to be said. The walk-up completing on the first
-      approach is in the log (visits 13–15, 19).
+      the arrival banner works; the vanish plays but is "not timed perfectly"** — **LATE** (the owner, the same
+      hour): the smoke plays and he stands in it until the server's Clear lands, `Spawner.VanishGraceSeconds` (2 s)
+      later. Vanilla `Odin.Update` creates the despawn effect and calls `m_nview.Destroy()` in the SAME frame, so
+      his body is never in his own smoke. The fix is in `CargoMerchant.RPC_Vanish` (Wu'barrk's): hide him on
+      receive — every `Renderer` under the merchant off, the AI stopped — on EVERY screen the RPC reaches, and let
+      the grace go on protecting the RPC's delivery invisibly. Not the grace itself: shortening it races the
+      RPC, which is the thing F3 put the grace there for. Proposed, not built; his file. The walk-up completing
+      on the first approach is in the log (visits 13–15, 19).
 
 ---
 

@@ -916,9 +916,12 @@ P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormT
    the server log counted a clock republish; sleep through a night mid-visit: the countdown did not jump.
 10. **The end** — server half 2026-09-07 11:05: `visit #1 ended: timer; takings 0 coins, purse 800, 0 clock
     republish(es), 0 owed deliveries` (and visit 6 the same at 11:36); the end banner and `cargo status` not read.
-    **The vanish itself was WATCHED by the owner on 2026-09-08**: it plays, "but not timed perfectly" — his words;
-    the number that times it is `Spawner.VanishGraceSeconds` (2 s: the Vanish RPC, then the Clear), Track B's
-    file, and what "not perfectly" looked like is asked below. As
+    **The vanish itself was WATCHED by the owner on 2026-09-08**: it plays, "but not timed perfectly" — **late**:
+    the smoke plays and he stands in it until the server's Clear lands, `Spawner.VanishGraceSeconds` (2 s) after
+    the Vanish RPC. Vanilla `Odin.Update` creates `m_despawn` and calls `m_nview.Destroy()` in the same frame, so
+    Odin is never in his own smoke. The fix is on receive, in Track B's `CargoMerchant.RPC_Vanish`: hide him
+    (every `Renderer` under the merchant off, the AI stopped) on every screen the RPC reaches, and keep the grace,
+    which exists so the RPC lands before the ZDO goes. Proposed, not built. As
     written: after 300 s the server log shows `visit #1 ended: timer; takings 0 coins`, the banner
     "Ingvar has gone back to the mist" shows, `cargo status` shows `visit: none; last #1 ended: timer`.
 11. **`cargo dismiss`** — admin half **DONE 2026-09-07**: `visit #2 ended: admin Nomadtest; takings 0 coins, …`,
