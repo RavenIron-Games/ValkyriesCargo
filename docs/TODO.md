@@ -486,3 +486,9 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       on visit 21, and the client's ServerSync line came 8 times over the whole visit instead of every 2 s. Still
       unseen: the terminal BUTTON path (the "Sending him off" wait, the farewell, `terminal closed: sent him off`)
       and a refusal on a screen (needs a modded client or a stale visit).
+- [ ] **`a/follow-assert` — the walk-off inside Trading, Wu'barrk's two diffs plus the vanish-flap guard
+      (2026-09-08 evening, his file at the owner's word).** PR open. Proof needs TWO clients: a leash-free visit
+      where ownership moves off the pilot (watch `ours|watching (owner N)` on both logs) and Ingvar stays at his
+      patrol point; and no `leaving -> trading via the ZDO` line on the watcher at the vanish. Open question for
+      Wu'barrk on the issue: was Ingvar armed, was anything hostile near the base on visit 16 (a combat target
+      beats the follow and the idle walk alike, state unchanged).
