@@ -1,0 +1,777 @@
+prefab	name	family	player_item	tier	biome	source	station	station_level	ingredients	drop_rate	boss_gated	limited	trader_price	rarity	complexity	value	class	how	anchor	confidence	wiki_page	exclude_reason	note
+Stone	Stone	material	true	0	All	gather		0		na	false	false	0	1	1	1	common	anchor	1	high	Stone		Abundant gather anywhere; reference scale 1
+Wood	Wood	material	true	0	All	gather		0		na	false	false	0	1	1	1	common	anchor	1	high	Wood		Abundant gather from trees/bushes/branches; reference scale 1
+BoneFragments	Bone fragments	material	true	0	Meadows, Black Forest, Swamp	drop		0		common	false	false	0	1	1	2	common	raw		high	Bone fragments		Common drop from skeletons and undead
+ChickenMeat	Chicken meat	material	true	0	Any	drop		0		common	false	false	0	1	1	2	common	raw		high	Chicken meat		Common meat drop from hens
+Dandelion	Dandelion	material	true	0	Meadows	gather		0		na	false	false	0	1	1	2	common	raw		high	Dandelion		Common flower
+FirCone	Fir Cone	material	true	0	Meadows	gather		0		na	false	false	0	1	1	2	common	raw		high	Fir Cone		Seed from felled Fir trees, plantable with Cultivator
+FishRaw	Raw Fish	material	true	0	Meadows	fish		0		common	false	false	0	1	1	2	common	raw		high	Raw Fish		Caught with Fishing rod from any tier; generic fish
+StoneRock	Mysterious Rock	material	true	0	All	gather		0		na	false	false	0	1	1	2	common	raw		high	Mysterious Rock		Placeable item/structure found as Rock pickables in Meadows/BF/Swamp/Mountains
+Acorn	Acorns	material	true	0	Meadows, Black Forest, Plains	plant	Cultivator	0		na	false	false	0	2	1	2	common	raw		high	Acorns		Seed planted to grow oak trees, available in all biomes
+BeechSeeds	Beech seeds	material	true	0	Meadows, Black Forest	plant	Cultivator	0		na	false	false	0	2	1	2	common	raw		high	Beech seeds		Low-tier tree seed
+BirchSeeds	Birch seeds	material	true	0	Black Forest	plant	Cultivator	0		na	false	false	0	2	1	2	common	raw		high	Birch seeds		Low-tier tree seed
+CarrotSeeds	Carrot seeds	material	true	0	Any	plant	Cultivator	0		na	false	false	0	2	1	2	common	raw		high	Carrot seeds		Early farming crop
+ElderBark	Elder bark	material	true	0	Black Forest	gather		0		na	false	false	0	2	1	3	common	anchor	3	high	Elder bark		Black Forest wood material
+Feathers	Feathers	material	true	0	Meadows	drop		0		common	false	false	0	2	1	3	common	anchor	3	high	Feathers		Dropped by Gulls, Crows, Hens, Chickens, Ash crows, Volturs; found in chests
+LeatherScraps	Leather scraps	material	true	0	Meadows	drop		0		common	false	false	0	1	1	3	common	anchor	3	high	Leather Scraps		Reference scale: 3. Abundant from Boar, Bat, and Muddy scrap piles in early game.
+BreadDough	Bread dough	material	true	0	Any	craft	Food preparation table	0	BarleyFlour x10	na	false	false	0	2	2	35	rare	cost		high	Bread dough		Cooking ingredient for bread
+CandleWick	Candle wick	material	true	0	Any	craft	Workbench	0	Resin x1, Linen thread x1	na	false	false	0	2	2	13	common	cost		high	Candle wick		Crafted from resin and thread
+CeramicPlate	Ceramic plate	material	true	0	Any	craft	Kiln	0	Clay x5	na	false	false	0	2	2	6	common	score		high	Ceramic plate		Kiln-crafted material
+SharpeningStone	Sharpening stone	material	true	0	Meadows	craft	Stonecutter	1	Stone x5	na	false	false	0	2	2	6	common	cost		high	Sharpening Stone		Crafted from stone at stonecutter
+Coal	Coal	material	true	1	Meadows	gather		0		na	false	false	0	1	1	1	common	anchor	1	high	Coal		Meadows ore, fundamental fuel
+Flint	Flint	material	true	1	Meadows	gather		0		common	false	false	0	1	1	1	common	anchor	1	high	Flint		Found on shorelines of Meadows; respawns every 4 hours
+Resin	Resin	material	true	1	Meadows	gather		0		na	false	false	0	1	1	1	common	anchor	1	high	Resin		Abundant gather from birch/elder trees
+DeerHide	Deer hide	material	true	1	Meadows	drop		0		common	false	false	0	2	1	3	common	anchor	3	high	Deer hide		Common drop from deer
+DeerMeat	Deer meat	material	true	1	Meadows	drop		0		common	false	false	0	1	1	2	common	raw		high	Deer meat		Common meat drop
+Entrails	Entrails	material	true	1	Meadows	drop		0		common	false	false	0	1	1	3	common	anchor	3	high	Entrails		Common drop from creatures
+FineWood	Finewood	material	true	1	Meadows	gather		0		na	false	false	0	2	1	3	common	anchor	3	high	Finewood		Chopped from Birch/Oak trees in Meadows/Plains
+PineCone	Pine cone	material	true	1	Meadows	gather		0		na	false	false	0	1	1	2	common	raw		high	Pine Cone		Abundant gather from pine trees
+RawMeat	Boar meat	material	true	1	Meadows	drop		0		common	false	false	0	1	1	2	common	raw		high	Boar Meat		Common drop from Boar (Meadows)
+CopperScrap	Copper scrap	material	true	1	Meadows	gather		0		na	false	false	0	2	1	3	common	raw		high	Copper scrap		Found in dungeons, can be smelted
+GreydwarfEye	Greydwarf eye	material	true	1	Meadows	drop		0		common	false	false	0	2	1	3	common	raw		high	Greydwarf Eye		Dropped by Greydwarves; common in Meadows and Black Forest
+NeckTail	Neck tail	material	true	1	Meadows	drop		0		common	false	false	0	2	1	3	common	raw		high	Neck Tail		Common drop from Neck (Meadows)
+QueenBee	Queen bee	material	true	1	Meadows	gather		0		na	false	false	0	2	1	3	common	raw		high	Queen Bee		Gathered from bee nests in Meadows
+CopperOre	Copper ore	material	true	1	Meadows	gather		0		na	false	false	0	2	1	5	common	anchor	5	high	Copper ore		Meadows ore for Bronze
+Amber	Amber	material	true	1	Meadows, Black Forest, Swamp	gather		0		na	false	false	5	2	1	7	common	anchor	7	high	Amber		Found in chests and Burial Chambers, sellable valuable
+Copper	Copper	material	true	1	Meadows	smelt	Smelter	0	Copper ore x1	na	false	false	0	2	2	6	common	cost		high	Copper		Basic metal for Black Forest gear
+SpiceForests	Woodland Herb Blend	material	true	1	N/A	trader		0		na	true	false	24	3	1	6	rare	raw		high	Woodland Herb Blend		Bog Witch purchase (120 coins per 5), requires Elder defeated
+Thunderstone	Thunder Stone	material	true	1	N/A	trader		0		na	true	false	50	3	1	13	rare	trader		high	Thunder Stone		Haldor purchase (50 coins each), requires Elder defeated
+VineGreenSeeds	Ivy Seeds	material	true	1	N/A	trader		0		na	true	false	22	3	1	6	rare	raw		high	Ivy Seeds		Bog Witch purchase (65 coins per 3); plants Ivy with Cultivator
+YmirRemains	Ymir Flesh	material	true	1	N/A	trader		0		na	true	false	120	3	1	30	rare	trader		high	Ymir Flesh		Haldor purchase (120 coins each), requires Elder defeated
+HardAntler	Hard antler	material	true	1	Meadows	boss_drop		0		very_rare	true	false	0	4	1	11	rare	raw		high	Hard Antler		Boss drop from Eikthyr; guaranteed 3 per defeat. First boss progression gate.
+AmberPearl	Amber pearl	material	true	1	Swamp	gather		0		na	false	false	10	3	1	14	rare	anchor	14	high	Amber pearl		Found in Sunken Crypts, less common than Amber
+FeastMeadows_Material	Whole roasted Meadow boar	material	true	1	Meadows	craft	Food preparation table	1	Cooked deer meat x2, Cooked boar meat x5, Dandelion x4, Woodland herb blend x1	na	true	false	0	2	5	50	rare	cost		high	Whole Roasted Meadow Boar		Early feast requiring cooked materials and Woodland herb blend
+Ruby	Ruby	material	true	1	Swamp	gather		0		na	false	false	20	3	1	29	rare	anchor	29	high	Ruby		Rare gem from burial chambers/sunken crypts
+SilverNecklace	Silver necklace	material	true	1	Swamp	gather		0		na	false	false	30	3	1	43	rare	anchor	43	high	Silver necklace		Found in graves/crypts. Reference: SilverNecklace = 43 in mod
+TinOre	Tin Ore	material	true	2	Black Forest	gather		0		na	false	false	0	1	1	5	common	anchor	5	high	Tin Ore		Abundant gather from Tin deposits in Black Forest near water; reference scale 5
+Thistle	Thistle	material	true	2	Black Forest	gather		0		na	false	false	0	1	1	3	common	raw		high	Thistle		Gathered from Black Forest and Swamp; respawns after 240 min
+TrollHide	Troll Hide	material	true	2	Black Forest	drop		0		common	false	false	0	2	1	6	common	anchor	6	high	Troll Hide		Dropped by Trolls, bonus from Trollfish; reference scale 6
+BronzeScrap	Bronze scrap	material	true	2	Black Forest	gather		0		na	false	false	0	2	1	4	common	raw		high	Bronze scrap		Found in dungeons, can be smelted
+BronzeNails	Bronze nails	material	true	2	Black Forest	craft	Forge	1	Bronze x1	na	false	false	0	2	2	2	common	cost		high	Bronze nails		Building component
+MeadBaseHealthMinor	Mead base: Minor healing	material	true	2	Plains	brew	Mead ketill	1	Mead base: Minor healing x1	na	false	false	0	2	2	14	common	cost		high	Minor Healing Mead		Mead base; basic health recovery; reference scale: 12.
+MeadBaseTasty	Mead base: Tasty	material	true	2	Meadows	craft	Mead ketill	1	Mead base: Tasty x1	na	false	false	0	2	2	14	common	cost		high	Tasty Mead		Freely craftable mead base from common materials
+Tin	Tin	material	true	2	N/A	craft	Smelter	1	Tin ore x1	na	false	false	0	2	2	6	common	cost		high	Tin		Smelted from Tin ore (1:1 ratio); reference scale 5
+Bronze	Bronze	material	true	2	Black Forest	smelt	Smelter	0	Copper x2, Tin x1	na	false	false	0	2	2	15	common	anchor	15	high	Bronze		Common alloy for Black Forest gear
+SurtlingCore	Surtling Core	material	true	2	All	drop		0		common	false	false	0	2	1	15	common	anchor	15	high	Surtling Core		Burial Chambers, Surtlings, bonfires, Dvergr lanterns; reference scale 15
+PowderedDragonEgg	Powdered dragon eggshells	material	true	2	Black Forest	trader		0		na	false	true	120	4	1	30	rare	trader		high	Powdered Dragon Eggshells		Purchased from Bog Witch (120 coins)
+PungentPebbles	Pungent pebbles	material	true	2	Black Forest	trader		0		na	false	true	125	4	1	31	rare	trader		high	Pungent Pebbles		Purchased from Bog Witch (125 coins)
+FeastBlackforest_Material	Black Forest buffet platter	material	true	2	Black Forest	craft	Food preparation table	1	Deer stew x3, Thistle x5, Queen's jam x4, Woodland herb blend x1	na	true	false	0	2	5	403	rare	cost		high	Black Forest Buffet Platter		Feast requires multiple cooked/prepared ingredients from tier 2 stations
+Ooze	Ooze	material	true	3	Swamp	drop		0		common	false	false	0	2	1	3	common	anchor	3	high	Ooze		Common drop from Blob/Oozer (Swamp)
+Blackwood	Blackwood	material	true	3	Swamp	gather		0		na	false	false	0	2	1	4	common	anchor	4	high	Blackwood		Swamp wood material
+Guck	Guck	material	true	3	Swamp	drop		0		common	false	false	0	2	1	4	common	anchor	4	high	Guck		Dropped by Abominations and Gucksacks in Swamps
+WitheredBone	Withered Bone	material	true	3	Swamp	gather		0		common	false	false	0	2	1	8	common	anchor	8	high	Withered Bone		Found in Muddy scrap piles (Sunken Crypts); reference scale 8
+Chain	Chain	material	true	3	Swamp	gather		0		na	false	false	0	3	1	12	rare	anchor	12	high	Chain		Found in swamp dungeons
+BlackMarble	Black marble	material	true	3	Swamp	gather		0		na	false	false	0	2	1	5	common	raw		high	Black marble		
+Root	Root	material	true	3	Swamp	drop		0		common	false	false	0	2	1	5	common	raw		high	Root (item)		Common drop from Abomination (Swamp)
+SerpentMeat	Serpent meat	material	true	3	Ocean	drop		0		common	false	false	0	2	1	5	common	raw		high	Serpent Meat		Common drop from Serpent (Ocean)
+SerpentScale	Serpent scale	material	true	3	Ocean	drop		0		common	false	false	0	2	1	5	common	raw		high	Serpent Scale		Common drop from Serpent (Ocean)
+TurnipSeeds	Turnip Seeds	material	true	3	Swamp	gather		0		na	false	false	0	2	1	5	common	raw		high	Turnip Seeds		Gathered from Swamp, planted with Cultivator for Turnips
+IronScrap	Scrap iron	material	true	3	Swamp	drop		0		uncommon	false	false	0	2	1	22	common	anchor	22	high	Scrap Iron		Reference scale: 22. From Sunken Crypts, Muddy scrap piles, Oozers (30%), Ancient weapons.
+Iron	Iron	material	true	3	Swamp	smelt	Smelter	1	Scrap iron x1	na	false	false	0	2	2	25	common	anchor	25	high	Iron		Smelted from scrap iron or iron ore. Reference scale: 25.
+BlobVial	Blob vial	material	true	3	Swamp	drop		0		uncommon	false	false	0	3	1	11	rare	raw		high	Blob vial		Drop from Blobs in Swamp
+FireworksRocket_White	Basic fireworks	material	true	3	Swamp	trader		0		na	true	false	50	3	1	13	rare	trader		high	Basic fireworks		Purchased from Hildir after returning his bronze chest; boss-gated
+FragrantBundle	Fragrant bundle	material	true	3	Swamp	trader		0		na	true	false	28	3	1	11	rare	raw		high	Fragrant Bundle		Purchased from Bog Witch for 140 coins per 5 items; gated by Moder defeat
+FreshSeaweed	Fresh seaweed	material	true	3	Swamp	trader		0		na	false	false	15	3	1	11	rare	raw		high	Fresh Seaweed		Purchased from Bog Witch for 75 coins per 5 items
+IronOre	Iron ore	material	true	3	Swamp	fish		0		rare	false	false	0	3	1	11	rare	raw		high	Iron Ore		Fishing bonus drop from Giant herring; no ore veins currently spawn in game.
+SpiceOceans	Seafarer's Herbs	material	true	3	N/A	trader		0		na	true	false	26	3	1	11	rare	raw		high	Seafarer's Herbs		Bog Witch purchase (130 coins per 5), requires Serpent killed
+FireworksRocket_Blue	Blue fireworks	material	true	3	Meadows	craft	Workbench	1	Basic fireworks x1, Blueberries x1	na	false	false	0	2	2	5	common	cost		medium	Fireworks		Colored firework crafted from Basic fireworks + Blueberries; from Fireworks page
+FireworksRocket_Cyan	Cyan fireworks	material	true	3	Meadows	craft	Workbench	1	Basic fireworks x1, Greydwarf eye x1	na	false	false	0	2	2	5	common	cost		medium	Fireworks		Colored firework using Greydwarf eye
+FireworksRocket_Green	Green fireworks	material	true	3	Swamp	craft	Workbench	1	Basic fireworks x1, Guck x1	na	false	false	0	2	2	5	common	cost		medium	Fireworks		Colored firework using Swamp-tier Guck
+FireworksRocket_Purple	Purple fireworks	material	true	3	Meadows	craft	Workbench	1	Basic fireworks x1, Turnip x1	na	false	false	0	2	2	5	common	cost		medium	Fireworks		Colored firework using Turnip (Swamp, tier 3)
+FireworksRocket_Red	Red fireworks	material	true	3	Meadows	craft	Workbench	1	Basic fireworks x1, Raspberry x1	na	false	false	0	2	2	4	common	cost		medium	Fireworks		Colored firework using Meadows-tier Raspberry
+FireworksRocket_Yellow	Yellow fireworks	material	true	3	Meadows	craft	Workbench	1	Basic fireworks x1, Dandelion x1	na	false	false	0	2	2	4	common	cost		medium	Fireworks		Colored firework using Meadows-tier Dandelion
+IronNails	Iron nails	material	true	3	Swamp	craft	Forge	1	Iron x1	na	false	false	0	2	2	2	common	cost		high	Iron Nails		1 iron yields 10 nails (quantity 10); teleportable, used in building.
+MeadBaseFrostResist	Mead base: Frost resistance	material	true	3	Mountains	brew	Mead ketill	1	Mead base: Frost resistance x1	na	false	false	0	2	2	16	common	cost		high	Frost Resistance Mead		Mead base; cold resistance buff; crafted at Mead ketill.
+MeadBaseHealthMedium	Mead base: Medium healing	material	true	3	Plains	brew	Mead ketill	1	Mead base: Medium healing x1	na	false	false	0	2	2	16	common	cost		medium	Medium Healing Mead		Mead base; medium health recovery; crafted at Mead ketill.
+MeadBaseStrength	Mead base: Troll endurance	material	true	3	Plains	brew	Mead ketill	1	Mead base: Troll endurance x1	na	false	false	0	2	2	16	common	cost		medium	Mead of Troll Endurance		Mead base; carry weight buff (+250); crafted at Mead ketill.
+MeadBaseSwimmer	Mead base: Vananidir	material	true	3	Ocean	brew	Mead ketill	1	Mead base: Vananidir x1	na	false	false	0	2	2	16	common	cost		medium	Draught of Vananidir		Mead base; swimming stamina reduction; crafted at Mead ketill.
+Turnip	Turnip	material	true	3	Swamp	plant	Cultivator	0	Turnip seeds x1	na	false	false	0	2	2	6	common	cost		high	Turnip		Farmed crop (4000-5000s grow time); cannot be eaten raw
+FeastOceans_Material	Sailor's bounty	material	true	3	Ocean	craft	Food preparation table	1	Cooked fish x5, Thistle x4, Cooked serpent meat x2, Seafarer's herbs x1	na	true	false	0	2	5	81	rare	cost		high	Sailor's Bounty		Feast using fish and Serpent materials from ocean tier
+FeastSwamps_Material	Swamp dweller's delight	material	true	3	Swamp	craft	Food preparation table	1	Sausages x8, Bloodbag x4, Turnip stew x2, Woodland herb blend x1	na	true	false	0	2	5	443	rare	cost		high	Swamp Dweller's Delight		Swamp feast, Woodland herb blend gated by Elder boss
+FreezeGland	Freeze gland	material	true	4	Mountains	drop		0		uncommon	false	false	0	3	1	4	rare	anchor	4	high	Freeze Gland		Dropped by Drakes in Mountains/Mistlands
+Obsidian	Obsidian	material	true	4	Mountains	gather		0		na	false	false	0	2	1	4	common	anchor	4	high	Obsidian		Gathered from obsidian deposits in Mountains
+WolfHairBundle	Fenris Hair	material	true	4	Mountain	gather		0		na	false	false	0	3	1	4	rare	anchor	4	high	Fenris Hair		Found in Frost Caves (Mountain biome); reference scale 4
+JuteRed	Red jute	material	true	4	Mountains	drop		0		uncommon	false	false	0	2	1	6	common	anchor	6	high	Red Jute		From Cultists or Frost Cave curtains; reference scale: 6.
+WolfPelt	Wolf Pelt	material	true	4	Mountain	drop		0		common	false	false	0	2	1	6	common	anchor	6	high	Wolf Pelt		Dropped by Wolves in Mountains; reference scale 6
+Crystal	Crystal	material	true	4	Mountains	gather		0		na	false	false	0	2	1	8	common	anchor	8	high	Crystal		Mountain ore
+OnionSeeds	Onion seeds	material	true	4	Mountains	gather		0		na	false	false	0	2	1	5	common	raw		high	Onion Seeds		Found in huts/ruins in Mountains
+WolfFang	Wolf Fang	material	true	4	Mountain	drop		0		common	false	false	0	2	1	5	common	raw		high	Wolf Fang		Dropped by Wolves, Fenrings, Ulvs in Mountains
+WolfMeat	Wolf Meat	material	true	4	Mountain	drop		0		common	false	false	0	2	1	5	common	raw		high	Wolf Meat		Dropped by Wolves in Mountains; cookable
+SilverOre	Silver ore	material	true	4	Mountains	gather		0		na	false	false	0	2	1	36	rare	anchor	36	high	Silver Ore		Reference: SilverOre = 36 in mod
+Silver	Silver	material	true	4	Mountains	smelt	Smelter	2	Silver ore x1	na	false	false	0	2	2	40	rare	anchor	40	high	Silver		Reference: Silver bar = 40 in mod
+Ironpit	Iron pit	material	true	4	Mountains	trader		0		na	false	false	75	3	1	19	rare	trader		high	Iron Pit		Purchased from Hildir for 75 coins. Cannot be teleported without Portal stone.
+SpiceMountains	Mountain Peak Pepper Powder	material	true	4	N/A	trader		0		na	true	false	28	3	1	13	rare	raw		high	Mountain Peak Pepper Powder		Bog Witch purchase (140 coins per 5), requires Moder defeated
+Wisp	Wisp	material	true	4	Mountain	gather		0		na	false	false	0	3	1	13	rare	raw		high	Wisp		Gathered from Wisp fountains at night; reference scale 8
+WolfClaw	Fenris Claw	material	true	4	Mountain	gather		0		na	false	false	0	3	1	13	rare	raw		high	Fenris Claw		Found on pedestals in Frost Caves (Mountain biome)
+MeadBasePoisonResist	Mead base: Poison resistance	material	true	4	Swamp	brew	Mead ketill	1	Mead base: Poison resistance x1	na	false	false	0	2	2	17	common	cost		high	Poison Resistance Mead		Mead base; poison resistance buff; crafted at Mead ketill.
+MeadBaseTamer	Mead base: Animal whispers	material	true	4	Plains	brew	Mead ketill	1	Mead base: Animal whispers x1	na	false	false	0	2	2	17	common	cost		medium	Brew of Animal Whispers		Mead base; 2x taming speed buff; crafted at Mead ketill.
+FeastMountains_Material	Hearty Mountain logger's stew	material	true	4	Mountains	craft	Food preparation table	1	Wolf skewer x2, Onion soup x3, Carrot x4, Mountain peak pepper powder x1	na	false	false	0	2	5	126	rare	cost		high	Hearty Mountain Logger's Stew		Mountain-tier feast requiring wolf meat and prepared ingredients
+Barley	Barley	material	true	5	Plains	plant	Cultivator	0		na	false	false	0	2	1	3	common	anchor	3	high	Barley		Plains crop, common harvest
+Flax	Flax	material	true	5	Plains	gather		0		uncommon	false	false	0	3	1	3	rare	anchor	3	high	Flax		Harvested from Fuling Villages in Plains or grown with Cultivator
+Needle	Needle	material	true	5	Plains	drop		0		common	false	false	0	2	1	6	common	anchor	6	high	Needle		Common drop from Deathsquito (Plains)
+LoxPelt	Lox pelt	material	true	5	Plains	drop		0		common	false	false	0	2	1	8	common	anchor	8	high	Lox Pelt		Reference scale: 8. Drop from Lox; used in crafting and building.
+LinenThread	Linen thread	material	true	5	Plains	craft	Spinning wheel	1	Flax x1	na	false	false	0	2	2	10	common	anchor	10	high	Linen Thread		Reference scale: 10. Crafted from Flax at Spinning wheel (~30s per thread).
+BlackMetalScrap	Black metal scrap	material	true	5	Plains	gather		0		na	false	false	0	3	1	50	rare	anchor	50	high	Black metal scrap		Found in Plains dungeons
+BlackMetal	Black metal	material	true	5	Plains	smelt	Smelter	0	Black metal scrap x1	na	false	false	0	3	2	60	rare	anchor	60	high	Black metal		Smelted from scrap found in Plains dungeons
+LoxMeat	Lox meat	material	true	5	Plains	drop		0		common	false	false	0	2	1	6	common	raw		high	Lox Meat		Drop from Lox in Plains; used in high-tier food recipes.
+Tar	Tar	material	true	5	Plains	drop		0		common	false	false	0	2	1	6	common	raw		high	Tar		Dropped by Growths in Plains, found in/around Tar pits
+UndeadBjornRibcage	Vile Ribcage	material	true	5	Plains	drop		0		common	false	false	0	2	1	6	common	raw		high	Vile Ribcage		Dropped by Vile in Plains; used for Vilebone crafting
+SpicePlains	Grasslands Herbalist Harvest	material	true	5	N/A	trader		0		na	true	false	32	3	1	14	rare	raw		high	Grasslands Herbalist Harvest		Bog Witch purchase (160 coins per 5), requires Yagluth defeated
+AxeHead1	Axe head 1	material	true	5	Plains	craft	Forge	2	Iron x4, Wood x2	na	false	false	0	2	2	117	rare	cost		medium	Axe head 1		Crafted component for complex tools
+AxeHead2	Axe head 2	material	true	5	Plains	craft	Forge	2	Iron x5, Wood x3	na	false	false	0	2	2	147	rare	cost		medium	Axe head 2		Crafted component for complex tools
+MeadBaseBugRepellent	Mead base: Anti-sting	material	true	5	Plains	brew	Mead ketill	1	Mead base: Anti-sting x1	na	false	false	0	2	2	20	common	cost		high	Anti-Sting Concoction		Mead base; crafted at Mead ketill; requires fermentation.
+MeadBaseBzerker	Mead base: Berserkir	material	true	5	Plains	brew	Mead ketill	1	Mead base: Berserkir x1	na	false	false	0	2	2	20	common	cost		medium	Berserkir Mead		Mead base; potent but risk/reward (weak to damage); crafted at Mead ketill.
+MeadBaseHasty	Mead base: Ratatosk	material	true	5	Plains	brew	Mead ketill	1	Mead base: Ratatosk x1	na	false	false	0	2	2	20	common	cost		medium	Tonic of Ratatosk		Mead base; speed buff; crafted at Mead ketill.
+MeadBaseLightFoot	Mead base: Lightfoot	material	true	5	Plains	brew	Mead ketill	1	Mead base: Lightfoot x1	na	false	false	0	2	2	20	common	cost		medium	Lightfoot Mead		Mead base; jump buff; crafted at Mead ketill.
+MeadBaseStaminaLingering	Mead base: Lingering stamina	material	true	5	Plains	brew	Mead ketill	1	Mead base: Lingering stamina x1	na	false	false	0	2	2	20	common	cost		medium	Lingering Stamina Mead		Mead base; stamina regen buff; crafted at Mead ketill.
+MeadBaseStaminaMedium	Mead base: Medium stamina	material	true	5	Plains	brew	Mead ketill	1	Mead base: Medium stamina x1	na	false	false	0	2	2	20	common	cost		medium	Medium Stamina Mead		Mead base; medium stamina recovery; crafted at Mead ketill.
+MeadBaseStaminaMinor	Mead base: Minor stamina	material	true	5	Plains	brew	Mead ketill	1	Mead base: Minor stamina x1	na	false	false	0	2	2	20	common	cost		high	Minor Stamina Mead		Mead base; basic stamina recovery; reference scale: 12.
+VikingCupcakeUncooked	Unbaked Sweetbread	material	true	5	N/A	craft	Food preparation table	0	Unbaked sweetbread x1	na	false	false	0	2	2	20	common	cost		high	Frosted Sweetbread		Uncooked food; baked at Stone oven to Frosted Sweetbread
+BombSiege	Bomb siege	material	true	5	Plains	craft	Forge	2	Black metal x2, Turnip x1, Thistle x1	na	false	false	0	2	3	34	rare	cost		high	Bomb siege		Crafted ammunition for siege weapons
+Catapult_ammo	Catapult training ammo	material	true	5	Plains	craft	Forge	2	Black metal x1, Turnip x1, Thistle x1	na	false	false	0	2	3	90	rare	cost		high	Catapult ammo		Siege weapon ammunition
+LoxPieUncooked	Unbaked lox pie	material	true	5	Plains	craft	Food preparation table	1	Unbaked lox pie x1	na	false	false	0	2	3	57	rare	cost		medium	Lox Meat Pie		Uncooked food; crafted at cooking station with multiple ingredient types.
+BarleyWineBase	Barley wine base	material	true	5	Plains	brew	Mead ketill	0	Barley wine base: Fire resistance x1	na	false	false	0	3	2	41	rare	score		high	Barley wine base		Brewing ingredient requiring honey from Plains
+ShieldCore	Shield core	material	true	5	Plains	craft	Artisan table	2	Black core x1, Surtling core x1, Ceramic plate x5	na	false	false	0	3	3	449	rare	cost		high	Shield Core		Artisan table craft with diverse ingredients
+FeastPlains_Material	Plains pie picnic	material	true	5	Plains	craft	Food preparation table	1	Bread x3, Lox meat pie x2, Cloudberries x5, Grasslands herbalist harvest x1	na	false	false	0	2	5	562	rare	cost		high	Plains Pie Picnic		Plains feast with Lox meat pie and cultivated ingredients
+Bloodbag	Bloodbag	material	true	6	Mistlands	gather		0		na	false	false	0	2	1	3	common	anchor	3	high	Bloodbag		Mistlands material
+RoundLog	Corewood	material	true	6	Mistlands	gather		0		na	false	false	0	2	1	3	common	anchor	3	high	Corewood		Wood from pine trees in Mistlands
+Chitin	Chitin	material	true	6	Mistlands	drop		0		common	false	false	0	2	1	5	common	anchor	5	high	Chitin		Common drop from Mistlands creatures
+YggdrasilWood	Yggdrasil Wood	material	true	6	Mistlands	gather		0		na	false	false	0	2	1	5	common	anchor	5	high	Yggdrasil Wood		Gathered from Yggdrasil shoots in Mistlands (Black metal axe+); reference scale 5
+Sap	Sap	material	true	6	Mistlands	gather		0		na	false	false	0	2	1	6	common	anchor	6	high	Sap		Gathered from trees in Mistlands
+ScaleHide	Scale hide	material	true	6	Mistlands	drop		0		common	false	false	0	2	1	6	common	anchor	6	high	Scale Hide		Common drop from Hare (Mistlands)
+JuteBlue	Blue jute	material	true	6	Mistlands	gather		0		common	false	false	0	2	1	8	common	anchor	8	high	Blue Jute		Gathered from destroyed Dvergr structures (curtains, drapes). Reference scale: 8.
+Softtissue	Soft Tissue	material	true	6	Mistlands	gather		0		na	false	false	0	3	1	8	rare	anchor	8	high	Soft Tissue		Mined from Giant Remains in Mistlands (50% yield), also Ashlands
+Carapace	Carapace	material	true	6	Mistlands	drop		0		common	false	false	0	2	1	10	common	anchor	10	high	Carapace		Common drop from Mistlands creatures
+Eitr	Eitr	material	true	6	Mistlands	craft	Eitr refinery	0	Sap x1, Soft tissue x1	na	false	false	0	2	2	45	rare	anchor	45	high	Eitr		Mistlands magic essence
+BoneMawSerpentMeat	Bonemaw serpent meat	material	true	6	Mistlands	drop		0		common	false	false	0	2	1	7	common	raw		high	Bonemaw serpent meat		Mistlands creature meat drop
+BonemawSerpentScale	Bonemaw serpent scale	material	true	6	Mistlands	drop		0		common	false	false	0	2	1	7	common	raw		high	none		Mistlands creature material drop
+BugMeat	Bug meat	material	true	6	Mistlands	drop		0		common	false	false	0	2	1	7	common	raw		high	Bug meat		Mistlands creature meat
+Ectoplasm	Ectoplasm	material	true	6	Mistlands	gather		0		na	false	false	0	2	1	7	common	raw		high	Ectoplasm		Mistlands resource
+HareMeat	Hare meat	material	true	6	Mistlands	drop		0		common	false	false	0	2	1	7	common	raw		high	Hare Meat		1 per hare kill (0-star); used in high-tier food recipes.
+Mandible	Mandible	material	true	6	Mistlands	drop		0		uncommon	false	false	0	2	1	7	common	raw		high	Mandible		Drop from Seeker Soldier in Mistlands; used in carapace armor crafting.
+MeatPlatterUncooked	Uncooked meat platter	material	true	6	Black Forest	craft	Food preparation table	1	Raw meat mix	na	false	false	0	2	1	7	common	raw		medium	Meat Platter		Intermediate food item
+MisthareSupremeUncooked	Uncooked misthare supreme	material	true	6	Mistlands	craft	Food preparation table	1	Misthare meat	na	false	false	0	2	1	7	common	raw		high	Misthare Supreme		Intermediate food from Mistlands
+BellFragment	Bell fragment	material	true	6	Mistlands	gather		0		na	false	false	0	3	1	16	rare	raw		high	Bell fragment		Mistlands loot material, limited availability
+BonemawSerpentTooth	Bonemaw serpent tooth	material	true	6	Mistlands	drop		0		uncommon	false	false	0	3	1	16	rare	raw		high	Bonemaw serpent tooth		Mistlands creature material drop
+DvergrNeedle	Dvergr needle	material	true	6	Mistlands	gather		0		na	false	false	0	3	1	16	rare	raw		high	Dvergr needle		Mistlands advanced component
+FishAnglerRaw	Raw Anglerfish	material	true	6	Mistlands	fish		0		uncommon	false	false	0	3	1	16	rare	raw		medium	Anglerfish		Fish caught from Mistlands waters using Misty fishing bait
+GiantBloodSack	Blood clot	material	true	6	Mistlands	drop		0		uncommon	false	false	0	3	1	16	rare	raw		high	Blood Clot		Dropped by Ticks in Mistlands; also spawned by Gjall
+SpiceMistlands	Herbs of the Hidden Hills	material	true	6	N/A	trader		0		na	true	false	36	3	1	16	rare	raw		high	Herbs of the Hidden Hills		Bog Witch purchase (180 coins per 5), requires The Queen defeated
+MeadBaseHealthMajor	Mead base: Major healing	material	true	6	Plains	brew	Mead ketill	1	Mead base: Major healing x1	na	false	false	0	2	2	23	common	cost		medium	Major Healing Mead		Mead base; major health recovery; crafted at Mead ketill.
+HoneyGlazedChickenUncooked	Uncooked honey glazed chicken	material	true	6	Plains	craft	Food preparation table	1	Uncooked honey glazed chicken x1	na	false	false	0	2	3	68	rare	cost		medium	Honey Glazed Chicken		Uncooked food material; crafted at cooking station with multiple ingredient types.
+MagicallyStuffedShroomUncooked	Uncooked stuffed mushroom	material	true	6	Mistlands	craft	Food preparation table	1	Uncooked stuffed mushroom x1	na	false	false	0	2	3	68	rare	cost		medium	Stuffed Mushroom		Uncooked food with magical properties (provides Eitr); multi-ingredient craft.
+DvergrKeyFragment	Dvergr key fragment	material	true	6	Mistlands	gather		0		na	false	true	0	4	1	29	rare	raw		high	Dvergr key fragment		Limited spawn puzzle piece
+FlametalOre	Flametal Ore (Old)	material	true	6	Mistlands	gather		0		uncommon	false	true	0	4	1	29	rare	raw		medium	Flametal Ore		Pre-Ashlands ore from Glowing metal piles; obsoleted, converts to Ancient ore
+FishAndBreadUncooked	Uncooked Fish 'n' Bread	material	true	6	Mistlands	craft	Food preparation table	1	Uncooked fish n' bread x1	na	false	false	0	3	2	56	rare	cost		high	Fish 'n' Bread		Mistlands food using Anglerfish from Mistlands fishing
+MeadBaseEitrMinor	Mead base: Minor eitr	material	true	6	Mistlands	brew	Mead ketill	1	Mead base: Minor eitr x1	na	false	false	0	3	2	56	rare	cost		medium	Minor Eitr Mead		Mead base for Mistlands; eitr restoration effect.
+BlackCore	Black core	material	true	6	Swamp	gather		0		rare	true	false	0	4	1	300	rare	anchor	300	high	Black core		Boss-gated material from high-tier swamp dungeon
+Flametal	Flametal (Old)	material	true	6	Mistlands	smelt	Blast furnace	3	Flametal ore (old) x1	na	false	true	0	4	2	103	rare	cost		medium	Flametal		Pre-Ashlands version from Glowing metal piles; converts to Ancient ore in new version
+FeastMistlands_Material	Mushrooms galore á la Mistlands	material	true	6	Mistlands	craft	Food preparation table	1	Misthare supreme x1, Cooked seeker meat x3, Yggdrasil porridge x1, Herbs of the hidden hills x1	na	true	false	0	2	5	195	rare	score		high	Mushrooms Galore á la Mistlands		High-tier feast with Yggdrasil and Mistlands ingredients
+MechanicalSpring	Mechanical spring	material	true	6	Mistlands	craft	Artisan table	3	Refined eitr x1, Iron x3	na	false	false	0	3	4	180	rare	cost		high	Mechanical Spring		Needs refined eitr, tier 6 crafting
+DyrnwynBladeFragment	Dyrnwyn blade fragment	material	true	6	Mistlands	drop		0		rare	true	true	0	5	1	840	ultra	ultra		high	none		Boss-unique fragment from Fader
+DyrnwynHiltFragment	Dyrnwyn hilt fragment	material	true	6	Mistlands	drop		0		rare	true	true	0	5	1	840	ultra	ultra		high	none		Boss-unique fragment from Fader
+DyrnwynTipFragment	Dyrnwyn tip fragment	material	true	6	Mistlands	drop		0		rare	true	true	0	5	1	840	ultra	ultra		high	none		Boss-unique fragment from Fader
+FaderDrop	Fader drop	material	true	6	Mistlands	drop		0		na	true	true	0	5	1	840	ultra	ultra		high	Fader		Boss-unique drop from Fader
+QueenDrop	Majestic carapace	material	true	6	Mistlands	boss_drop		0		na	true	true	0	5	1	840	ultra	ultra		high	Majestic Carapace		Unique drop from The Queen boss
+AskHide	Asksvin hide	material	true	7	Ashlands	drop		0		common	false	false	0	2	1	10	common	anchor	10	high	Asksvin hide		Ashlands creature drop, common material
+BjornHide	Bjorn hide	material	true	7	Ashlands	drop		0		common	false	false	0	2	1	10	common	anchor	10	high	Bjorn hide		Ashlands creature drop, common material
+FlametalOreNew	Flametal Ore	material	true	7	Ashlands	gather		0		uncommon	false	false	0	4	1	90	rare	anchor	90	high	Flametal Ore		Mined from Flametal ore veins in Ashlands; requires Black metal pickaxe
+FlametalNew	Flametal	material	true	7	Ashlands	smelt	Blast furnace	3	Flametal ore x1	na	false	false	0	4	2	110	rare	anchor	110	high	Flametal		Smelted from Flametal ore in Blast furnace
+AskBladder	Asksvin bladder	material	true	7	Ashlands	drop		0		common	false	false	0	2	1	10	common	raw		high	Asksvin bladder		Ashlands creature drop, common material
+AsksvinMeat	Asksvin meat	material	true	7	Ashlands	drop		0		common	false	false	0	2	1	10	common	raw		high	Asksvin meat		Raw meat drop from Asksvin creatures
+BjornMeat	Bjorn meat	material	true	7	Ashlands	drop		0		common	false	false	0	2	1	10	common	raw		high	Bjorn meat		Raw meat from Bjorn creatures
+CharcoalResin	Charcoal resin	material	true	7	Ashlands	gather		0		na	false	false	0	2	1	10	common	raw		high	Charcoal resin		Ashlands resource
+CharredBone	Charred bone	material	true	7	Ashlands	gather		0		na	false	false	0	2	1	10	common	raw		high	Charred bone		Ashlands resource
+Charredskull	Charred skull	material	true	7	Ashlands	gather		0		na	false	false	0	2	1	10	common	raw		high	Charred skull		Ashlands resource
+Grausten	Grausten	material	true	7	Ashlands	gather		0		common	false	false	0	2	1	10	common	raw		high	Grausten		Harvested from Ashlands ruins and rock formations
+PiquantPieUncooked	Uncooked piquant pie	material	true	7	Plains	craft	Food preparation table	1	Piquant pie ingredients	na	false	false	0	2	1	10	common	raw		high	Piquant Pie		Intermediate Plains food
+Pot_Shard_Green	Pot shard	material	true	7	Ashlands	drop		0		common	false	false	0	2	1	10	common	raw		high	Pot Shard		Dropped by Ancient pots in Charred Ruins/Putrid Hole
+RoastedCrustPieUncooked	Uncooked roasted crust pie	material	true	7	Mistlands	craft	Food preparation table	1	Roasted crust pie ingredients	na	false	false	0	2	1	10	common	raw		high	Roasted Crust Pie		Intermediate Mistlands food
+SulfurStone	Sulfur	material	true	7	Ashlands	gather		0		common	false	false	0	2	1	10	common	raw		high	Sulfur		Mined from Sulfur nodes under arches, dropped by Lava Blobs
+VineberrySeeds	Vineberry Seeds	material	true	7	Ashlands	gather		0		uncommon	false	false	0	2	1	10	common	raw		high	Vineberry Seeds		20% chance from Vineberry clusters in Ashlands; grows Ashvine
+VoltureMeat	Volture Meat	material	true	7	Ashlands	drop		0		common	false	false	0	2	1	10	common	raw		high	Volture Meat		Raw meat dropped by Volture; cookable at Iron cooking station
+AsksvinCarrionNeck	Asksvin neck	material	true	7	Ashlands	gather		0		na	false	false	0	3	1	25	rare	raw		high	Asksvin neck		Carrion remains found in Ashlands, limited spawns
+AsksvinCarrionPelvic	Asksvin pelvis	material	true	7	Ashlands	gather		0		na	false	false	0	3	1	25	rare	raw		high	Asksvin pelvis		Carrion remains found in Ashlands, limited spawns
+AsksvinCarrionRibcage	Asksvin ribcage	material	true	7	Ashlands	gather		0		na	false	false	0	3	1	25	rare	raw		high	Asksvin ribcage		Carrion remains found in Ashlands, largest piece, limited spawns
+AsksvinCarrionSkull	Asksvin skull	material	true	7	Ashlands	gather		0		na	false	false	0	3	1	25	rare	raw		high	Asksvin skull		Carrion remains found in Ashlands, limited spawns
+Bilebag	Bilebag	material	true	7	Ashlands	drop		0		uncommon	false	false	0	3	1	25	rare	raw		high	Bilebag		Ashlands creature material drop
+BjornPaw	Bjorn paw	material	true	7	Ashlands	drop		0		uncommon	false	false	0	3	1	25	rare	raw		high	Bjorn paw		Ashlands creature drop, uncommon
+CelestialFeather	Celestial feather	material	true	7	Ashlands	drop		0		uncommon	false	false	0	3	1	25	rare	raw		high	Celestial feather		Ashlands creature drop
+CharredCogwheel	Charred cogwheel	material	true	7	Ashlands	gather		0		na	false	false	0	3	1	25	rare	raw		high	Charred cogwheel		Ashlands rare component
+CuredSquirrelHamstring	Cured squirrel hamstring	material	true	7	Ashlands	gather		0		na	false	false	0	3	1	25	rare	raw		medium	Cured squirrel hamstring		Ashlands material, limited availability
+MoltenCore	Molten core	material	true	7	Ashlands	drop		0		rare	false	false	0	3	1	25	rare	raw		high	Molten Core		Dropped by Charred Fortress enemies
+ProustitePowder	Proustite powder	material	true	7	Ashlands	drop		0		uncommon	false	false	0	3	1	25	rare	raw		high	Proustite Powder		Dropped by Lava Blob/Unstable lava rock (Ashlands)
+SpiceAshlands	Fiery Spice Powder	material	true	7	N/A	trader		0		na	true	false	40	3	1	25	rare	raw		high	Fiery Spice Powder		Bog Witch purchase (200 coins per 5), requires Fader defeated
+MeadBaseHealthLingering	Mead base: Lingering health	material	true	7	Plains	brew	Mead ketill	1	Mead base: Lingering health x1	na	false	false	0	2	2	35	rare	cost		medium	Lingering Healing Mead		Mead base; lingering health regen; crafted at Mead ketill.
+GemstoneBlue	Iolite	material	true	7	Ashlands	gather		0		rare	false	false	0	4	1	45	rare	raw		high	Iolite		Found in Charred chests in Charred Fortresses; Ashlands gemstone
+GemstoneGreen	Jade	material	true	7	Ashlands	gather		0		rare	false	false	0	4	1	45	rare	raw		high	Jade		Found in Charred chests in Charred Fortresses; Ashlands gemstone
+GemstoneRed	Bloodstone	material	true	7	Ashlands	gather		0		rare	false	false	0	4	1	45	rare	raw		high	Bloodstone		Found in Charred chests in Charred Fortresses; Ashlands gemstone
+MeadBaseEitrLingering	Mead base: Lingering eitr	material	true	7	Mistlands	brew	Mead ketill	1	Mead base: Lingering eitr x1	na	false	false	0	3	2	86	rare	cost		medium	Lingering Eitr Mead		Mead base for Mistlands; requires Eitr (tier 6 resource).
+FeastAshlands_Material	Feast (Ashlands)	material	true	7	Ashlands	cook	Food preparation table	3	Cooked asksvin tail x3, Vineberry cluster x5, Scorching medley x2, Fiery spice powder x1	na	false	false	0	3	4	375	rare	score		medium	Feasts		High-tier feast requiring multiple Ashlands components
+Larva	Larva	material	true	8	Deep North	drop		0		uncommon	false	false	0	2	1	14	common	raw		low	none		Deep North creature drop; no wiki page found. Based on Valheim Deep North lore.
+MorgenHeart	Morgen heart	material	true	8	Deep North	drop		0		uncommon	true	false	0	3	1	35	rare	raw		high	Morgen Heart		Dropped by Morgen (Deep North boss)
+MorgenSinew	Morgen sinew	material	true	8	Deep North	drop		0		uncommon	true	false	0	3	1	35	rare	raw		high	Morgen Sinew		Dropped by Morgen (Deep North boss)
+Coins	Coins	material	false	0	Any	dev		0		na	false	false	0	1	1	2	common	raw		high	Coins	currency	In-game currency, not tradeable in mod
+Pot_Shard_Red	Pot shard (red)	material	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	Pot Shard	unused item - coded variant not implemented	Coded variant not implemented in game
+VegvisirShard_Bonemass	Yagluth Thing	material	false	0	N/A	dev		0		na	false	false	0	5	1	16	rare	raw		low	none	Placeholder item, removed/replaced by Torn Spirit	No wiki page; item removed in Mistlands update
+Mushroom	Mushroom	consumable	true	0	Meadows, Black Forest, Swamp	gather		0		na	false	false	0	1	1	2	common	raw		high	Mushroom		Tier 0 raw gather, respawn 240 min
+MushroomYellow	Thistle	consumable	true	0	Meadows	gather		0		na	false	false	0	1	1	2	common	raw		high	Thistle		Tier 0 raw gather
+Onion	Onion	consumable	true	0	Meadows, Mountains	gather		0		na	false	false	0	1	1	2	common	raw		high	Onion		Tier 0 raw gather/farm
+Raspberry	Raspberries	consumable	true	0	Meadows	gather		0		na	false	false	0	1	1	2	common	raw		high	Raspberries		Tier 0 raw gather, respawn 18000s
+Honey	Honey	consumable	true	1	Meadows	gather		0		na	false	false	0	2	1	2	common	anchor	2	high	Honey		Common gather from Beehives; rarity 2 per scale
+Carrot	Carrot	consumable	true	1	Meadows	plant		0		na	false	false	0	1	1	2	common	raw		high	Carrot		Farmed from Carrot seeds
+CookedChickenMeat	Cooked chicken meat	consumable	true	1	Meadows	cook	Cooking station	1	Chicken meat x1	na	false	false	0	1	2	2	common	cost		high	Chicken Meat		Cooked Meadows-tier meat
+CookedDeerMeat	Cooked deer meat	consumable	true	1	Meadows	cook	Cooking station	1	Deer meat x1	na	false	false	0	1	2	2	common	cost		high	Deer Meat		Cooked Meadows-tier meat
+CookedEgg	Cooked egg	consumable	true	1	Meadows	cook	Cooking station	1	Egg x1	na	false	false	0	1	2	7	common	cost		high	Egg		Cooked Meadows-tier egg
+CookedHareMeat	Cooked hare meat	consumable	true	1	Meadows	cook	Cooking station	1	Hare meat x1	na	false	false	0	1	2	8	common	cost		high	Hare Meat		Cooked Meadows-tier meat
+CookedMeat	Cooked boar meat	consumable	true	1	Meadows	cook	Cooking station	1	Boar meat x1	na	false	false	0	1	2	2	common	cost		high	Boar Meat		Cooked Meadows-tier meat
+BoarJerky	Boar jerky	consumable	true	1	Meadows	cook	Cauldron	1	Boar meat x1, Honey x1	na	false	false	0	2	2	5	common	cost		high	Boar Jerky		Simple 2-ingredient food at Cauldron
+Bread	Bread	consumable	true	1	Meadows	cook	Stone oven	1	BreadDough x1	na	false	false	0	2	2	40	rare	cost		high	Bread		Baked at Stone oven; Meadows-tier
+FishAndBread	Fish and bread	consumable	true	1	Meadows, Ocean	craft	Food preparation table	1	Uncooked fish n' bread x1	na	false	false	0	2	2	64	rare	cost		high	Fish and Bread		Simple 2-ingredient meal
+NeckTailGrilled	Grilled Neck Tail	consumable	true	1	Ocean	craft	Cooking Station	1	Neck tail x1	na	false	false	0	2	2	3	common	cost		high	Neck Tail		Ocean creature meat, simple cooking
+CarrotSoup	Carrot soup	consumable	true	1	Meadows	cook	Cauldron	1	Mushroom x1, Carrot x3	na	false	false	0	2	3	10	common	cost		high	Carrot Soup		Cauldron level 1; 3-ingredient soup
+DeerStew	Deer stew	consumable	true	1	Meadows	cook	Cauldron	1	Cooked deer meat x1, Blueberries x1, Carrot x1	na	false	false	0	2	3	9	common	cost		high	Deer Stew		Cauldron; 3-ingredient stew
+MeadTasty	Tasty Mead	consumable	true	1	Meadows	craft	Fermenter	2	Mead base: Tasty x1	na	false	false	0	2	4	10	common	anchor	10	high	Tasty Mead		Meadows-tier fermented mead
+MeadStaminaMinor	Minor Stamina Mead	consumable	true	1	Meadows	craft	Fermenter	2	Mead base: Minor stamina x1	na	false	false	0	2	4	12	common	anchor	12	high	Minor Stamina Mead		Meadows-tier fermented mead
+MeadTamer	Animal Whispers Mead	consumable	true	1	Meadows	craft	Fermenter	2	Mead base: Animal whispers x1	na	false	false	0	2	4	10	common	cost		high	Animal Whispers Mead		Meadows-tier fermented mead
+FeastMeadows	Meadows feast	consumable	true	1	Meadows	craft	Food preparation table	1	Mushroom x5, Dandelion x5, Thistle x5	na	false	false	0	2	5	63	rare	cost		medium	Meadows Feast		Feast; Meadows materials
+Blueberries	Blueberries	consumable	true	2	Black Forest	gather		0		na	false	false	0	1	1	3	common	raw		high	Blueberries		Gathered from bushes in Black Forest
+MeadHealthMinor	Minor Healing Mead	consumable	true	2	Black Forest	craft	Fermenter	2	Mead base: Minor healing x1	na	false	false	0	2	4	12	common	anchor	12	high	Minor Healing Mead		Black Forest-tier fermented mead
+MinceMeatSauce	Minced Meat Sauce	consumable	true	2	Black Forest	craft	Cauldron	1	Boar meat x1, Neck tail x1, Carrot x1	na	false	false	0	2	3	9	common	cost		high	Minced Meat Sauce		Black Forest-tier cauldron craft
+QueensJam	Queen's Jam	consumable	true	2	Black Forest	craft	Cauldron	1	Raspberries x8, Blueberries x6	na	false	false	0	2	3	44	rare	cost		high	Queen's Jam		Black Forest cauldron level 1 craft
+FeastBlackforest	Black forest feast	consumable	true	2	Black Forest	craft	Food preparation table	1	Mushroom x5, Thistle x5, Cloudberries x5	na	false	false	0	2	5	99	rare	cost		medium	Black Forest Feast		Feast; Black Forest materials
+RottenMeat	Rotten Meat	consumable	true	3	Swamp	drop		0		common	false	false	0	2	1	5	common	raw		high	Rotten Meat		Swamp gather/drop, food purge effect
+FishCooked	Cooked fish	consumable	true	3	Ocean	cook	Cooking station	1	Raw fish x1	na	false	false	0	1	2	2	common	cost		high	Fish		Cooked Ocean-tier fish
+SerpentMeatCooked	Cooked Serpent Meat	consumable	true	3	Swamp	craft	Cooking Station	1	Serpent meat x1	na	false	false	0	2	2	6	common	cost		high	Cooked Serpent Meat		Swamp creature meat, simple cooking
+BlackSoup	Black soup	consumable	true	3	Swamp, Black Forest	cook	Cauldron	2	Bloodbag x1, Honey x1, Turnip x1	na	false	false	0	2	3	14	common	cost		high	Black Soup		Cauldron level 2; 3-ingredient food
+MarinatedGreens	Marinated greens	consumable	true	3	Swamp, Ocean	cook	Cauldron	2	Sap x3, Magecap x2, Fiddlehead x2, Smoke puff x2	na	false	false	0	2	3	133	rare	cost		high	Marinated Greens		Cauldron level 2; Swamp/Ocean
+MashedMeat	Mashed meat	consumable	true	3	Swamp	cook	Cauldron	2	Asksvin tail x1, Volture meat x1, Fiddlehead x1	na	false	false	0	2	3	35	rare	cost		high	Mashed Meat		Cauldron level 2; Swamp-tier
+Sausages	Sausages	consumable	true	3	Swamp	craft	Cauldron	2	Entrails x4, Boar meat x1, Thistle x1	na	false	false	0	2	3	22	common	cost		high	Sausages		Swamp cauldron level 2 craft, yields 4
+ShocklateSmoothie	Muckshake	consumable	true	3	Swamp	craft	Cauldron	2	Ooze x1, Raspberries x2, Blueberries x2	na	false	false	0	2	3	17	common	cost		high	Muckshake		Swamp cauldron level 2 craft
+TurnipStew	Turnip Stew	consumable	true	3	Swamp	craft	Cauldron	2	Boar meat x1, Turnip x3	na	false	false	0	2	3	26	common	cost		high	Turnip Stew		Swamp cauldron level 2 craft
+MeadHealthMajor	Major health mead	consumable	true	3	Swamp	brew	Fermenter	1	Mead base: Major healing x1	na	false	false	0	2	4	14	common	cost		high	Major Health Mead		Fermented mead; Swamp-tier
+MeadHealthMedium	Medium Healing Mead	consumable	true	3	Swamp	craft	Fermenter	2	Mead base: Medium healing x1	na	false	false	0	2	4	10	common	cost		high	Medium Healing Mead		Swamp-tier fermented mead, multi-stage craft
+MeadPoisonResist	Poison Resistance Mead	consumable	true	3	Swamp	craft	Fermenter	2	Mead base: Poison resistance x1	na	false	false	0	2	4	10	common	cost		high	Poison Resistance Mead		Swamp-tier fermented mead
+MeadStrength	Strength Mead	consumable	true	3	Swamp	craft	Fermenter	2	Mead base: Troll endurance x1	na	false	false	0	2	4	10	common	cost		high	Troll Endurance Mead		Swamp-tier fermented mead, needs Trollfish
+SerpentStew	Serpent Stew	consumable	true	3	Swamp	craft	Cauldron	2	Mushroom x1, Cooked serpent meat x1, Honey x2	na	false	false	0	2	4	18	common	cost		high	Serpent Stew		Swamp cauldron level 2 multi-ingredient craft
+FeastOceans	Ocean feast	consumable	true	3	Ocean	craft	Food preparation table	1	Cooked fish x3, Seaweed x5, Thistle x5	na	false	false	0	2	5	137	rare	cost		medium	Ocean Feast		Feast; Ocean-tier ingredients
+FeastSwamps	Swamp feast	consumable	true	3	Swamp	craft	Food preparation table	1	Cooked turnip x3, Mushroom x5, Thistle x5	na	false	false	0	2	5	135	rare	score		medium	Swamp Feast		Feast; Swamp-tier ingredients
+CookedBjornMeat	Cooked bjorn meat	consumable	true	4	Mountains	cook	Cooking station	1	Bear meat x1	na	false	false	0	2	2	12	common	cost		high	Bjorn Meat		Cooked Mountains-tier meat
+CookedWolfMeat	Cooked wolf meat	consumable	true	4	Mountains	cook	Cooking station	1	Wolf meat x1	na	false	false	0	2	2	6	common	cost		high	Wolf Meat		Cooked Mountains-tier meat
+OnionSoup	Onion Soup	consumable	true	4	Mountains	craft	Cauldron	2	Onion x3	na	false	false	0	2	2	7	common	cost		high	Onion Soup		Mountain cauldron level 2 craft
+WolfJerky	Wolf Jerky	consumable	true	4	Mountains	craft	Cauldron	3	Wolf meat x1, Honey x1	na	false	false	0	2	2	8	common	cost		high	Wolf Jerky		Mountain cooking station craft
+WolfMeatSkewer	Wolf Meat Skewer	consumable	true	4	Mountains	craft	Cauldron	3	Wolf meat x1, Mushroom x2, Onion x1	na	false	false	0	2	3	14	common	cost		high	Wolf Meat Skewer		Mountain cauldron level 2 craft
+Eyescream	Eyescream	consumable	true	4	Mistlands	cook	Cauldron	3	Greydwarf eye x3, Freeze gland x1	na	false	false	0	2	4	20	common	cost		medium	Eyescream		Cauldron level 4; Mistlands ingredients
+MeadBzerker	Berserk brew	consumable	true	4	Mountains	brew	Fermenter	1	Mead base: Berserkir x1	na	false	false	0	2	4	12	common	cost		high	Berserk Brew		Fermented mead; Mountains-tier
+MeadFrostResist	Frost resistance mead	consumable	true	4	Mountains	brew	Fermenter	1	Mead base: Frost resistance x1	na	false	false	0	2	4	10	common	cost		high	Frost Resistance Mead		Fermented mead; Mountains-tier
+MeadHasty	Hasty mead	consumable	true	4	Mountains	brew	Fermenter	1	Mead base: Ratatosk x1	na	false	false	0	2	4	12	common	cost		high	Hasty Mead		Fermented mead; Mountains-tier
+MeadHealthLingering	Lingering health mead	consumable	true	4	Mountains	brew	Fermenter	1	Mead base: Lingering health x1	na	false	false	0	2	4	21	common	cost		high	Lingering Health Mead		Fermented mead; Mountains-tier
+MeadLightfoot	Lightfoot Mead	consumable	true	4	Mountains	craft	Fermenter	2	Mead base: Lightfoot x1	na	false	false	0	2	4	12	common	cost		high	Lightfoot Mead		Mountain-tier fermented mead, needs scale hide
+MeadStaminaMedium	Medium Stamina Mead	consumable	true	4	Mountains	craft	Fermenter	2	Mead base: Medium stamina x1	na	false	false	0	2	4	12	common	cost		high	Medium Stamina Mead		Mountain-tier fermented mead
+MeadSwimmer	Swimmer Mead	consumable	true	4	Mountains	craft	Fermenter	2	Mead base: Vananidir x1	na	false	false	0	2	4	10	common	cost		high	Vananidir Mead		Mountain-tier fermented mead, needs Perch
+FeastMountains	Mountain feast	consumable	true	4	Mountains	craft	Food preparation table	1	Cooked wolf meat x1, Mushroom x5, Cloudberries x5, Barley flour x1	na	false	false	0	2	5	88	rare	cost		medium	Mountain Feast		Feast; Mountains-tier ingredients
+Cloudberry	Cloudberries	consumable	true	5	Plains	gather		0		na	false	false	0	2	1	6	common	raw		high	Cloudberries		Gathered in Plains biome
+Pukeberries	Bukeperries	consumable	true	5	Plains	drop		0		uncommon	false	false	0	3	1	14	rare	raw		medium	Bukeperries		Drop from Fuling shaman and Greydwarf shaman
+CookedLoxMeat	Cooked lox meat	consumable	true	5	Plains	cook	Cooking station	1	Lox meat x1	na	false	false	0	2	2	7	common	cost		high	Lox Meat		Cooked Plains-tier meat
+FierySvinstew	Fiery svinstew	consumable	true	5	Plains	cook	Cauldron	3	Asksvin tail x1, Vineberry cluster x2, Smoke puff x1	na	false	false	0	2	3	52	rare	cost		high	Fiery Svinstew		Cauldron level 3; Plains materials
+FishWraps	Fish wraps	consumable	true	5	Ocean	cook	Cauldron	4	Cooked fish x2, Barley flour x4	na	false	false	0	2	3	21	common	cost		high	Fish Wraps		Cauldron level 2; Ocean-tier food
+LoxPie	Lox pie	consumable	true	5	Plains	cook	Cauldron	1	Unbaked lox pie x1	na	false	false	0	2	3	74	rare	cost		high	Lox Pie		Cauldron level 1; Plains ingredients
+MeadTrollPheromones	Love Potion	consumable	true	5	Plains	trader	Bog Witch	0	none	na	true	false	22	4	1	25	rare	raw		high	Love Potion		Bog Witch trader, 110 coins for 5 potions; gated by defeating Moder
+MushroomBzerker	Toadstool	consumable	true	5	Plains	trader	Bog Witch	0	none	na	true	false	85	4	1	25	rare	raw		high	Toadstool		Bog Witch trader, 85 coins; gated by defeating Moder
+BarleyWine	Fire resistance barley wine	consumable	true	5	Plains	brew	Fermenter	1	Barley wine base: Fire resistance x1	na	false	false	0	2	4	83	rare	score		high	Fire Resistance Barley Wine		Fermented mead from Plains ingredients; complexity 4
+BloodPudding	Blood pudding	consumable	true	5	Plains	cook	Cauldron	4	Thistle x2, Bloodbag x2, Barley flour x4	na	false	false	0	2	4	36	rare	cost		high	Blood Pudding		Cauldron level 4; Plains-tier ingredients
+MeadBugRepellent	Anti-sting concoction	consumable	true	5	Plains	brew	Fermenter	1	Mead base: Anti-sting x1	na	false	false	0	2	4	12	common	cost		high	Anti-Sting Concoction		Fermented mead; complexity 4
+VikingCupcake	Frosted Sweetbread	consumable	true	5	Plains	craft	Stone Oven	1	Unbaked sweetbread x1	na	false	false	0	2	4	30	common	cost		high	Frosted Sweetbread		Plains-tier stone oven craft
+FeastPlains	Plains feast	consumable	true	5	Plains	craft	Food preparation table	1	Cooked lox meat x1, Cloudberries x5, Barley flour x2	na	false	false	0	2	5	77	rare	cost		medium	Plains Feast		Feast; Plains-tier ingredients
+Fiddleheadfern	Fiddlehead fern	consumable	true	6	Mistlands	gather		0		na	false	false	0	2	1	7	common	raw		high	Fiddlehead Fern		Gathered in Mistlands
+MushroomJotunPuffs	Jotun Puffs	consumable	true	6	Mistlands	gather		0		na	false	false	0	2	1	7	common	raw		high	Jotun Puffs		Mistlands raw gather
+RoyalJelly	Royal Jelly	consumable	true	6	Mistlands	gather		0		na	false	false	0	3	1	16	rare	raw		high	Royal Jelly		Mistlands raw gather
+CookedBugMeat	Cooked bug meat	consumable	true	6	Mistlands	cook	Cooking station	1	Seeker meat x1	na	false	false	0	2	2	8	common	cost		high	Bug Meat		Cooked Mistlands-tier meat
+CookedVoltureMeat	Cooked vulture meat	consumable	true	6	Mistlands	cook	Iron cooking station	1	Volture meat x1	na	false	false	0	2	2	12	common	cost		high	Vulture Meat		Cooked Mistlands-tier meat
+HoneyGlazedChicken	Honey glazed chicken	consumable	true	6	Mistlands	cook	Food preparation table	1	Uncooked honey glazed chicken x1	na	false	false	0	2	4	102	rare	cost		high	Honey Glazed Chicken		Multi-tier ingredients; complexity 4
+MagicallyStuffedShroom	Magically stuffed shroom	consumable	true	6	Mistlands	cook	Food preparation table	3	Uncooked stuffed mushroom x1	na	false	false	0	2	4	102	rare	cost		high	Magically Stuffed Shroom		Cauldron level 3; Mistlands ingredients
+MushroomOmelette	Mushroom Omelette	consumable	true	6	Mistlands	craft	Cauldron	5	Egg x3, Jotun puffs x3	na	false	false	0	2	4	59	rare	cost		high	Mushroom Omelette		Mistlands cauldron level 5 craft
+Salad	Salad	consumable	true	6	Mistlands	craft	Cauldron	5	Jotun puffs x3, Onion x3, Cloudberries x3	na	false	false	0	2	4	68	rare	cost		high	Salad		Mistlands cauldron level 5 craft, yields 3
+SeekerAspic	Seeker Aspic	consumable	true	6	Mistlands	craft	Cauldron	5	Seeker meat x2, Magecap x2, Royal jelly x2	na	false	false	0	2	4	144	rare	cost		high	Seeker Aspic		Mistlands cauldron level 5 craft
+YggdrasilPorridge	Yggdrasil Porridge	consumable	true	6	Mistlands	craft	Cauldron	1	Sap x4, Barley x3, Royal jelly x2	na	false	false	0	2	4	98	rare	cost		high	Yggdrasil Porridge		Mistlands cauldron level 1 craft, needs Yggdrasil wood
+MeadStaminaLingering	Lingering Stamina Mead	consumable	true	6	Mistlands	craft	Fermenter	2	Mead base: Lingering stamina x1	na	false	false	0	2	5	14	common	cost		high	Lingering Stamina Mead		Mistlands-tier fermented mead, needs Jotun puffs
+MeatPlatter	Meat Platter	consumable	true	6	Mistlands	craft	Stone Oven	1	Uncooked meat platter x1	na	false	false	0	2	5	13	common	cost		high	Meat Platter		Mistlands-tier, multi-biome ingredient hunt
+MisthareSupreme	Misthare Supreme	consumable	true	6	Mistlands	craft	Stone Oven	1	Uncooked misthare supreme x1	na	false	false	0	2	5	13	common	cost		high	Misthare Supreme		Mistlands-tier endgame food, high tier ingredients
+MeadEitrLingering	Lingering mead: Eitr	consumable	true	6	Mistlands	brew	Fermenter	1	Mead base: Lingering eitr x1	na	false	false	0	3	4	52	rare	cost		high	Lingering Mead: Eitr		Fermented mead; eitr rarity 3
+MeadEitrMinor	Minor mead: Eitr	consumable	true	6	Mistlands	brew	Fermenter	1	Mead base: Minor eitr x1	na	false	false	0	3	4	34	rare	cost		high	Minor Mead: Eitr		Fermented mead; eitr rarity 3
+FeastMistlands	Mistlands gourmet platter	consumable	true	6	Mistlands	craft	Food preparation table	1	Cooked bug meat x2, Magecap x10, Royal jelly x2	na	false	false	0	2	5	536	rare	cost		medium	Mistlands Gourmet Platter		Feast; Mistlands-tier ingredients
+MushroomSmokePuff	Smoke Puff	consumable	true	7	Ashlands	gather		0		na	false	false	0	2	1	10	common	raw		high	Smoke Puff		Ashlands raw gather
+Vineberry	Vineberry Cluster	consumable	true	7	Ashlands	gather		0		na	false	false	0	2	1	10	common	raw		high	Vineberry Cluster		Ashlands raw gather/farm
+MushroomMagecap	Magecap	consumable	true	7	Ashlands	gather		0		na	false	false	0	3	1	25	rare	raw		high	Magecap		Ashlands raw gather
+CookedAsksvinMeat	Cooked asksvin meat	consumable	true	7	Ashlands	cook	Iron cooking station	1	Asksvin tail x1	na	false	false	0	2	2	12	common	cost		high	Asksvin Meat		Cooked Ashlands-tier meat
+SizzlingBerryBroth	Sizzling Berry Broth	consumable	true	7	Ashlands	craft	Cauldron	5	Sap x3, Fiddlehead x2, Vineberry cluster x2	na	false	false	0	2	3	68	rare	cost		high	Sizzling Berry Broth		Ashlands cauldron level 5 craft
+SparklingShroomshake	Sparkling Shroomshake	consumable	true	7	Ashlands	craft	Cauldron	6	Sap x4, Vineberry cluster x2, Smoke puff x2, Magecap x2	na	false	false	0	2	3	148	rare	cost		high	Sparkling Shroomshake		Ashlands cauldron level 5 craft
+SpicyMarmalade	Spicy Marmalade	consumable	true	7	Ashlands	craft	Cauldron	5	Vineberry cluster x3, Honey x1, Fiddlehead x1	na	false	false	0	2	3	51	rare	cost		high	Spicy Marmalade		Ashlands cauldron level 5 craft
+PiquantPie	Piquant Pie	consumable	true	7	Ashlands	craft	Cauldron	5	Uncooked piquant pie x1	na	false	false	0	2	4	15	common	cost		high	Piquant Pie		Ashlands cauldron level 5 craft
+RoastedCrustPie	Roasted Crust Pie	consumable	true	7	Ashlands	craft	Stone Oven	1	Uncooked roasted crust pie x1	na	false	false	0	2	4	15	common	cost		high	Roasted Crust Pie		Ashlands stone oven craft
+ScorchingMedley	Scorching Medley	consumable	true	7	Ashlands	craft	Cauldron	5	Jotun puffs x3, Onion x3, Fiddlehead x3	na	false	false	0	2	4	72	rare	cost		high	Scorching Medley		Ashlands cauldron level 5 craft
+FeastAshlands	Ashlands gourmet bowl	consumable	true	7	Ashlands	craft	Food preparation table	1	Cooked asksvin tail x3, Vineberry cluster x5, Scorching medley x2, Fiery spice powder x1	na	false	false	0	2	5	300	rare	score		high	Ashlands Gourmet Bowl		Feast; complex ingredient chain
+CookedBoneMawSerpentMeat	Cooked bone maw serpent meat	consumable	true	8	Deep North	cook	Cooking station	1	Bonemaw meat x1	na	false	false	0	3	2	8	rare	cost		medium	Bone Maw Serpent		Deep North-tier; uncommon drop
+StaminaUpgrade_Greydwarf	Stamina Upgrade Greydwarf	consumable	false	0	anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Dev/unused item not in wiki	Dev/unused item - not available to players
+StaminaUpgrade_Troll	Stamina Upgrade Troll	consumable	false	0	anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Dev/unused item not in wiki	Dev/unused item - not available to players
+StaminaUpgrade_Wraith	Stamina Upgrade Wraith	consumable	false	0	anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Dev/unused item not in wiki	Dev/unused item - not available to players
+MushroomBlue	Blueberry	consumable	false	1	Black Forest	gather		0		na	false	false	0	1	1	2	common	raw		high	Blueberry		Black Forest raw gather
+HealthUpgrade_GDKing	Elder heart	consumable	false	2	Black Forest	dev		0		na	false	false	0	0	0	3	common	raw		high	none	dev/cheat/unused item (HealthUpgrade_* prefix)	Excluded: dev/test item
+HealthUpgrade_Bonemass	Bonemass heart	consumable	false	3	Swamp	dev		0		na	false	false	0	0	0	3	common	raw		high	none	dev/cheat/unused item (HealthUpgrade_* prefix)	Excluded: dev/test item
+KnifeFlint	Flint Knife	weapons	true	0	Meadows	craft	Workbench	1	Wood x2, Flint x4, Leather scraps x2	na	false	false	0	2	2	14	common	cost		medium	Knife		Starter knife
+KnifeWood	Wood Knife	weapons	true	0	Meadows	find		0		na	false	false	0	2	2	6	common	score		medium	Knife		Simplest knife
+MaceWood	Wood Mace	weapons	true	0	Meadows	craft	Workbench	1	Wood x20	na	false	false	0	2	2	23	common	cost		medium	Mace		Simplest mace
+ShieldWood	Wood Shield	weapons	true	0	Meadows	craft	Workbench	1	Wood x20	na	false	false	0	2	2	23	common	cost		medium	Shield		Simplest shield
+ShieldWoodTower	Wood Tower Shield	weapons	true	0	Meadows	craft	Workbench	1	Wood x30	na	false	false	0	2	2	35	rare	cost		medium	Shield		Simplest tower shield
+SpearFlint	Flint Spear	weapons	true	1	Meadows	craft	Workbench	1	Wood x5, Flint x10, Leather scraps x2, Wood x3, Flint x5, Leather scraps x1, Wood x6, Flint x10, Leather scraps x2, Wood x9, Flint x15, Leather scraps x3	na	false	false	0	1	2	24	common	cost		high	Flint Spear		Workbench, flint and wood only
+Tankard	Tankard	weapons	true	1	Meadows	craft	Workbench	1	Finewood x5, Resin x2	na	false	false	0	1	2	20	common	cost		high	Tankard		Workbench, mead tool
+AxeFlint	Flint axe	weapons	true	1	Meadows	craft	Workbench	1	Wood x4, Flint x6	na	false	false	0	2	2	12	common	cost		high	Flint axe		Early game axe; tier 1 Workbench.
+AxeStone	Stone axe	weapons	true	1	Meadows	craft		0	Wood x5, Stone x4	na	false	false	0	2	2	10	common	cost		high	Stone axe		First axe; player crafting menu.
+Bow	Crude bow	weapons	true	1	Meadows	craft	Workbench	1	Wood x10, Leather scraps x8	na	false	false	0	2	2	39	rare	cost		high	Crude bow		First bow; tier 1 Workbench.
+Club	Club	weapons	true	1	Meadows	craft		0	Wood x10, Stone x5	na	false	false	0	2	2	17	common	cost		high	Club		First weapon; player crafting menu.
+FistBjornClaw	Bjorn Claw	weapons	true	1	Plains	craft		0		uncommon	false	false	0	3	1	6	rare	raw		medium	Transformation		Transformative equipment
+SledgeStagbreaker	Stagbreaker	weapons	true	1	Meadows	craft	Workbench	2	Corewood x20, Deer trophy x5, Leather scraps x2	na	false	false	0	2	2	122	rare	cost		high	Stagbreaker		Workbench tier 2, Meadows tier
+FishingRod	Fishing Rod	weapons	true	1	Meadows	trade		0		na	false	false	0	2	3	20	common	score		medium	Fishing Rod		3-ingredient craft
+KnifeButcher	Butcher Knife	weapons	true	1	Meadows	craft	Workbench	2	Bronze x3, Wood x4	na	false	false	0	2	3	29	common	cost		medium	Knife		Cooking knife
+KnifeCopper	Copper Knife	weapons	true	1	Meadows	craft	Forge	1	Wood x2, Copper x8	na	false	false	0	2	3	30	common	cost		medium	Knife		Early-game knife
+PickaxeAntler	Antler Pickaxe	weapons	true	1	Meadows	craft	Workbench	1	Hard Antler x10, Wood x3, Bone Fragments x2	na	false	false	0	2	3	59	rare	cost		medium	Pickaxe		Early mining tool
+BombSmoke	Smoke bomb	weapons	true	2	Black Forest	craft	Workbench	1	Thistle x10, Resin x5	na	false	false	0	2	2	8	common	cost		high	Smoke bomb		Black Forest bomb; stack 50.
+BowFineWood	Fine wood bow	weapons	true	2	Black Forest	craft	Workbench	1	Fine wood x10, Leather scraps x12, Deer hide x2	na	false	false	0	2	2	83	rare	cost		high	Fine wood bow		Black Forest bow; tier 2.
+MaceEldner	Eldner Mace	weapons	true	2	Black Forest	craft	Black forge	3		rare	true	false	0	3	1	10	rare	raw		medium	Mace		Elder boss drop
+SpearBronze	Bronze Spear	weapons	true	2	Black Forest	craft	Forge	1	Wood x5, Bronze x6, Deer hide x2, Wood x3, Bronze x4, Deer hide x1, Wood x6, Bronze x8, Deer hide x2, Wood x9, Bronze x12, Deer hide x3	na	false	false	0	2	2	116	rare	cost		high	Bronze Spear		Forge tier 1, Bronze materials
+SwordBronze	Bronze Sword	weapons	true	2	Black Forest	craft	Forge	1	Wood x2, Bronze x8, Leather scraps x2, Wood x1, Bronze x4, Leather scraps x1, Wood x2, Bronze x8, Leather scraps x2, Wood x3, Bronze x12, Leather scraps x3	na	false	false	0	2	2	147	rare	cost		high	Bronze Sword		Forge tier 1, bronze weapon
+AtgeirBronze	Bronze atgeir	weapons	true	2	Black Forest	craft	Forge	1	Wood x10, Bronze x8, Leather scraps x2	na	false	false	0	2	3	66	rare	cost		high	Bronze atgeir		First polearm; Forge level 1.
+AxeBronze	Bronze axe	weapons	true	2	Black Forest	craft	Forge	1	Wood x4, Bronze x8, Leather scraps x2	na	false	false	0	2	3	64	rare	cost		high	Bronze axe		First Forge-crafted axe; Bronze tier.
+BowHuntsman	Huntsman bow	weapons	true	2	Black Forest	craft	Forge	1	Fine wood x10, Bronze x10, Leather scraps x8	na	false	false	0	2	3	92	rare	cost		high	Huntsman bow		Bronze-tier bow from Forge.
+MaceBronze	Bronze Mace	weapons	true	2	Black Forest	craft	Forge	1	Bronze x10, Wood x4	na	false	false	0	2	3	73	rare	cost		medium	Mace		Bronze blunt
+PickaxeBronze	Bronze Pickaxe	weapons	true	2	Black Forest	craft	Workbench	2	Bronze x10, Wood x3	na	false	false	0	2	3	73	rare	cost		medium	Pickaxe		Bronze-tier mining
+ShieldBronzeBuckler	Bronze Buckler	weapons	true	2	Black Forest	craft	Workbench	2	Bronze x5, Wood x8	na	false	false	0	2	3	45	rare	cost		medium	Shield		Bronze buckler
+MaceEldnerBlood	Eldner Mace (Blood)	weapons	true	2	Black Forest	craft	Black forge	4	Flametal mace x1, Flametal x8, Bloodstone x1	na	false	false	0	3	3	309	rare	cost		medium	Mace		Eldner variant craft
+MaceEldnerLightning	Eldner Mace (Lightning)	weapons	true	2	Black Forest	craft	Black forge	4	Flametal mace x1, Flametal x8, Iolite x1	na	false	false	0	3	3	309	rare	cost		medium	Mace		Eldner variant craft
+MaceEldnerNature	Eldner Mace (Nature)	weapons	true	2	Black Forest	craft	Black forge	4	Flametal mace x1, Flametal x8, Jade x1	na	false	false	0	3	3	309	rare	cost		medium	Mace		Eldner variant craft
+BombOoze	Ooze bomb	weapons	true	3	Swamp	craft	Workbench	1	Ooze x1, Resin x3, Neck tail x1	na	false	false	0	2	2	2	common	cost		high	Ooze bomb		Swamp bomb; stack 50.
+SpearChitin	Abyssal Harpoon	weapons	true	3	Swamp	craft	Workbench	2	Finewood x8, Chitin x30, Leather scraps x3	na	false	false	0	2	2	210	rare	cost		high	Abyssal Harpoon		Early weapon, swamp materials
+SpearElderbark	Ancient Bark Spear	weapons	true	3	Swamp	craft	Forge	3	Troll hide x4, Iron x10, Ancient bark x10, Troll hide x1, Iron x5, Ancient bark x5, Troll hide x2, Iron x10, Ancient bark x10, Troll hide x3, Iron x15, Ancient bark x15	na	false	false	0	2	2	350	rare	cost		high	Ancient Bark Spear		Swamp tier, elder bark materials
+AtgeirIron	Iron atgeir	weapons	true	3	Swamp	craft	Forge	2	Wood x10, Iron x30, Leather scraps x2	na	false	false	0	2	3	264	rare	cost		high	Iron atgeir		Swamp-tier polearm; Forge level 2.
+AxeIron	Iron axe	weapons	true	3	Swamp	craft	Forge	2	Wood x4, Iron x20, Leather scraps x2	na	false	false	0	2	3	191	rare	cost		high	Iron axe		Swamp-tier axe; Forge level 2.
+Battleaxe	Battleaxe	weapons	true	3	Swamp	craft	Forge	2	Wood x4, Iron x30, Leather scraps x4	na	false	false	0	2	3	264	rare	cost		high	Battleaxe		Two-handed Swamp-tier weapon.
+MaceIron	Iron Mace	weapons	true	3	Swamp	craft	Workbench	3	Iron x20, Wood x4	na	false	false	0	2	3	189	rare	cost		medium	Mace		Iron blunt
+PickaxeIron	Iron Pickaxe	weapons	true	3	Swamp	craft	Workbench	3	Iron x15, Wood x3	na	false	false	0	2	3	150	rare	cost		medium	Pickaxe		Swamp-tier mining
+ShieldBoneTower	Bone Tower Shield	weapons	true	3	Swamp	craft	Workbench	3	Bone Fragments x30, Wood x15	na	false	false	0	2	3	41	rare	cost		medium	Shield		Swamp tower shield
+ShieldIronBuckler	Iron Buckler	weapons	true	3	Swamp	craft	Workbench	3	Iron x8, Wood x8	na	false	false	0	2	3	93	rare	cost		medium	Shield		Swamp buckler
+ShieldIronSquare	Iron Square Shield	weapons	true	3	Swamp	craft	Workbench	3	Iron x20, Wood x8	na	false	false	0	2	3	190	rare	cost		medium	Shield		Swamp square shield
+ShieldIronTower	Iron Tower Shield	weapons	true	3	Swamp	craft	Workbench	3	Iron x30, Wood x10	na	false	false	0	2	3	262	rare	cost		medium	Shield		Swamp tower shield
+ShieldKnight	Knight Shield	weapons	true	3	Swamp	craft	Workbench	3	Iron x40, Wood x10	na	false	false	0	2	3	329	rare	cost		medium	Shield		Swamp kite shield
+ShieldSerpentscale	Serpent Scale Shield	weapons	true	3	Ocean	craft	Workbench	2	Serpent Scale x40, Wood x10	na	false	false	0	2	3	94	rare	cost		medium	Shield		Ocean-biome shield
+SwordIron	Iron Sword	weapons	true	3	Swamp	craft	Forge	2	Wood x2, Iron x20, Leather scraps x3, Wood x1, Iron x10, Leather scraps x2, Wood x2, Iron x20, Leather scraps x4, Wood x3, Iron x30, Leather scraps x6	na	false	false	0	2	3	191	rare	cost		high	Iron Sword		Forge tier 2, swamp tier
+TankardAnniversary	Horn of Celebration	weapons	true	3	Swamp	craft	Workbench	1		na	false	false	0	3	2	34	rare	score		high	Horn of Celebration		Anniversary item, Workbench craft
+SledgeIron	Iron Sledge	weapons	true	3	Swamp	craft	Forge	2	Ancient bark x10, Iron x30, Ymir flesh x4, Draugr Elite trophy x1	na	false	false	0	2	4	350	rare	cost		high	Iron Sledge		Forge tier 2, Swamp tier
+BowDraugrFang	Draugr Fang	weapons	true	3	Swamp	craft	Forge	2	Ancient bark x10, Silver x20, Deer hide x2, Guck x10	na	false	false	0	3	3	294	rare	cost		high	Draugr Fang		Swamp-tier bow with poison effect.
+CrossbowArbalest	Arbalest	weapons	true	3	Mountains	craft	Black forge	1	Wood x10, Iron x8, Root x4	na	false	false	0	3	4	116	rare	cost		medium	Arbalest		Mountains crossbow.
+FistFenrirClaw	Fenrir Claw	weapons	true	4	Plains	craft	Forge	0		uncommon	false	false	0	3	1	13	rare	raw		medium	Transformation		Transformative equipment
+KnifeSilver	Silver Knife	weapons	true	4	Mountains	craft	Workbench	3	Wood x4, Silver x1, Bone Fragments x2	na	false	false	0	2	3	29	common	cost		medium	Knife		Mountains-tier
+SpearWolfFang	Fang Spear	weapons	true	4	Mountains	craft	Forge	3	Ancient bark x10, Wolf fang x4, Leather scraps x2, Silver x2, Ancient bark x5, Wolf fang x2, Leather scraps x1, Silver x1, Ancient bark x10, Wolf fang x4, Leather scraps x2, Silver x2, Ancient bark x15, Wolf fang x6, Leather scraps x3, Silver x3	na	false	false	0	2	3	66	rare	cost		high	Fang Spear		Mountains tier, wolf fang materials
+SwordSilver	Silver Sword	weapons	true	4	Mountains	craft	Forge	3	Wood x2, Silver x40, Leather scraps x3, Iron x5	na	false	false	0	2	3	508	rare	cost		high	Silver Sword		Forge tier 3, Mountains tier
+MaceSilver	Silver Mace	weapons	true	4	Mountains	craft	Workbench	3	Silver x20, Wood x4	na	false	false	0	2	4	316	rare	cost		medium	Mace		Mountains-tier
+ShieldBanded	Banded Shield	weapons	true	4	Mountains	craft	Workbench	3	Iron x40, Silver x10, Wood x10	na	false	false	0	2	4	496	rare	cost		medium	Shield		Mountains-tier
+ShieldSilver	Silver Shield	weapons	true	4	Mountains	craft	Workbench	3	Silver x40, Wood x10	na	false	false	0	2	4	552	rare	cost		medium	Shield		Mountains-tier shield
+AxeJotunBane	Jotun Bane	weapons	true	4	Mountains	craft	Black forge	1	Silver x20, Frost gland x10, Linen thread x5	na	true	false	0	3	4	343	rare	cost		medium	Jotun Bane		Mountains weapon; Black forge level 1 tier.
+BattleaxeCrystal	Crystal battleaxe	weapons	true	4	Mountains	craft	Forge	3	Ancient bark x40, Silver x30, Crystal x10	na	true	false	0	3	4	493	rare	cost		medium	Crystal battleaxe		Mountains weapon with crystal crafting.
+BattleaxeSkullSplittur	Skull Splitter	weapons	true	4	Mountains	craft	Black forge	1	Silver x20, Flametal x10, Yggdrasil wood x5	na	true	false	0	3	4	600	rare	cost		medium	Skull Splitter		Mountains Black forge tier weapon.
+BowSpineSnap	Spinesnap	weapons	true	4	Mountains	craft	Black forge	1	Finewood x10, Bone fragments x40, Refined eitr x10	na	true	false	0	3	4	237	rare	cost		medium	Spinesnap		Mountains Black forge bow.
+FistBjornUndeadClaw	Undead Bjorn Claw	weapons	true	5	Ashlands	craft	Forge	0		uncommon	false	false	0	3	1	14	rare	raw		medium	Transformation		Transformative equipment
+KnifeBlackMetal	Black Metal Knife	weapons	true	5	Plains	craft	Workbench	3	Wood x4, Black Metal x1, Bone Fragments x2	na	false	false	0	2	3	38	rare	cost		medium	Knife		Plains-tier
+PickaxeBlackMetal	Black Metal Pickaxe	weapons	true	5	Plains	craft	Workbench	3	Black Metal x20, Wood x3	na	false	false	0	2	3	379	rare	cost		medium	Pickaxe		High-tier mining
+ShieldBlackmetal	Black Metal Shield	weapons	true	5	Plains	craft	Workbench	3	FineWood x10, BlackMetal x8, Chain x1	na	false	false	0	2	3	194	rare	cost		medium	Shield		Plains-tier
+ShieldBlackmetalTower	Black Metal Tower Shield	weapons	true	5	Plains	craft	Workbench	3	FineWood x15, BlackMetal x10, Chain x7	na	false	false	0	2	3	254	rare	cost		medium	Shield		Plains tower shield
+AtgeirBlackmetal	Black metal atgeir	weapons	true	5	Plains	craft	Forge	4	Finewood x10, Black metal x30, Linen thread x5	na	false	false	0	2	4	600	rare	cost		high	Black metal atgeir		High-tier crafted polearm; Plains-tier Forge 4 station.
+AxeBlackMetal	Black metal axe	weapons	true	5	Plains	craft	Forge	4	Finewood x6, Black metal x20, Linen thread x5	na	false	false	0	2	4	456	rare	cost		high	Black metal axe		High-tier axe; Plains Forge level 4.
+BattleaxeBlackmetal	Black metal battleaxe	weapons	true	5	Plains	craft	Forge	4	Finewood x10, Black metal x30, Linen thread x5	na	false	false	0	2	4	600	rare	cost		high	Black metal battleaxe		High-tier two-hander; Forge level 4.
+Scythe	Scythe	weapons	true	5	Plains	craft	Forge	2	Scythe handle x1, Silver x6	na	false	false	0	2	4	140	rare	cost		medium	Scythe		Harvesting tool
+SwordBlackmetal	Black Metal Sword	weapons	true	5	Plains	craft	Forge	4	Finewood x2, Black metal x20, Linen thread x5	na	false	false	0	2	4	452	rare	cost		high	Black Metal Sword		Forge tier 4, Plains tier
+Tankard_dvergr	Dvergr Tankard	weapons	true	6	Mistlands			0		na	false	false	0	3	1	16	rare	raw		high	Dvergr Tankard		Found in Mistlands structures, uncommon
+KnifeChitin	Chitin Knife	weapons	true	6	Mistlands	craft	Workbench	4	Wood x4, Chitin x1, Bone Fragments x2	na	false	false	0	2	3	10	common	cost		medium	Knife		Mistlands-tier
+ShieldCarapace	Carapace Shield	weapons	true	6	Mistlands	craft	Workbench	4	Carapace x40, Bone Fragments x20	na	false	false	0	2	3	169	rare	cost		medium	Shield		Mistlands-tier
+ShieldCarapaceBuckler	Carapace Buckler	weapons	true	6	Mistlands	craft	Workbench	4	Carapace x20, Bone Fragments x10	na	false	false	0	2	3	97	rare	cost		medium	Shield		Mistlands buckler
+SpearCarapace	Carapace Spear	weapons	true	6	Mistlands	craft	Black forge	1	Yggdrasil wood x10, Carapace x4, Mandible x2	na	false	false	0	2	3	53	rare	cost		high	Carapace Spear		Black forge, Carapace materials
+BombBile	Bile bomb	weapons	true	6	Mistlands	craft	Workbench	1	Sap x1, Bilebag x1, Resin x3	na	false	false	0	3	2	8	rare	cost		high	Bile bomb		Mistlands bomb; stack 50.
+MaceNeedle	Needle Mace	weapons	true	6	Mistlands	craft	Workbench	4	Bone Fragments x30, Needle x10	na	false	false	0	2	4	69	rare	cost		medium	Mace		Mistlands-tier
+SledgeDemolisher	Demolisher	weapons	true	6	Mistlands	craft	Black forge	1	Yggdrasil wood x10, Iron x20, Refined eitr x10	na	false	false	0	2	4	377	rare	cost		high	Demolisher		Black forge crafted, Mistlands tier
+THSwordKrom	Krom	weapons	true	6	Swamp	craft	Black forge	1	Iron x30, Bronze x20, Scale hide x5	na	false	false	0	2	4	401	rare	cost		high	Krom		Black forge, but early 2H sword
+AtgeirHimminAfl	Himminafyl	weapons	true	6	Mountains	craft	Black forge	1	Yggdrasil wood x10, Refined eitr x15, Silver x5, Mandible x2	na	false	false	0	3	4	358	rare	cost		medium	Himminafyl		Unique polearm; needs both Mountains and Mistlands materials.
+StaffClusterbomb	Staff of Fracturing	weapons	true	6	Mistlands	craft	Galdr table	2	Charred bone x15, Ashwood x5, Proustite powder x8	na	false	false	0	3	4	170	rare	cost		high	Staff of Fracturing		Galdr table, Mistlands materials
+StaffFireball	Staff of Embers	weapons	true	6	Mistlands	craft	Galdr table	1	Yggdrasil wood x20, Surtling core x4, Refined eitr x16	na	false	false	0	3	4	340	rare	cost		high	Staff of Embers		Galdr table, Mistlands magic
+StaffGreenRoots	Staff of the Wild	weapons	true	6	Mistlands	craft	Galdr table	2	Ashwood x15, Fiddlehead x10, Celestial feather x3, Jade x1	na	false	false	0	3	4	124	rare	cost		high	Staff of the Wild		Galdr table, Mistlands magic
+StaffIceShards	Staff of Frost	weapons	true	6	Mistlands	craft	Galdr table	1	Yggdrasil wood x20, Freeze gland x4, Refined eitr x16	na	false	false	0	3	4	326	rare	cost		high	Staff of Frost		Galdr table, Mistlands magic
+StaffShield	Staff of Protection	weapons	true	6	Mistlands	craft	Galdr table	1	Yggdrasil wood x20, Blood clot x4, Refined eitr x16	na	false	false	0	3	4	341	rare	cost		high	Staff of Protection		Galdr table, blood magic
+SwordMistwalker	Mistwalker	weapons	true	6	Mistlands	craft	Black forge	1	Finewood x3, Iron x15, Refined eitr x10, Wisp x3	na	false	false	0	3	5	406	rare	cost		high	Mistwalker		Black forge, Mistlands magic
+ShieldFlametal	Flametal Shield	weapons	true	7	Ashlands	craft	Workbench	4	Flametal x40, Bone Fragments x20	na	false	false	0	2	3	600	rare	cost		medium	Shield		Ashlands-tier
+ShieldFlametalTower	Flametal Tower Shield	weapons	true	7	Ashlands	craft	Workbench	4	Flametal x50, Bone Fragments x30	na	false	false	0	2	3	600	rare	cost		medium	Shield		Ashlands tower
+BombLava	Lava bomb	weapons	true	7	Ashlands	craft	Workbench	1	Sap x1, Lava gland x1, Resin x3	na	false	false	0	3	2	75	rare	score		high	Lava bomb		Ashlands thrown weapon; stack 50.
+AxeBerzerkr	Berserkir axes	weapons	true	7	Ashlands	craft	Black forge	3	Charred bone x15, Flametal x24, Asksvin hide x3	na	true	false	0	3	5	600	rare	cost		high	Berserkir axes		Ashlands dual-wield axes; requires Black forge level 3.
+AxeBerzerkrBlood	Bleeding Berserkir axes	weapons	true	7	Ashlands	craft	Black forge	4	Berserkir axes x1, Flametal x5, Bloodstone x1	na	true	false	0	4	5	521	rare	cost		medium	Berserkir axes		Ashlands upgraded variant using Bloodstone.
+AxeBerzerkrLightning	Thundering Berserkir axes	weapons	true	7	Ashlands	craft	Black forge	4	Berserkir axes x1, Flametal x5, Iolite x1	na	true	false	0	4	5	521	rare	cost		medium	Berserkir axes		Ashlands upgraded variant using Iolite.
+AxeBerzerkrNature	Primal Berserkir axes	weapons	true	7	Ashlands	craft	Black forge	4	Berserkir axes x1, Flametal x5, Jade x1	na	true	false	0	4	5	521	rare	cost		medium	Berserkir axes		Ashlands upgraded variant using Jade.
+BowAshlands	Ash Fang	weapons	true	7	Ashlands	craft	Black forge	3	Ashwood x10, Charred bone x16, Flametal x5, Bonemaw tooth x5	na	true	false	0	3	5	390	rare	cost		high	Ash Fang		Ashlands bow; Black forge level 3.
+BowAshlandsBlood	Blood Fang	weapons	true	7	Ashlands	craft	Black forge	3	Ash Fang x1, Flametal x5, Bloodstone x1	na	true	false	0	4	5	447	rare	cost		medium	Ash Fang		Ashlands upgraded bow using Bloodstone.
+BowAshlandsRoot	Root Fang	weapons	true	7	Ashlands	craft	Black forge	3	Ash Fang x1, Flametal x5, Jade x1	na	true	false	0	4	5	447	rare	cost		medium	Ash Fang		Ashlands upgraded bow using Jade.
+BowAshlandsStorm	Storm Fang	weapons	true	7	Ashlands	craft	Black forge	3	Ash Fang x1, Flametal x5, Iolite x1	na	true	false	0	4	5	447	rare	cost		medium	Ash Fang		Ashlands upgraded bow using Iolite.
+CrossbowRipper	Ripper	weapons	true	7	Ashlands	craft	Black forge	3	Ashwood x10, Flametal x8, Morgen sinew x2, Bonemaw tooth x4	na	true	false	0	3	5	472	rare	cost		high	Ripper		Ashlands crossbow; Black forge level 3.
+CrossbowRipperBlood	Wound Ripper	weapons	true	7	Ashlands	craft	Black forge	3	Ripper x1, Flametal x8, Bloodstone x1	na	true	false	0	4	5	591	rare	cost		medium	Ripper		Ashlands upgraded crossbow using Bloodstone.
+CrossbowRipperLightning	Storm Ripper	weapons	true	7	Ashlands	craft	Black forge	3	Ripper x1, Flametal x8, Iolite x1	na	true	false	0	4	5	591	rare	cost		medium	Ripper		Ashlands upgraded crossbow using Iolite.
+CrossbowRipperNature	Root Ripper	weapons	true	7	Ashlands	craft	Black forge	3	Ripper x1, Flametal x8, Jade x1	na	true	false	0	4	5	591	rare	cost		medium	Ripper		Ashlands upgraded crossbow using Jade.
+KnifeSkollAndHati	Skoll and Hati Knife	weapons	true	7	Ashlands	craft	Workbench	4	Flametal x2, Bone Fragments x4, Linen Thread x2	na	false	false	0	2	4	123	rare	cost		medium	Knife		Ashlands endgame
+StaffRedTroll	Trollstav	weapons	true	7	Swamp	craft	Galdr table	2	Charred bone x15, Troll trophy x1, Flametal x3, Bloodstone x1	na	false	false	0	3	4	229	rare	cost		high	Trollstav		Swamp tier magic staff
+SpearSplitner	Splitnir	weapons	true	7	Ashlands	craft	Black forge	3	Ashwood x10, Flametal x6, Asksvin hide x2, Bonemaw tooth x3	na	false	false	0	3	5	366	rare	cost		high	Splitnir		Boss-gated Ashlands weapon
+StaffLightning	Dundr	weapons	true	7	Ashlands	craft	Galdr table	2	Ashwood x10, Flametal x4, Celestial feather x3, Bloodstone x1	na	false	false	0	3	5	300	rare	cost		high	Dundr		Ashlands tier staff
+SwordNiedhogg	Nidhögg	weapons	true	7	Ashlands	craft	Black forge	3	Charred bone x3, Flametal x12, Asksvin hide x2	na	false	false	0	3	5	582	rare	cost		high	Nidhögg		Black forge, Ashlands tier
+THSwordSlayer	Slayer	weapons	true	7	Ashlands	craft	Black forge	3	Flametal x30, Asksvin hide x5, Morgen sinew x3	na	false	false	0	3	5	600	rare	cost		high	Slayer		Black forge, Ashlands tier 2H
+SpearSplitner_Blood	Splitnir the Bleeding	weapons	true	7	Ashlands	craft	Black forge	4	Splitnir x1, Flametal x6, Bloodstone x1	na	false	false	0	4	5	1020	ultra	ultra		high	Splitnir the Bleeding		Upgraded with Bloodstone, boss-gated
+SpearSplitner_Lightning	Splitnir the Storming	weapons	true	7	Ashlands	craft	Black forge	4	Splitnir x1, Flametal x6, Iolite x1	na	false	false	0	4	5	1020	ultra	ultra		high	Splitnir the Storming		Upgraded with Iolite, boss-gated
+SpearSplitner_Nature	Splitnir the Primal	weapons	true	7	Ashlands	craft	Black forge	4	Splitnir x1, Flametal x6, Jade x1	na	false	false	0	4	5	1020	ultra	ultra		high	Splitnir the Primal		Upgraded with Jade, boss-gated
+SwordDyrnwyn	Dyrnwyn	weapons	true	7	Ashlands			0		na	false	false	0	4	5	1020	ultra	ultra		high	Dyrnwyn		Boss fragments + Ashlands materials, limited
+SwordNiedhoggBlood	Nidhögg the Bleeding	weapons	true	7	Ashlands	craft	Black forge	4	Nidhögg x1, Flametal x6, Bloodstone x1	na	false	false	0	4	5	1020	ultra	ultra		high	Nidhögg the Bleeding		Upgraded with Bloodstone
+SwordNiedhoggLightning	Nidhögg the Thundering	weapons	true	7	Ashlands	craft	Black forge	4	Nidhögg x1, Flametal x6, Iolite x1	na	false	false	0	4	5	1020	ultra	ultra		high	Nidhögg the Thundering		Upgraded with Iolite
+SwordNiedhoggNature	Nidhögg the Primal	weapons	true	7	Ashlands	craft	Black forge	4	Nidhögg x1, Flametal x6, Jade x1	na	false	false	0	4	5	1020	ultra	ultra		high	Nidhögg the Primal		Upgraded with Jade
+THSwordSlayerBlood	Brutal Slayer	weapons	true	7	Ashlands	craft	Black forge	4	Slayer x1, Flametal x15, Bloodstone x1	na	false	false	0	4	5	1020	ultra	ultra		high	Brutal Slayer		Upgraded Slayer with Bloodstone
+THSwordSlayerLightning	Scourging Slayer	weapons	true	7	Ashlands	craft	Black forge	4	Slayer x1, Flametal x15, Iolite x1	na	false	false	0	4	5	1020	ultra	ultra		high	Scourging Slayer		Upgraded Slayer with Iolite
+THSwordSlayerNature	Primal Slayer	weapons	true	7	Ashlands	craft	Black forge	4	Slayer x1, Flametal x15, Jade x1	na	false	false	0	4	5	1020	ultra	ultra		high	Primal Slayer		Upgraded Slayer with Jade
+AtgeirWood	Wood atgeir	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Unused/dev item	Unobtainable dev/test weapon.
+AxeEarly	Early axe	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Unused/dev item	Unobtainable dev item.
+AxeWood	Wood axe	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Unused/dev item	Unobtainable dev item.
+BattleaxeWood	Wood battleaxe	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Unused/dev item	Unobtainable dev item.
+charred_bow	Charred bow attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Charred enemy attack; not obtainable.
+charred_bow_Fader	Charred Fader bow attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Charred Fader attack; not obtainable.
+dragon_coldbreath	Dragon cold breath	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Dragon enemy attack; not obtainable.
+draugr_axe	Draugr axe attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Draugr enemy attack; not obtainable.
+draugr_bow	Draugr bow attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Draugr enemy attack; not obtainable.
+draugr_sword	Draugr sword attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Draugr enemy attack; not obtainable.
+DvergerMistile	Dvergr missile attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster-only weapon	Dvergr enemy-only attack; not obtainable.
+DvergerStaffBlocker	Dvergr staff blocker	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster-only weapon	Dvergr enemy-only weapon; not obtainable.
+DvergerStaffNova	Dvergr staff nova	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster-only weapon	Dvergr enemy-only weapon; not obtainable.
+Eikthyr_antler	Eikthyr antler attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Eikthyr boss attack; not obtainable.
+Fader_Jump	Fader jump attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Fader boss attack; not obtainable.
+Fader_Jump_Left	Fader jump left attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Fader boss attack; not obtainable.
+Fader_Jump_Right	Fader jump right attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Fader boss attack; not obtainable.
+Fader_Roar	Fader roar attack	weapons	false	0	Anywhere	dev		0		na	false	false	0	1	1	2	common	raw		high	none	Monster attack move	Fader boss attack; not obtainable.
+skeleton_hildir_firenova	Fire Skeleton Sword	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster attack / enemy-only weapon	Enemy attack animation, not obtainable
+skeleton_mace	Skeleton Mace	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster attack / enemy-only weapon	Enemy weapon, not obtainable
+skeleton_sword	Skeleton Sword	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster attack / enemy-only weapon	Enemy weapon, not obtainable
+skeleton_sword_hildir	Fire Skeleton Sword	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster attack / enemy-only weapon	Enemy weapon variant, not obtainable
+skeleton_sword2	Skeleton Sword	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster attack / enemy-only weapon	Enemy weapon variant, not obtainable
+SledgeCheat	Cheat Sledge	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	Cheat Sledge	console command only / cheat item	Dev/cheat item only
+SledgeWood	Wooden Sledge	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	not implemented / non-existent item	Not in game
+SpearWood	Wooden Spear	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	not implemented / non-existent item	Not in game
+SwordCheat	Cheat Sword	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	Cheat Sword	console command only / cheat item	Dev/cheat item only
+SwordIronFire	Fire Iron Sword	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	not implemented / non-existent item	Not in standard game
+SwordWood	Wooden Sword	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	not implemented / non-existent item	Not in game
+TankardOdin	Mead Horn of Odin	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	Mead Horn of Odin	DLC item / special restricted access	DLC-only item
+THSwordWood	Wooden 2H Sword	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	not implemented / non-existent item	Not in game
+Wolf_Attack1	Wolf Attack 1	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster attack / enemy-only weapon	Wolf attack animation, not obtainable
+Wolf_Attack2	Wolf Attack 2	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster attack / enemy-only weapon	Wolf attack animation, not obtainable
+Wolf_Attack3	Wolf Attack 3	weapons	false	0		dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster attack / enemy-only weapon	Wolf attack animation, not obtainable
+Fader_Roar_Intense		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	boss attack move	
+Fader_Spin		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	boss attack move	
+fallenvalkyrie_poisonbreath		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	boss attack move	
+fallenvalkyrie_screech		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	boss attack move	
+fallenvalkyrie_wingspin		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	boss attack move	
+gd_king_rootspawn		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	boss attack move	
+GoblinBrute_Attack		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	monster attack move	
+GoblinBruteBros_Attack		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	monster attack move	
+GoblinClub		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	monster-only weapon	
+GoblinSpear		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	monster-only weapon	
+GoblinSword		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	monster-only weapon	
+GoblinTorch		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	monster-only weapon	
+PickaxeStone	Stone Pickaxe	weapons	false	0	Meadows	craft	Workbench	1	Stone x20, Wood x3	na	false	false	0	2	2	26	common	cost		medium	Pickaxe		Simplest pickaxe
+PlayerUnarmed		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	dev/internal item	
+SeekerQueen_Spit		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	monster attack move	
+skeleton_bow		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	monster-only weapon	
+skeleton_bow2		weapons	false	0		dev		0		na	false	false	0	2	2	6	common	score		medium	none	monster-only weapon	
+BombBlob_Frost	Frost blob bomb	weapons	false	6	Mistlands	craft	Workbench	1	Sap x1, Frost gland x1, Resin x3	na	false	false	0	3	2	3	rare	cost		medium	Frost bomb	Crafted bomb variant	Mistlands blob bomb variant; stack 50.
+BombBlob_Poison	Poison blob bomb	weapons	false	6	Mistlands	craft	Workbench	1	Sap x1, Poison gland x1, Resin x3	na	false	false	0	3	2	49	rare	score		medium	Poison bomb	Crafted bomb variant	Mistlands blob bomb variant; stack 50.
+BombBlob_PoisonElite	Elite poison blob bomb	weapons	false	6	Mistlands	craft	Workbench	1	Sap x1, Poison gland x2, Resin x3	na	false	false	0	3	2	49	rare	score		medium	Poison bomb	Crafted bomb variant	Mistlands elite poison blob variant; stack 50.
+BombBlob_Tar	Tar blob bomb	weapons	false	6	Mistlands	craft	Workbench	1	Sap x1, Tar x1, Resin x3	na	false	false	0	3	2	3	rare	cost		medium	Tar bomb	Crafted bomb variant	Mistlands blob bomb variant; stack 50.
+BombBlob_Lava	Lava blob bomb	weapons	false	7	Ashlands	craft	Workbench	1	Sap x1, Lava gland x1, Resin x3	na	false	false	0	3	2	75	rare	score		medium	Lava bomb	Crafted bomb variant	Ashlands blob bomb variant; stack 50.
+HelmetMidsummerCrown	Midsummer Crown	armor	true	0	Any	craft	Workbench	1	Dandelion x10	na	false	true	0	3	1	5	rare	raw		high	Midsummer Crown		Seasonal event item, Midsummer only
+HelmetYule	Yule hat	armor	true	0		trader		0		na	false	true	100	3	1	25	rare	trader		high	Yule Hat		Holiday/Yule event item, limited seasonal availability; cosmetic only
+ArmorTunic1	Simple tunic blue	armor	true	1	Meadows	trader		0		na	false	false	0	2	1	3	common	raw		high	Simple tunic blue		Hildir cosmetic tunic purchase
+ArmorTunic10	Simple tunic natural	armor	true	1	Meadows	trader		0		na	false	false	0	2	1	3	common	raw		high	Simple tunic natural		Hildir cosmetic tunic purchase
+ArmorTunic2	Cape tunic blue	armor	true	1	Meadows	trader		0		na	false	false	0	2	1	3	common	raw		high	Cape tunic blue		Hildir cosmetic tunic purchase
+ArmorTunic3	Beaded tunic blue	armor	true	1	Meadows	trader		0		na	false	false	0	2	1	3	common	raw		high	Beaded tunic blue		Hildir cosmetic tunic purchase
+ArmorTunic4	Simple tunic red	armor	true	1	Meadows	trader		0		na	false	false	0	2	1	3	common	raw		high	Simple tunic red		Hildir cosmetic tunic purchase
+ArmorTunic5	Cape tunic red	armor	true	1	Meadows	trader		0		na	false	false	0	2	1	3	common	raw		high	Cape tunic red		Hildir cosmetic tunic purchase
+ArmorTunic6	Beaded tunic red	armor	true	1	Meadows	trader		0		na	false	false	0	2	1	3	common	raw		high	Beaded tunic red		Hildir cosmetic tunic purchase
+ArmorTunic7	Simple tunic yellow	armor	true	1	Meadows	trader		0		na	false	false	0	2	1	3	common	raw		high	Simple tunic yellow		Hildir cosmetic tunic purchase
+ArmorTunic8	Cape tunic yellow	armor	true	1	Meadows	trader		0		na	false	false	0	2	1	3	common	raw		high	Cape tunic yellow		Hildir cosmetic tunic purchase
+ArmorTunic9	Beaded tunic yellow	armor	true	1	Meadows	trader		0		na	false	false	0	2	1	3	common	raw		high	Beaded tunic yellow		Hildir cosmetic tunic purchase
+ArmorLeatherChest	Leather chest armor	armor	true	1	Meadows	craft	Workbench	2	Deer hide x6	na	false	false	0	2	2	21	common	cost		high	Leather Armor		Armor set item, crafted at Workbench
+ArmorLeatherLegs	Leather leg armor	armor	true	1	Meadows	craft	Workbench	2	Deer hide x6	na	false	false	0	2	2	21	common	cost		high	Leather Armor		Armor set item, crafted at Workbench
+ArmorRagsChest	Rag tunic	armor	true	1	Meadows	craft	Workbench	1	Leather scraps x5	na	false	false	0	2	2	17	common	cost		high	Rag Armor		Starting tier armor, minimal protection
+ArmorRagsLegs	Rag trousers	armor	true	1	Meadows	craft	Workbench	1	Leather scraps x5	na	false	false	0	2	2	17	common	cost		high	Rag Armor		Starting tier legs
+CapeDeerHide	Deer hide cape	armor	true	1	Meadows	craft	Workbench	2	Deer hide x4, Bone fragments x5	na	false	false	0	2	2	25	common	cost		high	Leather Armor		Meadows tier cape from leather armor set
+CapeOdin	Cape of Odin	armor	true	1	Meadows	craft	Workbench	1	Leather scraps x10, Coal x4	na	false	false	0	2	2	39	rare	cost		high	Cape of Odin		DLC early-game craft, 2 ingredient types
+HelmetLeather	Leather helmet	armor	true	1	Meadows	craft	Workbench	2	Deer hide x6	na	false	false	0	2	2	21	common	cost		high	Leather Armor		Meadows tier, early armor piece
+HelmetOdin	Hood of Odin	armor	true	1	Meadows	craft	Workbench	1	Leather scraps x4, Coal x2	na	false	false	0	2	2	16	common	cost		high	Hood of Odin		DLC item, early-game craft
+HelmetSweatBand	Headband	armor	true	1	Mistlands	trader		0		na	false	false	175	3	1	44	rare	trader		high	Headband		Hildir exclusive purchase; no crafting or durability loss
+HelmetPointyHat	Pointy Hat	armor	true	2	Black Forest	craft	Workbench	1		na	false	true	0	3	1	10	rare	raw		medium	Pointy Hat		Halloween event item
+ArmorBerserkerChest	Bear pelt chest	armor	true	2	Meadows	craft	Workbench	2	Bear hide x5, Bear paw x2, Blueberries x4	na	false	false	0	2	3	57	rare	cost		high	Bear Set		Armor set item, crafted at Workbench
+ArmorBerserkerLegs	Bear pelt leggings	armor	true	2	Meadows	craft	Workbench	2	Bear hide x5, Blueberries x4	na	false	false	0	2	3	35	rare	cost		high	Bear Set		Armor set item, crafted at Workbench
+ArmorBronzeChest	Bronze plate chest	armor	true	2	Black Forest	craft	Forge	1	Bronze x5, Deer hide x2	na	false	false	0	2	3	44	rare	cost		high	Bronze Armor		Armor set item, crafted at Forge
+ArmorBronzeLegs	Bronze plate leggings	armor	true	2	Black Forest	craft	Forge	1	Bronze x5, Deer hide x2	na	false	false	0	2	3	44	rare	cost		high	Bronze Armor		Armor set item, crafted at Forge
+ArmorTrollLeatherChest	Troll leather tunic	armor	true	2	Black Forest	craft	Workbench	2	Troll hide x5	na	false	false	0	3	2	35	rare	cost		high	Troll Set		Black Forest armor, requires troll hide drops
+ArmorTrollLeatherLegs	Troll leather trousers	armor	true	2	Black Forest	craft	Workbench	2	Troll hide x5	na	false	false	0	3	2	35	rare	cost		high	Troll Set		Troll Set legs
+HelmetBronze	Bronze helmet	armor	true	2	Black Forest	craft	Forge	1	Bronze x5, Deer hide x2	na	false	false	0	2	3	44	rare	cost		high	Bronze Armor		Bronze Age armor, common craft
+HelmetTrollLeather	Troll leather hood	armor	true	2	Black Forest	craft	Workbench	2	Troll hide x5, Bone fragments x3	na	false	false	0	2	3	23	common	cost		high	Troll Set		Standard Black Forest armor craft; part of sneaky set bonus when worn with other troll pieces
+CapeTrollHide	Troll hide cape	armor	true	2	Black Forest	craft	Workbench	2	Troll hide x10, Bone fragments x10	na	false	false	0	3	3	43	rare	cost		high	Troll Set		Black Forest set piece, requires troll kills
+HelmetBerserkerHood	Headdress of the Bear	armor	true	2	Black Forest	craft	Workbench	2	Bear hide x5, Bear trophy x1	na	false	false	0	3	3	34	rare	cost		high	Bear Set		Black Forest set piece, bear trophy required
+HelmetCelebration	Celebratory cap	armor	true	2	Black Forest	craft	Workbench	2	Deer hide x2, Bronze x1, Bear hide x1, Amber pearl x1	na	false	false	0	3	3	27	rare	cost		high	Celebratory cap		Bronze Age novelty item, 4 ingredient types
+ArmorDress1	Simple dress brown	armor	true	3	Swamp	trader		0		na	false	true	350	1	1	88	rare	trader		high	Simple dress brown		Armor set item, Hildir trader item
+ArmorDress10	Simple dress natural	armor	true	3	Swamp	trader		0		na	false	true	350	1	1	88	rare	trader		high	Simple dress natural		Armor set item, Hildir trader item
+ArmorDress2	Shawl dress brown	armor	true	3	Swamp	trader		0		na	false	true	350	1	1	88	rare	trader		high	Shawl dress brown		Armor set item, Hildir trader item
+ArmorDress3	Beaded dress brown	armor	true	3	Swamp	trader		0		na	false	true	350	1	1	88	rare	trader		high	Beaded dress brown		Armor set item, Hildir trader item
+ArmorDress4	Simple dress blue	armor	true	3	Swamp	trader		0		na	false	true	350	1	1	88	rare	trader		high	Simple dress blue		Armor set item, Hildir trader item
+ArmorDress5	Shawl dress blue	armor	true	3	Swamp	trader		0		na	false	true	350	1	1	88	rare	trader		high	Shawl dress blue		Armor set item, Hildir trader item
+ArmorDress6	Beaded dress blue	armor	true	3	Swamp	trader		0		na	false	true	350	1	1	88	rare	trader		high	Beaded dress blue		Armor set item, Hildir trader item
+ArmorDress7	Simple dress yellow	armor	true	3	Swamp	trader		0		na	false	true	350	1	1	88	rare	trader		high	Simple dress yellow		Armor set item, Hildir trader item
+ArmorDress8	Shawl dress yellow	armor	true	3	Swamp	trader		0		na	false	true	350	1	1	88	rare	trader		high	Shawl dress yellow		Armor set item, Hildir trader item
+ArmorDress9	Beaded dress yellow	armor	true	3	Swamp	trader		0		na	false	true	350	1	1	88	rare	trader		high	Beaded dress yellow		Armor set item, Hildir trader item
+HelmetHat1	Tied headscarf blue	armor	true	3	Swamp and Ocean	trader	Hildir	0		na	false	false	200	1	1	50	rare	trader		high	Tied headscarf blue		Hildir cosmetic hat
+HelmetHat10	Simple cap purple	armor	true	3	Swamp and Ocean	trader	Hildir	0		na	false	false	150	1	1	38	rare	trader		high	Simple cap purple		Hildir cosmetic hat
+HelmetHat2	Twisted headscarf green	armor	true	3	Swamp and Ocean	trader	Hildir	0		na	false	false	250	1	1	63	rare	trader		high	Twisted headscarf green		Hildir cosmetic hat
+HelmetHat3	Fur cap brown	armor	true	3	Swamp and Ocean	trader	Hildir	0		na	false	false	200	1	1	50	rare	trader		high	Fur cap brown		Hildir cosmetic hat
+HelmetHat4	Extravagant cap green	armor	true	3	Swamp and Ocean	trader	Hildir	0		na	false	false	250	1	1	63	rare	trader		high	Extravagant cap green		Hildir cosmetic hat
+HelmetHat5	Simple cap red	armor	true	3	Swamp and Ocean	trader	Hildir	0		na	false	false	150	1	1	38	rare	trader		high	Simple cap red		Hildir cosmetic hat
+HelmetHat6	Tied headscarf yellow	armor	true	3	Swamp and Ocean	trader	Hildir	0		na	false	false	250	1	1	63	rare	trader		high	Tied headscarf yellow		Hildir cosmetic hat
+HelmetHat7	Twisted headscarf red	armor	true	3	Swamp and Ocean	trader	Hildir	0		na	false	false	300	1	1	75	rare	trader		high	Twisted headscarf red		Hildir cosmetic hat
+HelmetHat8	HelmetHat8	armor	true	3	Swamp and Ocean	trader	Hildir	0		na	false	false	0	1	1	3	common	raw		low	none		Hildir item, no wiki file found
+HelmetHat9	Extravagant cap orange	armor	true	3	Swamp and Ocean	trader	Hildir	0		na	false	false	300	1	1	75	rare	trader		high	Extravagant cap orange		Hildir cosmetic hat
+ArmorHarvester1	Harvest tunic	armor	true	3	Swamp	trader		0		na	false	true	550	2	1	138	rare	trader		high	Harvest tunic		Armor set item, Hildir trader item
+ArmorHarvester2	Harvest dress	armor	true	3	Swamp	trader		0		na	false	true	550	2	1	138	rare	trader		high	Harvest dress		Armor set item, Hildir trader item
+HelmetDverger	Dverger circlet	armor	true	3	Swamp and Ocean	trader	Haldor	0		na	false	false	620	3	1	155	rare	trader		high	Dverger circlet		Haldor purchase, light source utility
+ArmorIronChest	Iron plate chest	armor	true	3	Swamp	craft	Forge	2	Iron x20, Deer hide x2	na	false	false	0	2	3	189	rare	cost		high	Iron Armor		Armor set item, crafted at Forge
+ArmorIronLegs	Iron plate leggings	armor	true	3	Swamp	craft	Forge	2	Iron x20, Deer hide x2	na	false	false	0	2	3	189	rare	cost		high	Iron Armor		Armor set item, crafted at Forge
+ArmorRootChest	Root harnesk	armor	true	3	Swamp	craft	Workbench	2	Root x10, Ancient bark x10, Deer hide x2	na	false	false	0	2	3	46	rare	cost		high	Root Set		Swamp tier light armor with archery bonus
+ArmorRootLegs	Root leggings	armor	true	3	Swamp	craft	Workbench	2	Root x10, Ancient bark x10, Deer hide x2	na	false	false	0	2	3	46	rare	cost		high	Root Set		Root Set legs
+HelmetIron	Iron helmet	armor	true	3	Swamp	craft	Forge	1	Iron x20, Deer hide x2	na	false	false	0	2	3	189	rare	cost		high	Iron Armor		Iron Age armor, common craft
+HelmetPadded	Padded helmet	armor	true	3	Swamp	craft	Forge	1	Iron x10, Linen thread x15	na	false	false	0	2	3	157	rare	cost		high	Padded Armor		Iron Age, Linen requires Plains progression
+HelmetRoot	Root mask	armor	true	3	Black Forest	craft	Workbench	2	Root x10, Ancient bark x10, Leather scraps x4	na	false	false	0	2	3	48	rare	cost		high	Root Set		Black Forest set, 3 ingredient types
+HelmetFishingHat	Fishing hat	armor	true	3	Swamp and Ocean	craft	Workbench	1	Perch x1, Pike x1, Tuna x1, Tetra x1, Trollfish x1, Giant herring x1, Grouper x1, Coral cod x1, Anglerfish x1, Northern salmon x1, Magmafish x1, Pufferfish x1	na	false	false	0	4	3	18	rare	cost		high	Fishing Hat		Requires 12 different fish types, fishing challenge
+ArmorFenringChest	Fenris tunic chest	armor	true	4	Plains	craft	Workbench	2	Fenris hair x20, Wolf pelt x5, Leather scraps x10	na	false	false	0	2	3	68	rare	cost		high	Fenris Set		Armor set item, crafted at Workbench
+ArmorFenringLegs	Fenris tunic leggings	armor	true	4	Plains	craft	Workbench	2	Fenris hair x20, Wolf pelt x5, Leather scraps x10	na	false	false	0	2	3	68	rare	cost		high	Fenris Set		Armor set item, crafted at Workbench
+ArmorWolfChest	Wolf hide chestpiece	armor	true	4	Mountains	craft	Forge	2	Silver x20, Wolf pelt x5, Chain x1	na	false	false	0	2	4	328	rare	cost		high	Wolf Armor		Mountain tier heavy armor, requires silver and wolf pelts
+ArmorWolfLegs	Wolf hide trousers	armor	true	4	Mountains	craft	Forge	2	Silver x20, Wolf pelt x5, Wolf fang x4	na	false	false	0	2	4	331	rare	cost		high	Wolf Armor		Wolf Armor legs
+CapeWolf	Wolf fur cape	armor	true	4	Mountains	craft	Workbench	2	Wolf pelt x6, Silver x4, Wolf trophy x1	na	false	false	0	3	3	94	rare	cost		high	Wolf Armor		Mountain tier, requires wolf trophy
+HelmetFenring	Fenris hood	armor	true	4	Mountains	craft	Workbench	2	Fenris hair x20, Wolf pelt x2, Cultist trophy x1	na	false	false	0	3	3	54	rare	cost		high	Fenris Set		Mountain set, requires cultist trophy
+HelmetBerserkerUndead	Vilebone visage	armor	true	4	Mountains	craft	Forge	2	Bear hide x5, Vile trophy x1	na	false	false	0	4	3	180	rare	score		high	Vilebone Set		Mountain tier, requires Vile trophy (rare drop)
+HelmetDrake	Drake helmet	armor	true	4	Mountains	craft	Forge	1	Silver x20, Wolf pelt x2, Drake trophy x2	na	false	false	0	4	3	285	rare	cost		high	Wolf Armor		Mountain tier, requires Drake trophy (rare)
+HelmetStrawHat	Straw hat	armor	true	5	Plains	trader	Hildir	0		na	false	false	300	2	1	75	rare	trader		high	Straw hat		Hildir post-quest, farming set bonus
+ArmorBerserkerUndeadChest	Vilebone chest	armor	true	5	Black Forest	craft	Forge	2	Bear hide x4, Vile ribcage x3, Linen thread x4	na	false	false	0	2	3	51	rare	cost		high	Vilebone Set		Armor set item, crafted at Forge
+ArmorBerserkerUndeadLegs	Vilebone leggings	armor	true	5	Black Forest	craft	Forge	2	Bear hide x10, Vile ribcage x1, Linen thread x4	na	false	false	0	2	3	70	rare	cost		high	Vilebone Set		Armor set item, crafted at Forge
+CapeLinen	Linen cape	armor	true	5	Plains	craft	Workbench	2	Linen thread x20, Silver x1	na	false	false	0	2	3	104	rare	cost		high	Padded Armor		Plains tier cape from Padded Armor set
+ArmorPaddedCuirass	Padded cuirass	armor	true	5	Plains	craft	Forge	2	Iron x10, Linen thread x20	na	false	false	0	2	4	199	rare	cost		high	Padded Armor		Heavy armor chest for Plains, iron and linen thread
+ArmorPaddedGreaves	Padded greaves	armor	true	5	Plains	craft	Forge	2	Iron x10, Linen thread x20	na	false	false	0	2	4	199	rare	cost		high	Padded Armor		Heavy armor legs for Plains
+CapeLox	Lox cape	armor	true	5	Plains	craft	Workbench	2	Lox pelt x6, Silver x2	na	false	false	0	3	3	63	rare	cost		high	Vilebone Set		Plains tier cape, requires Lox pelt and trophy
+ArmorCarapaceChest	Carapace chest armor	armor	true	6	Mistlands	craft	Black forge	1	Carapace x20, Scale hide x3, Iron x5, Refined eitr x4	na	false	false	0	2	4	224	rare	cost		high	Carapace Armor		Armor set item, crafted at Black forge
+ArmorCarapaceLegs	Carapace leg armor	armor	true	6	Mistlands	craft	Black forge	1	Carapace x20, Scale hide x3, Iron x5, Refined eitr x4	na	false	false	0	2	4	224	rare	cost		high	Carapace Armor		Armor set item, crafted at Black forge
+HelmetMage	Eitr-weave hood	armor	true	6	Mistlands	craft	Galdr table	1	Linen thread x16, Refined eitr x15, Iron x2	na	false	false	0	2	4	342	rare	cost		high	Eitr-weave Set		Galdr table craft, 15x Refined eitr required
+HelmetCarapace	Carapace helmet	armor	true	6	Mistlands	craft	Black forge	1	Carapace x16, Scale hide x3, Mandible x2, Refined eitr x4	na	false	false	0	2	5	205	rare	cost		high	Carapace Armor		Black forge Mistlands, Refined eitr required
+ArmorMageChest	Eitr-weave robe	armor	true	6	Mistlands	craft	Galdr table	1	Linen thread x20, Refined eitr x20, Feathers x10, Scale hide x5	na	false	false	0	4	5	509	rare	cost		high	Eitr-weave Set		Mage armor for Mistlands, requires refined eitr and scale hide
+ArmorMageLegs	Eitr-weave trousers	armor	true	6	Mistlands	craft	Galdr table	1	Linen thread x20, Refined eitr x20, Scale hide x10	na	false	false	0	4	5	509	rare	cost		high	Eitr-weave Set		Mage legs armor for Mistlands
+CapeFeather	Feather cape	armor	true	6	Mistlands	craft	Galdr table	1	Feathers x10, Scale hide x5, Refined eitr x20	na	false	false	0	3	5	438	rare	cost		high	Eitr-weave Set		Mistlands cape with featherfall, Galdr table
+ArmorAshlandsMediumChest	Breastplate of Ask	armor	true	7	Ashlands	craft	Black forge	3	Linen thread x15, Lox pelt x4, Asksvin hide x10	na	false	false	0	2	5	164	rare	cost		high	Ask Set		Armor set item, crafted at Black forge
+ArmorAshlandsMediumlegs	Trousers of Ask	armor	true	7	Ashlands	craft	Black forge	3	Linen thread x15, Lox pelt x4, Asksvin hide x10	na	false	false	0	2	5	164	rare	cost		high	Ask Set		Armor set item, crafted at Black forge
+ArmorFlametalChest	Flametal armor chest	armor	true	7	Ashlands	craft	Black forge	3	Flametal x20, Asksvin hide x3, Charred bone x5, Morgen heart x1	na	false	false	0	2	5	600	rare	cost		high	Flametal Armor		Armor set item, crafted at Black forge
+ArmorFlametalLegs	Flametal armor leggings	armor	true	7	Ashlands	craft	Black forge	3	Flametal x20, Asksvin hide x3, Charred bone x5	na	false	false	0	2	5	600	rare	cost		high	Flametal Armor		Armor set item, crafted at Black forge
+ArmorMageChest_Ashlands	Trousers of Embla	armor	true	7	Ashlands	craft	Galdr table	2	Linen thread x20, Refined eitr x20, Asksvin hide x10	na	false	false	0	4	5	523	rare	cost		high	Embla Set		Mage armor for Ashlands, requires Asksvin hide
+ArmorMageLegs_Ashlands	Robes of Embla	armor	true	7	Ashlands	craft	Galdr table	2	Linen thread x20, Refined eitr x20, Asksvin hide x10, Flametal x5	na	false	false	0	4	5	600	rare	cost		high	Embla Set		Mage legs armor for Ashlands, requires Flametal
+CapeAsh	Ashen cape	armor	true	7	Ashlands	craft	Black forge	3	Asksvin hide x6, Morgen sinew x2, Flametal x5	na	false	false	0	3	5	332	rare	cost		high	Ashen Cape		Combat-focused Ashlands cape, Black forge level 3
+CapeAsksvin	Asksvin cloak	armor	true	7	Ashlands	craft	Galdr table	2	Asksvin hide x6, Morgen sinew x2	na	false	false	0	3	5	88	rare	cost		high	Asksvin Cloak		Ashlands cape with Wind Run effect, Galdr table
+HelmetAshlandsMediumHood	Hood of Ask	armor	true	7	Mistlands	craft	Black forge	3	Linen thread x15, Lox pelt x4, Asksvin hide x10	na	false	false	0	2	4	137	rare	cost		high	Ask Set		Black forge tier, Mistlands gear, 3 ingredient types
+HelmetFlametal	Flametal Helmet	armor	true	7	Ashlands	craft	Black forge	3	Flametal x16, Asksvin hide x3, Charred bone x2, Refined eitr x4	na	false	false	0	2	5	600	rare	cost		high	Flametal Armor		Ashlands endgame, Flametal + Refined eitr
+HelmetMage_Ashlands	Hood of Embla	armor	true	7	Ashlands	craft	Galdr table	2	Linen thread x16, Refined eitr x15, Asksvin hide x2	na	false	false	0	2	4	332	rare	cost		high	Embla Set		Ashlands Galdr table, 15x Refined eitr
+CapeTest	CAPE TEST	armor	false	0	Any	dev		0	n/a	na	false	false	0	0	0	2	common	raw		high	CAPE TEST	test asset	Console-only test item
+Charred_Breastplate	Charred_Breastplate	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+Charred_Helmet	Charred_Helmet	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+Charred_HipCloth	Charred_HipCloth	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+Charred_MageCloths	Charred_MageCloths	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+DvergerHairFemale	DvergerHairFemale	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only wear	monster-only wear
+DvergerHairFemale_Redhair	DvergerHairFemale_Redhair	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only wear	monster-only wear
+DvergerHairMale	DvergerHairMale	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only wear	monster-only wear
+DvergerHairMale_Redbeard	DvergerHairMale_Redbeard	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only wear	monster-only wear
+DvergerSuitArbalest	DvergerSuitArbalest	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+DvergerSuitArbalest_Ashlands	DvergerSuitArbalest_Ashlands	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+DvergerSuitFire	DvergerSuitFire	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+DvergerSuitIce	DvergerSuitIce	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+DvergerSuitSupport	DvergerSuitSupport	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinArmband	GoblinArmband	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinBrute_ArmGuard	GoblinBrute_ArmGuard	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinBrute_Backbones	GoblinBrute_Backbones	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinBrute_ExecutionerCap	GoblinBrute_ExecutionerCap	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinBrute_HipCloth	GoblinBrute_HipCloth	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinBrute_ShoulderGuard	GoblinBrute_ShoulderGuard	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinHelmet	GoblinHelmet	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinLegband	GoblinLegband	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinLoin	GoblinLoin	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinShaman_Headdress_antlers	GoblinShaman_Headdress_antlers	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinShaman_Headdress_feathers	GoblinShaman_Headdress_feathers	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+GoblinShoulders	GoblinShoulders	armor	false	0	Any	dev		0		na	false	false	0	0	0	2	common	raw		high	none	monster-only armor	monster-only armor
+StoneGolem_clubs	Stone Golem Club	armor	false	4	Mountains	drop		0		na	true	false	0	0	0	4	common	raw		high	Stone Golem	monster-only weapon	Monster equipment, not obtainable by players
+StoneGolem_hat	Stone Golem Hat	armor	false	4	Mountains	drop		0		na	true	false	0	0	0	4	common	raw		high	Stone Golem	monster-only wear	Monster equipment, not obtainable by players
+ArrowFlint	Flinthead arrow	gear	true	0	Meadows	craft	Workbench	2		na	false	false	0	1	1	2	common	raw		high	ArrowFlint		
+ArrowWood	Wood arrow	gear	true	0	Meadows	craft	Workbench	1		na	false	false	0	1	1	2	common	raw		high	ArrowWood		
+Bell	Bell	gear	true	0	Meadows	gather		0		na	false	false	0	1	1	2	common	raw		high	Bell		
+Fish1	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish1		
+Fish10	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish10		
+Fish11	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish11		
+Fish12	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish12		
+Fish2	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish2		
+Fish3	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish3		
+Fish5	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish5		
+Fish6	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish6		
+Fish7	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish7		
+Fish8	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish8		
+Fish9	Fish	gear	true	0	Ocean	fish		0		na	false	false	0	1	1	2	common	raw		high	Fish9		
+FishingBait	Fishing bait	gear	true	0		craft		0		na	false	false	0	1	1	2	common	raw		high	FishingBait		
+Torch	Torch	gear	true	0	Meadows	craft		0	Wood x1, Resin x1	na	false	false	0	1	2	2	common	cost		high	Torch		Light source and weapon; craftable from start without station
+TurretBoltBone	Bone missile	gear	true	0	Meadows	craft	Artisan table	1	Wood x10, Bone fragments x1	na	false	false	0	1	2	2	common	cost		low	none		Ballista ammunition variant; inferred from pattern
+Feaster	Feaster	gear	true	0	Meadows	craft		0		na	false	false	0	2	2	6	common	score		high	Feaster		
+Hammer	Hammer	gear	true	0	Meadows	craft		0	Wood x3, Stone x2	na	false	false	0	2	2	6	common	cost		high	Hammer		Building tool, craftable from start without station
+Hoe	Hoe	gear	true	0	Meadows	craft	Workbench	1	Wood x5, Stone x2	na	false	false	0	2	2	8	common	cost		high	Hoe		Farming tool, craftable at workbench
+BarrelRings	Barrel rings	gear	true	1	Meadows	gather		0		na	false	false	0	1	1	2	common	raw		high	BarrelRings		
+BoltBone	Bone bolt	gear	true	1	Meadows	craft	Black forge	1		na	false	false	0	1	1	2	common	raw		high	BoltBone		
+ChickenEgg	Chicken egg	gear	true	1	Meadows	gather		0		na	false	false	1500	2	1	6	common	hand		high	ChickenEgg		
+CryptKey	Crypt key	gear	true	1	Meadows	gather		0		na	false	true	0	2	1	3	common	raw		high	CryptKey		
+Sparkler	Sparkler	gear	true	1	Meadows	trader		0		na	false	false	150	2	1	38	rare	trader		high	Sparkler		Purchased from Hildir for 150 coins; decorative torch
+AncientSeed	Ancient seed	gear	true	1	Meadows	drop		0		na	true	false	0	3	1	6	rare	raw		high	AncientSeed		
+chest_hildir1	Hildir chest 1	gear	true	1	Meadows	trader		0		na	false	true	150	3	1	38	rare	trader		high	chest_hildir1		
+Cultivator	Cultivator	gear	true	1	Meadows	craft	Forge	1	RoundLog x5, Bronze x5	na	false	false	0	2	2	103	rare	cost		high	Cultivator		
+Fish4_cave	Fish	gear	true	2	Black Forest	fish		0		na	false	false	0	2	1	4	common	raw		high	Fish4_cave		
+FishingBaitCave	Fishing bait cave	gear	true	2	Black Forest	gather		0		na	false	false	0	2	1	4	common	raw		high	FishingBaitCave		
+FishingBaitForest	Fishing bait forest	gear	true	2	Black Forest	gather		0		na	false	false	0	2	1	4	common	raw		high	FishingBaitForest		
+TurretBoltWood	Wooden missile	gear	true	2	Black Forest	craft	Artisan table	1	Corewood x5, Feathers x2	na	false	false	0	1	2	2	common	cost		high	Wooden Missile		Ballista ammunition; craftable at Artisan table in stacks of 20
+ArrowBronze	Bronzehead arrow	gear	true	2	Black Forest	craft	Forge	1	Wood x8, Bronze x1, Feathers x2	na	false	false	0	2	2	2	common	cost		high	ArrowBronze		
+HildirKey_forestcrypt	Smouldering Tombs key	gear	true	2	Black Forest	quest		0		na	false	false	0	3	1	10	rare	raw		medium	Hildir		Quest item from Hildir; unlocks Smouldering Tombs dungeon in Black Forest
+TrinketBronzeHealth	Heart of the Forest	gear	true	2	Black Forest	craft	Forge	1	Bronze x5, Ancient seed x5, Greydwarf Shaman trophy x1	na	false	false	0	2	3	58	rare	cost		high	Heart of the Forest		Black Forest-tier trinket; first available trinket in game
+TrinketBronzeStamina	Bronze Pendant	gear	true	2	Black Forest	craft	Forge	1	Bronze x5, Bear trophy x1, Ruby x3	na	false	false	0	2	3	80	rare	cost		high	Bronze Pendant		Black Forest-tier trinket
+ArrowIron	Ironhead arrow	gear	true	3	Swamp	craft	Forge	2		na	false	false	0	2	2	2	common	anchor	2	high	ArrowIron		
+BoltIron	Iron bolt	gear	true	3	Swamp	craft	Black forge	1		na	false	false	0	2	2	3	common	anchor	3	high	BoltIron		
+FishingBaitOcean	Fishing bait ocean	gear	true	3	Ocean	gather		0		na	false	false	0	1	1	3	common	raw		high	FishingBaitOcean		
+chest_hildir2	Hildir chest 2	gear	true	3	Swamp	trader		0		na	false	true	300	3	1	75	rare	trader		high	chest_hildir2		
+ArrowFire	Fire arrow	gear	true	3	Swamp	craft	Workbench	2	Wood x8, Resin x8, Feathers x2	na	false	false	0	2	2	2	common	cost		high	ArrowFire		
+ArrowPoison	Poison arrow	gear	true	3	Swamp	craft	Workbench	3	Wood x8, Obsidian x4, Feathers x2, Ooze x2	na	false	false	0	2	2	2	common	cost		high	ArrowPoison		
+FishingBaitSwamp	Fishing bait	gear	true	3	Swamp	craft	Food preparation table	1	Fishing bait x20, Abomination trophy x1	na	false	false	0	2	2	57	rare	cost		medium	Fishing		Purchased from Haldor for 10 coins per unit; specialized bait for Swamp fishing
+TrinketChitinSwim	Fins of Destiny	gear	true	3	Ocean	craft	Forge	1	Chitin x5, Serpent scale x5, Serpent trophy x1	na	true	false	0	2	3	39	rare	cost		high	Fins of Destiny		Ocean-tier trinket; requires Serpent trophy
+TrinketIronHealth	Iron Brooch	gear	true	3	Swamp	craft	Forge	1	Iron x5, Ancient bark x5, Leech trophy x1	na	false	false	0	2	3	72	rare	cost		high	Iron Brooch		Swamp-tier trinket
+TrinketIronStamina	Nimble Anklet	gear	true	3	Swamp	craft	Forge	1	Iron x5, Withered bone x5, Surtling trophy x1	na	false	false	0	2	3	86	rare	cost		high	Nimble Anklet		Swamp-tier trinket
+Wishbone	Wishbone	gear	true	3	Swamp	boss_drop		0		na	true	true	0	5	1	800	ultra	ultra		high	Wishbone		Boss drop from Bonemass; essential for finding secrets and treasure
+ArrowFrost	Frosthead arrow	gear	true	4	Mountains	craft	Workbench	4		na	false	false	0	2	2	3	common	anchor	3	high	ArrowFrost		
+HildirKey_mountaincave	Howling Caverns key	gear	true	4	Mountains	quest		0		na	false	false	0	3	1	13	rare	raw		medium	Hildir		Quest item from Hildir; unlocks Howling Caverns dungeon in Mountains
+ScytheHandle	Scythe handle	gear	true	4	Mountains	trader		0		na	true	false	200	3	1	50	rare	trader		high	Scythe Handle		Purchased from Bog Witch for 200 coins (requires Moder defeat); used to craft Scythe
+ArrowNeedle	Needle arrow	gear	true	4	Mountains	craft	Workbench	4	Needle x4, Feathers x2	na	false	false	0	2	2	2	common	cost		high	ArrowNeedle		
+ArrowSilver	Silverhead arrow	gear	true	4	Mountains	craft	Forge	3	Wood x8, Silver x1, Feathers x2	na	false	false	0	3	2	3	rare	cost		high	ArrowSilver		
+DragonEgg	Dragon egg	gear	true	4	Mountains	drop		0		na	true	true	0	5	1	800	ultra	ultra		high	DragonEgg		
+DragonTear	Dragon tear	gear	true	4	Mountains	boss_drop		0		na	true	false	0	4	1	23	rare	raw		high	DragonTear		
+TrinketSilverDamage	Wolf Sight	gear	true	4	Mountains	craft	Forge	1	Silver x5, Wolf fang x5, Fenring trophy x1	na	false	false	0	2	3	104	rare	cost		high	Wolf Sight		Mountain-tier trinket
+TrinketSilverResist	Crystal Heart	gear	true	4	Mountains	craft	Forge	1	Silver x5, Crystal x5, Stone Golem trophy x1	na	false	false	0	2	3	109	rare	cost		high	Crystal Heart		Mountain-tier trinket
+BeltStrength	Megingjord	gear	true	4	Mountains	trader		0		na	true	true	950	5	1	800	ultra	ultra		high	BeltStrength		
+TurretBolt	Black metal missile	gear	true	5	Plains	craft	Artisan table	1	Wood x10, Black metal x1	na	false	false	0	1	2	4	common	cost		high	Black Metal Missile		Ballista ammunition; craftable at Artisan table in stacks of 20
+BarberKit	Barber kit	gear	true	5	Plains	trader		0		na	false	false	600	3	1	150	rare	trader		high	BarberKit		
+chest_hildir3	Hildir chest 3	gear	true	5	Plains	trader		0		na	false	true	450	3	1	113	rare	trader		high	chest_hildir3		
+GoblinTotem	Fuling totem	gear	true	5	Plains	gather		0		uncommon	false	false	0	3	1	14	rare	raw		high	Fuling totem		50% in Fuling villages, 10% drop from Fuling Berserker, 2.8% from chests; 5 needed to summon Yagluth
+HildirKey_plainsfortress	Sealed Tower key	gear	true	5	Plains	quest		0		na	false	false	0	3	1	14	rare	raw		medium	Hildir		Quest item from Hildir; unlocks Sealed Tower dungeon in Plains
+ArrowCharred	Charred arrow	gear	true	5	Plains	craft	Black forge	1	Blackwood x8, CharredBone x2, Feathers x2	na	false	false	0	2	2	3	common	cost		high	ArrowCharred		
+ArrowObsidian	Obsidian arrow	gear	true	5	Plains	craft	Workbench	3	Wood x8, Obsidian x4, Feathers x2	na	false	false	0	2	2	2	common	cost		high	ArrowObsidian		
+BarleyFlour	Barley flour	gear	true	5	Plains	cook		0	Barley x1	na	false	false	0	2	2	3	common	cost		high	BarleyFlour		
+BoltBlackmetal	Black metal bolt	gear	true	5	Plains	craft	Black forge	2	Wood x8, BlackMetal x2, Feathers x2	na	false	false	0	2	2	8	common	cost		high	BoltBlackmetal		
+BoltCharred	Charred bolt	gear	true	5	Plains	craft	Black forge	1	Blackwood x8, CharredBone x2, Feathers x2	na	false	false	0	2	2	3	common	cost		high	BoltCharred		
+FishingBaitPlains	Fishing bait	gear	true	5	Plains	craft	Food preparation table	1	Fishing bait x20, Fuling trophy x1	na	false	false	0	2	2	63	rare	cost		medium	Fishing		Purchased from Haldor for 10 coins per unit; specialized bait for Plains fishing
+SaddleLox	Lox Saddle	gear	true	5	Plains	craft	Workbench	1	Leather scraps x10, Linen thread x20, Black metal x15	na	false	false	0	2	3	360	rare	cost		high	Lox Saddle		Mount equipment for Lox; requires Black metal and Linen thread
+TrinketBlackDamageHealth	Bracelets of the Brave	gear	true	5	Plains	craft	Forge	1	Black metal x5, Lox pelt x5, Lox trophy x1	na	true	false	0	2	3	142	rare	cost		high	Bracelets of the Brave		Plains-tier trinket; requires Lox trophy (need to defeat Lox)
+TrinketBlackStamina	Evasion Mantle	gear	true	5	Plains	craft	Forge	1	Black metal x5, Fuling berserker trophy x1, Linen thread x10	na	true	false	0	2	3	161	rare	cost		high	Evasion Mantle		Plains-tier trinket; requires Fuling Berserker trophy
+YagluthDrop	Torn spirit	gear	true	5	Plains	boss_drop		0		na	true	true	0	5	1	800	ultra	ultra		high	Torn Spirit		Boss drop from Yagluth (3 dropped); used in building
+DvergrKey	Dverger key	gear	true	6	Mistlands	gather		0		na	false	true	0	2	1	7	common	raw		high	DvergrKey		
+FishingBaitMistlands	Fishing bait mistlands	gear	true	6	Mistlands	gather		0		na	false	false	0	2	1	7	common	raw		high	FishingBaitMistlands		
+DvergerArbalest	Dverger arbalest	gear	true	6	Mistlands	drop		0		na	false	false	0	3	1	16	rare	raw		high	DvergerArbalest		
+DvergerStaffFire	Dverger staff fire	gear	true	6	Mistlands	drop		0		na	false	false	0	3	1	16	rare	raw		high	DvergerStaffFire		
+DvergerStaffHeal	Dverger staff heal	gear	true	6	Mistlands	drop		0		na	false	false	0	3	1	16	rare	raw		high	DvergerStaffHeal		
+DvergerStaffIce	Dverger staff ice	gear	true	6	Mistlands	drop		0		na	false	false	0	3	1	16	rare	raw		high	DvergerStaffIce		
+DvergerStaffSupport	Dverger staff support	gear	true	6	Mistlands	drop		0		na	false	false	0	3	1	16	rare	raw		high	DvergerStaffSupport		
+TorchMist	Mistlands Torch	gear	true	6	Mistlands	craft	Workbench	1	Corewood x1, Sealing Wax x1	na	false	false	0	2	2	20	common	score		low	Torch		Mistlands-tier torch variant
+ArrowCarapace	Carapace arrow	gear	true	6	Mistlands	craft	Black forge	1	Wood x8, Carapace x4, Feathers x2	na	false	false	0	2	3	3	common	cost		high	ArrowCarapace		
+BoltCarapace	Carapace bolt	gear	true	6	Mistlands	craft	Black forge	1	Wood x8, Carapace x4, Feathers x2	na	false	false	0	2	3	3	common	cost		high	BoltCarapace		
+Lantern	Dvergr Lantern	gear	true	6	Mistlands	craft	Black forge	2	Bronze x2, Surtling core x1, Crystal x1	na	false	false	0	2	3	31	rare	cost		high	Dvergr Lantern		Light source tool; craftable at Black forge in Mistlands
+TrinketCarapaceEitr	Pulsating Earrings	gear	true	6	Mistlands	craft	Black forge	2	Carapace x5, Refined eitr x5, Gjall trophy x1	na	true	false	0	2	4	145	rare	cost		high	Pulsating Earrings		Mistlands-tier trinket; requires Gjall boss trophy and refined eitr
+TrinketScaleStaminaDamage	Resounding Shackle	gear	true	6	Mistlands	craft	Black forge	2	Refined eitr x5, Scale hide x5, Mandible x1, Seeker trophy x1	na	true	false	0	2	4	135	rare	cost		high	Resounding Shackle		Mistlands-tier trinket; requires Seeker trophy and refined eitr
+Demister	Demister	gear	true	6	Mistlands	craft	Workbench	1		na	false	false	0	3	4	244	rare	score		high	Demister		
+FishingBaitAshlands	Fishing bait ashlands	gear	true	7	Ashlands	gather		0		na	false	false	0	2	1	10	common	raw		high	FishingBaitAshlands		
+VoltureEgg	Volture egg	gear	true	7	Ashlands	gather		0		common	false	false	0	2	1	10	common	raw		high	Volture egg		Found in Volture nests in Ashlands; used for cooking
+AsksvinEgg	Asksvin egg	gear	true	7	Ashlands	drop		0		na	false	false	0	3	1	25	rare	raw		high	AsksvinEgg		
+TurretBoltFlametal	Flametal missile	gear	true	7	Ashlands	craft	Artisan table	1	Ashwood x10, Flametal x1	na	false	false	0	2	2	9	common	cost		high	Flametal Missile		Ballista ammunition; craftable at Artisan table in stacks of 20
+SaddleAsksvin	Asksvin Saddle	gear	true	7	Ashlands	craft	Black forge	2	Flametal x6, Linen thread x20, Morgen sinew x4	na	false	false	0	2	4	377	rare	cost		high	Asksvin Saddle		Mount equipment for Asksvin; requires multiple refined materials
+TrinketFlametalEitr	Jörmundling	gear	true	7	Ashlands	craft	Black forge	2	Flametal x5, Refined eitr x5, Bloodstone x1, Fallen Valkyrie trophy x1	na	true	false	0	2	5	395	rare	cost		high	Jörmundling		Ashlands-tier trinket; requires Fallen Valkyrie trophy and refined materials
+TrinketFlametalStaminaHealth	Brimstone	gear	true	7	Ashlands	craft	Black forge	2	Flametal x5, Sulfur x5, Molten core x1, Morgen trophy x1	na	true	false	0	2	4	273	rare	cost		high	Brimstone		Ashlands-tier trinket; requires Morgen trophy
+FishingBaitDeepNorth	Fishing bait deep north	gear	true	8	Deep North	gather		0		na	false	false	0	2	1	14	common	raw		high	FishingBaitDeepNorth		
+draugr_arrow	Ironhead arrow	gear	false	0		dev		0		na	false	false	0	1	1	2	common	raw		high	draugr_arrow	Monster projectile	
+GoblinBrute_LegBones	Leg bones	gear	false	0		drop		0		na	false	false	0	0	0	2	common	raw		high	none	Monster-only item; not obtainable by players	Goblin Brute monster equipment; cannot be traded meaningfully
+GoblinShaman_Staff_Feathers	Club	gear	false	0		drop		0		na	false	false	0	0	0	2	common	raw		high	none	Monster-only weapon; not obtainable by players	Goblin Shaman monster weapon; cannot be traded meaningfully
+GoblinShaman_Staff_Hildir	Club	gear	false	0		drop		0		na	false	false	0	0	0	2	common	raw		high	none	Monster-only weapon; not obtainable by players	Goblin Shaman monster weapon; cannot be traded meaningfully
+TrophyNeck	Neck trophy	trophy	true	1	Meadows	drop		0		rare	false	false	0	4	1	6	rare	anchor	6	high	Neck		5% drop from Neck
+TrophyBoar	Boar trophy	trophy	true	1	Meadows	drop		0		uncommon	false	false	0	3	1	8	rare	anchor	8	high	Boar		15% drop from Boar
+TrophyDeer	Deer trophy	trophy	true	1	Meadows	drop		0		rare	false	false	0	4	1	8	rare	anchor	8	high	Deer		50% drop from Deer
+TrophyEikthyr	Eikthyr trophy	trophy	true	1	Meadows	boss_drop		0		na	true	true	0	5	1	800	ultra	ultra		high	Eikthyr		Boss trophy, guaranteed drop
+TrophyGreydwarf	Greydwarf trophy	trophy	true	2	Black Forest	drop		0		rare	false	false	0	4	1	8	rare	anchor	8	high	Greydwarf		5% drop from Greydwarf
+TrophySkeleton	Skeleton trophy	trophy	true	2	Black Forest	drop		0		uncommon	false	false	0	3	1	8	rare	anchor	8	high	Skeleton		10% drop from Skeleton
+TrophyDraugr	Draugr trophy	trophy	true	2	Black Forest	drop		0		uncommon	false	false	0	3	1	12	rare	anchor	12	high	Draugr		Drop from Draugr
+TrophyAbomination	Abomination trophy	trophy	true	2	Black Forest	drop		0		uncommon	false	false	0	3	1	10	rare	raw		high	Abomination		Uncommon drop from Black Forest creature
+TrophyBjorn	Bear trophy	trophy	true	2	Black Forest	drop		0		uncommon	false	false	0	3	1	10	rare	raw		high	Bear		10% drop from Bear
+TrophyBlob	Blob trophy	trophy	true	2	Black Forest	drop		0		uncommon	false	false	0	3	1	10	rare	raw		high	Blob		Drop from Blob
+TrophyDraugrFem	Draugr trophy	trophy	true	2	Black Forest	drop		0		uncommon	false	false	0	3	1	10	rare	raw		high	Draugr		Female variant of Draugr
+TrophyGreydwarfBrute	Greydwarf Brute trophy	trophy	true	2	Black Forest	drop		0		uncommon	false	false	0	3	1	10	rare	raw		high	Greydwarf Brute		10% drop from Greydwarf Brute
+TrophyGreydwarfShaman	Greydwarf Shaman trophy	trophy	true	2	Black Forest	drop		0		uncommon	false	false	0	3	1	10	rare	raw		high	Greydwarf Shaman		10% drop from Greydwarf Shaman
+TrophySkeletonHildir	Skeleton trophy	trophy	true	2	Black Forest	drop		0		uncommon	false	false	0	3	1	10	rare	raw		high	Skeleton		Hildir variant of Skeleton trophy
+TrophyTheElder	The Elder trophy	trophy	true	2	Black Forest	boss_drop		0		na	true	true	0	5	1	800	ultra	ultra		high	The Elder		Boss trophy, guaranteed drop
+TrophyDraugrElite	Draugr Elite trophy	trophy	true	3	Swamp	drop		0		uncommon	false	false	0	3	1	11	rare	raw		high	Draugr Elite		10% drop from Draugr Elite
+TrophyGhost	Ghost trophy	trophy	true	3	Swamp	drop		0		uncommon	false	false	0	3	1	11	rare	raw		high	Ghost		Drop from Ghost
+TrophyKvastur	Kvastur trophy	trophy	true	3	Swamp	drop		0		uncommon	false	false	0	3	1	11	rare	raw		high	Kvastur		Drop from Kvastur, Bog Witch hut
+TrophyLeech	Leech trophy	trophy	true	3	Swamp	drop		0		uncommon	false	false	0	3	1	11	rare	raw		high	Leech		10% drop from Leech
+TrophySkeletonPoison	Skeleton trophy	trophy	true	3	Swamp	drop		0		uncommon	false	false	0	3	1	11	rare	raw		high	Skeleton		Poison variant in Swamp
+TrophyWraith	Wraith trophy	trophy	true	3	Swamp	drop		0		uncommon	false	false	0	3	1	11	rare	raw		high	Wraith		Drop from Wraith
+TrophySerpent	Serpent trophy	trophy	true	3	Ocean	drop		0		rare	false	false	0	4	1	20	rare	raw		high	Serpent		Drop from Serpent in ocean
+TrophyBonemass	Bonemass trophy	trophy	true	3	Swamp	boss_drop		0		na	true	true	0	5	1	800	ultra	ultra		high	Bonemass		Boss trophy, guaranteed drop
+TrophyWolf	Wolf trophy	trophy	true	4	Mountain	drop		0		uncommon	false	false	0	3	1	15	rare	anchor	15	high	Wolf		Drop from Wolf
+TrophyCultist	Cultist trophy	trophy	true	4	Ashlands	drop		0		uncommon	false	false	0	3	1	13	rare	raw		high	Cultist		Drop from Cultist (Hildir content)
+TrophyFenring	Fenring trophy	trophy	true	4	Mountain	drop		0		uncommon	false	false	0	3	1	13	rare	raw		high	Fenring		Drop from Fenring
+TrophyForestTroll	Troll trophy	trophy	true	4	Mountain	drop		0		uncommon	false	false	0	3	1	13	rare	raw		high	Troll		Drop from Forest Troll variant
+TrophyFrostTroll	Troll trophy	trophy	true	4	Mountain	drop		0		uncommon	false	false	0	3	1	13	rare	raw		high	Troll		Drop from Frost Troll variant
+TrophySGolem	Stone Golem trophy	trophy	true	4	Mountain	drop		0		uncommon	false	false	0	3	1	13	rare	raw		high	Stone Golem		Drop from Stone Golem
+TrophyUlv	Ulv trophy	trophy	true	4	Ashlands	drop		0		uncommon	false	false	0	3	1	13	rare	raw		high	Ulv		Drop from Ulv
+TrophyGoblin	Fuling trophy	trophy	true	5	Plains	drop		0		uncommon	false	false	0	3	1	15	rare	anchor	15	high	Fuling		10% drop from Fuling
+TrophyDeathsquito	Deathsquito trophy	trophy	true	5	Plains	drop		0		uncommon	false	false	0	3	1	14	rare	raw		high	Deathsquito		Drop from Deathsquito
+TrophyGoblinBruteBrosBrute	Fuling Berserker trophy	trophy	true	5	Plains	drop		0		uncommon	false	false	0	3	1	14	rare	raw		high	Fuling Berserker		Variant of Fuling Berserker
+TrophyGoblinBruteBrosShaman	Fuling Shaman trophy	trophy	true	5	Plains	drop		0		uncommon	false	false	0	3	1	14	rare	raw		high	Fuling Shaman		Variant of Fuling Shaman
+TrophyGoblinKing	Fuling trophy	trophy	true	5	Plains	drop		0		uncommon	true	true	0	5	1	800	ultra	ultra		medium	Fuling		Trophy from Fuling King or high-star Fuling
+TrophyGoblinShaman	Fuling Shaman trophy	trophy	true	5	Plains	drop		0		uncommon	false	false	0	3	1	14	rare	raw		high	Fuling Shaman		Drop from Fuling Shaman
+TrophyGrowth	Growth trophy	trophy	true	5	Plains	drop		0		uncommon	false	false	0	3	1	14	rare	raw		high	Growth		Drop from Growth in Plains tar pits
+TrophyLox	Lox trophy	trophy	true	5	Plains	drop		0		uncommon	false	false	0	3	1	14	rare	raw		high	Lox		Drop from Lox
+TrophyGoblinBrute	Fuling Berserker trophy	trophy	true	5	Plains	drop		0		rare	false	false	0	4	1	25	rare	raw		high	Fuling Berserker		5% drop from Fuling Berserker
+TrophyHatchling	Hatchling trophy	trophy	true	6	Mistlands	drop		0		uncommon	false	false	0	3	1	16	rare	raw		high	Hive		Drop from Hatchling
+TrophySeeker	Seeker trophy	trophy	true	6	Mistlands	drop		0		uncommon	false	false	0	3	1	16	rare	raw		high	Seeker		10% drop from Seeker
+TrophyDvergr	Dvergr trophy	trophy	true	6	Mistlands	drop		0		rare	false	false	0	4	1	29	rare	raw		high	Dvergr Rogue		5% drop from Dvergr variants
+TrophyGjall	Gjall trophy	trophy	true	6	Mistlands	drop		0		rare	false	false	0	4	1	29	rare	raw		high	Gjall		30% drop from Gjall
+TrophyHare	Hare trophy	trophy	true	6	Mistlands	drop		0		rare	false	false	0	4	1	29	rare	raw		high	Hare		5% drop from Hare
+TrophySeekerBrute	Seeker Soldier trophy	trophy	true	6	Mistlands	drop		0		rare	false	false	0	4	1	29	rare	raw		high	Seeker Soldier		5% drop from Seeker Soldier
+TrophyTick	Tick trophy	trophy	true	6	Mistlands	drop		0		rare	false	false	0	4	1	29	rare	raw		high	Tick		5% drop from Tick
+TrophyDragonQueen	The Queen trophy	trophy	true	6	Mistlands	boss_drop		0		na	true	true	0	5	1	840	ultra	ultra		high	The Queen		Boss trophy, guaranteed drop
+TrophyAsksvin	Asksvin trophy	trophy	true	7	Ashlands	drop		0		uncommon	false	false	0	3	1	25	rare	raw		high	Asksvin		Drop from Asksvin creature
+TrophyBonemawSerpent	Bonemaw trophy	trophy	true	7	Ashlands	drop		0		uncommon	false	false	0	3	1	25	rare	raw		high	Bonemaw		33% drop from Bonemaw Serpent
+TrophyCultist_Hildir	Cultist trophy	trophy	true	7	Ashlands	drop		0		uncommon	false	false	0	3	1	25	rare	raw		high	Cultist		Hildir variant of Cultist trophy
+TrophyFallenValkyrie	Fallen Valkyrie trophy	trophy	true	7	Ashlands	drop		0		uncommon	false	false	0	3	1	25	rare	raw		high	Fallen Valkyrie		Drop from Fallen Valkyrie
+TrophySurtling	Surtling trophy	trophy	true	7	Ashlands	drop		0		uncommon	false	false	0	3	1	25	rare	raw		high	Surtling		Drop from Surtling
+TrophyVolture	Volture trophy	trophy	true	7	Ashlands	drop		0		uncommon	false	false	0	3	1	25	rare	raw		high	Volture		Drop from Volture
+TrophyCharredArcher	Charred Marksman trophy	trophy	true	7	Ashlands	drop		0		rare	false	false	0	4	1	45	rare	raw		high	Charred Marksman		5% drop from Charred Marksman
+TrophyCharredMage	Charred Warlock trophy	trophy	true	7	Ashlands	drop		0		rare	false	false	0	4	1	45	rare	raw		high	Charred Warlock		5% drop from Charred Warlock
+TrophyCharredMelee	Charred Warrior trophy	trophy	true	7	Ashlands	drop		0		rare	false	false	0	4	1	45	rare	raw		high	Charred Warrior		5% drop from Charred Warrior
+TrophyMorgen	Morgen trophy	trophy	true	7	Ashlands	drop		0		rare	false	false	0	4	1	45	rare	raw		high	Morgen		5% drop from Morgen
+TrophyFader	Fader trophy	trophy	true	7	Ashlands	boss_drop		0		na	true	true	0	5	1	900	ultra	ultra		high	Fader		Boss trophy, guaranteed drop
+TrophyBjornUndead		trophy	false	0		dev		0		na	false	false	0	0	0	2	common	raw		low	none	Not obtainable	Variant, likely unused
+TrophySeekerQueen		trophy	false	0		dev		0		na	true	true	0	5	0	800	ultra	ultra		medium	none	Not a playable boss	Not a summoned boss
