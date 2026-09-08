@@ -142,6 +142,10 @@ namespace RavenIron.ValkyriesCargo.Server
                                        (d._pendingSessionRow != null ? ", a saved visit waits for its event" : "") + ")" : "NOT AVAILABLE: " + d.Store.Detail) +
                                        "; " + d._market.DescribeShelf(znet.GetTimeSeconds()) +
                                        (problems.Count > 0 ? "; problems: " + d.Problems : ""));
+            // The names too (StormTest 2026-09-08: the first boot on the shelf printed the count and the period and
+            // left the reader computing the twenty by hand), on their own line so the director-up line stays readable.
+            if (d._market.Rotating)
+                ValkyriesCargo.Log.LogInfo("shelf now: " + string.Join(", ", d._market.ShelfNames()));
             return d;
         }
 
