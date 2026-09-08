@@ -126,6 +126,24 @@ namespace RavenIron.ValkyriesCargo.Server
             return current != null && current.m_name == Name;
         }
 
+        /// <summary>
+        /// Move the running event's area to where he is. Vanilla pauses the clock and scopes the banner
+        /// by `m_pos`, which `SetRandomEventByName` fixed at the drop point; after the leash walk that
+        /// point was 134 m behind him (visit 21, 2026-09-08), so the clock paused beside a trading
+        /// player and every tick retargeted the deadline (a VisitState republish, the client's
+        /// "Received 0 configs and 1 custom values" line, every 2 s). The server's own
+        /// `SendCurrentRandomEvent` carries the new position to every client within 2 s
+        /// (`RPC_SetEvent` updates `m_pos` on a same-name event). True when it moved.
+        /// </summary>
+        public static bool Follow(RandEventSystem res, Vector3 at, float minMove = 1f)
+        {
+            RandomEvent current = res != null ? res.GetCurrentRandomEvent() : null;
+            if (current == null || current.m_name != Name) return false;
+            if ((current.m_pos - at).sqrMagnitude < minMove * minMove) return false;
+            current.m_pos = at;
+            return true;
+        }
+
         /// <summary>Real seconds the running event has left, or -1 when it is not ours or not running.</summary>
         public static double Remaining(RandEventSystem res)
         {

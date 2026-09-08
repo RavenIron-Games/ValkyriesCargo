@@ -102,6 +102,17 @@ after the rest of this log was written.
   smoke; the Clear follows in 2 s`. Nothing of ours enables a renderer, so he stays gone. **Seen on visit 20,
   2026-09-08, on the owner's dismiss: `into the mist: 1 renderer(s) off with the smoke`, and his word for the
   screen: "vanish looked great."**
+- **The dismiss follows him (branch `a/dismiss-at-merchant`, 1885 checks).** Visit 21 (2026-09-08): after the leash
+  walk he stood 134 m from his drop point, and the server measured "Send him off" against the DROP POINT: refused
+  three times while the client's terminal closed on "sent him off" and said the farewell on trust. Now the event's
+  area follows him once he is down (`CargoEvent.Follow`; `Server/VisitAnchor.cs` reads his live ZDO position, the
+  drop point only while none is bound), so the vanilla clock no longer pauses beside a trading player (that pause
+  retargeted the deadline every 2 s tick and republished VisitState: the client's `Received 0 configs and 1 custom
+  values` line every 2 s); the deal wire measures a dismiss against him (the refusal line says `from the merchant`)
+  and ANSWERS it on `VCargo_dismissed` (`ok` / `too_far` / `stale_visit`); the terminal waits on that answer
+  ("Sending him off", `So be it. I wait on the Allfather's word.`), closes with the farewell on `ok`, shows his words
+  for a refusal, and says `No word came back on that. Ask me again.` after 4 s of silence. Shift+E on him stays
+  fire-and-forget (interact range is inside the 96 m by construction). Unseen on a screen.
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 

@@ -56,7 +56,28 @@ namespace RavenIron.ValkyriesCargo.Net
 
         public static void Open(int visitId)    { if (_transport != null) _transport.Open(visitId); }
         public static void Close(int visitId)   { if (_transport != null) _transport.Close(visitId); }
-        public static void Dismiss(int visitId) { if (_transport != null) _transport.Dismiss(visitId); }
+        /// <summary>
+        /// Send him off. The server answers exactly once on VCargo_dismissed (DealReason.Ok, TooFar or
+        /// StaleVisit) and it comes back through onAnswer; without a transport the answer is
+        /// not_connected. Until 2026-09-08 this was fire-and-forget and the terminal closed on trust:
+        /// visit 21's dismiss was refused three times on the server while the client said the farewell.
+        /// </summary>
+        public static void Dismiss(int visitId, Action<string> onAnswer = null)
+        {
+            _dismissAnswer = onAnswer;
+            if (_transport == null) { AnswerDismiss(DealReason.NotConnected); return; }
+            _transport.Dismiss(visitId);
+        }
+
+        /// <summary>The transport's answer to the last Dismiss: delivered once; with nobody waiting it is dropped.</summary>
+        public static void AnswerDismiss(string reason)
+        {
+            Action<string> cb = _dismissAnswer;
+            _dismissAnswer = null;
+            if (cb != null) cb(string.IsNullOrEmpty(reason) ? DealReason.Malformed : reason);
+        }
+
+        private static Action<string> _dismissAnswer;
 
         /// <summary>
         /// Send a deal. The answer comes back exactly once through onAnswer; a redelivered accepted
@@ -123,6 +144,7 @@ namespace RavenIron.ValkyriesCargo.Net
         {
             EndSession();
             _inbox = new DealInbox();
+            _dismissAnswer = null;
         }
     }
 
@@ -138,7 +160,7 @@ namespace RavenIron.ValkyriesCargo.Net
         public bool Ready => true;
         public void Open(int visitId) { Opens++; }
         public void Close(int visitId) { Closes++; }
-        public void Dismiss(int visitId) { Dismisses++; }
+        public void Dismiss(int visitId) { Dismisses++; CargoRpc.AnswerDismiss(DealReason.Ok); }
 
         public void Send(Deal deal, Action<DealResult> onAnswer)
         {

@@ -333,6 +333,7 @@ ValkyriesCargo/
   Core/SidecarThenMirror.cs  PURE: decision 4 proved off-game: the sidecar succeeds first, a mirror throw never reaches the caller
   Server/MarketStore.cs      the sidecar on disk: valkyriescargo_{worldUid}.dat, .tmp/.bak/.corrupt
   Server/BackpackMod.cs      the backpack add-on's lookup (2026-09-08): is Server.BackpackModGuid loaded here; the shelf scales by Shelf.Scaled
+  Server/VisitAnchor.cs      where the visit IS (2026-09-08): his live ZDO position when bound, else the drop point; the event's area and the dismiss rule measure against it
   Net/DealWire.cs            server end: VCargo_open/close/deal/ack/claim/dismiss on each peer's ZRpc; VCargo_dealt back
   Server/BarrkBotExport.cs   writes barrkbot_cargo_market/traders/visits.json under BepInEx/config/ValkyriesCargo/, from VisitDirector.Tick
   Net/CargoTransport.cs      client end (the real ICargoTransport), LocalTransport (listen host), Deliveries
