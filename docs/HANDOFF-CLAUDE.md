@@ -9,10 +9,57 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 
 ---
 
-## 0. State on 2026-09-08 morning: #55 merged, 1.0 verified and held, the rotating shelf waiting on you — READ THIS FIRST
+## 0. State on 2026-09-08 night: everything merged through #64, the dismiss follows him, no release — READ THIS FIRST
 
 **The tracker is still `docs/TODO.md`**, three tracks, each editing only its own section; when this file and
-that one disagree, that one wins. The subsection below this one is this morning's state, kept as history.
+that one disagree, that one wins. The subsections below this one are the day's earlier states, kept as history.
+
+**Where main is.** `1dcf3ac` (docs) on `55508d6` (code, PR #64): 0 warnings, **1885/1885 off-game checks**. Merged
+today at the owner's word, in build order: #57 the rotating shelf (762df89), #58 the item value table (824f874),
+#60 the terminal (05da13e), #61 the busy hold and the hover localise (da72e00), #62 the backpack shelf half
+(43149bb), #63 the vanish hide (c81fbea), #64 the dismiss (55508d6). `CHANGELOG.md` "Since 0.1.0-rc2" carries
+each with its check count. **No open PR.** Issue #59 is Wu'barrk's list. **No release** — the owner's word after
+the merges and again at the close ("im happy"): `v0.1.0-rc2` stands as the last cut, rc1 must not reach a tester.
+Lesson of the day, kept in CLAUDE.md: `gh pr merge --delete-branch` on a base branch CLOSES the PRs stacked on it;
+retarget them to main first.
+
+**StormTest is DOWN** (11:16, no visit open, the sidecar clean; next visit #23; the purse reads 100000 = the test
+value in the server config, takings are counted apart). The server and Don's Gale `Default` profile both carry
+main's DLL (md5 `a9010be4d119`, built from 55508d6; the docs commit changes no byte). Backpacks 1.3.8 and
+Yggdrasil's Reckoning 0.1.1 are installed both sides; YR's boot errors (`Player.PlacePiece`, the two donors) are
+its issue #1, not ours, and the headless `ShieldDomeImageEffect` null-shader exception is vanilla.
+
+**Seen on a screen today (visits 16–22, one client, Don's Windows box):** the shelf roll and its hold under a
+running visit; the new tray settling deals on the wire (visit 20: a Flametal for five Eitr, +28; visit 21: eight
+Ruby for 280 through the count box); the leash-hold line on every terminal open; the backpack boot line and
+`shelf 40 of 72`; the vanish with the smoke (20 and 22; the owner: "vanish looked great"); the arrival banner; the
+count box, the hover key and the backdrop ("all that looks fine"); and **#64 on visit 22**: after a leash walk the
+dismiss taken first try, `VCargo_dismissed: ok` on the client, **0 clock republishes** against 543 on visit 21,
+the client's ServerSync line 8 times over the visit instead of every 2 s.
+
+**The visit-21 finding, fixed by #64, is worth knowing by heart:** the vanilla event's `m_pos` stayed at the drop
+point, so after the leash walk (134 m) the engine paused the clock beside a trading player — the director
+retargeted the deadline and republished VisitState every 2 s tick, which is the client's `Received 0 configs and
+1 custom values` line — the banner's 96 m area was wrong, and `DealWire.OnDismiss` measured the dismisser against
+the drop point and refused. Now `CargoEvent.Follow` moves the event to him each server tick once he is down, from
+`Server/VisitAnchor.cs` (his ZDO through `Spawner.Merchant`, the drop point only while none is bound); the wire
+measures against him and **answers** on `VCargo_dismissed` (`ok` / `too_far` / `stale_visit`); the terminal waits
+on that answer (`Lines.DismissSent`, 4 s then `no_answer`). Shift+E on him stays fire-and-forget.
+
+**Unseen, in order of worth:** (1) the terminal BUTTON dismiss path ("Sending him off" → the farewell → `terminal
+closed: sent him off`; visit 22 used Shift+E); (2) a second player at the terminal holding the leash (needs
+Wu'barrk on); (3) `Client.TerminalScale` 2 with the tray; (4) the ownership loss during the carry — three reclaims
+on visit 21, none on 22, #54's hold is in and the trigger is still Wu'barrk's; (5) the chase after a moving player
+— visit 21: gave up after 26 s and 156 m, 18 m short, the designed fallback (a chase cannot finish inside an
+entry-distance budget; a note for Wu'barrk). Valheim 1.0: the two stop-ships stand as findings, "dont change
+anything for 1.0".
+
+**Wu'barrk's list is issue #59** (assigned RGlabs84): the flight's feel, the walk-off's own log lines, the body
+backpack bake; the economy questions on #56; YR issue #1. Nothing of his was touched beyond what the owner
+reassigned today (the busy hold in `MerchantPlan`/`CargoMerchant`, `HideForGood`); #64 reads only
+`Spawner.Merchant`, already public.
+
+### The morning of 2026-09-08 (history)
 
 **Where main is.** `a08e8c4` at the time of writing (your PR #55 merged the morning of 2026-09-08; the close-out
 docs commit sits on top): 0 warnings, **1722/1722 off-game checks**, `probes 19/19 ok, 7 not probeable` on the real

@@ -3,10 +3,44 @@
 The repo is scaffolded, builds clean, tests pass, and boots headless on a dedicated server. This is
 what it is, what of yours is already in it, what we need from you, and exactly where each thing goes.
 
-## 0. Where things stand, 2026-09-08 morning: #55 merged, 1.0 held, the rotating shelf waiting on you
+## 0. Where things stand, 2026-09-08 night: everything merged through #64, the dismiss follows him, no release
 
-**Your list is `docs/TODO.md` section 2**; when this file and that one disagree, TODO wins. This morning's
-state is kept below as history.
+**Your list is `docs/TODO.md` section 2** and **issue #59**; when this file and those disagree, they win. The
+day's earlier states are kept below as history.
+
+`main` is at 1dcf3ac (docs) on 55508d6 (code, PR #64): 0 warnings, **1885 checks**. Merged today at Don's word, in
+order: #57 the rotating shelf, #58 the item value table, #60 the terminal (count boxes, no pay mode, the 40 % black
+backdrop), #61 the busy hold and the hover localise (your items 2 and 3 from #59, in your files with his word),
+#62 the backpack shelf half, #63 the vanish hide (`HideForGood`, your file with his word), #64 the dismiss. No open
+PR. **No release** — his word after the merges and again at the close. StormTest is down, no visit open; both
+machines here carry main's DLL.
+
+**What changed under you today, in one place.** (a) `CargoMerchant.HideForGood` runs from `RPC_Vanish`: renderers,
+LOD groups and the collider off, the AI stood down on the owner; seen twice, the owner: "vanish looked great".
+(b) `MerchantPlan.Next(..., busy)` / `AccumulateFar(..., busy)` and `CargoMerchant.Busy()` hold the leash while any
+terminal is open on him (`VisitState` carries the wire's count as an optional 13th field). (c) **#64: the running
+event's `m_pos` now follows the merchant every server tick once he is down** (`CargoEvent.Follow`, from
+`Server/VisitAnchor.cs`, which reads his ZDO through your public `Spawner.Merchant`). Vanilla pauses the clock and
+scopes the banner by `m_pos`, and the deal wire scoped a dismiss by it: on visit 21, after the leash walk, Don stood
+134 m from the drop point with Ingvar beside him — the clock paused (543 republishes, a ServerSync line on his
+client every 2 s), and his "Send him off" was refused three times while the terminal closed on trust. If anything
+of yours reads `RandomEvent.m_pos` as the drop point, it moves now; `VisitSession.DropX/Y/Z` is still where he
+landed. The wire also answers a dismiss on `VCargo_dismissed` (`ok` / `too_far` / `stale_visit`), and the terminal
+waits on it. Seen on visit 22: dismiss taken first try after a leash walk, 0 republishes. Nothing in
+`CargoMerchant`, `Spawner` or `MerchantPlan` was edited for #64.
+
+**Two notes from visit 21 for your side.** (1) **The chase after a moving player cannot finish inside an
+entry-distance budget:** the leash fired at 39 m after 5 s, he followed 156 m in 26 s and gave up 18 m short — the
+designed fallback, but a chase whose target keeps walking never closes on a budget scaled from the entry distance.
+(2) **Ownership during the carry:** three reclaims on visit 21, none on visit 22; #54's hold is in and the
+trigger is still open on your side (the PR #50 thread).
+
+**Yours, unchanged (issue #59):** the flight's feel (say which screen and which part; `Server.FlightSpeed` 12 /
+`Server.FlightTurnRate` 30 first, no build), the walk-off's own log lines from your client, the backpack on his
+body (a bake); the economy questions on #56; YR issue #1 (`Player.PlacePiece` fails to bind on 0.221.12). Still
+unseen here and needing two clients: a second player at the terminal holding the leash.
+
+### The morning of 2026-09-08 (history)
 
 `main` is at a08e8c4 (your #55 merged the morning of 2026-09-08; the close-out docs commit on top): 0 warnings,
 **1722 checks**, `probes 19/19 ok`, the day's PRs #24 to #53 in `CHANGELOG.md` "0.1.0-rc2" and #54 and #55 under
