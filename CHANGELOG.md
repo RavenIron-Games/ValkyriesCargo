@@ -112,7 +112,10 @@ after the rest of this log was written.
   and ANSWERS it on `VCargo_dismissed` (`ok` / `too_far` / `stale_visit`); the terminal waits on that answer
   ("Sending him off", `So be it. I wait on the Allfather's word.`), closes with the farewell on `ok`, shows his words
   for a refusal, and says `No word came back on that. Ask me again.` after 4 s of silence. Shift+E on him stays
-  fire-and-forget (interact range is inside the 96 m by construction). Unseen on a screen.
+  fire-and-forget (interact range is inside the 96 m by construction). SEEN on visit 22 (2026-09-08): after the leash
+  walk a Shift+E dismiss was taken first try, `VCargo_dismissed: ok` on the client, **0 clock republishes** (543 on
+  visit 21) and the ServerSync line 8 times over the visit instead of every 2 s. The terminal button path itself is
+  not yet seen on a screen.
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 
