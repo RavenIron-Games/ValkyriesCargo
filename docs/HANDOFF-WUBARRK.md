@@ -28,6 +28,12 @@ namespace, a peer-list gather, both version names, the zone type at runtime; a S
 three sites, flagged as the owner's call). **The owner said "dont change anything for 1.0": nothing is built, and
 neither side starts without his word.** The client axis is unswept everywhere.
 
+**Your backpack add-on: the shelf half is built** (`a/backpack-shelf`, at the owner's word the same morning). A
+server with Backpacks loaded (`Server.BackpackModGuid`, your GUID `org.bepinex.plugins.backpacks` confirmed off
+the 1.3.8 DLL) sells from `ShelfSize × Server.BackpackShelfMultiplier` (2, range 1–4), looked up in the
+chainloader at director up and every tick, scaled by the pure `Shelf.Scaled`. Backpacks 1.3.8 is on StormTest
+and Don's client. **The backpack on his body is yours**: a bake, nothing of the model is touched here.
+
 **The rotating shelf, issue #56, is BUILT on `a/rotating-shelf`; the PR waits for Don's word.** Your read came the
 same morning (two game days by default; the backpack add-on) and the owner said build. Ingvar's selling side stops
 being a fixed list — 20 of the 72 catalogue entries on the shelf at a time, re-rolled every two game days, seeded

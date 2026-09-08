@@ -53,7 +53,18 @@ after the rest of this log was written.
   with the new `not_on_shelf` and a line of Ingvar's for it. The director re-rolls on the first idle tick of a new
   period, never under a visit (`shelf rolled: …` / `shelf roll waits: …`), and republishes the market; nothing is
   persisted, so a restart mid-period shows the same twenty. `0` keeps the old fixed shelf. `docs/CATALOGUE.md` §7,
-  `docs/ECONOMY-SIM.md` §11. **Not seen on a machine.**
+  `docs/ECONOMY-SIM.md` §11. **Seen on StormTest 2026-09-08**: `shelf roll waits: visit #17 is running`, then
+  `shelf rolled: … period 14 …` naming the twenty, `shelf now: …` after a restart, visit 18 resumed across it.
+- **The backpack add-on, the shelf half (branch `a/backpack-shelf`, Track A, 1831 checks; Wu'barrk's design of
+  2026-09-08, the owner's "take the shelf multiplier on a branch").** A server running Smoothbrain's Backpacks
+  (`Server.BackpackModGuid`, shipped `org.bepinex.plugins.backpacks`, changeable live) sells from a shelf of
+  `ShelfSize × Server.BackpackShelfMultiplier` (shipped 2, range 1–4; capped at 200 and at the catalogue): players
+  who can carry more get more to buy. `Server/BackpackMod.cs` reads BepInEx's chainloader on the server at
+  director up — before the market is sized, so nothing re-rolls a tick later — and once a second after;
+  `Shelf.Scaled` is pure (0 stays the fixed shelf; the scaled shelf for a period is a superset of the unscaled
+  one, so the mod arriving swaps nothing out). One log line at director up says what was found and what it does
+  to the shelf, and `cargo status` repeats it. The backpack on his body is the other half, and Wu'barrk's.
+  **Not seen on a machine.**
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 

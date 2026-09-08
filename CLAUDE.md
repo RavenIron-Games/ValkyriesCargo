@@ -326,6 +326,7 @@ ValkyriesCargo/
   Core/BarrkExport.cs        PURE: the BarrkBOT export's payload shaping: Market/TraderLedger/VisitHistory -> rows
   Core/SidecarThenMirror.cs  PURE: decision 4 proved off-game: the sidecar succeeds first, a mirror throw never reaches the caller
   Server/MarketStore.cs      the sidecar on disk: valkyriescargo_{worldUid}.dat, .tmp/.bak/.corrupt
+  Server/BackpackMod.cs      the backpack add-on's lookup (2026-09-08): is Server.BackpackModGuid loaded here; the shelf scales by Shelf.Scaled
   Net/DealWire.cs            server end: VCargo_open/close/deal/ack/claim/dismiss on each peer's ZRpc; VCargo_dealt back
   Server/BarrkBotExport.cs   writes barrkbot_cargo_market/traders/visits.json under BepInEx/config/ValkyriesCargo/, from VisitDirector.Tick
   Net/CargoTransport.cs      client end (the real ICargoTransport), LocalTransport (listen host), Deliveries
@@ -827,6 +828,16 @@ waits: …`), the `not_on_shelf` refusal with a line of Ingvar's, one line in `c
 has been seen on a machine**. The owner's second ask in the same message — Ingvar buys ANY item a player offers
 and an uncatalogued sale forces a persistent common-or-rare entry — is DESIGNED in that PR's body and NOT built
 (six decisions listed there). Thorium and Wu'barrk are the same person.
+
+**The backpack add-on's shelf half, the same day (branch `a/backpack-shelf`, off the shelf branch; the owner:
+"take the shelf multiplier on a branch").** Smoothbrain's Backpacks 1.3.8 (GUID `org.bepinex.plugins.backpacks`,
+confirmed off the DLL) is installed on StormTest and Don's client. `Server/BackpackMod.cs` looks the GUID
+(`Server.BackpackModGuid`) up in BepInEx's chainloader on the server — at director up, BEFORE the market is
+sized, and once a second after — and `FillMarketRules` ships `Shelf.Scaled(ShelfSize, Server.BackpackShelfMultiplier
+(2, 1–4), present)`: 0 stays the fixed shelf, the product is capped at 200, and the scaled shelf for a period is a
+superset of the unscaled one. One log line at director up names what was found and what it does to the shelf;
+`cargo status` repeats it. 1831 checks. **Not seen on a machine**: the boot must print `backpack mod: … 1.3.8
+loaded; shelf x2 …` then `director up: …; shelf 40 of 72`. The backpack on his body is Wu'barrk's bake.
 
 ## What to verify in-game
 

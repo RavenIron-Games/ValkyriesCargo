@@ -283,3 +283,17 @@ Ware rows in the snapshot, an off-shelf Ware trading as a Want and an on-shelf W
 refusal against an `unknown_item` for a stranger, the Fair Market Act clamp following the shelf, the drift knobs
 following the shelf, the roll moving with the period, the size and the rotation, the switch-off, the catalogue
 swap, and the sidecar rows carrying nothing for it.
+
+**The backpack add-on (2026-09-08; Wu'barrk's design, the owner's decision on the mod).** A server running
+Smoothbrain's Backpacks (BepInEx GUID `org.bepinex.plugins.backpacks`, or whatever `Server.BackpackModGuid`
+names) sells from a bigger shelf: `ShelfSize × Server.BackpackShelfMultiplier` (shipped 2, range 1–4), because
+players who can carry more can buy more in one visit. The lookup (`Server/BackpackMod.cs`) is one read of
+BepInEx's chainloader on the server, made at director up — before the market is sized, so the shelf is built at
+its scaled size and does not re-roll a tick later — and once a second after, so a live change of either knob
+lands on the next idle tick like any other shelf change. The scaling is pure (`Shelf.Scaled`): `0` stays the
+fixed shelf, the product is capped at `Shelf.MaxSize` (200) and, by the roll, at the catalogue, and the scaled
+shelf for a period is a superset of the unscaled one (the swaps are sequential), so the mod arriving mid-period
+swaps nothing out. On the shipped 72 entries ×4 is the whole catalogue and ×3 is 60 of it. The other half of
+the add-on — a backpack on Ingvar's body — is a bake, and Wu'barrk's. The log says what it found at director up
+(`backpack mod: org.bepinex.plugins.backpacks 1.3.8 loaded; shelf x2 (Server.BackpackShelfMultiplier)` or
+`none (…); shelf x1`) and `cargo status` repeats it.

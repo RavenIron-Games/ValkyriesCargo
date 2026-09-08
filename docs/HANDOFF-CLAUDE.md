@@ -36,6 +36,13 @@ the zone type resolved at runtime; for ServerSync's three sites a shim declared 
 flagged as the owner's call) — **and the owner said "dont change anything for 1.0"**. Nothing is built. Neither
 side starts 1.0 work without his word; the client axis is unswept everywhere.
 
+**The backpack add-on's shelf half is built on `a/backpack-shelf`** (the owner's word, later the same morning):
+`Server.BackpackShelfMultiplier` (2, 1–4) and `Server.BackpackModGuid` (`org.bepinex.plugins.backpacks`),
+`Server/BackpackMod.cs` reading BepInEx's chainloader on the server at director up and every tick, `Shelf.Scaled`
+pure. Backpacks 1.3.8 is installed on StormTest and Don's client. **The body half — a backpack on Ingvar — is
+your owner's bake**; nothing here touches the model. Unseen on a machine: the boot line `backpack mod: … loaded;
+shelf x2` and `director up: …; shelf 40 of 72`.
+
 **The rotating shelf (issue #56) is BUILT on `a/rotating-shelf` and its PR waits for the word.** The owner's ask,
 2026-09-08: Ingvar's selling side stops being a fixed list — 20 of the 72 catalogue entries are on the shelf at a
 time, re-rolled every couple of game days, seeded, the fixed Ware list gone; on the shelf an entry behaves as a
