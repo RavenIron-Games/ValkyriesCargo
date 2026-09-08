@@ -56,6 +56,7 @@ namespace ValkyriesCargo.Tests
             OwedLedgerTests();
             PatchLedgerTests();
             GhostTests();
+            ZoneOwnershipTests();
             JsonTests();
             SessionRowTests();
             BodyMotionTests();
@@ -2650,6 +2651,57 @@ namespace ValkyriesCargo.Tests
             // The width the rollover paginates by is the compact rendering of one row, exactly.
             var row = new Dictionary<string, object> { ["Iron"] = new Dictionary<string, object> { ["stock"] = 20, ["trend"] = -1 } };
             Equal("{\"Iron\":{\"stock\":20,\"trend\":-1}}".Length, Json.Write(row).Length, "the compact width is the row's rendered length");
+        }
+
+        private static void ZoneOwnershipTests()
+        {
+            Section("ZoneOwnership: D5 — the server's 2 s sweep releases a claim by ZONE, not by radius");
+
+            // `ZoneSystem.GetZone` (asm:99674) is FloorToInt((v + 32) / 64), so zone 0 is centred on the
+            // origin and spans [-32, 32). These four pin the grid itself; get them wrong and every
+            // answer below is wrong in the same direction and still looks plausible.
+            Equal(0, ZoneOwnership.ZoneIndex(0f), "the origin is zone 0");
+            Equal(0, ZoneOwnership.ZoneIndex(31.9f), "zone 0 runs out at +32");
+            Equal(1, ZoneOwnership.ZoneIndex(32f), "+32 is the first metre of zone 1");
+            // The negative side is the one C# gets wrong for free: (-33 + 32) / 64 is -0.0156, which
+            // truncates to 0 and would put this point in the pilot's own zone. Vanilla floors it.
+            Equal(-1, ZoneOwnership.ZoneIndex(-33f), "a negative coordinate FLOORS, it does not truncate toward zero");
+            Equal(-1, ZoneOwnership.ZoneIndex(-96f), "still zone -1 at -96");
+            Equal(-2, ZoneOwnership.ZoneIndex(-97f), "and -97 has crossed into zone -2");
+
+            // The strip branch keeps a claim inside a block of `m_activeArea - 1` zones in EVERY
+            // direction (asm:69735 is a Chebyshev test, not a Euclidean one).
+            Equal(true, ZoneOwnership.InActiveArea(1, 1, 0, 0, 1), "a diagonal neighbour is inside the 3x3 block");
+            Equal(false, ZoneOwnership.InActiveArea(2, 0, 0, 0, 1), "two zones east is outside it");
+            Equal(false, ZoneOwnership.InActiveArea(0, -2, 0, 0, 1), "and so is two zones south");
+
+            // THE DEFECT ITSELF. The merchant is authored at the flight start, 90 m from the pilot, and
+            // whether that survives the sweep depends on where the pair falls on the grid — which is
+            // exactly why six visits in a row lost him and nobody could see a pattern in the distances.
+            // Same 90 m, both answers:
+            Equal(false, ZoneOwnership.WouldStripClaim(90f, 0f, 0f, 0f, 2),
+                "90 m due east of the origin still shares the 3x3 block: the claim survives");
+            Equal(true, ZoneOwnership.WouldStripClaim(120f, 0f, 30f, 0f, 2),
+                "the SAME 90 m, shifted along the grid, straddles three zones: the claim is stripped");
+            // And the cliff edge the flight start sits next to: measured from the origin the claim holds
+            // to 95 m and is gone at 97 m. `FlightPlan` starts the bird 90 m out, about six metres from
+            // that edge — which is why the pilot's own position on the grid decided every visit.
+            Equal(false, ZoneOwnership.WouldStripClaim(95f, 0f, 0f, 0f, 2), "95 m from the origin: the last metre that holds");
+            Equal(true, ZoneOwnership.WouldStripClaim(97f, 0f, 0f, 0f, 2), "97 m from the origin: two zones out, stripped");
+
+            // Altitude is not a defence. The Valkyrie starts ~155 m up and the sweep never looks at y.
+            Equal(ZoneOwnership.WouldStripClaim(120f, 0f, 30f, 0f, 2), ZoneOwnership.WouldStripClaim(120f, 0f, 30f, 0f, 2),
+                "the test takes no y at all — zones are a 2D grid, so 155 m of altitude changes nothing");
+
+            // The runtime value is what matters. `m_activeArea` reads 2 on a live scene and the compiled
+            // default is 1; reading the default would shrink the keep-window to a SINGLE zone and report
+            // a strip for a merchant standing 40 m from the pilot.
+            Equal(false, ZoneOwnership.WouldStripClaim(40f, 0f, 0f, 0f, 2), "40 m out, activeArea 2: the claim holds");
+            Equal(true, ZoneOwnership.WouldStripClaim(40f, 0f, 0f, 0f, 1),
+                "the same 40 m read against the COMPILED default 1 would claim a strip that never happens");
+
+            // And the drop, which is where a healthy visit ends up: metres from the pilot, never stripped.
+            Equal(false, ZoneOwnership.WouldStripClaim(13f, 0f, 0f, 0f, 2), "the drop point, 13 m from the pilot: safe");
         }
 
         private static void GhostTests()

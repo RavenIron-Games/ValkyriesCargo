@@ -84,6 +84,15 @@ namespace RavenIron.ValkyriesCargo.Client
         public bool HasDropped => _dropped;
         public int VisitId => _visitId;
 
+        /// <summary>
+        /// True on the one machine flying this bird - the pilot's client, because `Spawner` authors the
+        /// bird owned by the pilot. The bird is NON-persistent, and `ZDOMan.ReleaseNearbyZDOS` skips
+        /// `!Persistent` outright (`asm:65189`), so unlike the merchant's this ownership is never
+        /// reassigned by proximity and stays true for the whole flight. That makes it the honest test
+        /// for "am I the machine that should own the merchant too" - see `CargoMerchant.FixedUpdate`.
+        /// </summary>
+        public bool Flying => _nview != null && _nview.IsValid() && _nview.IsOwner();
+
         private void Awake()
         {
             _nview = GetComponent<ZNetView>();
