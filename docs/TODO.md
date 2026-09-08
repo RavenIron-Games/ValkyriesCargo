@@ -175,6 +175,64 @@ step 4).
       update `docs/ENGINE-BASELINE.md`, check in the report under `docs/engine-sweeps/`, and report
       anything that moved. Then re-check every CLAUDE.md engine fact the diff touches. Any change in
       the surface is a stop-ship.
+      **A head start landed 2026-09-07, from the MigrationStation session on this machine.** A 1.0
+      build is already local: Steam public-test build 23105022, **0.221.13**, network version 37, at
+      `libs-Tools/GAME-SNAPSHOT-playtest-build23105022/` (dedicated SERVER only; no 1.0 client
+      snapshot exists, so the client axis is unverified), decompiled at
+      `libs-Tools/DECOMPILED-PLAYTEST-build23105022/`. Its same-axis metadata diff (0.221.12 server
+      vs 0.221.13 server) is checked in verbatim at
+      `docs/engine-sweeps/2026-09-07-migrationstation-server-vs-server-0.221.12-vs-0.221.13.txt`
+      with a header saying what it is and what a signature diff cannot see. **Do NOT install their
+      compat layer on a 1.0 testbed** — their own audit found its same-name bridges make
+      `Type.GetMethod(name)` / `AccessTools.Method(type, name)` throw `AmbiguousMatchException`, which
+      would break our whole name-based probe registry on contact; their advice to us is to recompile
+      against 1.0 references instead. What is already known, so the sweep need not re-derive it:
+      - **D5 and `Core/ZoneOwnership.cs` survive untouched**, checked at BODY level (a metadata diff
+        cannot): `ReleaseNearbyZDOS` is unchanged statement for statement and `GetZone` still computes
+        `FloorToInt((v + 32.0) / 64.0)`. Only `Vector2i` -> `Vector2s` moved.
+      - **Unchanged by signature:** `ZNetView.ClaimOwnership`, `Character.RPC_Damage` (the
+        immortality patch), `RandEventSystem`'s runtime API, `ZoneSystem.instance.m_activeArea`.
+      - **Our two real break points, both by design:** `EngineCheck.cs`'s three `InActiveArea` probe
+        rows pin `typeof(Vector2i)` and will report FAILED on 1.0 — a probe is a veto, so this is the
+        stop-ship signal firing correctly, not a bug; and `CheckVersion` reflects `m_networkVersion` /
+        `m_playerVersion` / `m_worldVersion` by name, all renamed on 1.0 (`c_networkVersion`; world
+        version becomes the enum `Version.World`), so it answers "is gone or is not a number" rather
+        than silently claiming "same build". Both want the rename, neither is a silent failure.
+      - Type-pinning our reflection is what keeps us on the right side of the ambiguity above; keep it.
+      **THE SWEEP RAN EARLY, 2026-09-08**, on the server axis, with `tools/decompile-builds.sh` +
+      `tools/diff-engine.js` - the P10a tools, unmodified; the two snapshots are symlinked into
+      `~/valheim-shadows` so `--build` finds them. Report:
+      `docs/engine-sweeps/2026-09-08-server-0.221.12-vs-0.221.13.md`. Of 257 surface members: 231
+      unchanged, 15 body changed, 6 signature changed, 5 gone. **There is a stop-ship, and it is worse
+      than the FileSource one:** `StringExtensionMethods.GetStableHashCode(this string)` gained an
+      optional `bool addToNameHash = true`. The ALGORITHM is byte-identical, so no key value and no
+      saved world moves - but C# resolves an optional parameter at the CALL SITE at our compile time, so
+      our DLL calls a one-argument method that does not exist on 1.0. All 16 call sites throw
+      `MissingMethodException`, and most are `static readonly` initialisers, which makes it a
+      `TypeInitializationException` that poisons the type for the rest of the session: `Server/Spawner.cs`
+      (10 - the whole spawner), `Libs/ServerSync.cs` (3 - the version gate, **and that file is "not ours"
+      and may not be edited in place; it wants an upstream ServerSync built for 1.0**),
+      `Client/ComfortReporter.cs` (2 - nobody is ever eligible), `EngineCheck.cs` (1). Verified against
+      the real assemblies, not the decompile: arity 1 on 0.221.12, arity 2 with no 1-arg overload on
+      0.221.13. *Not yet decided:* how we call it from one DLL that must run on both - a cached
+      reflected delegate behind a `Keys.Hash(string)` helper covers our 13, but ServerSync's 3 are
+      upstream's. **The client axis is still unswept** - no 1.0 client build exists yet; a second run is
+      owed when one appears. The 15 body changes are listed in the report and none has been read yet;
+      each is a recorded engine fact that may now be false.
+      **The 15 were read the same day, and there is a SECOND stop-ship, quieter than the first:**
+      `ZNet.GetAllCharacterZDOS` gained `if (m_characterID == ZDOID.None) return empty;` ABOVE the loop
+      over `m_peers`. `m_characterID` is set only by `ZNet.SetCharacterID`, called only from
+      `Game.SpawnPlayer` (the LOCAL player), and a dedicated server never spawns one - so on a 1.0
+      dedicated server the method returns an empty list forever. `VisitDirector.Gather` calls it once a
+      second and CLAUDE.md calls it "THE server-side 'where is every player'"; that fact is now false.
+      No candidate is ever found, no visit can ever happen, nothing throws, and the roll reports
+      `no eligible player: nobody online` on a full server. A listen host is unaffected. Everything else
+      holds and the report says why for each: `ZSyncTransform.OwnerSync`'s velocity path is
+      byte-identical (only the scale branch moved), `ZNetView.Awake` still never re-applies Persistent,
+      `CreateNewZDO` still does not set the prefab, and `Character.Awake` / `ZSyncAnimation.Awake` still
+      cache a root-scoped animator so BodyLoader's appended-last defence stands. One WATCH: `ZDO.IsValid`
+      is now `m_prefab != -1` rather than a `DataFlags` bit, so a ZDO is invalid between `CreateNewZDO`
+      and `SetPrefab` - a window `Spawner.Author` already closes on the next line and must keep closing.
 - [ ] **Client-only proofs he took:** the animator parameter names (a dedicated build strips controllers;
       P5's `SetBool` names must be read on a client); the rest of item 20 — Ingvar in daylight, the
       walk, the one-shot clips (CLAUDE.md "Seen fixed on a screen"); `cargo prefab odin` on a client.
