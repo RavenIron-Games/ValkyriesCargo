@@ -750,6 +750,22 @@ leash and `reached the player` within 5 s; a barter and two Eitr deals with the 
 target); both visits ended on the timer with the D3 sweep line. **Found on screen: Ingvar walks backward** (item
 20, fixed the same evening). No exception on either side.
 
+**VISIT 9, 17:03 the same day, on main `84de90a` (all four fixes) — the no-show, and D1's second regime SETTLED.**
+The drop printed PR #50's new line on the pilot's client:
+`cargo merchant #9: carried -> approaching via the ZDO, 16.9601974 s after waking; carrier none, 135.693878 m from
+the player, watching, grounded yes; walk-up budget 90 s`. Two words settle §1.3 of the audit: **`watching`** — the
+pilot's client, which owned him at `awake … ours` 17 s earlier, does NOT own him at the drop; and **`135.7 m`** —
+his transform is not at the drop point 13 m from the pilot but far back along the flight. So **the pilot's client
+loses ownership of the merchant during the carry**; his networked position freezes where that happened (only an
+owner writes it); when the bird lets go, `ZSyncTransform`'s non-owner path snaps his body to the frozen position;
+and with no owner nothing runs `Decide`, so he stands there until the pilot comes within a zone and his client
+claims him again — the late give-ups, the 150–600 m "moved", the clock pausing with nobody within 96 m. On visit
+9 the pilot never went to him ("no show"), left at 17:05:38 with the visit open and paused. The entry reset itself
+worked (budget 90 s from 135.7 m, not the 20 s floor); the body's `turned 180 deg (Client.BodyYawDegrees)` line was
+printed but the walk was not seen. **What is NOT yet known: WHO takes ownership, or whether it is released to
+nobody, and when during the carry.** The fix direction, Track B's file: keep the pilot as owner for the whole
+carry (claim it back in `Reassert` while `Pinned`, or refuse the release), and log the owner uid at the transition.
+
 ## What to verify in-game
 
 **An item is proven by its own pasted log line and a date, and by nothing else.** Done so far: **item 1**

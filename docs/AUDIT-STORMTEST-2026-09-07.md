@@ -48,6 +48,14 @@ With `_timeInState` carrying the flight and the budget at its 20 s floor, the gi
 
 ### 1.3 The second regime: visits 4–6 — unexplained by the code alone
 
+> **SETTLED 2026-09-07 17:03, visit 9, by PR #50's own line:** `carried -> approaching via the ZDO, 16.96 s after
+> waking; carrier none, 135.7 m from the player, watching, grounded yes; walk-up budget 90 s`. The pilot's client
+> does not own the merchant at the drop (`watching`), and his transform is 135.7 m from a drop point 13 m from the
+> pilot: ownership is lost during the carry, the networked position freezes there, the body snaps back to it when
+> the bird lets go, and with no owner nothing runs `Decide`. The reconstruction below was right about the
+> mechanism's shape and wrong about the vehicle: it is not the bird carrying him off, it is the ownership
+> release. Not yet known: who takes it, or whether it goes to nobody, and when. See CLAUDE.md "VISIT 9".
+
 | visit | drop (client clock) | `Destroying valkyrie` | walk-up gave up | where he was |
 |---|---|---|---|---|
 | 4 | ≈11:18:19 | 11:18:47 (+28 s) | **never** in 64 s; dismissed | no merchant state line at all |

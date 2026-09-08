@@ -234,8 +234,16 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
 - [x] **Ingvar walks backward** (owner, on screen, 2026-09-07 15:50, visit 8; "fix the backwards walking"):
       the bundle's forward axis is the Dverger's back and the loader attached him with identity rotation.
       `Client.BodyYawDegrees` (local, default 180, range ±180) applied at `BodyLoader.Attach` and in the preview;
-      the attach line logs `turned N deg`. Harness untouched (Unity-side). **Not yet seen after the fix**: the next
-      visit shows him walking forward and facing the player; a bake that comes out facing forward sets it to 0.
+      the attach line logs `turned N deg`. Harness untouched (Unity-side). **Not yet seen after the fix**: visit 9
+      (17:03, main 84de90a) printed `turned 180 deg` but was a no-show — see the next item — so the walk itself is
+      still unseen; a bake that comes out facing forward sets it to 0.
+- [ ] **Visit 9 settled D1's second regime: the pilot loses OWNERSHIP of the merchant during the carry** (CLAUDE.md
+      "VISIT 9"; audit §1.3's note). PR #50's line at the drop read `… carrier none, 135.7 m from the player,
+      watching, …; walk-up budget 90 s`: the entry reset works (90 s, not the floor), but the pilot's client no
+      longer owns him and his body is back along the flight where his networked position froze. No owner, no
+      `Decide`, no walk-up; the clock pauses with nobody within 96 m; the pilot left with the visit open. **Track
+      B's file** (`CargoMerchant` / `Spawner`): keep the pilot as owner for the whole carry, and log the owner uid at
+      the transition so the next log says who took it. Not built; the owner is telling Wu'barrk.
       The evening session's other lines are in CLAUDE.md's "THE EVENING SESSION" paragraph and
       `docs/proofs/2026-09-07-stormtest-evening.log.txt` (D4a seen, D2's base bucket, item 19 DONE, D1's second
       regime on both visits, the Fair Market Act on Eitr).

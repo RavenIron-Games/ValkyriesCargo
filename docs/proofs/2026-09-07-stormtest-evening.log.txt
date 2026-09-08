@@ -115,3 +115,60 @@
 [Info   :Valkyrie's Cargo] terminal closed: escape
 [Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
 [Info   : Unity Log] 09/07/2026 15:50:00: Closing socket 90292347319028760
+
+## THIRD BOOT, 16:58 (main 84de90a: D1 #50, D3 #51, D2/D4 #48, the body half-turn #53) — visit 9, the no-show, and the line that explains it
+
+### SERVER (from line 5261 of its log)
+[Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.0]
+[Info   :Valkyrie's Cargo] built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable.
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches 18/18 applied, catalogue=72 entries, engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+[Info   : Unity Log] 09/07/2026 16:58:22: Load world: Dedicated (Dedicated)
+[Info   :Valkyrie's Cargo] role: dedicated server
+[Info   :Valkyrie's Cargo] admin wire up for this session: VCargo_admin is registered on each peer's OWN socket as it connects and VCargo_reply answers on the same socket; the caller's identity is that socket, never a field in the packet
+[Info   :Valkyrie's Cargo] director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 535, next visit #9, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_4690126.dat (89 rows loaded)
+[Info   :Valkyrie's Cargo] roll: no eligible player: nobody online
+[Info   : Unity Log] 09/07/2026 17:01:35: Got connection SteamID 76561198392625778
+[Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 to the client.
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 from the client.
+[Info   :Valkyrie's Cargo] admin wire registered for Nomadtest (498059743)
+[Info   :Valkyrie's Cargo] deal wire registered for Nomadtest (498059743)
+[Info   : Unity Log] 09/07/2026 17:01:55: Got character ZDOID from Nomadtest : 498059743:7
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 not rested
+[Info   :Valkyrie's Cargo] admin Nomadtest (498059743): cargo visit 
+[Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-51.83114, 57.449913); 1 eligible, 1 ticket(s)
+[Info   : Unity Log] 09/07/2026 17:02:58: Random event set:valkyries_cargo
+[Info   :Valkyrie's Cargo] visit #9 begins: pilot Nomadtest (uid 498059743) at (-51.83114, 57.449913), 300 s, purse 800, seed 1178917042
+[Info   :Valkyrie's Cargo] visit #9: flight authored: start (-76.33636, 144.04953) at 198.019928, descent (-69.10133, 118.481476) at 159.847748 (50 m short), drop (-55.4873161, 70.370575) at 78.01992, straight in 90 m out; bird -185572200:88973, Dverger -185572200:88974, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #9: dropped at (-55.4873161, 76.03958, 70.370575)
+[Info   : Unity Log] 09/07/2026 17:05:38: Closing socket 76561198392625778
+
+### CLIENT (Gale profile Default, the boot of 17:01)
+[Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.0]
+[Info   :Valkyrie's Cargo] built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable.
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=True, patches 18/18 applied, catalogue=72 entries, engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+[Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 to the server.
+[Info   :Valkyrie's Cargo] role: client
+[Info   : Unity Log] 09/07/2026 17:01:35: Got connection SteamID 90292351936321560
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 from the server.
+[Info   : Unity Log] Received 31 configs and 2 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] admin wire: registered VCargo_reply on the server socket
+[Info   :Valkyrie's Cargo] deal wire: registered VCargo_dealt on the server socket
+[Info   :Valkyrie's Cargo] body: source embedded, prefab 'ingvar', 6 clip(s) [Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s], SkinnedMeshRenderer=True, bones=24, tris=31112, mesh bounds y -0.244 to 0.244 (0.94 x 0.49 x 1.37 m), ground offset 0.244 m
+[Info   :Valkyrie's Cargo] body: the BIND-POSE box implies a 0.244 m offset, which on this asset is an artefact of that box and not a real lift -- the source is authored on a different up-axis and FBX axis conversion does not touch bind-pose bounds. Nothing is placed from this number: Attach and the preview both measure the POSED mesh (BakeMesh). Kept because it is still the fastest way to see a bake come out sideways.
+[Info   : Unity Log] 09/07/2026 17:02:58: Random event set:valkyries_cargo
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-51.83114, 57.449913); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] cargo flight #9: flying from (-76.33636, 198.019928, 144.04953) via (-69.10133, 159.847748, 118.481476) to (-55.4873161, 78.01992, 70.370575), 76.572 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+[Info   :Valkyrie's Cargo] body: dressed Ingvar in a copy of the Dverger's own material ('DvergerBody', shader 'Custom/Creature') with our albedo in it. A baked bundle carries Unity's Standard, which Valheim lights only from direct light.
+[Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+[Info   :Valkyrie's Cargo] cargo merchant #9: awake as carried, ours, body=Ingvar
+[Info   :Valkyrie's Cargo] cargo flight #9: dropped at (-55.4873161, 76.03958, 70.370575) after 16.9601974 s
+[Info   :Valkyrie's Cargo] cargo merchant #9: carried -> approaching via the ZDO, 16.9601974 s after waking; carrier none, 135.693878 m from the player, watching, grounded yes; walk-up budget 90 s
+[Info   : Unity Log] Received 0 configs and 1 custom values from the server for mod Valkyrie's Cargo
+[Info   :Valkyrie's Cargo] cargo flight #9: ground unknown at (-99.70183, 178.450638, 224.011246) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+[Info   : Unity Log] 09/07/2026 17:03:39: Destroying valkyrie
+[Info   : Unity Log] 09/07/2026 17:05:38: Closing socket 90292351936321560
+[Warning: Unity Log] 09/07/2026 17:05:40: Local player destroyed
