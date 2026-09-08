@@ -14,11 +14,12 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 **The tracker is still `docs/TODO.md`**, three tracks, each editing only its own section; when this file and
 that one disagree, that one wins. The subsection below this one is this morning's state, kept as history.
 
-**Where main is.** `ae17eb1` at the time of writing, with one docs PR open (#49: the moved-version proof and the
-rc2 changelog draft): 0 warnings, **1701/1701 off-game checks**, `probes 18/18 ok, 7 not probeable` on the real
-assembly. **Twenty-five PRs merged today, #24 to #48**, every one listed in build order with its check count in
-`CHANGELOG.md` "Since 0.1.0-rc1" (on #49). **`v0.1.0-rc1` still carries the F1 blocker and must not reach a
-tester**; rc2 is the next cut, from main, on the owner's word.
+**Where main is.** `e4ee83c` at the time of writing: 0 warnings, **1701/1701 off-game checks**, `probes 18/18 ok,
+7 not probeable` on the real assembly. The day's PRs, **#24 to #53**, are listed in build order with their check
+counts in `CHANGELOG.md` "0.1.0-rc2". **`v0.1.0-rc2` is cut** from that commit (2026-09-07 evening, at the owner's
+word): the store zip and the bundle attached, a pre-release, uploaded to no store. `v0.1.0-rc1` is marked
+superseded on its release page and still must not reach a tester: it carries F1, and the ServerSync gate does not
+tell the two apart (both are 0.1.0), so every copy is replaced by hand. Issue #23 is closed.
 
 **Six visits have now flown on the owner's Windows client against the dedicated server StormTest** (10:39–11:38
 today), twenty deals over the wire, no exception from the mod on either side. The record with every line is
@@ -82,8 +83,8 @@ drift knobs, ghost mode, the load-bearing set. Still open, the owner's and nobod
 the client asserting its own rested/comfort numbers, and reconfirm versus teardown on a price tick.
 
 **What Don's side wants from yours, in order:** ~~D1 and D3; your `docs/TODO.md` §2~~ done (#50, #51, #52); the
-animator parameter names and item 23 on your server, still yours; issue #23 (your rc1 note) closes when rc2
-replaces rc1; and your commits under one author name — today's arrived as `t <t@l>`, `trial <trial@local>` and one
+animator parameter names and item 23 on your server, still yours; ~~issue #23 (your rc1 note)~~ closed with rc2;
+and your commits under one author name — today's arrived as `t <t@l>`, `trial <trial@local>` and one
 merge authored as the model, which is what blame and the release notes will show.
 
 ### The morning of 2026-09-07, after the rc1 merge (history)

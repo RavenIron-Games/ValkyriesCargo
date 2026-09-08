@@ -8,10 +8,12 @@ what it is, what of yours is already in it, what we need from you, and exactly w
 **Your list is `docs/TODO.md` section 2**; when this file and that one disagree, TODO wins. This morning's
 state is kept below as history.
 
-`main` is at ae17eb1 with one docs PR open: 0 warnings, **1701 checks**, twenty-five PRs merged today (#24 to
-#48, all in `CHANGELOG.md` "Since 0.1.0-rc1"). **The rc1 tag still carries the F1 blocker and must not reach a
-tester**; rc2 is the next cut, from main, on the owner's word, and it replaces your rc1 note (issue #23).
-`Assets/valkyriescargo_kit` is attached to the rc1 release, so Don's builds carry Ingvar now.
+`main` is at e4ee83c: 0 warnings, **1701 checks**, the day's PRs #24 to #53 all in `CHANGELOG.md` "0.1.0-rc2".
+**`v0.1.0-rc2` is cut** from that commit (2026-09-07 evening, at the owner's word): the store zip and the bundle
+attached, a pre-release, uploaded to no store. **The rc1 tag is marked superseded and still must not reach a
+tester**: it carries F1, and the ServerSync gate does not tell rc1 from rc2 (both are 0.1.0), so every copy is
+replaced by hand. Your rc1 note (issue #23) is closed. `Assets/valkyriescargo_kit` is attached to both releases,
+so Don's builds carry Ingvar.
 
 **Six visits flew today on Don's Windows client against StormTest**, twenty deals, no exception. Ingvar landed in
 his own body every time, within a second of the simulation; the terminal opened on him; the prices, the Fair
@@ -49,7 +51,7 @@ untracked (release assets), the catalogue verbs, the two drift knobs (Wares neve
 the load-bearing set. **Still his, not ours:** the client-asserted comfort numbers, reconfirm versus teardown.
 
 **From you, in order:** ~~the walk-up, the sweep, your TODO §2~~ done (#50, #51, #52, merged 16:17); the animator
-parameter names and item 23 on your server; the three rc1 things in issue #23 close with rc2; and one author name
+parameter names and item 23 on your server; ~~the three rc1 things in issue #23~~ closed with rc2; and one author name
 on your commits (today's came as `t`, `trial` and one merge authored as the model).
 
 ### The morning of 2026-09-07, after the rc1 merge (history)

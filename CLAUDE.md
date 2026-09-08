@@ -26,7 +26,7 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 **Main after the 0.1.0 integration (PR #22) and the API-reference snapshot (PR #17), 2026-09-07. Builds clean
 (0 warnings), 1301/1301 off-game checks, packages (`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right
-layout); `v0.1.0-rc1` is tagged with the store zip attached to the release and uploaded to NO store.** Every
+layout); `v0.1.0-rc1` is tagged with the store zip attached to the release and uploaded to NO store — superseded the same evening by `v0.1.0-rc2` (main `e4ee83c`, 1701 checks, the zip and the bundle attached, still a pre-release, still no store; the RC2 paragraph after VISIT 9).** Every
 package is now code: the plugin entry, ServerSync vendored and armed, the config surface bound and locked, the
 `cargo` console, the catalogue with 72 defaults, the market and the scheduler, the event and the director, the
 deal wire, the world sidecar, the Cargo Terminal, the body loader with Ingvar's baked bundle embedded, the
@@ -766,6 +766,17 @@ printed but the walk was not seen. **What is NOT yet known: WHO takes ownership,
 nobody, and when during the carry.** The fix direction, Track B's file: keep the pilot as owner for the whole
 carry (claim it back in `Reassert` while `Pinned`, or refuse the release), and log the owner uid at the transition.
 
+**RC2 CUT, 2026-09-07 evening, at the owner's word ("rc2").** `v0.1.0-rc2` is tagged on main `e4ee83c` (code
+`84de90a`, the docs commit on top): 1701/1701 checks, 0 warnings, `tools/package.ps1` layout exact, the store zip
+(4,154,088 bytes; DLL 4,224,000 with the bundle inside) and `valkyriescargo_kit` (3,845,930, the same bytes as
+rc1's) attached as release assets; a pre-release, uploaded to NO store (`docs/RELEASE.md` step 5 holds until the
+whole loop is seen). rc1's release page is retitled SUPERSEDED with a note on top, nothing below it edited; issue
+#23 closed. **Both cuts are version 0.1.0, so the ServerSync gate does not refuse an rc1 client on an rc2 server**
+— every copy is replaced by hand; the release note says so in its first line. Known and open at the cut: the
+pilot's client loses ownership of the merchant during the carry (VISIT 9 above), Track B's file. The StormTest
+sidecar's `session 9` row was removed before this cut (backup `.before-clear-2026-09-07-1715.bak`), so the next
+boot sweep destroys the stranded merchant.
+
 ## What to verify in-game
 
 **An item is proven by its own pasted log line and a date, and by nothing else.** Done so far: **item 1**
@@ -780,7 +791,7 @@ log. **Never run: items 3, 5, 14, 22 and 25**, item 4's local-edit half, item 11
 RUN, above) had shown the server-log half of item 15's restart-mid-visit; that half is still his.
 **The runbook is `docs/PROOF-CLIENT.md`**: the order, the exact
 command for each, the line the code writes, and `tools/deploy-test.ps1` / `tail-log.ps1` / `set-test-config.ps1`.
-Deploy the **rc1 release DLL**: it is the only build that carries Ingvar on a machine without the bundle asset.
+Deploy the **rc2 release DLL** (inside the zip on `v0.1.0-rc2`; never rc1's, which carries F1): it is the build that carries Ingvar on a machine without the bundle asset.
 The client audit (`docs/CLIENT-AUDIT.md`, PR #11) fixed six defects on these paths before anyone ran them; its
 section (c) lists what only a screen can settle.
 

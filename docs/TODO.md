@@ -286,3 +286,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       the demo market keeps a one-day half-life on both kinds so its walk still moves; EconSim scenario 10 is
       the sweep and `docs/ECONOMY-SIM.md` is regenerated; harness checks for the shipped knobs and the clamps.
       **SEEN 2026-09-07 on StormTest**: five Wares bought out in visit 3 still at 0 when visit 4 opened; Wood 326 → 322 in the gap.
+- [x] **rc2 cut** 2026-09-07 evening at the owner's word: `v0.1.0-rc2` on main e4ee83c (code 84de90a), 1701
+      checks, the store zip and `valkyriescargo_kit` attached, pre-release, no store; rc1's page marked
+      superseded, issue #23 closed. The gate does not tell rc1 from rc2 (both 0.1.0): replace copies by hand.
+      The rc2 changelog entry and the README status rewrite (`docs/RELEASE.md` step 4) went in with it.
