@@ -777,6 +777,24 @@ pilot's client loses ownership of the merchant during the carry (VISIT 9 above),
 sidecar's `session 9` row was removed before this cut (backup `.before-clear-2026-09-07-1715.bak`), so the next
 boot sweep destroys the stranded merchant.
 
+**VISITS 10 TO 15, 20:18–21:10 the same night — rc2 on a screen, then D5 built by Track B and SEEN.** On rc2's
+code (84de90a): visit 10 kept ownership (`ours`, from the west, 90 m) and its first approach gave up at the scaled
+budget (31.7 s, 242 m moved, 10 m short; the leash reached +29 s); visits 11 and 12 lost him (`watching`, 95.7 m
+and 116.8 m frozen, from the east and the south, 78 m starts) — Don STOOD STILL on 12, so movement is out and the
+direction is the variable. Wu'barrk's PR #54 (D5: `HoldTheCarry` claims him back every physics step while Pinned,
+on the pilot's client only; `owner N` and a reclaim count in the lines) was reviewed, merged on the word (main
+`2694d3b`, 1718 checks), deployed both sides, the server restarted 20:44 with the visit 12 row cleared. Visits
+13, 14, 15 on it: `ours (owner -677746031), 2 / 2 / 0 reclaim(s)` from the south, the east, the north-east, and
+**the first approach reached the player every time (11, 12, 13 s) — the first times in fifteen visits: D1, F5
+and D5 seen.** Also seen: D3's clean end (reclaim line, no sweep line) on every end, D4's wires registering once
+the identity arrived, the boot sweep destroying one stranded merchant on each boot after a cleared row. Open from
+the night: the trigger of the loss (all starts inside the pilot's 3x3 by `ZoneOwnership`'s own maths, the
+reclaim counts by direction; a first-reclaim line asked for on #54), F3's grace (end to reclaim 6 / 0 / 0 / 0 s,
+his file), the walk direction and the vanish (Don's eyes; not in the log). His PR #55 (docs, the 1.0 head start)
+is OPEN and not merged at the owner's word. The record: `docs/proofs/2026-09-07-stormtest-night.md`. Server
+DOWN with visit 15 open in the sidecar (purse 100000, a test value) — the next boot adopts it unless the row is
+cleared first.
+
 ## What to verify in-game
 
 **An item is proven by its own pasted log line and a date, and by nothing else.** Done so far: **item 1**

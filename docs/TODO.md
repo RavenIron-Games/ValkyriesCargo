@@ -326,3 +326,14 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       visit on that build where the first approach reaches Don; not a date. rc3, or 0.1.0 proper if that visit and
       the vanish are clean; if Valheim 1.0 lands first, cut once after the probe run. Review his PR on arrival,
       merge only on the word.
+- [x] **D5 reviewed and merged** (owner, "post it and merge", 2026-09-07 ~20:43): Wu'barrk's PR #54, main 2694d3b,
+      1718 checks; deployed both sides; **SEEN on visits 13, 14, 15**: `ours (owner …), 2 / 2 / 0 reclaim(s)` and
+      the first approach reached every time. The review's table (all starts inside the 3x3; freezes mid-flight)
+      and the two notes (the reclaim pattern by direction; F3's grace 0 s on three of four ends) are on #54.
+- [ ] **PR #55 (his docs: the 1.0 head start)** — OPEN, NOT merged at the owner's word ("do not merge 55").
+      Caveat not yet posted: Steam shows no branch with build 23105022 / 0.221.13 on either app from this machine
+      (public, previous stable, the pre-1.0 pins, all at 21981590 or older). Builds, 1718, docs only.
+- [ ] **StormTest is down with visit 15 OPEN in the sidecar** (session row; `purse`/`purseStart` 100000 = Don's
+      test value; the merchant ZDO in the 21:05:20 save near the drop). The next boot adopts it (item 15 and F4's
+      rebind for free) unless the row is cleared first, as was done before the 20:18 and 20:44 boots (a backup
+      beside the file each time). The proofs record is `docs/proofs/2026-09-07-stormtest-night.md`.

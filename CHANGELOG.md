@@ -21,8 +21,21 @@ two-client items, and the screen questions (the release over the drop point, the
 bubble, the hover prompt). The runbook is `docs/PROOF-CLIENT.md` and what remains is listed in
 CLAUDE.md's "what to verify in-game". Treat 0.1.0 as a first playable, not as a settled one.
 
-Entries are in build order, except the four sections directly below: 0.1.0's newest work, added
+Entries are in build order, except the five sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
+
+### Since 0.1.0-rc2 — the same night
+
+- **D5, the ownership loss during the carry (PR #54, Track B, 1718).** `HoldTheCarry` claims the merchant back
+  every physics step while he hangs from the talons, on the pilot's client only (gated on owning the bird, which
+  the engine's sweep never touches); both log lines say who holds him (`ours|watching (owner N)`) and the
+  transition line counts the reclaims. **Seen the same night on StormTest, three visits from three directions:
+  `ours`, 2 / 2 / 0 reclaims, and the first approach reached the player every time — the first times in fifteen
+  visits, so D1, F5 and D5 are all seen.** The trigger is still open: the reclaim counts by direction do not fit a
+  sector strip around a standing pilot, and a first-reclaim line is asked for. Also seen that night: D3's clean
+  end with no sweep line on every end, D4's wires registering once the identity arrived, and that F3's two-second
+  grace before the reclaim does not show in the log (0 s on three of four ends; Track B's file). The record is
+  `docs/proofs/2026-09-07-stormtest-night.md`.
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 

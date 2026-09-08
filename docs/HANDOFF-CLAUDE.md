@@ -1,4 +1,4 @@
-# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 night, after nine visits and the rc2 cut
+# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 night, after fifteen visits, the rc2 cut and D5
 
 You are the second engineering session on this mod. Don's session (me) built what is here; you and
 Wu'barrk take part of what is left. This file tells you everything you need to act, in the order to
@@ -9,25 +9,26 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 
 ---
 
-## 0. State on 2026-09-07 night, after nine visits and the rc2 cut — READ THIS FIRST
+## 0. State on 2026-09-07 night, after fifteen visits, the rc2 cut and D5 — READ THIS FIRST
 
 **The tracker is still `docs/TODO.md`**, three tracks, each editing only its own section; when this file and
 that one disagree, that one wins. The subsection below this one is this morning's state, kept as history.
 
-**Where main is.** `67201c5` at the time of writing (code `84de90a`; the rc2 tag sits on `e4ee83c`, the
-release-docs commit): 0 warnings, **1701/1701 off-game checks**, `probes 18/18 ok,
-7 not probeable` on the real assembly. The day's PRs, **#24 to #53**, are listed in build order with their check
-counts in `CHANGELOG.md` "0.1.0-rc2". **`v0.1.0-rc2` is cut** from that commit (2026-09-07 evening, at the owner's
-word): the store zip and the bundle attached, a pre-release, uploaded to no store. `v0.1.0-rc1` is marked
-superseded on its release page and still must not reach a tester: it carries F1, and the ServerSync gate does not
-tell the two apart (both are 0.1.0), so every copy is replaced by hand. Issue #23 is closed. **The next cut waits on
-the ownership fix and one screen visit where the first approach reaches Don, not on a date** (owner, 2026-09-08
-00:40); it is rc3, or 0.1.0 proper if that visit and the vanish are clean, and if Valheim 1.0 lands first it is cut
-once, after the probe run.
+**Where main is.** `2694d3b` at the time of writing (your PR #54 merged; the night's docs commit sits on top): 0
+warnings, **1718/1718 off-game checks**, `probes 18/18 ok, 7 not probeable` on the real assembly. The day's PRs,
+**#24 to #53**, are in build order with their check counts in `CHANGELOG.md` "0.1.0-rc2", and #54 under "Since
+0.1.0-rc2". **`v0.1.0-rc2` is cut** at `e4ee83c` (2026-09-07 evening, at the owner's word): the store zip and the
+bundle attached, a pre-release, uploaded to no store; **it does not carry D5**. `v0.1.0-rc1` is marked superseded
+and still must not reach a tester: it carries F1, and the ServerSync gate does not tell the cuts apart (all are
+0.1.0), so every copy is replaced by hand. Issue #23 is closed. **Your PR #55 (docs, the 1.0 head start) is OPEN
+and not merged, at the owner's word.** The owner's conditions for the next cut (2026-09-08 00:40: the ownership
+fix in, a first approach that reaches) are met but for the vanish being watched; the cut itself is on his word —
+rc3, or 0.1.0 proper — and if Valheim 1.0 lands first it is cut once, after the probe run.
 
-**Nine visits have now flown on the owner's Windows client against the dedicated server StormTest**: six in the
-morning (10:39–11:38, PR #46's build), twenty deals over the wire, no exception from the mod on either side; then
-three in the evening on the audit's fixes. The record with every line is `docs/proofs/2026-09-07-stormtest-session.md`
+**Fifteen visits have now flown on the owner's Windows client against the dedicated server StormTest**: six in the
+morning (10:39–11:38, PR #46's build), twenty deals over the wire, no exception from the mod on either side; three
+in the evening on the audit's fixes; and six at night, on rc2 and then on your D5 (the paragraph below the audit's,
+and `docs/proofs/2026-09-07-stormtest-night.md`). The record with every line is `docs/proofs/2026-09-07-stormtest-session.md`
 (the evening in `2026-09-07-stormtest-evening.log.txt` beside it); CLAUDE.md's verify list carries each item's
 line. Proven on a machine: the flight and the drop within a second of the simulation, Ingvar in his own body every
 time, the terminal opened ON the merchant, the price curve, the Fair Market Act, both drift knobs and the purse
@@ -96,18 +97,31 @@ mutate-and-restore cycle (a `git checkout --` wiped an uncommitted edit today), 
 drift knobs, ghost mode, the load-bearing set. Still open, the owner's and nobody else's (`docs/TODO.md` §1):
 the client asserting its own rested/comfort numbers, and reconfirm versus teardown on a price tick.
 
-**What Don's side wants from yours, in order:** **the ownership fix during the carry** (above; the next cut waits
-on it) with the owner uid in the line; ~~D1 and D3; your `docs/TODO.md` §2~~ done (#50, #51, #52); the animator
-parameter names and item 23 on your server, still yours; ~~issue #23 (your rc1 note)~~ closed with rc2; and your
-commits under one author name — today's arrived as `t <t@l>`, `trial <trial@local>` and one merge authored as the
-model, which is what blame and the release notes will show.
+**D5 is built by your side (PR #54, merged and deployed the same night) and SEEN — three visits, three
+directions, `ours (owner -677746031)` at every drop and the first approach reaching the player every time, the
+first times in fifteen visits.** Two things came back on #54, both yours: the reclaim counts run 2 / 2 / 0 by
+direction (south, east, north-east) from starts that are all inside the pilot's 3x3 by `ZoneOwnership`'s own
+arithmetic, so the trigger is not settled by the sector strip around a standing pilot — the ask is one line,
+printed once per carry at the FIRST reclaim, with his position, the player's and the seconds since waking; and
+F3's two-second vanish grace does not show in the log (end to reclaim 6 / 0 / 0 / 0 s across a dismiss, two timers
+and a dismiss), which is `End` → `FinishDeparture` in your `VisitDirector`. The record of the night's six visits is
+`docs/proofs/2026-09-07-stormtest-night.md`.
 
-**Don's test rig tonight, so the next boot is not misread.** StormTest was stopped at 17:13 with visit 9 still open
-in the sidecar; the `session 9` row was then removed (backup beside it), so the next boot adopts nothing and its
-`boot` sweep destroys the stranded persistent merchant, 135 m from the base — a `restart sweep: 1 stranded` line on
-that boot is expected and correct. StormTest and Don's Gale `Default` profile carry the same DLL, rc2's code. Every
-session on Don's side is on Windows: builds, deploys and the log watch run from a shell, the game itself needs him
-at the screen, so the fixes listed above get seen when he next sits down, not before.
+**What Don's side wants from yours, in order:** the first-reclaim line and a look at the grace (above); ~~the
+ownership fix~~ done (#54); ~~D1 and D3; your `docs/TODO.md` §2~~ done (#50, #51, #52); the animator parameter
+names and item 23 on your server, still yours; ~~issue #23 (your rc1 note)~~ closed with rc2; and your commits
+under one author name — today's arrived as `t <t@l>`, `trial <trial@local>` and one merge authored as the model,
+which is what blame and the release notes will show. On #55: Steam shows this machine no branch carrying build
+23105022 / 0.221.13 on either app (public, previous stable, the pre-1.0 pins, all at 21981590 or older), so
+nothing in that file can be checked from here yet; the owner has held it.
+
+**Don's test rig tonight, so the next boot is not misread.** StormTest is down, stopped from the desktop with
+**visit 15 still open in the sidecar** (`session 15 … Dropped`, and `purse`/`purseStart` 100000 — a test value Don
+set for that visit, which the carry keeps unless reset). The next boot adopts visit 15 — item 15 and F4's rebind
+for free — unless the row is removed first, which was done before both of tonight's boots (a backup beside the
+file each time; each of those boots then logged `boot sweep: 1 stranded merchant(s) destroyed`, as predicted).
+StormTest and Don's Gale `Default` profile carry the same DLL, main `2694d3b` with D5. Every session on Don's side
+is on Windows: builds, deploys and the log watch run from a shell, the game itself needs him at the screen.
 
 ### The morning of 2026-09-07, after the rc1 merge (history)
 

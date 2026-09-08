@@ -1,0 +1,148 @@
+# StormTest, 2026-09-07 20:18-21:10 — every line the mod wrote on both sides, visits 10 to 15.
+# SERVER = StormTest BepInEx/LogOutput.log; CLIENT = the Gale Default profile's. Read-time stamps from the gapless
+# watcher (a line's stamp is when it was read, up to 5 s after it was written). Visits 10-12 on rc2's code (84de90a);
+# the server restarted 20:44 on main 2694d3b (PR #54, D5) for visits 13-15. The record is 2026-09-07-stormtest-night.md.
+
+20:20:45 SERVER [Info   :Valkyrie's Cargo] roll: no eligible player: 1 not rested
+20:20:45 CLIENT [Info   :Valkyrie's Cargo] admin wire: registered VCargo_reply on the server socket
+20:20:45 CLIENT [Info   :Valkyrie's Cargo] deal wire: registered VCargo_dealt on the server socket
+20:20:45 CLIENT [Info   :Valkyrie's Cargo] body: source embedded, prefab 'ingvar', 6 clip(s) [Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s], SkinnedMeshRenderer=True, bones=24, tris=31112, mesh bounds y -0.244 to 0.244 (0.94 x 0.49 x 1.37 m), ground offset 0.244 m
+20:20:45 CLIENT [Info   :Valkyrie's Cargo] body: the BIND-POSE box implies a 0.244 m offset, which on this asset is an artefact of that box and not a real lift -- the source is authored on a different up-axis and FBX axis conversion does not touch bind-pose bounds. Nothing is placed from this number: Attach and the preview both measure the POSED mesh (BakeMesh). Kept because it is still the fastest way to see a bake 
+20:20:51 SERVER [Info   :Valkyrie's Cargo] admin Nomadtest (-765188066): cargo visit 
+20:20:51 SERVER [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-51.49881, 57.12608); 1 eligible, 1 ticket(s)
+20:20:51 SERVER [Info   :Valkyrie's Cargo] visit #10 begins: pilot Nomadtest (uid -765188066) at (-51.49881, 57.12608), 300 s, purse 800, seed 601616405
+20:20:51 SERVER [Info   :Valkyrie's Cargo] visit #10: flight authored: start (-129.830826, 12.8079586) at 197.9296, descent (-105.761139, 26.4259319) at 158.755676 (50 m short), drop (-62.24335, 51.04711) at 77.92959, straight in 90 m out; bird -658315956:88974, Dverger -658315956:88975, both owned by the pilot
+20:20:52 CLIENT [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-51.49881, 57.12608); 1 eligible, 1 ticket(s)
+20:20:52 CLIENT [Info   :Valkyrie's Cargo] cargo flight #10: flying from (-129.830826, 197.9296, 12.8079586) via (-105.761139, 158.755676, 26.4259319) to (-62.24335, 77.92959, 51.04711), 77.65501 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+20:20:52 CLIENT [Info   :Valkyrie's Cargo] body: dressed Ingvar in a copy of the Dverger's own material ('DvergerBody', shader 'Custom/Creature') with our albedo in it. A baked bundle carries Unity's Standard, which Valheim lights only from direct light.
+20:20:52 CLIENT [Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+20:20:52 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #10: awake as carried, ours, body=Ingvar
+20:21:05 CLIENT [Info   :Valkyrie's Cargo] cargo flight #10: dropped at (-62.24335, 79.24438, 51.04711) after 16.8201942 s
+20:21:05 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #10: carried -> approaching via the ZDO, 16.8201942 s after waking; carrier none, 47.4984627 m from the player, ours, grounded no; walk-up budget 31.6656418 s
+20:21:11 SERVER [Info   :Valkyrie's Cargo] visit #10: dropped at (-62.24335, 79.24438, 51.04711)
+20:21:42 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #10: trading (entered: gave up walking after 31.6656418 s) [callout]
+20:21:42 CLIENT [Warning:Valkyrie's Cargo] cargo merchant #10: the walk-up did not finish. walked 31.6805344 s of a 31.6656418 s budget (scaled from 47.4984627 m at entry), moved 242.194611 m; stuck 0 s of the last window, and stopped 10.1233015 m away; follow target Player(Clone), tamed yes, alerted no, AI target none, grounded yes.
+20:21:48 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #10: approaching (entered: the player left: 46.34543 m for 5.01999569 s) [following]
+20:22:11 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #10: trading (entered: reached the player) [callout]
+20:23:55 SERVER [Info   :Valkyrie's Cargo] admin Nomadtest (-765188066): cargo dismiss 
+20:23:55 SERVER [Info   :Valkyrie's Cargo] visit #10 ended: admin Nomadtest; takings 0 coins, purse 800, 0 clock republish(es), 0 owed deliveries
+20:23:55 SERVER [Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+20:23:55 CLIENT [Info   :Valkyrie's Cargo] server answered: cargo: visit #10 dismissed (admin Nomadtest)
+20:24:01 SERVER [Info   :Valkyrie's Cargo] visit #10: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+20:26:42 SERVER [Info   :Valkyrie's Cargo] admin Nomadtest (-765188066): cargo visit 
+20:26:42 SERVER [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-51.71468, 57.0860443); 1 eligible, 1 ticket(s)
+20:26:42 SERVER [Info   :Valkyrie's Cargo] visit #11 begins: pilot Nomadtest (uid -765188066) at (-51.71468, 57.0860443), 300 s, purse 800, seed 23099175
+20:26:42 SERVER [Info   :Valkyrie's Cargo] visit #11: flight authored: start (-21.8653717, -14.9765568) at 197.94162, descent (-28.0602512, -0.0207949746) at 170.44162 (48.564 m short), drop (-46.64489, 44.84649) at 77.94161, straight in 78 m out; bird -658315956:88976, Dverger -658315956:88977, both owned by the pilot
+20:26:43 CLIENT [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-51.71468, 57.0860443); 1 eligible, 1 ticket(s)
+20:26:43 CLIENT [Info   :Valkyrie's Cargo] cargo flight #11: flying from (-21.8653717, 197.94162, -14.9765568) via (-28.0602512, 170.44162, -0.0207949746) to (-46.64489, 77.94161, 44.84649), 64.752 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+20:26:43 CLIENT [Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+20:26:43 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #11: awake as carried, ours, body=Ingvar
+20:27:00 SERVER [Info   :Valkyrie's Cargo] visit #11: dropped at (-46.64489, 80.93029, 44.84649)
+20:27:00 CLIENT [Info   :Valkyrie's Cargo] cargo flight #11: dropped at (-46.64489, 80.93029, 44.84649) after 15.8801727 s
+20:27:00 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #11: carried -> approaching via the ZDO, 15.8801727 s after waking; carrier none, 95.67858 m from the player, watching, grounded yes; walk-up budget 63.78572 s
+20:27:23 CLIENT [Info   :Valkyrie's Cargo] cargo flight #11: ground unknown at (12.6341419, 186.576248, -96.0520248) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+20:30:19 SERVER [Info   :Valkyrie's Cargo] admin Nomadtest (-765188066): cargo visit 
+20:30:19 CLIENT [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: a visit is already running (#11, 01:25 left)
+20:30:47 SERVER [Info   :Valkyrie's Cargo] visit #11: one minute left
+20:31:46 SERVER [Info   :Valkyrie's Cargo] visit #11 ended: timer; takings 0 coins, purse 800, 0 clock republish(es), 0 owed deliveries
+20:31:46 SERVER [Info   :Valkyrie's Cargo] roll: no eligible player: 1 on cooldown
+20:31:46 SERVER [Info   :Valkyrie's Cargo] visit #11: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+20:31:47 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #11: leaving -> approaching via the ZDO, 300.913177 s after waking; carrier none, 110.237869 m from the player, watching, grounded yes; walk-up budget 73.49191 s
+20:32:31 SERVER [Info   :Valkyrie's Cargo] admin Nomadtest (-765188066): cargo visit 
+20:32:31 SERVER [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-51.3563538, 56.81994); 1 eligible, 1 ticket(s)
+20:32:31 SERVER [Info   :Valkyrie's Cargo] visit #12 begins: pilot Nomadtest (uid -765188066) at (-51.3563538, 56.81994), 300 s, purse 800, seed 70173132
+20:32:31 SERVER [Info   :Valkyrie's Cargo] visit #12: flight authored: start (-69.1677246, -19.1192169) at 197.932434, descent (-65.48419, -3.41441751) at 170.432434 (48.393 m short), drop (-54.43361, 43.69999) at 77.93244, straight in 78 m out; bird -658315956:88978, Dverger -658315956:88979, both owned by the pilot
+20:32:32 CLIENT [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-51.3563538, 56.81994); 1 eligible, 1 ticket(s)
+20:32:32 CLIENT [Info   :Valkyrie's Cargo] cargo flight #12: flying from (-69.1677246, 197.932434, -19.1192169) via (-65.48419, 170.432434, -3.41441751) to (-54.43361, 77.93244, 43.69999), 64.524 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+20:32:32 CLIENT [Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+20:32:32 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #12: awake as carried, ours, body=Ingvar
+20:32:50 SERVER [Info   :Valkyrie's Cargo] visit #12: dropped at (-54.43361, 80.57016, 43.69999)
+20:32:50 CLIENT [Info   :Valkyrie's Cargo] cargo flight #12: dropped at (-54.43361, 80.57016, 43.69999) after 15.8801727 s
+20:32:50 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #12: carried -> approaching via the ZDO, 15.8801727 s after waking; carrier none, 116.836479 m from the player, watching, grounded yes; walk-up budget 77.89098 s
+20:33:20 CLIENT [Info   :Valkyrie's Cargo] cargo flight #12: ground unknown at (-93.89558, 111.97171, -96.02161) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+20:36:34 SERVER [Info   :Valkyrie's Cargo] visit #12: one minute left
+20:44:33 SERVER [Info   :Valkyrie's Cargo] built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable.
+20:44:33 SERVER [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches 18/18 applied, catalogue=72 entries, engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable, ServerSync version gate armed; role is decided when a world loads.
+20:44:39 SERVER [Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+20:44:39 SERVER [Error  : Unity Log] ArgumentNullException: Value cannot be null.
+20:44:39 SERVER [Info   :Valkyrie's Cargo] role: dedicated server
+20:44:39 SERVER [Info   :Valkyrie's Cargo] admin wire up for this session: VCargo_admin is registered on each peer's OWN socket as it connects and VCargo_reply answers on the same socket; the caller's identity is that socket, never a field in the packet
+20:44:39 SERVER [Info   :Valkyrie's Cargo] boot sweep: 1 stranded merchant(s) destroyed; prefab 'Dverger' hash 1283200037
+20:44:39 SERVER [Info   :Valkyrie's Cargo] director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 800, next visit #13, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_4690126.dat (84 rows loaded)
+20:44:39 SERVER [Warning:Valkyrie's Cargo] event 'valkyries_cargo' is running with nobody to receive it (no live candidate near -51.3563538, 56.81994); ending it
+20:46:35 CLIENT [Info   :Valkyrie's Cargo] built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable.
+20:46:35 CLIENT [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=True, patches 18/18 applied, catalogue=72 entries, engine: same build 0.221.12 (net 36, player 43, world 37); probes 18/18 ok, 7 not probeable, ServerSync version gate armed; role is decided when a world loads.
+20:51:14 CLIENT [Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+20:51:14 CLIENT [Info   :Valkyrie's Cargo] role: client
+20:51:25 SERVER [Info   :Valkyrie's Cargo] admin wire registered for Nomadtest (-677746031)
+20:51:25 SERVER [Info   :Valkyrie's Cargo] deal wire registered for Nomadtest (-677746031)
+20:51:25 CLIENT [Info   :Valkyrie's Cargo] admin wire: registered VCargo_reply on the server socket
+20:51:25 CLIENT [Info   :Valkyrie's Cargo] deal wire: registered VCargo_dealt on the server socket
+20:51:44 SERVER [Info   :Valkyrie's Cargo] roll: no eligible player: 1 not rested
+20:52:14 SERVER [Info   :Valkyrie's Cargo] admin Nomadtest (-677746031): cargo visit 
+20:52:14 SERVER [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-51.81772, 56.9190254); 1 eligible, 1 ticket(s)
+20:52:14 SERVER [Info   :Valkyrie's Cargo] visit #13 begins: pilot Nomadtest (uid -677746031) at (-51.81772, 56.9190254), 300 s, purse 800, seed 1585006385
+20:52:14 SERVER [Info   :Valkyrie's Cargo] visit #13: flight authored: start (-76.56748, -17.05022) at 197.9198, descent (-71.39835, -1.60132) at 170.4198 (48.8722534 m short), drop (-55.8909569, 44.7453957) at 77.91979, straight in 78 m out; bird -806573598:88976, Dverger -806573598:88977, both owned by the pilot
+20:52:14 CLIENT [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-51.81772, 56.9190254); 1 eligible, 1 ticket(s)
+20:52:14 CLIENT [Info   :Valkyrie's Cargo] cargo flight #13: flying from (-76.56748, 197.9198, -17.05022) via (-71.39835, 170.4198, -1.60132) to (-55.8909569, 77.91979, 44.7453957), 65.163 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+20:52:14 CLIENT [Info   :Valkyrie's Cargo] body: source embedded, prefab 'ingvar', 6 clip(s) [Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s], SkinnedMeshRenderer=True, bones=24, tris=31112, mesh bounds y -0.244 to 0.244 (0.94 x 0.49 x 1.37 m), ground offset 0.244 m
+20:52:14 CLIENT [Info   :Valkyrie's Cargo] body: the BIND-POSE box implies a 0.244 m offset, which on this asset is an artefact of that box and not a real lift -- the source is authored on a different up-axis and FBX axis conversion does not touch bind-pose bounds. Nothing is placed from this number: Attach and the preview both measure the POSED mesh (BakeMesh). Kept because it is still the fastest way to see a bake 
+20:52:14 CLIENT [Info   :Valkyrie's Cargo] body: dressed Ingvar in a copy of the Dverger's own material ('DvergerBody', shader 'Custom/Creature') with our albedo in it. A baked bundle carries Unity's Standard, which Valheim lights only from direct light.
+20:52:14 CLIENT [Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+20:52:14 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #13: awake as carried, ours (owner -677746031), body=Ingvar
+20:52:31 SERVER [Info   :Valkyrie's Cargo] visit #13: dropped at (-55.8909569, 80.2585144, 44.7453957)
+20:52:32 CLIENT [Info   :Valkyrie's Cargo] cargo flight #13: dropped at (-55.8909569, 80.2585144, 44.7453957) after 15.9401741 s
+20:52:32 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #13: carried -> approaching via the ZDO, 15.9401741 s after waking; carrier none, 44.1676636 m from the player, ours (owner -677746031), 2 reclaim(s) during the carry, grounded no; walk-up budget 29.4451084 s
+20:52:43 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #13: trading (entered: reached the player) [callout]
+20:53:12 CLIENT [Info   :Valkyrie's Cargo] cargo flight #13: ground unknown at (-110.979469, 112.22126, -96.04578) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+20:53:36 CLIENT [Info   :Valkyrie's Cargo] terminal opened: visit #13 on Dverger(Clone)
+20:53:48 CLIENT [Info   :Valkyrie's Cargo] terminal closed: escape
+20:56:13 SERVER [Info   :Valkyrie's Cargo] visit #13: one minute left
+20:57:16 SERVER [Info   :Valkyrie's Cargo] visit #13 ended: timer; takings 0 coins, purse 800, 0 clock republish(es), 0 owed deliveries
+20:57:16 SERVER [Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+20:57:16 SERVER [Info   :Valkyrie's Cargo] visit #13: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+20:58:16 SERVER [Info   :Valkyrie's Cargo] roll: no eligible player: 1 on cooldown
+20:59:17 SERVER [Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+21:00:54 CLIENT [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-45.84521, 53.0959549); 1 eligible, 1 ticket(s)
+21:00:54 CLIENT [Info   :Valkyrie's Cargo] cargo flight #14: flying from (-19.0397549, 198.382355, -20.1533966) via (-24.48719, 170.882355, -5.267578) to (-40.8295, 78.38236, 39.3898735), 63.405 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+21:00:54 CLIENT [Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+21:00:54 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #14: awake as carried, ours (owner -677746031), body=Ingvar
+21:01:00 SERVER [Info   :Valkyrie's Cargo] admin Nomadtest (-677746031): cargo visit 
+21:01:00 SERVER [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-45.84521, 53.0959549); 1 eligible, 1 ticket(s)
+21:01:00 SERVER [Info   :Valkyrie's Cargo] visit #14 begins: pilot Nomadtest (uid -677746031) at (-45.84521, 53.0959549), 300 s, purse 800, seed 2047915599
+21:01:00 SERVER [Info   :Valkyrie's Cargo] visit #14: flight authored: start (-19.0397549, -20.1533966) at 198.382355, descent (-24.48719, -5.267578) at 170.882355 (47.55375 m short), drop (-40.8295, 39.3898735) at 78.38236, straight in 78 m out; bird -806573598:88978, Dverger -806573598:88979, both owned by the pilot
+21:01:12 SERVER [Info   :Valkyrie's Cargo] visit #14: dropped at (-40.8295, 82.2314, 39.3898735)
+21:01:12 CLIENT [Info   :Valkyrie's Cargo] cargo flight #14: dropped at (-40.8295, 82.2314, 39.3898735) after 15.7201691 s
+21:01:12 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #14: carried -> approaching via the ZDO, 15.7201691 s after waking; carrier none, 48.47553 m from the player, ours (owner -677746031), 2 reclaim(s) during the carry, grounded no; walk-up budget 32.31702 s
+21:01:24 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #14: trading (entered: reached the player) [callout]
+21:01:24 CLIENT [Info   :Valkyrie's Cargo] terminal opened: visit #14 on Dverger(Clone)
+21:01:24 CLIENT [Info   :Valkyrie's Cargo] terminal closed: use
+21:01:47 CLIENT [Info   :Valkyrie's Cargo] cargo flight #14: ground unknown at (17.3541737, 112.642113, -96.02578) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+21:03:20 CLIENT [Info   :Valkyrie's Cargo] terminal opened: visit #14 on Dverger(Clone)
+21:03:38 CLIENT [Info   :Valkyrie's Cargo] terminal closed: escape
+21:03:38 CLIENT [Info   :Valkyrie's Cargo] terminal opened: visit #14 on Dverger(Clone)
+21:03:44 CLIENT [Info   :Valkyrie's Cargo] terminal closed: escape
+21:04:21 SERVER [Info   :Valkyrie's Cargo] admin Nomadtest (-677746031): cargo dismiss 
+21:04:21 SERVER [Info   :Valkyrie's Cargo] visit #14 ended: admin Nomadtest; takings 0 coins, purse 800, 0 clock republish(es), 0 owed deliveries
+21:04:21 SERVER [Info   :Valkyrie's Cargo] roll: no eligible player: 1 on cooldown
+21:04:21 SERVER [Info   :Valkyrie's Cargo] visit #14: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+21:04:21 CLIENT [Info   :Valkyrie's Cargo] server answered: cargo: visit #14 dismissed (admin Nomadtest)
+21:04:56 SERVER [Info   :Valkyrie's Cargo] admin Nomadtest (-677746031): cargo visit 
+21:04:56 SERVER [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-47.84603, 52.67401); 1 eligible, 1 ticket(s)
+21:04:56 SERVER [Info   :Valkyrie's Cargo] visit #15 begins: pilot Nomadtest (uid -677746031) at (-47.84603, 52.67401), 300 s, purse 100000, seed 27036350
+21:04:56 SERVER [Info   :Valkyrie's Cargo] visit #15: flight authored: start (3.77584934, 126.3977) at 198.3341, descent (-11.4067192, 104.714745) at 160.257721 (50 m short), drop (-40.08554, 63.7571373) at 78.3341, straight in 90 m out; bird -806573598:88980, Dverger -806573598:88981, both owned by the pilot
+21:04:56 CLIENT [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-47.84603, 52.67401); 1 eligible, 1 ticket(s)
+21:04:56 CLIENT [Info   :Valkyrie's Cargo] cargo flight #15: flying from (3.77584934, 198.3341, 126.3977) via (-11.4067192, 160.257721, 104.714745) to (-40.08554, 78.3341, 63.7571373), 76.47 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+21:04:56 CLIENT [Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+21:04:56 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #15: awake as carried, ours (owner -677746031), body=Ingvar
+21:05:08 CLIENT [Info   :Valkyrie's Cargo] cargo flight #15: dropped at (-40.08554, 78.40678, 63.7571373) after 16.8201942 s
+21:05:08 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #15: carried -> approaching via the ZDO, 16.8201942 s after waking; carrier none, 46.29379 m from the player, ours (owner -677746031), 0 reclaim(s) during the carry, grounded no; walk-up budget 30.8625259 s
+21:05:15 SERVER [Info   :Valkyrie's Cargo] visit #15: dropped at (-40.08554, 78.40678, 63.7571373)
+21:05:21 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #15: trading (entered: reached the player) [callout]
+21:05:38 CLIENT [Info   :Valkyrie's Cargo] cargo flight #15: ground unknown at (72.05817, 199.861954, 224.008774) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+21:06:03 CLIENT [Info   :Valkyrie's Cargo] terminal opened: visit #15 on Dverger(Clone)
+21:06:03 CLIENT [Info   :Valkyrie's Cargo] terminal closed: use
+21:06:03 CLIENT [Info   :Valkyrie's Cargo] terminal opened: visit #15 on Dverger(Clone)
+21:06:03 CLIENT [Info   :Valkyrie's Cargo] terminal closed: escape
+21:06:11 CLIENT [Info   :Valkyrie's Cargo] terminal opened: visit #15 on Dverger(Clone)
+21:06:23 CLIENT [Info   :Valkyrie's Cargo] terminal closed: escape
