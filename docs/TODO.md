@@ -199,6 +199,26 @@ step 4).
         version becomes the enum `Version.World`), so it answers "is gone or is not a number" rather
         than silently claiming "same build". Both want the rename, neither is a silent failure.
       - Type-pinning our reflection is what keeps us on the right side of the ambiguity above; keep it.
+      **THE SWEEP RAN EARLY, 2026-09-08**, on the server axis, with `tools/decompile-builds.sh` +
+      `tools/diff-engine.js` - the P10a tools, unmodified; the two snapshots are symlinked into
+      `~/valheim-shadows` so `--build` finds them. Report:
+      `docs/engine-sweeps/2026-09-08-server-0.221.12-vs-0.221.13.md`. Of 257 surface members: 231
+      unchanged, 15 body changed, 6 signature changed, 5 gone. **There is a stop-ship, and it is worse
+      than the FileSource one:** `StringExtensionMethods.GetStableHashCode(this string)` gained an
+      optional `bool addToNameHash = true`. The ALGORITHM is byte-identical, so no key value and no
+      saved world moves - but C# resolves an optional parameter at the CALL SITE at our compile time, so
+      our DLL calls a one-argument method that does not exist on 1.0. All 16 call sites throw
+      `MissingMethodException`, and most are `static readonly` initialisers, which makes it a
+      `TypeInitializationException` that poisons the type for the rest of the session: `Server/Spawner.cs`
+      (10 - the whole spawner), `Libs/ServerSync.cs` (3 - the version gate, **and that file is "not ours"
+      and may not be edited in place; it wants an upstream ServerSync built for 1.0**),
+      `Client/ComfortReporter.cs` (2 - nobody is ever eligible), `EngineCheck.cs` (1). Verified against
+      the real assemblies, not the decompile: arity 1 on 0.221.12, arity 2 with no 1-arg overload on
+      0.221.13. *Not yet decided:* how we call it from one DLL that must run on both - a cached
+      reflected delegate behind a `Keys.Hash(string)` helper covers our 13, but ServerSync's 3 are
+      upstream's. **The client axis is still unswept** - no 1.0 client build exists yet; a second run is
+      owed when one appears. The 15 body changes are listed in the report and none has been read yet;
+      each is a recorded engine fact that may now be false.
 - [ ] **Client-only proofs he took:** the animator parameter names (a dedicated build strips controllers;
       P5's `SetBool` names must be read on a client); the rest of item 20 — Ingvar in daylight, the
       walk, the one-shot clips (CLAUDE.md "Seen fixed on a screen"); `cargo prefab odin` on a client.
