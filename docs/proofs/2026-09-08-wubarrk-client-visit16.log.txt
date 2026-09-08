@@ -1,0 +1,41 @@
+# Wu'barrk's client, 2026-09-08 11:39-11:45 — every line the mod wrote on THIS machine during the
+# two-player playtest with Don. Gale profile "TestywithDon"; main's DLL (patches 18/18, probes 19/19,
+# so it carries D1/#50, D3/#51, D5/#54 and the half-turn/#53, and NOT #61's busy hold or #63's HideForGood).
+# Read-time stamps are the nearest preceding Unity Log stamp in the same file, so a line's stamp is when
+# it was read, not exactly when it was written. Only visit #16 appears; the two earlier world sessions
+# (11:27:35 and 11:28:55) joined and left with no visit running. Filed against issue #59 item 2, the walk-off.
+# CLIENT here = platform 2602964759; the merchant's owner throughout was 109725011 (Don).
+
+--:--:-- CLIENT [Info   :Valkyrie's Cargo] built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 19/19 ok, 7 not probeable.
+--:--:-- CLIENT [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=True, patches 18/18 applied, catalogue=72 entries, engine: same build 0.221.12 (net 36, player 43, world 37); probes 19/19 ok, 7 not probeable, ServerSync version gate armed; role is decided when a world loads.
+11:27:35 CLIENT [Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+11:27:35 CLIENT [Info   :Valkyrie's Cargo] role: client
+11:27:45 CLIENT [Info   :Valkyrie's Cargo] session ended: no director on this machine (a client keeps no sidecar); wire, reporter, routed RPCs and the terminal surface dropped
+11:28:55 CLIENT [Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+11:28:55 CLIENT [Info   :Valkyrie's Cargo] role: client
+11:29:05 CLIENT [Info   :Valkyrie's Cargo] session ended: no director on this machine (a client keeps no sidecar); wire, reporter, routed RPCs and the terminal surface dropped
+11:39:02 CLIENT [Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+11:39:03 CLIENT [Info   :Valkyrie's Cargo] role: client
+11:39:13 CLIENT [Info   :Valkyrie's Cargo] admin wire: registered VCargo_reply on the server socket
+11:39:13 CLIENT [Info   :Valkyrie's Cargo] deal wire: registered VCargo_dealt on the server socket
+11:41:23 CLIENT [Info   :Valkyrie's Cargo] cargo flight #16: watching from (-5.773078, 198.22934, 133.644852) via (-18.42393, 160.351013, 110.633034) to (-42.5116119, 78.22933, 66.8177), 76.26 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+11:41:23 CLIENT [Info   :Valkyrie's Cargo] body: source embedded, prefab 'ingvar', 6 clip(s) [Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s], SkinnedMeshRenderer=True, bones=24, tris=31112, mesh bounds y -0.244 to 0.244 (0.94 x 0.49 x 1.37 m), ground offset 0.244 m
+11:41:23 CLIENT [Info   :Valkyrie's Cargo] body: the BIND-POSE box implies a 0.244 m offset, which on this asset is an artefact of that box and not a real lift -- the source is authored on a different up-axis and FBX axis conversion does not touch bind-pose bounds. Nothing is placed from this number: Attach and the preview both measure the POSED mesh (BakeMesh). Kept because it is still the fastest way to see a bake come out sideways.
+11:41:23 CLIENT [Info   :Valkyrie's Cargo] body: dressed Ingvar in a copy of the Dverger's own material ('DvergerBody', shader 'Custom/Creature') with our albedo in it. A baked bundle carries Unity's Standard, which Valheim lights only from direct light.
+11:41:23 CLIENT [Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+11:41:23 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #16: awake as carried, watching (owner 109725011), body=Ingvar
+11:41:36 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #16: carried -> approaching via the ZDO, 18.0402222 s after waking; carrier none, 42.4202423 m from the player, watching (owner 109725011), 0 reclaim(s) during the carry, grounded yes; walk-up budget 28.28016 s
+11:41:36 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #16: approaching -> trading via the ZDO, 25.2603874 s after waking; carrier none, 3.52120447 m from the player, watching (owner 109725011), 0 reclaim(s) during the carry, grounded yes
+11:41:36 CLIENT [Info   :Valkyrie's Cargo] terminal opened: visit #16 on Dverger(Clone)
+11:42:08 CLIENT [Info   :Valkyrie's Cargo] terminal closed: inventory
+11:43:07 CLIENT [Info   :Valkyrie's Cargo] terminal opened: visit #16 on Dverger(Clone)
+11:43:29 CLIENT [Info   :Valkyrie's Cargo] terminal deal on visit #16: ok w4790ce-16-1 +1 TrophyDeer, -8 coins
+11:43:36 CLIENT [Info   :Valkyrie's Cargo] terminal deal on visit #16: ok w4790ce-16-3 -1 Wood, +1 coins
+11:43:46 CLIENT [Info   :Valkyrie's Cargo] terminal deal on visit #16: ok w4790ce-16-4 -20 Wood, +20 coins
+11:44:03 CLIENT [Info   :Valkyrie's Cargo] terminal closed: escape
+11:44:17 CLIENT [Info   :Valkyrie's Cargo] terminal opened: visit #16 on Dverger(Clone)
+11:44:31 CLIENT [Info   :Valkyrie's Cargo] terminal deal on visit #16: ok w4790ce-16-6 +1 TrophyDeer, -8 coins
+11:44:40 CLIENT [Info   :Valkyrie's Cargo] terminal deal on visit #16: ok w4790ce-16-8 +8 TrophyDeer, -72 coins
+11:44:40 CLIENT [Info   :Valkyrie's Cargo] terminal closed: close button
+11:44:40 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #16: leaving -> trading via the ZDO, 210.548157 s after waking; carrier none, 0.86293155 m from the player, watching (owner 109725011), 0 reclaim(s) during the carry, grounded yes
+11:44:40 CLIENT [Info   :Valkyrie's Cargo] cargo merchant #16: trading -> leaving via the ZDO, 210.668182 s after waking; carrier none, 0.91240114 m from the player, watching (owner 109725011), 0 reclaim(s) during the carry, grounded yes
