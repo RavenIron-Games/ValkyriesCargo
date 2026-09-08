@@ -28,6 +28,28 @@ after the rest of this log was written.
 
 ### Since 0.1.0-rc2 — the same night
 
+- **The backpack add-on, the body half (Track B, 2026-09-08, 1917 checks).** On a server running the backpack
+  mod Ingvar now wears the players' own pack; on any other server he wears nothing and none of this code runs.
+  It is NOT a bake. Smoothbrain's pack is one prefab, `bp_explorer`, put into ObjectDB by the mod's own
+  ItemManager, with its geometry at `attach_skin/Mesh` as `SkinnedMeshRenderer`s rigged to VALHEIM's skeleton —
+  and Ingvar's rig is his own (24 joints, `Hips -> Spine -> Spine01 -> Spine02 -> neck -> Head`). So vanilla's
+  way of wearing a pack is closed twice over: equipping it would have `VisEquipment` bind it to the Dverger
+  chassis, whose renderers `BodyLoader.HideStandIn` switches off, and even visible it would follow bones nobody
+  can see. `Client/BackpackProp.cs` bakes the skinned parts to static meshes once, at bind pose (a pack does not
+  deform), on a throwaway instance rather than on the ObjectDB prefab — mutating that would change the pack for
+  every player on the machine — and hangs them on a named bone of Ingvar's own rig, UNDER the body object, which
+  is what keeps them visible through both the attach-time hide and the 2 s re-hide. `Core/Knapsack.cs` is pure:
+  the bone resolution and its fallback chain (`Spine02`, `Spine2`, `Spine01`, `Spine1`, `Chest`, `Spine`,
+  `Hips`, case-insensitive), the `x,y,z` knob parse — a component that is not a finite number reads 0, never
+  NaN, which Unity propagates through the transform and takes the whole body with it — and the scale clamp.
+  Six client knobs: `BackpackOnIngvar`, `BackpackPrefab`, `BackpackBone`, `BackpackOffset`, `BackpackRotation`,
+  `BackpackScale`. The pack goes on `cargo body preview` too, because dialling the placement in by eye is the
+  only way it can be settled, and `cargo body` and `cargo status` each carry a `backpack:` line saying what the
+  last attach found. Detection is the prefab lookup itself, not the chainloader: no prefab means no mod, which
+  is a stronger test than a plugin GUID that can be present for a mod that failed to register. **Nothing here
+  has been on a screen** — the offset, rotation and scale are placeholders at 0/0/1 and no off-game check can
+  say where a pack sits on a shoulder.
+
 - **D5, the ownership loss during the carry (PR #54, Track B, 1718).** `HoldTheCarry` claims the merchant back
   every physics step while he hangs from the talons, on the pilot's client only (gated on owning the bird, which
   the engine's sweep never touches); both log lines say who holds him (`ours|watching (owner N)`) and the

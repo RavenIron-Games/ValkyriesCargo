@@ -77,6 +77,14 @@ namespace RavenIron.ValkyriesCargo.Config
         /// out the other way round is a config edit, not a rebuild; the attach line logs the value used.
         /// </summary>
         public static ConfigEntry<float>  BodyYawDegrees;
+        // The backpack add-on's body half (2026-09-08). Client.*, because the pack is drawn and nothing else:
+        // the shelf half it pairs with is Server.BackpackShelfMultiplier / Server.BackpackModGuid.
+        public static ConfigEntry<bool>   BackpackOnIngvar;
+        public static ConfigEntry<string> BackpackPrefab;
+        public static ConfigEntry<string> BackpackBone;
+        public static ConfigEntry<string> BackpackOffset;
+        public static ConfigEntry<string> BackpackRotation;
+        public static ConfigEntry<float>  BackpackScale;
 
         // ---- Broadcast channels (server writes, everyone reads) ---------------------------
 
@@ -241,6 +249,24 @@ namespace RavenIron.ValkyriesCargo.Config
                 "180 because the shipped bundle's forward axis faces the Dverger's back, so with 0 he walks backward (seen 2026-09-07). " +
                 "Set 0 for a bake that comes out facing forward. Read on the CLIENT.",
                 new AcceptableValueRange<float>(-180f, 180f));
+
+            BackpackOnIngvar = C(cfg, "Client", "BackpackOnIngvar", true,
+                "The backpack add-on's body half (2026-09-08). When the backpack mod is loaded on this machine, hang its own pack on Ingvar so he wears what the players wear. " +
+                "Off leaves him bare; on a machine without the mod nothing happens either way. Read on the CLIENT.");
+            BackpackPrefab = C(cfg, "Client", "BackpackPrefab", "bp_explorer",
+                "The prefab the pack is taken from, looked up in ObjectDB. 'bp_explorer' is Smoothbrain's Backpacks; name another mod's prefab to wear that one instead. " +
+                "A name this game does not have simply leaves him bare. Read on the CLIENT.");
+            BackpackBone = C(cfg, "Client", "BackpackBone", Core.Knapsack.DefaultBone,
+                "Which bone of Ingvar's own rig the pack hangs on. His spine runs Hips/Spine/Spine01/Spine02; a name the rig does not have falls back through " +
+                "Spine02, Spine2, Spine01, Spine1, Chest, Spine, Hips. Read on the CLIENT.");
+            BackpackOffset = C(cfg, "Client", "BackpackOffset", "0,0,0",
+                "Where the pack sits on that bone, in bone-local metres, as x,y,z. Ingvar is about 1.37 m to a player's 1.8, so a pack authored for a player " +
+                "needs dialling in: change it, then `cargo body preview` to see it without waiting for a visit. Read on the CLIENT.");
+            BackpackRotation = C(cfg, "Client", "BackpackRotation", "0,0,0",
+                "How the pack is turned on that bone, as x,y,z degrees. Read on the CLIENT.");
+            BackpackScale = C(cfg, "Client", "BackpackScale", 1f,
+                "How big the pack is on him. 1 is the size the backpack mod authored for a player. Read on the CLIENT.",
+                new AcceptableValueRange<float>(Core.Knapsack.MinScale, Core.Knapsack.MaxScale));
 
             VisitState  = new CustomSyncedValue<string>(Sync, "visit", "");
             MarketState = new CustomSyncedValue<string>(Sync, "market", "");

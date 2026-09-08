@@ -46,6 +46,7 @@ namespace ValkyriesCargo.Tests
             MarketStateTests();
             MarketCatalogueSwapTests();
             ShelfTests();
+            KnapsackTests();
             NonceRingTests();
             SchedulerTests();
             VisitClockTests();
@@ -1651,6 +1652,65 @@ namespace ValkyriesCargo.Tests
             var pool = new List<string>();
             foreach (MarketItem it in m.Items) pool.Add(it.Prefab);
             return pool;
+        }
+
+        /// <summary>
+        /// The backpack add-on's body half (2026-09-08). Ingvar's rig and Smoothbrain's pack agree on nothing,
+        /// so every number that puts one on the other is a knob - and a knob typed wrong must leave him where
+        /// the default put him, never at NaN, which in Unity takes the whole transform with it.
+        /// </summary>
+        private static void KnapsackTests()
+        {
+            Section("Knapsack (the backpack add-on's body half, 2026-09-08)");
+
+            // Ingvar's own rig, read off models/ingvar.glb: 24 joints, his spine spelled Spine/Spine01/Spine02.
+            var ingvar = new List<string> {
+                "LeftToeBase","LeftFoot","LeftLeg","LeftUpLeg","RightToeBase","RightFoot","RightLeg","RightUpLeg",
+                "LeftHand","LeftForeArm","LeftArm","LeftShoulder","head_end","headfront","Head","neck",
+                "RightHand","RightForeArm","RightArm","RightShoulder","Spine","Spine01","Spine02","Hips" };
+
+            Equal("Spine02", Knapsack.ResolveBone(ingvar, "Spine02"), "the shipped bake's own upper spine is found by name");
+            Equal("Spine02", Knapsack.ResolveBone(ingvar, ""), "an empty knob falls straight to the best fallback");
+            Equal("Spine02", Knapsack.ResolveBone(ingvar, "   "), "so does a knob that is only whitespace");
+            Equal("Head", Knapsack.ResolveBone(ingvar, "head"), "the match is case-insensitive: a person types the knob, an exporter picked the spelling");
+            Equal("Spine02", Knapsack.ResolveBone(ingvar, "NoSuchBone"),
+                  "a bone this rig has not got falls back rather than dropping the pack at his feet");
+
+            // A re-bake, or another mod's body, may spell the spine Valheim's way or not have one at all.
+            var valheimish = new List<string> { "Hips", "Spine", "Spine1", "Spine2", "Neck", "Head" };
+            Equal("Spine2", Knapsack.ResolveBone(valheimish, "Spine02"), "Valheim's own spelling is in the fallback chain");
+            Equal("Hips", Knapsack.ResolveBone(new List<string> { "Hips", "Head" }, "Spine02"),
+                  "Hips is the last resort, because every humanoid rig has one");
+            Equal("", Knapsack.ResolveBone(new List<string> { "root", "camera" }, "Spine02"),
+                  "a rig with no spine and no hips answers nothing, so the caller can say so instead of guessing");
+            Equal("", Knapsack.ResolveBone(new List<string>(), "Spine02"), "an empty rig answers nothing");
+            Equal("", Knapsack.ResolveBone(null, "Spine02"), "so does no rig at all");
+
+            float x, y, z;
+            Check(Knapsack.Triple("0.1,-0.05,0.2", out x, out y, out z), "a well-formed offset parses");
+            Check(Math.Abs(x - 0.1f) < 1e-6f && Math.Abs(y + 0.05f) < 1e-6f && Math.Abs(z - 0.2f) < 1e-6f,
+                  "and parses to the three numbers that were typed");
+            Check(Knapsack.Triple(" 1 , 2 , 3 ", out x, out y, out z), "whitespace round the components is allowed");
+            Check(x == 1f && y == 2f && z == 3f, "and does not change the numbers");
+            Check(!Knapsack.Triple("1,2", out x, out y, out z), "two components is not an offset");
+            Check(x == 0f && y == 0f && z == 0f, "and a refused parse leaves zeros, not the half it managed");
+            Check(!Knapsack.Triple("1,fish,3", out x, out y, out z), "a component that is not a number is refused");
+            Check(y == 0f, "and that component reads 0 while the others keep their values");
+            Check(x == 1f && z == 3f, "the usable components survive a partial refusal");
+            Check(!Knapsack.Triple("", out x, out y, out z), "an empty knob is refused");
+            Check(!Knapsack.Triple(null, out x, out y, out z), "so is no knob at all");
+            Check(!Knapsack.Triple("NaN,0,0", out x, out y, out z), "NaN is refused: Unity propagates it through the transform");
+            Check(x == 0f, "and reads 0 instead");
+            Check(!Knapsack.Triple("Infinity,0,0", out x, out y, out z), "so is an infinity");
+
+            Equal(1f, Knapsack.Scale(1f), "the authored size passes through");
+            Equal(0.75f, Knapsack.Scale(0.75f), "so does a sensible shrink");
+            Equal(1f, Knapsack.Scale(0f), "zero reads as 1 rather than collapsing the pack to a point");
+            Equal(1f, Knapsack.Scale(-2f), "a negative reads as 1 rather than inverting its normals");
+            Equal(1f, Knapsack.Scale(float.NaN), "NaN reads as 1");
+            Equal(1f, Knapsack.Scale(float.PositiveInfinity), "an infinity reads as 1");
+            Equal(Knapsack.MaxScale, Knapsack.Scale(1000f), "a huge knob is clamped, not honoured");
+            Equal(Knapsack.MinScale, Knapsack.Scale(0.0001f), "so is a tiny one");
         }
 
         private static void ShelfTests()

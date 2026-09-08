@@ -478,7 +478,24 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       line. 1831 checks. **SEEN on StormTest 2026-09-08 10:26** (the first boot on main): `backpack mod:
       org.bepinex.plugins.backpacks 1.3.8 loaded; shelf x2 (Server.BackpackShelfMultiplier)`, then `director up: …;
       shelf 40 of 72, period 14 …` with forty names on `shelf now:` and no re-roll after; visit 20 bought a Flametal
-      that is on the shelf only by the multiplier. The body half stays his.
+      that is on the shelf only by the multiplier.
+      **The BODY half is BUILT on `b/backpack-body`** (2026-09-08, and NOT a bake in the end): Smoothbrain's own
+      pack is one prefab, `bp_explorer`, registered into ObjectDB by the mod's ItemManager, with its geometry at
+      `attach_skin/Mesh` as `SkinnedMeshRenderer`s rigged to VALHEIM's skeleton. Ingvar's rig is his own (24
+      joints, `Hips -> Spine -> Spine01 -> Spine02 -> neck -> Head`, read off `models/ingvar.glb`), so vanilla's
+      way of wearing one is closed twice: `VisEquipment` would bind it to the Dverger chassis, whose renderers
+      `HideStandIn` switches off, and even visible it would follow bones nobody can see. So `Client/BackpackProp.cs`
+      bakes the skinned parts to static meshes ONCE, at bind pose (a pack does not deform), on a throwaway
+      instance rather than the ObjectDB prefab, and hangs them on a named bone of Ingvar's own rig, UNDER the
+      body object so `HideStandIn` and the 2 s re-hide both skip it. `Core/Knapsack.cs` is pure: the bone
+      resolution with its fallback chain, the `x,y,z` knob parse (a bad component reads 0, never NaN, which
+      Unity propagates through the whole transform) and the scale clamp. Six client knobs
+      (`BackpackOnIngvar`, `BackpackPrefab`, `BackpackBone`, `BackpackOffset`, `BackpackRotation`,
+      `BackpackScale`), the pack in `cargo body preview` too, and a `backpack:` line in `cargo body` and
+      `cargo status`. No mod on the machine = no prefab in ObjectDB = he goes bare and says so. 1917 checks
+      (32 new, three mutations re-run by hand: the fallback chain, a refused component keeping its NaN, and
+      the non-positive scale guard). *What closes it:* one screen with Backpacks loaded — the offset, rotation
+      and scale are dialled in by eye through `cargo body preview`, and NOTHING off-game can settle them.
 - [x] **`a/dismiss-at-merchant` — the dismiss measured against him and answered (PR #64 MERGED 2026-09-08, main
       55508d6, 1885 checks, deployed both sides).** SEEN on visit 22 (2026-09-08 ~11:15): leash walk (31 m / 5 s,
       followed, reached again), then Shift+E on him → server `VCargo_dismiss from Nomadtest: visit #22 dismissed`
