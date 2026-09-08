@@ -20,7 +20,10 @@ release-docs commit): 0 warnings, **1701/1701 off-game checks**, `probes 18/18 o
 counts in `CHANGELOG.md` "0.1.0-rc2". **`v0.1.0-rc2` is cut** from that commit (2026-09-07 evening, at the owner's
 word): the store zip and the bundle attached, a pre-release, uploaded to no store. `v0.1.0-rc1` is marked
 superseded on its release page and still must not reach a tester: it carries F1, and the ServerSync gate does not
-tell the two apart (both are 0.1.0), so every copy is replaced by hand. Issue #23 is closed.
+tell the two apart (both are 0.1.0), so every copy is replaced by hand. Issue #23 is closed. **The next cut waits on
+the ownership fix and one screen visit where the first approach reaches Don, not on a date** (owner, 2026-09-08
+00:40); it is rc3, or 0.1.0 proper if that visit and the vanish are clean, and if Valheim 1.0 lands first it is cut
+once, after the probe run.
 
 **Nine visits have now flown on the owner's Windows client against the dedicated server StormTest**: six in the
 morning (10:39–11:38, PR #46's build), twenty deals over the wire, no exception from the mod on either side; then

@@ -13,7 +13,9 @@ state is kept below as history.
 attached, a pre-release, uploaded to no store. **The rc1 tag is marked superseded and still must not reach a
 tester**: it carries F1, and the ServerSync gate does not tell rc1 from rc2 (both are 0.1.0), so every copy is
 replaced by hand. Your rc1 note (issue #23) is closed. `Assets/valkyriescargo_kit` is attached to both releases,
-so Don's builds carry Ingvar.
+so Don's builds carry Ingvar. **The next cut waits on your ownership fix and one screen visit where the first
+approach reaches Don, not on a date** (owner, 2026-09-08 00:40); it is rc3, or 0.1.0 proper if that visit and the
+vanish are clean, and if Valheim 1.0 lands first it is cut once, after the probe run.
 
 **Nine visits flew today on Don's Windows client against StormTest**: six in the morning, twenty deals, no
 exception; three in the evening on the audit's fixes. Ingvar landed in his own body every time, within a second

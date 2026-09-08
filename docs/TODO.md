@@ -290,3 +290,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       checks, the store zip and `valkyriescargo_kit` attached, pre-release, no store; rc1's page marked
       superseded, issue #23 closed. The gate does not tell rc1 from rc2 (both 0.1.0): replace copies by hand.
       The rc2 changelog entry and the README status rewrite (`docs/RELEASE.md` step 4) went in with it.
+- [ ] **The next cut** (owner, 2026-09-08 00:40): waits on Wu'barrk's ownership-during-the-carry PR and one screen
+      visit on that build where the first approach reaches Don; not a date. rc3, or 0.1.0 proper if that visit and
+      the vanish are clean; if Valheim 1.0 lands first, cut once after the probe run. Review his PR on arrival,
+      merge only on the word.
