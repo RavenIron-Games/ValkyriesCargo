@@ -210,7 +210,7 @@ itself is what arms the lock.
 | `ShelfRotationGameDays` | `2` | 0.1-365 | How many game days one shelf lasts. The roll happens on the first idle tick of a new period, never under a running visit, and a restart mid-period shows the same shelf. |
 | `PurseCoins` | `1500` | 0-100000 | Coins he arrives with. |
 | `PurseCarryPercent` | `50` | 0-100 | Percent of last visit's takings added to the next purse, capped at three purses. |
-| `EnableBarter` | `true` | | Allow paying with goods he wants, valued at his live buy price. `false` hides the terminal's Barter button; the server settles a barter deal either way. Read on the **client**, synced from the server. |
+| `EnableBarter` | `true` | | Allow paying with goods he wants, valued at his live buy price. `false` makes the terminal refuse goods staged beside a ware ("Coins for my wares on this shore") and hides "Cover it with my goods"; the server settles a barter deal either way. Read on the **client**, synced from the server. |
 | `BarrkBotExport` | `true` | | Write `barrkbot_cargo_market.json`, `barrkbot_cargo_traders.json` and `barrkbot_cargo_visits.json` under `BepInEx/config/ValkyriesCargo/` for BarrkBOT to read, refreshed about once a minute; the world sidecar is still the source of truth. |
 
 ### `[Client]`
@@ -221,6 +221,7 @@ itself is what arms the lock.
 | `ShowPriceTrend` | `true` | | Show the up/down glyph against base price in the terminal. |
 | `Theme` | `Vanilla` | `Vanilla` \| `BlackGold` | Terminal metal colour. |
 | `TerminalScale` | `1.0` | 0.5-2 | Terminal size multiplier. |
+| `TerminalBackdropAlpha` | `0.4` | 0-1 | Opacity of the black backdrop behind the terminal's text: `0.4` is a 40 % translucent black (the playtest's ask, 2026-09-08), `1` the solid panel of before, `0` the frame alone over the world. |
 
 ---
 

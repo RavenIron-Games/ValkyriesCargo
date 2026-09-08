@@ -15,6 +15,11 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
     /// gotcha 3), closed by the panel rules: Escape, Use, Tab or M, the player dead, more than 5 m from
     /// the merchant, the visit leaving or over. Opened by the merchant's interact (P5) or by
     /// `cargo terminal demo|open`. The inventory is written only inside the answer, through DealApplier.
+    ///
+    /// The playtest of 2026-09-08 reshaped the lower half: the Coins/Barter switch is gone and the tray is
+    /// always YOU GET beside YOU GIVE with one balance line (item 5); every staged line carries a count box
+    /// and an "all" button (item 4); the window sits on a translucent black backdrop with brighter text
+    /// (item 7), set through the theme's own options and never by editing the vendored theme.
     /// </summary>
     internal sealed class CargoTerminal : ICargoTerminal
     {
@@ -23,6 +28,13 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         public const float CloseDistance = 5f;
         public const float DismissArmSeconds = 5f;
         public const float CountRefreshSeconds = 0.25f;
+        /// <summary>The tray shows this many lines a side before YOU GIVE scrolls; its height never moves.</summary>
+        public const int TrayRows = 4;
+        public const float TrayRowHeight = 26f;
+        /// <summary>IMGUI control names for the count boxes, prefixed with the mod's name like the window id.</summary>
+        public const string CountBoxPrefix = "VCargo_count_";
+        private const string HexAmber = "#E0A23C";
+        private const string HexDim = "#B8AE9A";
 
         public static CargoTerminal Instance { get; private set; }
 
@@ -51,8 +63,19 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         private bool _awaiting;
         private int _coins;
         private Rect _rect;
-        private Vector2 _scrollWares, _scrollWants;
+        private Vector2 _scrollWares, _scrollWants, _scrollTray;
         private int _throws;
+        /// <summary>The count box being typed in (its IMGUI control name) and the digits typed so far: the box
+        /// shows these while it has the keyboard, so it can be emptied and retyped; the tray's own count is
+        /// what it shows otherwise. A clamp writes the clamped number back here.</summary>
+        private string _editName = "";
+        private string _editText = "";
+        /// <summary>Read in Draw (IMGUI answers it only there), raised as the text-focus token from Tick, and
+        /// the reason Use, Tab and M do not close the window while a count is being typed.</summary>
+        private bool _fieldFocused;
+        /// <summary>Where the focused box is on screen: a click anywhere else hands the keyboard back.</summary>
+        private Rect _focusedBox;
+        private GUIStyle _small, _smallFrom;
 
         public bool IsOpen { get; private set; }
         public string LastCloseReason { get; private set; } = "";
@@ -84,7 +107,8 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             _awaiting = false;
             _countAge = CountRefreshSeconds;
             _tray.Clear();
-            _tray.Mode = PayMode.Coins;
+            _editName = ""; _editText = ""; _fieldFocused = false;
+            _scrollTray = Vector2.zero;
             _tray.Message = Lines.Open;
             IsOpen = true;
             Opens++;
@@ -97,8 +121,10 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             if (!IsOpen) return;
             IsOpen = false;
             LastCloseReason = why ?? "";
+            _fieldFocused = false;
             UIFocus.SetWantsCursor(WindowId, false);
             UIFocus.SetBlocksGameInput(WindowId, false);
+            UIFocus.SetHasTextFocus(WindowId, false);
             CargoRpc.Close(_visitId);
             if (_demo) CargoRpc.UseDemo(false);
             ValkyriesCargo.Log.LogInfo("terminal closed: " + LastCloseReason);
@@ -122,6 +148,9 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             {
                 UIFocus.SetWantsCursor(WindowId, true);
                 UIFocus.SetBlocksGameInput(WindowId, true);
+                // The third registry, for an actual focused text field only (the knowledge base's warning):
+                // the count box. Raised here, from Update, never from OnGUI.
+                UIFocus.SetHasTextFocus(WindowId, _fieldFocused);
 
                 // ZInput, not UnityEngine.Input: this build reads every key through ZInput's new-Input-System
                 // wrapper (Menu.Update 307/364, FejdStartup 1702, InventoryGui 396, Minimap 616) and reads no
@@ -134,9 +163,15 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
                 // InventoryGui.Update and Minimap.Update both open on `!Chat.HasFocus()` plus a still-
                 // pressed ZInput button, so without this Tab closes the terminal AND opens the inventory,
                 // M closes it AND opens the map. (UIFocus's own header prescribes this for a token holder.)
-                if (ZInput.GetButtonDown("Use")) { ZInput.ResetButtonStatus("Use"); Close("use"); return; }
-                if (ZInput.GetButtonDown("Inventory")) { ZInput.ResetButtonStatus("Inventory"); Close("inventory"); return; }
-                if (ZInput.GetButtonDown("Map")) { ZInput.ResetButtonStatus("Map"); Close("map"); return; }
+                // Not while a count box has the keyboard: E, Tab and M are then letters being typed (only digits
+                // reach the tray, but the key still lands here). Escape closes either way, and Enter or a click
+                // elsewhere hands the keyboard back (Draw).
+                if (!_fieldFocused)
+                {
+                    if (ZInput.GetButtonDown("Use")) { ZInput.ResetButtonStatus("Use"); Close("use"); return; }
+                    if (ZInput.GetButtonDown("Inventory")) { ZInput.ResetButtonStatus("Inventory"); Close("inventory"); return; }
+                    if (ZInput.GetButtonDown("Map")) { ZInput.ResetButtonStatus("Map"); Close("map"); return; }
+                }
                 if (InventoryGui.IsVisible() || Minimap.IsOpen() || Menu.IsVisible()) { Close("a vanilla screen opened"); return; }
 
                 Player p = Player.m_localPlayer;
@@ -195,6 +230,10 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             {
                 GiltFrameTheme.EnsureBuilt(Theme());
                 Layout();
+                Event ev = Event.current;
+                // A click anywhere but the focused count box hands the keyboard back before the click lands.
+                if (_fieldFocused && ev != null && ev.type == EventType.MouseDown && !_focusedBox.Contains(ev.mousePosition))
+                    GUIUtility.keyboardControl = 0;
                 GiltFrameTheme.DrawWindow(_rect, Lines.Title + "  -  Valkyrie's Cargo");
                 DrawTitleBar();
                 Rect body = GiltFrameTheme.Body(_rect);
@@ -202,24 +241,20 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
 
                 MarketSnapshot m = CargoRpc.Market;
 
-                // Header line: purse, pay mode, countdown.
+                // Header line: his purse, your coins, the countdown. The Coins/Barter switch lived here until
+                // 2026-09-08 (the playtest's item 5): the tray now always shows both sides and one balance line.
                 Rect header = new Rect(body.x, body.y, body.width, S(28f));
-                GUI.Label(new Rect(header.x, header.y, S(220f), header.height), "Purse " + m.Purse + "c", GiltFrameTheme.Value);
-                float bx = header.x + S(230f);
-                GUI.Label(new Rect(bx, header.y, S(70f), header.height), "Pay with:", GiltFrameTheme.Key);
-                bx += S(76f);
-                if (GUI.Button(new Rect(bx, header.y, S(120f), header.height), "Coins " + _coins, _tray.Mode == PayMode.Coins ? GiltFrameTheme.Primary : GiltFrameTheme.Button)) _tray.Mode = PayMode.Coins;
-                bx += S(126f);
-                if (ModConfig.EnableBarter.Value &&
-                    GUI.Button(new Rect(bx, header.y, S(120f), header.height), "Barter", _tray.Mode == PayMode.Barter ? GiltFrameTheme.Primary : GiltFrameTheme.Button)) _tray.Mode = PayMode.Barter;
+                GUI.Label(new Rect(header.x, header.y, S(220f), header.height), "His purse " + m.Purse + "c", GiltFrameTheme.Value);
+                GUI.Label(new Rect(header.x + S(230f), header.y, S(220f), header.height), "Your coins " + _coins + "c", GiltFrameTheme.Value);
                 string clock = VisitClock.Format(Remaining()) + " left";
                 GUI.Label(new Rect(body.xMax - S(140f), header.y, S(140f), header.height), clock, GiltFrameTheme.SubTitle);
 
-                // Two panes.
+                // Two panes over a tray of fixed height, so nothing above jumps as lines come and go.
                 float paneTop = header.yMax + S(8f);
                 float footerH = S(26f);
-                float trayH = S(78f);
-                float paneH = body.yMax - paneTop - trayH - footerH - S(12f);
+                float trayH = S(30f) + TrayRows * S(TrayRowHeight) + S(6f);
+                float buttonsH = S(28f);
+                float paneH = body.yMax - paneTop - trayH - buttonsH - footerH - S(26f);
                 float gap = S(12f);
                 float paneW = (body.width - gap) * 0.5f;
                 Rect left = new Rect(body.x, paneTop, paneW, paneH);
@@ -227,13 +262,27 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
                 DrawWares(left, m);
                 DrawWants(right, m);
 
-                // The tray and the buttons.
+                // The tray, then the buttons with the balance line between them.
                 Rect tray = new Rect(body.x, left.yMax + S(8f), body.width, trayH);
                 DrawTray(tray, m);
+                Rect buttons = new Rect(body.x, tray.yMax + S(6f), body.width, buttonsH);
+                DrawButtons(buttons, m);
 
                 // Footer: his words, or why the last confirm stopped.
                 Rect foot = GiltFrameTheme.FooterLine(_rect);
                 GUI.Label(foot, _awaiting ? "..." : _tray.Message, GiltFrameTheme.Footer);
+
+                // Which control has the keyboard is a question only OnGUI can answer; Tick raises the token.
+                string focused = GUI.GetNameOfFocusedControl();
+                _fieldFocused = !string.IsNullOrEmpty(focused) && focused.StartsWith(CountBoxPrefix, StringComparison.Ordinal);
+                if (_fieldFocused && ev != null && ev.type == EventType.KeyDown &&
+                    (ev.keyCode == KeyCode.Return || ev.keyCode == KeyCode.KeypadEnter))
+                {
+                    GUIUtility.keyboardControl = 0;
+                    _fieldFocused = false;
+                    _editName = ""; _editText = "";
+                    ev.Use();
+                }
             }
             catch (Exception ex)
             {
@@ -248,13 +297,21 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             ThemeOptions o = ThemeOptions.Default;
             o.Scale = Mathf.Clamp(ModConfig.TerminalScale.Value, 0.5f, 2f);
             if (ModConfig.Theme.Value == "Vanilla") o.Metal = new Color(0.66f, 0.48f, 0.26f, 1f);   // Valheim's bronze; BlackGold is the theme's own gilt
+            // The backdrop (2026-09-08, the playtest's item 7): the theme's near-black panel at
+            // Client.TerminalBackdropAlpha (0.4 = a 40% translucent black) instead of its 0.955, and both text
+            // tones a step brighter. All through the theme's own options; the vendored file is not edited. The
+            // panel keeps its warm near-black rather than pure black because every button and field surface is
+            // derived from the panel colour (GiltFrameTheme.Surface), and black times anything is black.
+            o.PanelOpacity = Mathf.Clamp01(ModConfig.TerminalBackdropAlpha.Value);
+            o.Text = new Color(0.97f, 0.94f, 0.86f, 1f);
+            o.MutedText = new Color(0.78f, 0.74f, 0.64f, 1f);
             return o;
         }
 
         private void Layout()
         {
             float w = Mathf.Min(Screen.width - 40f, GiltFrameTheme.S(980f));
-            float h = Mathf.Min(Screen.height - 40f, GiltFrameTheme.S(620f));
+            float h = Mathf.Min(Screen.height - 40f, GiltFrameTheme.S(700f));
             _rect = new Rect(Mathf.Round((Screen.width - w) * 0.5f), Mathf.Round((Screen.height - h) * 0.5f), w, h);
         }
 
@@ -355,66 +412,178 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
                                         : (Has(row.Prefab) < 1 ? "You carry none of those." : Lines.RefuseFull);
         }
 
+        /// <summary>
+        /// The tray (design 3.4, reshaped 2026-09-08): YOU GET on the left (the one wanted line), YOU GIVE on
+        /// the right (the offered lines, scrolling past TrayRows), each line with its count box, "all" and x.
+        /// </summary>
         private void DrawTray(Rect r, MarketSnapshot m)
         {
             float S(float v) => GiltFrameTheme.S(v);
             GiltFrameTheme.DrawRule(new Rect(r.x, r.y, r.width, 1f));
             float y = r.y + S(6f);
-            GUI.Label(new Rect(r.x, y, S(80f), S(22f)), "STAGING", GiltFrameTheme.Header);
-
-            var sb = new System.Text.StringBuilder();
-            if (_tray.Wanted != null)
-                sb.Append("buy: ").Append(Span(_tray.Wanted, Name(_tray.Wanted.Prefab)));
-            if (_tray.Offered.Count > 0)
+            float gap = S(12f);
+            float colW = (r.width - gap) * 0.5f;
+            float rowH = S(TrayRowHeight);
+            Rect getCol = new Rect(r.x, y, colW, S(22f));
+            Rect giveCol = new Rect(r.x + colW + gap, y, colW, S(22f));
+            GUI.Label(new Rect(getCol.x, getCol.y, S(120f), getCol.height), "YOU GET", GiltFrameTheme.Header);
+            GUI.Label(new Rect(giveCol.x, giveCol.y, S(120f), giveCol.height), "YOU GIVE", GiltFrameTheme.Header);
+            foreach (Rect col in new[] { getCol, giveCol })
             {
-                if (sb.Length > 0) sb.Append("   ");
-                sb.Append("offer: ");
-                for (int i = 0; i < _tray.Offered.Count; i++)
-                {
-                    if (i > 0) sb.Append(", ");
-                    sb.Append(Span(_tray.Offered[i], Name(_tray.Offered[i].Prefab)));
-                }
+                GUI.Label(new Rect(col.xMax - S(212f), col.y, S(60f), col.height), "count", GiltFrameTheme.Key);
+                GUI.Label(new Rect(col.xMax - S(74f), col.y, S(70f), col.height), "value", GiltFrameTheme.Key);
             }
-            if (sb.Length == 0) sb.Append("<color=" + GiltFrameTheme.HexMuted + ">click a ware to buy it, one of your goods to offer it; Shift = 5, Ctrl = 20, right-click takes back</color>");
-            long net = _tray.Net;
-            string pay = _tray.IsEmpty ? "" : net > 0 ? "   ->  you pay " + net + "c" : net < 0 ? "   ->  he pays you " + (-net) + "c" : "   ->  even";
-            GUIStyle rich = GiltFrameTheme.Value;
-            bool wasRich = rich.richText;
-            rich.richText = true;
-            try { GUI.Label(new Rect(r.x + S(84f), y, r.width - S(84f), S(22f)), sb + pay, rich); }
-            finally { rich.richText = wasRich; }
 
-            y += S(28f);
-            float bw = S(150f), bh = S(28f), bx = r.x;
+            float wellH = TrayRows * rowH + S(4f);
+            Rect getWell = new Rect(getCol.x, getCol.yMax + S(2f), colW, wellH);
+            Rect giveWell = new Rect(giveCol.x, giveCol.yMax + S(2f), colW, wellH);
+            GiltFrameTheme.DrawInset(getWell);
+            GiltFrameTheme.DrawInset(giveWell);
+
+            if (_tray.Wanted != null)
+                DrawTrayLine(new Rect(getWell.x + S(2f), getWell.y + S(2f), getWell.width - S(4f), rowH), _tray.Wanted, m, true, Vector2.zero);
+            else
+                GUI.Label(new Rect(getWell.x + S(8f), getWell.y, getWell.width - S(16f), getWell.height),
+                          "click a ware on the left to buy it\nShift = 5, Ctrl = 20; type a count, or press all", GiltFrameTheme.Note);
+
+            if (_tray.Offered.Count == 0)
+            {
+                GUI.Label(new Rect(giveWell.x + S(8f), giveWell.y, giveWell.width - S(16f), giveWell.height),
+                          "click one of your goods on the right to offer it\nright-click takes one back; x clears the line", GiltFrameTheme.Note);
+                return;
+            }
+            Rect inner = new Rect(giveWell.x + S(2f), giveWell.y + S(2f), giveWell.width - S(4f), giveWell.height - S(4f));
+            int n = _tray.Offered.Count;
+            bool scrolls = n > TrayRows;
+            Rect view = new Rect(0, 0, inner.width - (scrolls ? S(16f) : 0f), Mathf.Max(inner.height, n * rowH));
+            _scrollTray = GUI.BeginScrollView(inner, _scrollTray, view);
             try
             {
-            GUI.enabled = !_awaiting && !_tray.IsEmpty;
-            if (GUI.Button(new Rect(bx, y, bw, bh), _tray.AnyAmber ? "Confirm new price" : "Confirm deal", GiltFrameTheme.Primary)) Confirm(m);
-            GUI.enabled = !_awaiting;
-            bx += bw + S(8f);
-            if (GUI.Button(new Rect(bx, y, S(90f), bh), "Clear", GiltFrameTheme.Button)) { _tray.Clear(); _tray.Message = ""; }
-            bx += S(98f);
-            if (_tray.Mode == PayMode.Barter && _tray.Wanted != null &&
-                GUI.Button(new Rect(bx, y, S(170f), bh), "Fill from my goods", GiltFrameTheme.Button))
-            {
-                int n = _tray.AutoFill(m, Has);
-                _tray.Message = n > 0 ? "Offered " + n + " kind(s) of your goods against it." : "Nothing of yours covers it.";
+                Vector2 origin = inner.position - _scrollTray;   // view-local to screen, for the focused box
+                for (int i = 0; i < n && i < _tray.Offered.Count; i++)
+                {
+                    TrayLine l = _tray.Offered[i];
+                    DrawTrayLine(new Rect(0, i * rowH, view.width, rowH), l, m, false, origin);
+                    if (i >= _tray.Offered.Count || _tray.Offered[i] != l) break;   // x took it out; the rest redraws next frame
+                }
             }
-            }
-            finally { GUI.enabled = true; }
-            string dismiss = _dismissArmedUntil > 0f ? "Ask once more" : "Send him off";
-            if (GUI.Button(new Rect(r.xMax - S(150f), y, S(150f), bh), dismiss, GiltFrameTheme.Button)) DismissPressed();
+            finally { GUI.EndScrollView(); }
         }
 
-        private static string Span(TrayLine l, string name)
+        /// <summary>
+        /// One staged line: icon, name and unit price, the count box (item 4), "all", x, and the line's value
+        /// now (amber where the price moved since it was staged). `origin` maps the box to screen space when
+        /// the line is drawn inside the scroll view, so a click elsewhere can be told from a click on it.
+        /// </summary>
+        private void DrawTrayLine(Rect line, TrayLine l, MarketSnapshot m, bool get, Vector2 origin)
         {
-            string text = name + " x" + l.Count + " (" + l.ValueNow + "c)";
-            return l.Amber ? "<color=#E0A23C>" + text + "</color>" : text;
+            float S(float v) => GiltFrameTheme.S(v);
+            float h = line.height;
+            DrawIcon(new Rect(line.x + S(2f), line.y + S(2f), h - S(4f), h - S(4f)), l.Prefab);
+
+            float right = line.xMax;
+            string value = l.ValueNow + "c";
+            if (l.Amber) value = "<color=" + HexAmber + ">" + value + "</color>";
+            GUI.Label(new Rect(right - S(74f), line.y, S(72f), h), value, GiltFrameTheme.Value);
+            right -= S(78f);
+
+            GUIStyle small = SmallButton();
+            if (GUI.Button(new Rect(right - S(24f), line.y + S(2f), S(24f), h - S(4f)), "x", small)) { _tray.Remove(l.Prefab); return; }
+            right -= S(28f);
+            if (GUI.Button(new Rect(right - S(40f), line.y + S(2f), S(40f), h - S(4f)), "all", small))
+            {
+                _tray.AllOf(m, l.Prefab, Has, _coins);
+                if (_editName.Length > 0) { GUIUtility.keyboardControl = 0; _editName = ""; _editText = ""; }   // the box shows the tray's count again
+            }
+            right -= S(44f);
+
+            // The count box. It shows the tray's count until the player types, then what they have typed
+            // (digits only; empty is allowed while typing and changes nothing); a number the tray clamps is
+            // written back so the box says what he will actually take.
+            Rect box = new Rect(right - S(58f), line.y + S(2f), S(56f), h - S(4f));
+            string name = CountBoxPrefix + (get ? "get_" : "give_") + l.Prefab;
+            GUI.SetNextControlName(name);
+            bool focused = GUI.GetNameOfFocusedControl() == name;
+            string shown = focused && _editName == name ? _editText : l.Count.ToString();
+            string typed = GUI.TextField(box, shown, 6, GiltFrameTheme.Field);
+            if (focused) _focusedBox = new Rect(box.x + origin.x, box.y + origin.y, box.width, box.height);
+            if (typed != shown)
+            {
+                string digits = Digits(typed);
+                _editName = name;
+                _editText = digits;
+                int want;
+                if (digits.Length > 0 && int.TryParse(digits, out want) && want >= 1)
+                {
+                    int applied = _tray.SetCount(m, l.Prefab, want, Has);
+                    if (applied != want) _editText = applied.ToString();
+                }
+            }
+            else if (!focused && _editName == name) { _editName = ""; _editText = ""; }
+            right -= S(62f);
+
+            GUI.Label(new Rect(line.x + h + S(2f), line.y, Mathf.Max(0f, right - line.x - h - S(4f)), h),
+                      Name(l.Prefab) + "  <color=" + HexDim + ">@ " + l.UnitPriceNow + "c</color>", GiltFrameTheme.Value);
+        }
+
+        /// <summary>The theme's button with room for a two-letter face; rebuilt whenever the theme rebuilds its styles.</summary>
+        private GUIStyle SmallButton()
+        {
+            if (_small == null || !ReferenceEquals(_smallFrom, GiltFrameTheme.Button))
+            {
+                _smallFrom = GiltFrameTheme.Button;
+                _small = new GUIStyle(GiltFrameTheme.Button) { padding = new RectOffset(2, 2, 2, 2) };
+            }
+            return _small;
+        }
+
+        private static string Digits(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+            var sb = new System.Text.StringBuilder(s.Length);
+            foreach (char c in s) if (c >= '0' && c <= '9') sb.Append(c);
+            return sb.ToString();
+        }
+
+        /// <summary>Confirm, Clear, "Cover it with my goods", the one balance line (item 5), and Send him off.</summary>
+        private void DrawButtons(Rect r, MarketSnapshot m)
+        {
+            float S(float v) => GiltFrameTheme.S(v);
+            float bh = r.height, bx = r.x;
+            try
+            {
+                GUI.enabled = !_awaiting && !_tray.IsEmpty;
+                if (GUI.Button(new Rect(bx, r.y, S(150f), bh), _tray.AnyAmber ? "Confirm new price" : "Confirm deal", GiltFrameTheme.Primary)) Confirm(m);
+                GUI.enabled = !_awaiting;
+                bx += S(158f);
+                if (GUI.Button(new Rect(bx, r.y, S(90f), bh), "Clear", GiltFrameTheme.Button)) { _tray.Clear(); _tray.Message = ""; }
+                bx += S(98f);
+                // Whenever a ware is staged (no mode to switch into any more), unless the server turned barter off.
+                if (ModConfig.EnableBarter.Value && _tray.Wanted != null)
+                {
+                    if (GUI.Button(new Rect(bx, r.y, S(190f), bh), "Cover it with my goods", GiltFrameTheme.Button))
+                    {
+                        int n = _tray.AutoFill(m, Has);
+                        _tray.Message = n > 0 ? "Offered " + n + " kind(s) of your goods against it." : "Nothing of yours covers it.";
+                    }
+                    bx += S(198f);
+                }
+            }
+            finally { GUI.enabled = true; }
+
+            // The one balance line: who pays whom the difference, at the numbers on screen now.
+            long net = _tray.Net;
+            string balance = _tray.IsEmpty ? "" : net > 0 ? "you pay " + net + "c" : net < 0 ? "he pays you " + (-net) + "c" : "even";
+            if (_tray.AnyAmber && balance.Length > 0) balance += "  <color=" + HexAmber + ">(a price moved)</color>";
+            GUI.Label(new Rect(bx, r.y, Mathf.Max(0f, r.xMax - S(158f) - bx), bh), balance, GiltFrameTheme.SubTitle);
+
+            string dismiss = _dismissArmedUntil > 0f ? "Ask once more" : "Send him off";
+            if (GUI.Button(new Rect(r.xMax - S(150f), r.y, S(150f), bh), dismiss, GiltFrameTheme.Button)) DismissPressed();
         }
 
         private void Confirm(MarketSnapshot m)
         {
-            string why = _tray.Validate(m, _coins, Has);
+            string why = _tray.Validate(m, _coins, Has, ModConfig.EnableBarter.Value);
             if (why != null) { _tray.Message = TrayModel.Words(why); return; }
             Deal d = _tray.Build(_visitId);
             if (!_demo)

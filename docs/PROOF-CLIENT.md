@@ -568,8 +568,14 @@ it; walking away closes it only once P5 gives it a merchant.
 What the code fixes:
 - every confirmed deal logs `terminal deal on visit #<n>: ok <delivery id> <+2 Iron, -50 coins>`, or
   `terminal deal on visit #<n>: <refusal token>`
-- **Fill from my goods** appears only with `Pay with: Barter` selected and a ware staged; it answers
-  `Offered <n> kind(s) of your goods against it.` or `Nothing of yours covers it.`
+- **Cover it with my goods** (was "Fill from my goods" behind a Barter switch until 2026-09-08) appears whenever a
+  ware is staged and `EnableBarter` is on; it answers `Offered <n> kind(s) of your goods against it.` or
+  `Nothing of yours covers it.` With `EnableBarter` off, goods staged beside a ware are refused on Confirm with
+  `Coins for my wares on this shore, friend. Sell me your goods in a deal of their own.`
+- **the count box** on a staged line takes digits only; a number above his stock (or your carry, or the room
+  on his shelf) is written back clamped; **all** fills the line (a ware: as many as he has and you can pay for;
+  goods: everything you carry that fits); **x** clears the line; Enter or a click elsewhere hands the keyboard
+  back. While a box has the keyboard, E, Tab and M do not close the window (Escape still does).
 - **Send him off** arms for 5 s and reads `Ask once more`; the footer says
   `Send me off, then? Ask once more and I'll go.`, then `The Allfather calls me back to the mist!`
 - close reasons in `terminal closed: <reason>`: `escape`, `use`, `inventory`, `map`,

@@ -36,6 +36,19 @@ the zone type resolved at runtime; for ServerSync's three sites a shim declared 
 flagged as the owner's call) — **and the owner said "dont change anything for 1.0"**. Nothing is built. Neither
 side starts 1.0 work without his word; the client axis is unswept everywhere.
 
+**Later the same morning (2026-09-08): the shelf seen, the first two-client playtest, the terminal reshaped.** The
+shelf rolled on StormTest exactly as designed (`shelf roll waits:` under visit 17, `shelf rolled: … period 14 …`
+with the twenty names, `shelf now:` after a restart, visit 18 resumed); PR #57 still waits for the word. Your
+owner joined by crossplay join code with Yggdrasil's Reckoning 0.1.1 on both sides and reported seven items;
+**the three terminal ones (amounts, Coins/Barter, contrast) are built on `a/terminal-ux`** (branched off the
+shelf branch; its PR targets that branch until #57 merges): a count box, "all" and x on every staged line, no
+pay mode (YOU GET / YOU GIVE and one balance line; `EnableBarter=false` now refuses goods beside a ware on the
+client), a 40 % black backdrop with brighter text through `ThemeOptions`. **Your side is issue #59**: the
+flight's feel (which screen, which part; the two synced knobs to try), the walk-off (your client's
+`cargo merchant #N: … (entered: …)` lines settle it; we propose a `terminalsOpen` count in `VisitState` from
+our wire and a `busy` input to `MerchantPlan` from you), the one-line `Localize` in `GetHoverText`, and the
+Backpacks test with what to expect. `docs/TODO.md` §3 carries the build's own unseen list.
+
 **The rotating shelf (issue #56) is BUILT on `a/rotating-shelf` and its PR waits for the word.** The owner's ask,
 2026-09-08: Ingvar's selling side stops being a fixed list — 20 of the 72 catalogue entries are on the shelf at a
 time, re-rolled every couple of game days, seeded, the fixed Ware list gone; on the shelf an entry behaves as a

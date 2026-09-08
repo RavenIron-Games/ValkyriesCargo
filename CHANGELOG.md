@@ -53,7 +53,21 @@ after the rest of this log was written.
   with the new `not_on_shelf` and a line of Ingvar's for it. The director re-rolls on the first idle tick of a new
   period, never under a visit (`shelf rolled: …` / `shelf roll waits: …`), and republishes the market; nothing is
   persisted, so a restart mid-period shows the same twenty. `0` keeps the old fixed shelf. `docs/CATALOGUE.md` §7,
-  `docs/ECONOMY-SIM.md` §11. **Not seen on a machine.**
+  `docs/ECONOMY-SIM.md` §11. **Seen on StormTest 2026-09-08**: `shelf roll waits: visit #17 is running`, then
+  `shelf rolled: … period 14 …` naming the twenty, `shelf now: …` after a restart, visit 18 resumed across it.
+- **The terminal after the first playtest (branch `a/terminal-ux`, Track A, 1841 checks; Wu'barrk's report of
+  2026-09-08, items 4, 5 and 7; the owner: "build 4, 5 and 7 on a branch").** Click-per-unit staging was unusable
+  and the Coins/Barter switch unreadable, so: every staged line carries a **count box** (digits only; a number
+  above his stock, your carry or the room on his shelf is written back clamped), an **all** button (a ware: as many
+  as he has and you can pay for; goods: everything you carry that fits) and **x**; Shift 5 / Ctrl 20 stay. The
+  switch and `PayMode` are gone: the tray is always **YOU GET** beside **YOU GIVE** with one balance line
+  (`you pay N c` / `he pays you N c` / `even`), and "Cover it with my goods" shows whenever a ware is staged;
+  `EnableBarter=false` now refuses goods beside a ware on the client (`barter_off`, "Coins for my wares on this
+  shore, friend"), since there is no mode to hide. The window sits on the theme's near-black panel at
+  `Client.TerminalBackdropAlpha` (0.4 = the 40 % translucent black asked for) with both text tones a step
+  brighter, all through `ThemeOptions` — the vendored theme is not edited. While a count box has the keyboard the
+  text-focus token is raised (from Tick) and Use/Tab/M do not close the window; Enter or a click elsewhere hands
+  it back. `TrayModel.SetCount` / `AllOf` / `Remove` are pure and checked. **Not seen on a screen.**
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 

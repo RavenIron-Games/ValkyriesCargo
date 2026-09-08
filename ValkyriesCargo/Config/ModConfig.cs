@@ -65,6 +65,7 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<bool>   ShowPriceTrend;
         public static ConfigEntry<string> Theme;
         public static ConfigEntry<float>  TerminalScale;
+        public static ConfigEntry<float>  TerminalBackdropAlpha;
         /// <summary>
         /// The half-turn Ingvar's body gets when it is attached to the merchant and stood up by the
         /// preview. On StormTest, 2026-09-07 15:50, the owner watched him WALK BACKWARD on a live visit:
@@ -224,6 +225,10 @@ namespace RavenIron.ValkyriesCargo.Config
             TerminalScale = C(cfg, "Client", "TerminalScale", 1f,
                 "Terminal size multiplier. Read on the CLIENT.",
                 new AcceptableValueRange<float>(0.5f, 2f));
+            TerminalBackdropAlpha = C(cfg, "Client", "TerminalBackdropAlpha", 0.4f,
+                "Opacity of the black backdrop behind the terminal's text: 0.4 is a 40% translucent black (the playtest's ask, 2026-09-08), " +
+                "1 is the solid panel of before, 0 is the frame alone over the world. Read on the CLIENT.",
+                new AcceptableValueRange<float>(0f, 1f));
             BodyYawDegrees = C(cfg, "Client", "BodyYawDegrees", 180f,
                 "Degrees Ingvar's body is turned about the vertical when it is attached to the merchant (and in `cargo body preview`). " +
                 "180 because the shipped bundle's forward axis faces the Dverger's back, so with 0 he walks backward (seen 2026-09-07). " +
