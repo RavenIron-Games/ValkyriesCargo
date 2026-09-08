@@ -104,6 +104,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 case DealReason.PurseEmpty: return RefusePurse;
                 case DealReason.UnknownItem: return RefuseUnknown;
                 case DealReason.SoldOut: return "That shelf is bare.";
+                case DealReason.NotOnShelf: return "Not in this load, friend. Ask me again in a few days.";
                 case DealReason.CoinsShort: return "Your purse is lighter than that.";
                 case DealReason.InventoryFull: return "You have no room to carry it.";
                 case DealReason.VisitOver: return "The Valkyrie is already circling; the bargaining is done.";

@@ -307,7 +307,7 @@ price changed); coins short; purse empty. Each row below is one deal against a f
 | a refused deal moves no stock and no purse | unchanged | unchanged | PASS |
 | a refused deal does not spend its nonce | reusable | reusable | PASS |
 | an accepted deal always carries a delivery id | always | always | PASS |
-| every answer above is one of the 15 DealReason tokens | always | always | PASS |
+| every answer above is one of the 16 DealReason tokens | always | always | PASS |
 
 All 29 checks **pass**, and no input threw. Two answers are worth a second look:
 
@@ -456,6 +456,85 @@ he pays stays near par; at 30 nobody is refused either, but scrap sits at the fl
 **An admin's stock edit lives as long as the drift lets it**, which for a Ware is now for ever, and for a Want a few days.
 The lever that persists on either kind is the TARGET (`cargo catalogue add Iron:25:60:60:Ware` holds 60 at any half-life,
 because the gap is 0); a stock edit is an event. No stock verb was asked for, and none was built.
+
+## 11. The rotating shelf — twenty of seventy-two, re-rolled every two game days
+
+The owner's 2026-09-08 change (issue #56): the fixed Ware list goes away. `Server.ShelfSize` (20) entries of the WHOLE
+catalogue are on sale at a time, chosen by `Shelf.Roll` from the world's salt and the period index, re-rolled every
+`Server.ShelfRotationGameDays` (2). An entry on the shelf is sold at the curve, bought back under the Fair Market Act and
+drifts on the Ware half-life; every other entry is bought only and drifts on the Want half-life. Nothing is persisted and
+nothing is sent for it: a restart rolls the same shelf. Wu'barrk asked for the two-day default.
+
+### The first fifteen shelves (thirty game days) for the salt `sim`
+
+| period | game days | old-list Wares on it | entries seen so far | the shelf, in catalogue order |
+|---|---|---|---|---|
+| 0 | 0–2 | 5 of 18 | 20 of 72 | Silver, Eitr, ArrowFrost, MeadHealthMinor, MeadTasty, Wood, ElderBark, Stone, Feathers, JuteRed, JuteBlue, WolfHairBundle, CopperOre, TinOre, Needle, SurtlingCore, Carapace, TrophyBoar, TrophySkeleton, TrophyGoblin |
+| 1 | 2–4 | 6 of 18 | 32 of 72 | Bronze, Silver, ArrowIron, BoltIron, MeadStaminaMinor, Honey, Wood, Feathers, LeatherScraps, ScaleHide, Flax, JuteRed, JuteBlue, TinOre, SilverOre, Entrails, Crystal, Needle, SurtlingCore, Sap |
+| 2 | 4–6 | 3 of 18 | 44 of 72 | FlametalNew, Eitr, MeadStaminaMinor, Blackwood, YggdrasilWood, WolfPelt, ScaleHide, BjornHide, Flax, JuteBlue, CopperOre, TinOre, IronScrap, Bloodbag, Chain, Obsidian, FreezeGland, TrophyNeck, TrophyGreydwarf, TrophySkeleton |
+| 3 | 6–8 | 5 of 18 | 51 of 72 | Bronze, Iron, Eitr, SilverNecklace, MeadTasty, RoundLog, YggdrasilWood, LeatherScraps, DeerHide, WolfPelt, BjornHide, Barley, JuteRed, CopperOre, SilverOre, Guck, Bloodbag, Chain, WitheredBone, TrophyBoar |
+| 4 | 8–10 | 7 of 18 | 58 of 72 | Iron, Silver, BlackMetal, Amber, AmberPearl, ArrowFrost, Honey, FineWood, Resin, DeerHide, Barley, JuteBlue, TinOre, SilverOre, Guck, Entrails, Ooze, Chain, TrophyDeer, TrophyBoar |
+| 5 | 10–12 | 6 of 18 | 61 of 72 | Iron, Amber, Ruby, SilverNecklace, ArrowFrost, BoltIron, Wood, ElderBark, YggdrasilWood, Resin, DeerHide, TrollHide, LoxPelt, ScaleHide, WolfHairBundle, Bloodbag, Crystal, Sap, WitheredBone, TrophyNeck |
+| 6 | 12–14 | 7 of 18 | 63 of 72 | Bronze, FlametalNew, Ruby, SilverNecklace, ArrowFrost, MeadHealthMinor, Honey, Wood, Resin, DeerHide, TrollHide, BjornHide, Barley, JuteBlue, FlametalOreNew, Guck, Obsidian, Crystal, TrophyGreydwarf, TrophyDraugr |
+| 7 | 14–16 | 4 of 18 | 67 of 72 | Silver, ArrowIron, ArrowFrost, MeadStaminaMinor, RoundLog, Coal, WolfPelt, ScaleHide, AskHide, LinenThread, Barley, WolfHairBundle, SilverOre, Guck, Obsidian, Crystal, Needle, TrophyDeer, TrophyWolf, TrophyGoblin |
+| 8 | 16–18 | 2 of 18 | 68 of 72 | BlackMetal, MeadStaminaMinor, YggdrasilWood, LeatherScraps, TrollHide, WolfPelt, BjornHide, Flax, JuteRed, IronScrap, Bloodbag, Entrails, Chain, Chitin, Crystal, Needle, SurtlingCore, Carapace, TrophyBoar, TrophyDraugr |
+| 9 | 18–20 | 5 of 18 | 69 of 72 | FlametalNew, BlackCore, BoltIron, MeadStaminaMinor, Honey, RoundLog, Coal, LeatherScraps, WolfPelt, LoxPelt, ScaleHide, Barley, JuteBlue, TinOre, SilverOre, SurtlingCore, Carapace, TrophyBoar, TrophyNeck, TrophyGoblin |
+| 10 | 20–22 | 4 of 18 | 69 of 72 | BlackCore, BoltIron, MeadHealthMinor, Honey, Wood, YggdrasilWood, Resin, LeatherScraps, TrollHide, WolfPelt, ScaleHide, Flax, TinOre, FlametalOreNew, Entrails, Ooze, Crystal, Needle, Carapace, TrophyWolf |
+| 11 | 22–24 | 4 of 18 | 70 of 72 | Silver, Amber, AmberPearl, Honey, Blackwood, Resin, Coal, Stone, Flint, Feathers, WolfPelt, LoxPelt, ScaleHide, LinenThread, Barley, Guck, Bloodbag, FreezeGland, TrophyBoar, TrophyWolf |
+| 12 | 24–26 | 5 of 18 | 70 of 72 | Bronze, FlametalNew, BlackCore, Ruby, ArrowFrost, Resin, Flint, LeatherScraps, DeerHide, BjornHide, CopperOre, SilverOre, FlametalOreNew, Guck, Chain, FreezeGland, Carapace, WitheredBone, TrophyBoar, TrophyWolf |
+| 13 | 26–28 | 8 of 18 | 70 of 72 | Bronze, FlametalNew, Ruby, ArrowFrost, MeadHealthMinor, MeadStaminaMinor, MeadTasty, Honey, Wood, ElderBark, Resin, Stone, TrollHide, Barley, JuteRed, Guck, Ooze, Chain, Needle, TrophyDeer |
+| 14 | 28–30 | 3 of 18 | 72 of 72 | Ruby, ArrowFrost, BoltIron, Wood, FineWood, Stone, Flint, LeatherScraps, LoxPelt, LinenThread, BlackMetalScrap, FlametalOreNew, Chitin, FreezeGland, SurtlingCore, Sap, Softtissue, TrophyBoar, TrophySkeleton, TrophyDraugr |
+
+Over 200 periods (400 game days, 200 real hours of uptime with somebody online): the same roll twice **every time**; every shelf exactly twenty distinct entries: **yes**; every entry shown at least once: **yes**. A fair roll shows each entry near 56 times in 200; the least-shown is Softtissue (43), the most-shown Carapace (68).
+
+### Thirty game days of trade, one visit a day, on the shipped rules with the shelf rotating
+
+Each visit: a shopper with 5000 coins buys out two entries on the shelf, chosen by the seed; a supplier sells him up to 20 of
+two entries that are OFF the shelf (the old Wants' role, now any entry's turn); and on the first visit after every roll the
+shopper tries once to buy an entry that was on the shelf last visit and is not now — a stale pane, which the server must
+refuse `not_on_shelf` rather than sell. `UpdateShelf` runs before each visit, which is what the director's idle tick does.
+
+| visit (day) | period | the shopper bought | the supplier sold | the stale pane | purse after |
+|---|---|---|---|---|---|
+| 1 | 0 | TrophyGoblin x10, SurtlingCore x10 for 300 | YggdrasilWood x20, FineWood x20 for 120 |  | 1680 |
+| 2 | 1 (rolled) | ArrowIron x100, ScaleHide x40 for 440 | ElderBark x20, BlackMetal x20 for 880 | Eitr → `not_on_shelf` | 1210 |
+| 3 | 1 | Needle x40, Wood x200 for 440 | TrophyNeck x20, WolfHairBundle x20 for 140 |  | 2020 |
+| 4 | 2 (rolled) | Flax x100, MeadStaminaMinor x10 for 420 | BlackMetalScrap x20, FineWood x20 for 740 | Bronze → `not_on_shelf` | 1400 |
+| 5 | 2 | FreezeGland x40, JuteBlue x40 for 480 | Ooze x20, DeerHide x20 for 80 |  | 2110 |
+| 6 | 3 (rolled) | JuteRed x40, Chain x20 for 480 | Flint x20, Wood x20 for 40 | FlametalNew → `not_on_shelf` | 2180 |
+| 7 | 3 | Eitr x10, Guck x40 for 610 | Flint x20, Entrails x20 for 60 |  | 2290 |
+| 8 | 4 (rolled) | TrophyDeer x10, FineWood x115 for 425 | ArrowIron x20, Carapace x20 for 180 | Bronze → `not_on_shelf` | 2050 |
+| 9 | 4 | Amber x30, Silver x12 for 690 | YggdrasilWood x20, Chitin x20 for 140 |  | 2263 |
+| 10 | 5 (rolled) | BoltIron x100, TrollHide x20 for 420 | Chain x20, Bronze x20 for 420 | Silver → `not_on_shelf` | 1845 |
+| 11 | 5 | ElderBark x64 for 192 | Entrails x20, CopperOre x20 for 120 |  | 1782 |
+| 12 | 6 (rolled) | FlametalNew x6, TrophyGreydwarf x10 for 740 | Ooze x20, Eitr x20 for 760 | Iron → `not_on_shelf` | 1576 |
+| 13 | 6 | Barley x100 for 300 | ArrowIron x20, SilverOre x20 for 520 |  | 1650 |
+| 14 | 7 (rolled) | ArrowFrost x100, Silver x7 for 636 | Eitr x10, FlametalOreNew x20 for 1510 | Bronze → `not_on_shelf` | 776 |
+| 15 | 7 | TrophyWolf x10, Crystal x20 for 310 | TrophyBoar x20, Feathers x20 for 160 |  | 1968 |
+| 16 | 8 (rolled) | Chitin x45 for 225 | Honey x20, ElderBark x20 for 60 | Silver → `not_on_shelf` | 1820 |
+| 17 | 8 | TrollHide x14, YggdrasilWood x66 for 428 | Flint x20, TrophyWolf x20 for 300 |  | 1741 |
+| 18 | 9 (rolled) | JuteBlue x38 for 304 | WolfHairBundle x20, TrophyDraugr x20 for 220 | BlackMetal → `not_on_shelf` | 1798 |
+| 19 | 9 | Barley x60, Honey x66 for 372 | Resin x20, Blackwood x20 for 80 |  | 1944 |
+| 20 | 10 (rolled) | YggdrasilWood x22, Wood x196 for 350 | Bronze x20, ArrowIron x20 for 220 | FlametalNew → `not_on_shelf` | 1816 |
+| 21 | 10 | Resin x120, FlametalOreNew x16 for 1336 | Iron x20, ArrowFrost x20 for 400 |  | 2611 |
+| 22 | 11 (rolled) | Barley x37, LinenThread x50 for 648 | LeatherScraps x20, Chain x20 for 200 | BlackCore → `not_on_shelf` | 2616 |
+| 23 | 11 | TrophyWolf x19, WolfPelt x40 for 468 | MeadTasty x20, Entrails x20 for 180 |  | 2112 |
+| 24 | 12 (rolled) | FreezeGland x39, SilverOre x22 for 926 | ArrowIron x20, LinenThread x20 for 220 | Silver → `not_on_shelf` | 2440 |
+| 25 | 12 | CopperOre x41 for 205 | MeadTasty x7, TrophyDeer x20 for 155 |  | 2013 |
+| 26 | 13 (rolled) | Wood x137, Stone x200 for 337 | Chitin x20, Flax x20 for 120 | BlackCore → `not_on_shelf` | 1820 |
+| 27 | 13 | Guck x39, TrophyDeer x30 for 306 | Entrails x20, YggdrasilWood x20 for 120 |  | 1855 |
+| 28 | 14 (rolled) | LinenThread x44, TrophyDraugr x12 for 572 | TinOre x20, Chain x20 for 240 | Bronze → `not_on_shelf` | 1985 |
+| 29 | 14 | LeatherScraps x66, FineWood x99 for 495 | Needle x20, Bloodbag x20 for 120 |  | 2161 |
+| 30 | 15 (rolled) | ArrowIron x110 for 220 | TrophyWolf x20, Resin x20 for 240 | Ruby → `not_on_shelf` | 1728 |
+
+Rolls seen across the thirty visits: 15 (one every second visit, as the two-day clock says). Stale-pane buys tried 15, refused `not_on_shelf` 15 — **every one**. Other refusals 0. Bought 2932 units for 14075 coins; sold him 1177 units for 8745 coins; purse at the end 1728.
+
+**What this says.** The shelf is a pure function of salt, clock and catalogue (the first table is the same on every machine
+and after every restart), the pane the client draws follows the snapshot's kind so no client code moved, and a player
+holding yesterday's pane is refused with a reason that names the shelf. What it does NOT say: whether twenty is the right
+number for a server of eight, whether two days is too quick for a solo player who visits once a week, and what a Want's
+stock does over a month of being sold-and-then-on-the-shelf (it is bought out when it lands on the shelf and refilled when it
+leaves; the drift knobs switch with the kind). Those are the questions for the first live shelf.
 
 ## Verdict — what to keep and what to change
 

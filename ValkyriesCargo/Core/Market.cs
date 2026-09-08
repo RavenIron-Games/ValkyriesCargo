@@ -40,6 +40,19 @@ namespace RavenIron.ValkyriesCargo.Core
         public const double MaxHalfLifeGameDays = 365.0;
         public double SecondsPerGameDay = DefaultSecondsPerGameDay;   // EnvMan.instance.m_dayLengthSec, read once at boot
         /// <summary>
+        /// The rotating shelf (the owner, 2026-09-08; issue #56). Above 0, the catalogue's own Ware/Want kinds
+        /// stop deciding what he sells: `ShelfSize` entries of the WHOLE catalogue are on the shelf at a time,
+        /// chosen by `Shelf.Roll` for the current period, and an entry on the shelf behaves exactly as a Ware
+        /// did (sold at the curve, bought back under the Fair Market Act, drifting on WareHalfLifeGameDays)
+        /// while every other entry behaves as a Want (bought only, drifting on WantHalfLifeGameDays). At 0 the
+        /// shelf is fixed and the kinds in the catalogue line mean what they meant before. The pure core's
+        /// baseline is 0 so every older check still reads against the fixed shelf; `ModConfig.FillMarketRules`
+        /// overwrites it from `Server.ShelfSize`, which ships at 20.
+        /// </summary>
+        public int ShelfSize = 0;
+        /// <summary>How many game days one shelf lasts (the owner: "a couple", so 2). A period is this times SecondsPerGameDay.</summary>
+        public double ShelfRotationGameDays = 2.0;
+        /// <summary>
         /// The pure core's own baseline, and NOT what ships: `ModConfig.FillMarketRules` overwrites this
         /// from `Server.PurseCoins` (1500) before any market the game builds ever sees it. Deliberately
         /// left at a round 800 so the harness's mechanics tests -- the carry arithmetic, the purse_empty
@@ -63,6 +76,9 @@ namespace RavenIron.ValkyriesCargo.Core
             WareHalfLifeGameDays = ClampHalfLife(WareHalfLifeGameDays, 0.0, "WareHalfLifeGameDays", problems);
             WantHalfLifeGameDays = ClampHalfLife(WantHalfLifeGameDays, 3.0, "WantHalfLifeGameDays", problems);
             SecondsPerGameDay = Clamp(SecondsPerGameDay, 60.0, 86400.0, "SecondsPerGameDay", problems);
+            if (ShelfSize < 0) { ShelfSize = 0; Wire.Report(problems, "ShelfSize clamped up to 0 (a fixed shelf)"); }
+            if (ShelfSize > Shelf.MaxSize) { ShelfSize = Shelf.MaxSize; Wire.Report(problems, "ShelfSize clamped down to " + Wire.Int(Shelf.MaxSize)); }
+            ShelfRotationGameDays = Clamp(ShelfRotationGameDays, Shelf.MinRotationDays, Shelf.MaxRotationDays, "ShelfRotationGameDays", problems);
             if (PurseCoins < 0) { PurseCoins = 0; Wire.Report(problems, "PurseCoins clamped to 0"); }
             if (PurseCoins > MaxPurseCoins) { PurseCoins = MaxPurseCoins; Wire.Report(problems, "PurseCoins clamped to " + Wire.Int(MaxPurseCoins)); }
             if (PurseCarryPercent < 0 || PurseCarryPercent > 100) { PurseCarryPercent = Math.Max(0, Math.Min(100, PurseCarryPercent)); Wire.Report(problems, "PurseCarryPercent clamped to 0..100"); }
@@ -155,6 +171,11 @@ namespace RavenIron.ValkyriesCargo.Core
         private int _deliverySeq;
         private int _purseAtVisitStart;
         private int _coinedThisVisit;
+        // The rotating shelf (2026-09-08): what is on sale THIS period, the period it was rolled for, and the
+        // size it was rolled at, so a live change of either re-rolls on the next idle tick.
+        private readonly HashSet<string> _shelf = new HashSet<string>(StringComparer.Ordinal);
+        private long _shelfPeriod = -1;
+        private int _shelfSize;
 
         public MarketRules Rules { get; }
         public int VisitId { get; private set; }
@@ -184,6 +205,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 _items.Add(item);
                 _byPrefab.Add(e.Prefab, item);
             }
+            UpdateShelf(worldTime);
         }
 
         public MarketItem Find(string prefab)
@@ -191,6 +213,83 @@ namespace RavenIron.ValkyriesCargo.Core
             if (string.IsNullOrEmpty(prefab)) return null;
             MarketItem it;
             return _byPrefab.TryGetValue(prefab, out it) ? it : null;
+        }
+
+        // ---- the rotating shelf (2026-09-08, issue #56) ----------------------------------------------
+
+        /// <summary>True while `ShelfSize` is above 0: the roll decides what he sells, not the catalogue's kinds.</summary>
+        public bool Rotating => Rules.ShelfSize > 0;
+        /// <summary>The period the current shelf was rolled for; -1 before the first roll or while the shelf is fixed.</summary>
+        public long ShelfPeriod => _shelfPeriod;
+        public int ShelfCount => _shelf.Count;
+        public bool OnShelf(string prefab) => !string.IsNullOrEmpty(prefab) && _shelf.Contains(prefab);
+
+        /// <summary>
+        /// The kind an item BEHAVES as right now: with the shelf rotating, Ware on the shelf and Want off it;
+        /// with the shelf fixed, whatever the catalogue line says. Every price, drift, refusal, snapshot row and
+        /// export row reads this and never `Entry.Kind` directly, so the terminal - which decides its panes by
+        /// the row's kind - follows the shelf without a line of its own changing.
+        /// </summary>
+        public EntryKind KindOf(MarketItem it)
+        {
+            if (it == null) return EntryKind.Want;
+            if (!Rotating) return it.Entry.Kind;
+            return _shelf.Contains(it.Prefab) ? EntryKind.Ware : EntryKind.Want;
+        }
+
+        /// <summary>The current period for this world time, under the rules as they are now.</summary>
+        public long PeriodAt(double worldTime) => Shelf.Period(worldTime, Rules.SecondsPerGameDay, Rules.ShelfRotationGameDays);
+
+        /// <summary>
+        /// Would <see cref="UpdateShelf"/> change anything: the period moved, the size was changed live, or the
+        /// shelf was switched off while still holding names. The director asks this every idle tick and
+        /// refuses to act on it while a visit runs, so the pane never changes under an open terminal.
+        /// </summary>
+        public bool ShelfDue(double worldTime)
+        {
+            if (!Rotating) return _shelf.Count > 0;
+            return PeriodAt(worldTime) != _shelfPeriod || Rules.ShelfSize != _shelfSize;
+        }
+
+        /// <summary>Roll the shelf for this world time if it is due. True when the set of names changed.</summary>
+        public bool UpdateShelf(double worldTime)
+        {
+            if (!Rotating)
+            {
+                if (_shelf.Count == 0) { _shelfPeriod = -1; _shelfSize = 0; return false; }
+                _shelf.Clear(); _shelfPeriod = -1; _shelfSize = 0;
+                return true;
+            }
+            long period = PeriodAt(worldTime);
+            if (period == _shelfPeriod && Rules.ShelfSize == _shelfSize) return false;
+            var pool = new List<string>(_items.Count);
+            for (int i = 0; i < _items.Count; i++) pool.Add(_items[i].Prefab);
+            var before = new HashSet<string>(_shelf, StringComparer.Ordinal);
+            _shelf.Clear();
+            foreach (string name in Shelf.Roll(_salt, period, pool, Rules.ShelfSize)) _shelf.Add(name);
+            _shelfPeriod = period;
+            _shelfSize = Rules.ShelfSize;
+            return !before.SetEquals(_shelf);
+        }
+
+        /// <summary>The names on the shelf, in catalogue order.</summary>
+        public List<string> ShelfNames()
+        {
+            var names = new List<string>(_shelf.Count);
+            for (int i = 0; i < _items.Count; i++) if (_shelf.Contains(_items[i].Prefab)) names.Add(_items[i].Prefab);
+            return names;
+        }
+
+        /// <summary>World time at which the next roll is due; 0 while the shelf is fixed.</summary>
+        public double NextRollWorldTime => Rotating ? Shelf.NextRollAt(_shelfPeriod, Rules.SecondsPerGameDay, Rules.ShelfRotationGameDays) : 0;
+
+        /// <summary>One line for the log and `cargo status`: "shelf 20 of 72, period 26, rolls every 2 game days, next in 1.4".</summary>
+        public string DescribeShelf(double worldTime)
+        {
+            if (!Rotating) return "shelf fixed (ShelfSize 0: the catalogue's own kinds)";
+            double left = Rules.SecondsPerGameDay > 0 ? Math.Max(0.0, NextRollWorldTime - worldTime) / Rules.SecondsPerGameDay : 0;
+            return "shelf " + Wire.Int(_shelf.Count) + " of " + Wire.Int(_items.Count) + ", period " + _shelfPeriod.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                   ", rolls every " + Wire.Double(Rules.ShelfRotationGameDays) + " game day(s), next in " + Wire.Double(Math.Round(left, 2)) + " game day(s)";
         }
 
         // ---- the curve ------------------------------------------------------------------
@@ -241,7 +340,7 @@ namespace RavenIron.ValkyriesCargo.Core
         }
 
         public int Charge(MarketItem it) => PriceFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, Rules);
-        public int Pays(MarketItem it) => PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, it.Entry.Kind, Rules);
+        public int Pays(MarketItem it) => PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, KindOf(it), Rules);
         /// <summary>Derived from the charge against base for both kinds; monotone with Pays, so the arrow is right for a Want too.</summary>
         public int Trend(MarketItem it) { int c = Charge(it); return c > it.Entry.BasePrice ? 1 : c < it.Entry.BasePrice ? -1 : 0; }
 
@@ -294,7 +393,7 @@ namespace RavenIron.ValkyriesCargo.Core
             if (Rules.SecondsPerGameDay <= 0) return;
             foreach (MarketItem it in _items)
             {
-                double halfLife = it.Kind == EntryKind.Ware ? Rules.WareHalfLifeGameDays : Rules.WantHalfLifeGameDays;
+                double halfLife = KindOf(it) == EntryKind.Ware ? Rules.WareHalfLifeGameDays : Rules.WantHalfLifeGameDays;
                 if (halfLife <= 0) continue;   // never
                 double dt = worldTime - it.UpdatedWorldTime;
                 if (dt <= 0) continue;
@@ -319,7 +418,7 @@ namespace RavenIron.ValkyriesCargo.Core
             {
                 snap.Add(new MarketRow
                 {
-                    Prefab = it.Prefab, Kind = it.Kind, Stock = it.Stock, Target = it.Entry.TargetStock, Max = it.Entry.MaxStock,
+                    Prefab = it.Prefab, Kind = KindOf(it), Stock = it.Stock, Target = it.Entry.TargetStock, Max = it.Entry.MaxStock,
                     Buy = Charge(it), Sell = Pays(it), Trend = Trend(it),
                 });
             }
@@ -348,7 +447,10 @@ namespace RavenIron.ValkyriesCargo.Core
             if (d.Wanted != null)
             {
                 want = Find(d.Wanted.Prefab);
-                if (want == null || want.Kind != EntryKind.Ware) return Refuse(d, DealReason.UnknownItem);
+                if (want == null) return Refuse(d, DealReason.UnknownItem);
+                // A catalogue entry he is not selling: off this period's shelf when it rotates (its own reason,
+                // so a stale pane says why), a Want when it is fixed (the reason it always had).
+                if (KindOf(want) != EntryKind.Ware) return Refuse(d, Rotating ? DealReason.NotOnShelf : DealReason.UnknownItem);
                 if (d.Wanted.Count < 1) return Refuse(d, DealReason.BadCount);
                 if (want.Stock < d.Wanted.Count) return Refuse(d, DealReason.SoldOut);
                 wantCharge = Charge(want);

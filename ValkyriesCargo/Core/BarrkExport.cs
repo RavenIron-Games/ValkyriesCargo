@@ -69,8 +69,10 @@ namespace RavenIron.ValkyriesCargo.Core
                 rows.Add(new MarketExportRow
                 {
                     Prefab = it.Prefab,
-                    Kind = it.Kind == EntryKind.Ware ? "Ware" : "Want",
-                    Purchasable = it.Kind == EntryKind.Ware,
+                    // The kind he TRADES it as right now: on the rotating shelf (2026-09-08) an entry is a Ware
+                    // only while it is on this period's shelf, and the export says what a player would see.
+                    Kind = market.KindOf(it) == EntryKind.Ware ? "Ware" : "Want",
+                    Purchasable = market.KindOf(it) == EntryKind.Ware,
                     Stock = it.Stock,
                     TargetStock = it.Entry.TargetStock,
                     MaxStock = it.Entry.MaxStock,

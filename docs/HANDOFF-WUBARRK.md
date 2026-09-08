@@ -28,12 +28,18 @@ namespace, a peer-list gather, both version names, the zone type at runtime; a S
 three sites, flagged as the owner's call). **The owner said "dont change anything for 1.0": nothing is built, and
 neither side starts without his word.** The client axis is unswept everywhere.
 
-**The rotating shelf, issue #56, waits for your read before anything is built.** The owner's ask: Ingvar's selling
-side stops being a fixed list — 20 of the 72 catalogue entries on the shelf at a time, re-rolled every couple of
-game days, seeded, the fixed Ware list gone; on the shelf an entry behaves as a Ware, off it as a Want, stock
-persists across rolls, a due roll waits for no visit. The four economy questions in the issue are yours: the
-Haldor anchors sold as well as bought, the round trip across a changing twenty, the purse against a shelf of wood
-and hide, buying-side bases becoming selling prices.
+**The rotating shelf, issue #56, is BUILT on `a/rotating-shelf`; the PR waits for Don's word.** Your read came the
+same morning (two game days by default; the backpack add-on) and the owner said build. Ingvar's selling side stops
+being a fixed list — 20 of the 72 catalogue entries on the shelf at a time, re-rolled every two game days, seeded
+from the world's salt and the period (nothing persisted, nothing sent: a restart shows the same shelf), the fixed
+Ware list gone; on the shelf an entry behaves as a Ware, off it as a Want, stock persists across rolls, a due roll
+waits for no visit and logs `shelf rolled: …`. `Server.ShelfSize` 20 (0 = the old fixed shelf) and
+`Server.ShelfRotationGameDays` 2. Nothing of yours is touched; the client is untouched. The four economy questions
+in the issue are still yours: the Haldor anchors sold as well as bought, the round trip across a changing twenty,
+the purse against a shelf of wood and hide, buying-side bases becoming selling prices — and two the build raised:
+a flooded Want lands on the shelf with all of it for sale at the flooded price (cap a landing entry at its target?),
+and whether a roll should be announced to players. The backpack add-on needs the plugin GUID(s) to detect and your
+bake for the body; the owner's buy-anything ask is designed in the PR and not built.
 
 **Fifteen visits flew today on Don's Windows client against StormTest**: six in the morning, twenty deals, no
 exception; three in the evening on the audit's fixes; six at night on rc2 and then on your D5 (item 1 below and
@@ -83,8 +89,8 @@ probe tool against it within the hour** and tells you which probes moved; the co
 untracked (release assets), the catalogue verbs, the two drift knobs (Wares never, Wants three days), ghost mode,
 the load-bearing set. **Still his, not ours:** the client-asserted comfort numbers, reconfirm versus teardown.
 
-**From you, in order:** **your read on issue #56, the rotating shelf** (nothing is built until then); the
-first-reclaim line (item 1) and a look at F3's grace — tonight's ends reclaimed him
+**From you, in order:** **your read of the shelf PR** (built on `a/rotating-shelf`; the two new economy questions,
+and the backpack mod's plugin GUID); the first-reclaim line (item 1) and a look at F3's grace — tonight's ends reclaimed him
 6 / 0 / 0 / 0 s after `ended` across a dismiss, two timers and a dismiss, where `VanishGraceSeconds` says 2 (both
 on #54); ~~the ownership fix~~ done (#54); ~~the walk-up, the sweep, your TODO §2~~ done (#50, #51, #52); the
 animator parameter names and item 23 on your server; ~~the three rc1 things in issue #23~~ closed with rc2; and

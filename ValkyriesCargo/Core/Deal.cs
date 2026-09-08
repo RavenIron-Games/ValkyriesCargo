@@ -113,6 +113,8 @@ namespace RavenIron.ValkyriesCargo.Core
     {
         public const string Ok            = "ok";
         public const string SoldOut       = "sold_out";
+        /// <summary>The item is in the catalogue but not on this period's shelf (the rotating shelf, 2026-09-08).</summary>
+        public const string NotOnShelf    = "not_on_shelf";
         public const string OverMax       = "over_max";
         public const string PurseEmpty    = "purse_empty";
         public const string CoinsShort    = "coins_short";
