@@ -1,23 +1,39 @@
-# Handoff for Wu'barrk — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 night, after the rc2 cut
+# Handoff for Wu'barrk — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-08 morning: #55 merged, 1.0 held, the rotating shelf waiting on you
 
 The repo is scaffolded, builds clean, tests pass, and boots headless on a dedicated server. This is
 what it is, what of yours is already in it, what we need from you, and exactly where each thing goes.
 
-## 0. Where things stand, 2026-09-07 night, after fifteen visits, the rc2 cut and D5
+## 0. Where things stand, 2026-09-08 morning: #55 merged, 1.0 held, the rotating shelf waiting on you
 
 **Your list is `docs/TODO.md` section 2**; when this file and that one disagree, TODO wins. This morning's
 state is kept below as history.
 
-`main` is at 2694d3b (your #54 merged; the night's docs commit on top): 0 warnings, **1718 checks**, the day's PRs
-#24 to #53 in `CHANGELOG.md` "0.1.0-rc2" and #54 under "Since 0.1.0-rc2". **`v0.1.0-rc2` is cut** at e4ee83c
-(2026-09-07 evening, at the owner's word): the store zip and the bundle attached, a pre-release, uploaded to no
-store — **it does not carry D5**. **The rc1 tag is marked superseded and still must not reach a tester**: it
-carries F1, and the ServerSync gate does not tell the cuts apart (all are 0.1.0), so every copy is replaced by
-hand. Your rc1 note (issue #23) is closed; **your #55 (docs, the 1.0 head start) is open and not merged, at the
-owner's word**. `Assets/valkyriescargo_kit` is attached to both releases, so Don's builds carry Ingvar. **The
-owner's conditions for the next cut (2026-09-08 00:40) are met but for the vanish being watched**: your fix is in
-and the first approach has reached three times. The cut is on his word, rc3 or 0.1.0 proper; if Valheim 1.0 lands
-first, once, after the probe run.
+`main` is at a08e8c4 (your #55 merged the morning of 2026-09-08; the close-out docs commit on top): 0 warnings,
+**1722 checks**, `probes 19/19 ok`, the day's PRs #24 to #53 in `CHANGELOG.md` "0.1.0-rc2" and #54 and #55 under
+"Since 0.1.0-rc2". **`v0.1.0-rc2` is cut** at e4ee83c (2026-09-07 evening, at the owner's word): the store zip and
+the bundle attached, a pre-release, uploaded to no store — **it carries neither D5 nor your save-path resolver**.
+**The rc1 tag is marked superseded and still must not reach a tester**: it carries F1, and the ServerSync gate does
+not tell the cuts apart (all are 0.1.0), so every copy is replaced by hand. Your rc1 note (issue #23) is closed.
+`Assets/valkyriescargo_kit` is attached to both releases, so Don's builds carry Ingvar. **The owner's conditions
+for the next cut (2026-09-08 00:40) are met but for the vanish being watched**; the cut is on his word, rc3 or
+0.1.0 proper.
+
+**Valheim 1.0: your sweep verified from Don's machine, and HELD by the owner.** The `public-test` branch is
+password-protected and hidden from the branch list — that is why it read as absent last night, not because it
+was; it is fetched here now (build 23105022, 0.221.13, server only). Our probe tool on it: the version line
+unreadable (renamed constants), `zone_maths` FAILED on the `Vector2s` overloads, three probes THREW on the
+one-argument `GetStableHashCode`, your `save_path` PASSED; the decompile shows the `GetAllCharacterZDOS` early
+return word for word. Fix designs exist on Don's side (a pure hash rebinding all 13 of our sites through the
+namespace, a peer-list gather, both version names, the zone type at runtime; a ServerSync-namespace shim for its
+three sites, flagged as the owner's call). **The owner said "dont change anything for 1.0": nothing is built, and
+neither side starts without his word.** The client axis is unswept everywhere.
+
+**The rotating shelf, issue #56, waits for your read before anything is built.** The owner's ask: Ingvar's selling
+side stops being a fixed list — 20 of the 72 catalogue entries on the shelf at a time, re-rolled every couple of
+game days, seeded, the fixed Ware list gone; on the shelf an entry behaves as a Ware, off it as a Want, stock
+persists across rolls, a due roll waits for no visit. The four economy questions in the issue are yours: the
+Haldor anchors sold as well as bought, the round trip across a changing twenty, the purse against a shelf of wood
+and hide, buying-side bases becoming selling prices.
 
 **Fifteen visits flew today on Don's Windows client against StormTest**: six in the morning, twenty deals, no
 exception; three in the evening on the audit's fixes; six at night on rc2 and then on your D5 (item 1 below and
@@ -67,17 +83,19 @@ probe tool against it within the hour** and tells you which probes moved; the co
 untracked (release assets), the catalogue verbs, the two drift knobs (Wares never, Wants three days), ghost mode,
 the load-bearing set. **Still his, not ours:** the client-asserted comfort numbers, reconfirm versus teardown.
 
-**From you, in order:** the first-reclaim line (item 1) and a look at F3's grace — tonight's ends reclaimed him
+**From you, in order:** **your read on issue #56, the rotating shelf** (nothing is built until then); the
+first-reclaim line (item 1) and a look at F3's grace — tonight's ends reclaimed him
 6 / 0 / 0 / 0 s after `ended` across a dismiss, two timers and a dismiss, where `VanishGraceSeconds` says 2 (both
 on #54); ~~the ownership fix~~ done (#54); ~~the walk-up, the sweep, your TODO §2~~ done (#50, #51, #52); the
 animator parameter names and item 23 on your server; ~~the three rc1 things in issue #23~~ closed with rc2; and
 one author name on your commits (today's came as `t`, `trial` and one merge authored as the model).
 
-**Don's rig tonight:** StormTest is down with **visit 15 open in the sidecar** (and `purse` 100000, a test value
-he set); the next boot adopts it unless the row is removed first, as was done before both of tonight's boots (each
-then logged `boot sweep: 1 stranded merchant(s) destroyed`, as predicted). StormTest and his Gale `Default`
-profile carry main 2694d3b with D5. The record of the night's six visits is
-`docs/proofs/2026-09-07-stormtest-night.md`.
+**Don's rig at this close-out:** StormTest is down (stopped cleanly 06:50, 2026-09-08) with **visit 15 still open
+in the sidecar** and `purse` 100000, a test value he set. The morning boot on main a08e8c4 resumed that visit and
+rebound the merchant (`visit #15 RESUMED after a restart … merchant ZDO 1:60469 rebound`: item 15's server half and
+F4's rebind, seen), and the next boot does it again unless the row is removed first. StormTest and his Gale
+`Default` profile carry main a08e8c4: D5 and your save-path resolver, `probes 19/19 ok` on 0.221.12. The record of
+the night's six visits is `docs/proofs/2026-09-07-stormtest-night.md`.
 
 ### The morning of 2026-09-07, after the rc1 merge (history)
 

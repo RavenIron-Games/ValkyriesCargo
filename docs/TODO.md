@@ -395,3 +395,11 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       test value; the merchant ZDO in the 21:05:20 save near the drop). The next boot adopts it (item 15 and F4's
       rebind for free) unless the row is cleared first, as was done before the 20:18 and 20:44 boots (a backup
       beside the file each time). The proofs record is `docs/proofs/2026-09-07-stormtest-night.md`.
+- [x] **#55 merged** (owner, "merge 55", 2026-09-08 morning; main a08e8c4, 1722): the save-path resolver + the
+      `save_path` probe; his 1.0 sweep report. Verified from this machine (the hidden `public-test` branch fetched,
+      build 23105022 / 0.221.13; ProbeCheck 15/19 on it; both stop-ships confirmed in the decompile). Deployed both
+      sides; StormTest booted 19/19 on 0.221.12 and RESUMED visit 15 (item 15's server half + F4's rebind SEEN).
+- [ ] **1.0: HELD** (owner, "dont change anything for 1.0"). The two stop-ships stay findings; the fix designs are in
+      the handoffs. Do not start without the word.
+- [ ] **The rotating shelf** (owner, 2026-09-08): 20 of the 72, re-rolled every couple of game days, the fixed Ware
+      list goes away; issue #56 carries the design and the four economy questions; WAITS for Wu'barrk's read.

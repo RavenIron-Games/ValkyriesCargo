@@ -795,6 +795,28 @@ is OPEN and not merged at the owner's word. The record: `docs/proofs/2026-09-07-
 DOWN with visit 15 open in the sidecar (purse 100000, a test value) — the next boot adopts it unless the row is
 cleared first.
 
+**THE MORNING OF 2026-09-08 — #55 merged, the 1.0 playtest verified from Don's machine, and the owner's two holds.**
+Wu'barrk's PR #55 grew overnight into code: `Server/WorldSavePath.cs` resolves the world save directory by name
+(`World.GetWorldSavePath` on 0.221.12, `SaveSystem.GetWorldsSaveRootPath` on 1.0, `FileSource.Local` by name because
+the enum's values moved) with a new probe `save_path` (rank 8; 19 probes now; 1722 checks), plus the P10a sweep run
+a day early against the 1.0 playtest (`docs/engine-sweeps/2026-09-08-server-0.221.12-vs-0.221.13.md`): TWO
+STOP-SHIPS, neither fixed — `GetStableHashCode` gained an optional parameter (all 16 call sites, 13 ours and 3 in
+vendored ServerSync, throw on 1.0: the mod fails to load) and `ZNet.GetAllCharacterZDOS` returns empty on a 1.0
+dedicated server (no candidate, no visit, a clean boot line). VERIFIED HERE: Steam's `public-test` branch is
+password-protected and hidden from `app_info_print`; fetched (`valheim-shadows/server-public-test`, build 23105022,
+0.221.13, server only); ProbeCheck on that assembly reads `game version unreadable (Version.m_networkVersion is
+gone)`, probes 15/19: `zone_maths` FAILED (the `InActiveArea` overloads take `Vector2s` now), `velocity_cache`,
+`character`, `comfort` THREW on the one-argument hash, `save_path` PASSED; ilspycmd confirms the
+`GetAllCharacterZDOS` early return, `c_networkVersion = 37u`, `c_WorldVersion = World.ChunkedSave`. Merged on the
+word (main `a08e8c4`), deployed both sides, StormTest booted clean on 0.221.12 with `probes 19/19 ok` — and the boot
+RESUMED visit 15 from the sidecar (`visit #15 RESUMED after a restart … merchant ZDO 1:60469 rebound`): item 15's
+server half and F4's rebind, seen. **OWNER: "dont change anything for 1.0"** — the fixes were designed (a pure
+`Core/StableHash.cs` exposed as an extension method inside our namespace so C# rebinds all 13 sites without an
+edit; a peer-list gather; both version names; the zone type resolved at runtime; a ServerSync-namespace shim
+flagged as his call) and NOT built. **OWNER: the rotating shelf** — 20 of the 72 on the shelf, re-rolled every
+couple of game days, the fixed Ware list goes away — designed in issue #56 and WAITING FOR WU'BARRK'S READ; nothing
+built. Thorium and Wu'barrk are the same person.
+
 ## What to verify in-game
 
 **An item is proven by its own pasted log line and a date, and by nothing else.** Done so far: **item 1**

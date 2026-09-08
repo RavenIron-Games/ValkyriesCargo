@@ -1,4 +1,4 @@
-# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 night, after fifteen visits, the rc2 cut and D5
+# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-08 morning: #55 merged, 1.0 verified and held, the rotating shelf waiting on you
 
 You are the second engineering session on this mod. Don's session (me) built what is here; you and
 Wu'barrk take part of what is left. This file tells you everything you need to act, in the order to
@@ -9,21 +9,39 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 
 ---
 
-## 0. State on 2026-09-07 night, after fifteen visits, the rc2 cut and D5 — READ THIS FIRST
+## 0. State on 2026-09-08 morning: #55 merged, 1.0 verified and held, the rotating shelf waiting on you — READ THIS FIRST
 
 **The tracker is still `docs/TODO.md`**, three tracks, each editing only its own section; when this file and
 that one disagree, that one wins. The subsection below this one is this morning's state, kept as history.
 
-**Where main is.** `2694d3b` at the time of writing (your PR #54 merged; the night's docs commit sits on top): 0
-warnings, **1718/1718 off-game checks**, `probes 18/18 ok, 7 not probeable` on the real assembly. The day's PRs,
-**#24 to #53**, are in build order with their check counts in `CHANGELOG.md` "0.1.0-rc2", and #54 under "Since
-0.1.0-rc2". **`v0.1.0-rc2` is cut** at `e4ee83c` (2026-09-07 evening, at the owner's word): the store zip and the
-bundle attached, a pre-release, uploaded to no store; **it does not carry D5**. `v0.1.0-rc1` is marked superseded
-and still must not reach a tester: it carries F1, and the ServerSync gate does not tell the cuts apart (all are
-0.1.0), so every copy is replaced by hand. Issue #23 is closed. **Your PR #55 (docs, the 1.0 head start) is OPEN
-and not merged, at the owner's word.** The owner's conditions for the next cut (2026-09-08 00:40: the ownership
-fix in, a first approach that reaches) are met but for the vanish being watched; the cut itself is on his word —
-rc3, or 0.1.0 proper — and if Valheim 1.0 lands first it is cut once, after the probe run.
+**Where main is.** `a08e8c4` at the time of writing (your PR #55 merged the morning of 2026-09-08; the close-out
+docs commit sits on top): 0 warnings, **1722/1722 off-game checks**, `probes 19/19 ok, 7 not probeable` on the real
+assembly. The day's PRs, **#24 to #53**, are in build order with their check counts in `CHANGELOG.md` "0.1.0-rc2";
+#54 and #55 are under "Since 0.1.0-rc2". **`v0.1.0-rc2` is cut** at `e4ee83c` (2026-09-07 evening, at the owner's
+word): the store zip and the bundle attached, a pre-release, uploaded to no store; **it carries neither D5 nor the
+save-path resolver**. `v0.1.0-rc1` is marked superseded and still must not reach a tester: it carries F1, and the
+ServerSync gate does not tell the cuts apart (all are 0.1.0), so every copy is replaced by hand. Issue #23 is
+closed. The owner's conditions for the next cut (2026-09-08 00:40: the ownership fix in, a first approach that
+reaches) are met but for the vanish being watched; the cut itself is on his word — rc3, or 0.1.0 proper.
+
+**Valheim 1.0, verified from Don's machine and HELD by the owner.** Your #55 sweep holds on every point that could
+be checked here: Steam's `public-test` branch is password-protected and hidden from the branch list (that is why
+it read as absent last night); fetched to `valheim-shadows/server-public-test` (build 23105022, 0.221.13, server
+only). Our probe tool on that assembly: the version line unreadable (the constants are renamed), `zone_maths`
+FAILED on the `Vector2s` overloads, `velocity_cache` / `character` / `comfort` THREW on the one-argument
+`GetStableHashCode`, `save_path` PASSED. The decompile shows the `GetAllCharacterZDOS` early return word for word.
+Fix designs exist (a pure `Core/StableHash.cs` exposed as an extension method inside our namespace, so C# rebinds
+all 13 of our sites without an edit; a peer-list gather in `VisitDirector.Gather`; both version-constant names;
+the zone type resolved at runtime; for ServerSync's three sites a shim declared in its namespace from our file,
+flagged as the owner's call) — **and the owner said "dont change anything for 1.0"**. Nothing is built. Neither
+side starts 1.0 work without his word; the client axis is unswept everywhere.
+
+**The rotating shelf (issue #56) waits for your read.** The owner's ask, 2026-09-08: Ingvar's selling side stops
+being a fixed list — 20 of the 72 catalogue entries are on the shelf at a time, re-rolled every couple of game
+days, seeded, the fixed Ware list gone; on the shelf an entry behaves as a Ware, off it as a Want, stock persists
+across rolls, a due roll waits for no visit. The issue carries the four economy questions that are yours (the
+Haldor anchors sold as well as bought, the round trip across a changing twenty, the purse against a shelf of
+wood and hide, buying-side bases becoming selling prices). Nothing is built until you answer.
 
 **Fifteen visits have now flown on the owner's Windows client against the dedicated server StormTest**: six in the
 morning (10:39–11:38, PR #46's build), twenty deals over the wire, no exception from the mod on either side; three
@@ -107,21 +125,21 @@ F3's two-second vanish grace does not show in the log (end to reclaim 6 / 0 / 0 
 and a dismiss), which is `End` → `FinishDeparture` in your `VisitDirector`. The record of the night's six visits is
 `docs/proofs/2026-09-07-stormtest-night.md`.
 
-**What Don's side wants from yours, in order:** the first-reclaim line and a look at the grace (above); ~~the
-ownership fix~~ done (#54); ~~D1 and D3; your `docs/TODO.md` §2~~ done (#50, #51, #52); the animator parameter
-names and item 23 on your server, still yours; ~~issue #23 (your rc1 note)~~ closed with rc2; and your commits
-under one author name — today's arrived as `t <t@l>`, `trial <trial@local>` and one merge authored as the model,
-which is what blame and the release notes will show. On #55: Steam shows this machine no branch carrying build
-23105022 / 0.221.13 on either app (public, previous stable, the pre-1.0 pins, all at 21981590 or older), so
-nothing in that file can be checked from here yet; the owner has held it.
+**What Don's side wants from yours, in order:** **your read on issue #56, the rotating shelf** (nothing is built
+until then); the first-reclaim line and a look at the grace (above); ~~the ownership fix~~ done (#54); ~~D1 and
+D3; your `docs/TODO.md` §2~~ done (#50, #51, #52); the animator parameter names and item 23 on your server, still
+yours; ~~issue #23 (your rc1 note)~~ closed with rc2; and your commits under one author name — today's arrived as
+`t <t@l>`, `trial <trial@local>` and one merge authored as the model, which is what blame and the release notes
+will show. ~~On #55: the branch could not be seen from here~~ — it is hidden, not absent; verified and merged.
 
-**Don's test rig tonight, so the next boot is not misread.** StormTest is down, stopped from the desktop with
-**visit 15 still open in the sidecar** (`session 15 … Dropped`, and `purse`/`purseStart` 100000 — a test value Don
-set for that visit, which the carry keeps unless reset). The next boot adopts visit 15 — item 15 and F4's rebind
-for free — unless the row is removed first, which was done before both of tonight's boots (a backup beside the
-file each time; each of those boots then logged `boot sweep: 1 stranded merchant(s) destroyed`, as predicted).
-StormTest and Don's Gale `Default` profile carry the same DLL, main `2694d3b` with D5. Every session on Don's side
-is on Windows: builds, deploys and the log watch run from a shell, the game itself needs him at the screen.
+**Don's test rig at this close-out, so the next boot is not misread.** StormTest is down, stopped cleanly at 06:50
+on 2026-09-08 with **visit 15 still open in the sidecar** (the clock pauses with nobody near, so the visit the
+morning boot resumed never ended; `purse`/`purseStart` 100000 is a test value Don set, kept by the carry until
+reset). The next boot resumes it again — item 15's server half and F4's rebind, seen this morning as
+`visit #15 RESUMED after a restart … merchant ZDO 1:60469 rebound` — unless the row is removed first (a backup
+beside the file each time that was done). StormTest and Don's Gale `Default` profile carry main `a08e8c4`: D5 and
+the save-path resolver, `probes 19/19 ok` on 0.221.12. Every session on Don's side is on Windows: builds, deploys
+and the log watch run from a shell, the game itself needs him at the screen.
 
 ### The morning of 2026-09-07, after the rc1 merge (history)
 

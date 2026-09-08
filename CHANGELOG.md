@@ -36,6 +36,13 @@ after the rest of this log was written.
   end with no sweep line on every end, D4's wires registering once the identity arrived, and that F3's two-second
   grace before the reclaim does not show in the log (0 s on three of four ends; Track B's file). The record is
   `docs/proofs/2026-09-07-stormtest-night.md`.
+- **The sidecar's save path resolved by name, and the 1.0 sweep (PR #55, Track B, 1722).** `Server/WorldSavePath.cs`
+  finds `World.GetWorldSavePath` (0.221.12) or `SaveSystem.GetWorldsSaveRootPath` (1.0) and reads
+  `FileSource.Local` by name, because the method moved and the enum's values did; the new `save_path` probe reports
+  it (19 probes). The sweep against the 1.0 playtest is `docs/engine-sweeps/2026-09-08-server-0.221.12-vs-0.221.13.md`:
+  two stop-ships, neither fixed (the one-argument `GetStableHashCode` is gone; `GetAllCharacterZDOS` returns empty on
+  a dedicated server). Verified from Track A's machine against the fetched playtest build. **1.0 work is held by the
+  owner.**
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 
