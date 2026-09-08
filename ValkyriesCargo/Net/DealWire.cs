@@ -37,12 +37,14 @@ namespace RavenIron.ValkyriesCargo.Net
             try { peers = znet.GetPeers(); }
             catch (Exception ex) { if (_throws++ < 3) ValkyriesCargo.Log.LogError("deal wire: GetPeers threw: " + ex); return; }
             var live = new HashSet<ZRpc>();
+            var liveUids = new HashSet<long>();
             foreach (ZNetPeer peer in peers)
             {
                 if (peer == null || peer.m_rpc == null) continue;
                 // See AdminRpc.SweepPeers (D4a): no uid or name until RPC_PeerInfo; gate above the count.
                 if (!peer.IsReady()) continue;
                 live.Add(peer.m_rpc);
+                liveUids.Add(peer.m_uid);
                 if (_registered.Contains(peer.m_rpc)) continue;
                 try
                 {
@@ -62,7 +64,13 @@ namespace RavenIron.ValkyriesCargo.Net
                 }
             }
             if (_registered.Count > live.Count) _registered.RemoveWhere(r => !live.Contains(r));
+            // A peer that dropped with the terminal open never sends VCargo_close: forget it here, or the
+            // count stays above zero and the merchant's leash holds for the rest of the visit (issue #59).
+            if (_open.Count > 0) _open.RemoveWhere(uid => !liveUids.Contains(uid));
         }
+
+        /// <summary>The visit ended: whatever was open is open on nobody now. The next visit starts at 0.</summary>
+        public static void ClearOpen() { _open.Clear(); }
 
         public static void Reset() { _registered.Clear(); _open.Clear(); _lastClaim.Clear(); }
 

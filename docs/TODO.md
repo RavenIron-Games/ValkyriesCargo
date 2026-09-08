@@ -426,6 +426,17 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       did — but this one has not been typed into yet), the backdrop's contrast in daylight, the tray at scale 2.
       Items 1, 2 (needs Wu'barrk's client log) and 3 (a one-line `Localize` in his `GetHoverText`) and the backpack
       test are his: issue #59.
+- [x] **Items 2 and 3 taken from Track B** (owner, 2026-09-08: "take the first two on a branch"). **BUILT on
+      `a/merchant-busy`** (off `a/terminal-ux`): `VisitSnapshot.TerminalsOpen` as an optional 13th field (12-field
+      strings still parse; never in the sidecar row), `VisitSession.SetTerminalsOpen` publishing on change, the
+      director copying `DealWire.OpenTerminals` every tick, the wire forgetting a dropped peer's open terminal and
+      clearing at End; his side: `MerchantPlan.Next(..., busy)` holds the leash, `AccumulateFar(..., busy)` banks
+      nothing, `CargoMerchant.Busy()` = the local terminal or the server's count for this visit, one log line per
+      flip; `GetHoverText` through `Localization.instance.Localize`. 1862 checks, 0 warnings. **Unseen on a
+      machine**: `cargo merchant #N: a terminal is open on him (K on the wire): the leash holds` on the owner while a
+      SECOND player trades, the hover reading `[E] Trade`, and whether the walk-off was the leash at all (his log).
+      **Backpacks 1.3.8 is installed on StormTest and Don's client** (GUID `org.bepinex.plugins.backpacks`,
+      confirmed off the DLL; Thunderstore, the owner's download OK) — the backpack test can run from here.
 - [ ] **The buy-anything extension** (owner, 2026-09-08, the same message): Ingvar buys ANY item a player offers,
       on the shelf or not; a sale of an uncatalogued item forces a new persistent entry, classed common or rare by
       value; common rows rotate as normal inventory with a timed persistence (say 2 visits), rare rows stay until

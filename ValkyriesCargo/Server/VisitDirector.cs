@@ -4,6 +4,7 @@ using System.Globalization;
 using RavenIron.ValkyriesCargo.Client;
 using RavenIron.ValkyriesCargo.Config;
 using RavenIron.ValkyriesCargo.Core;
+using RavenIron.ValkyriesCargo.Net;
 using UnityEngine;
 
 namespace RavenIron.ValkyriesCargo.Server
@@ -234,6 +235,12 @@ namespace RavenIron.ValkyriesCargo.Server
                     {
                         string republish = _session.Sync(worldTime, CargoEvent.Remaining(res));
                         if (republish != null) Publish(republish);
+
+                        // Issue #59 (2026-09-08): how many terminals are open on him rides in VisitState, so
+                        // the merchant's owner can hold the leash for a player it may not have instanced.
+                        // The wire counts one per peer and forgets a peer that drops; this only copies it.
+                        string busy = _session.SetTerminalsOpen(DealWire.OpenTerminals);
+                        if (busy != null) Publish(busy);
 
                         // The server never flies anything: it watches the pilot's `VCargo_dropped` flag and
                         // moves the visit's phase and drop point to follow (P4).
@@ -525,6 +532,7 @@ namespace RavenIron.ValkyriesCargo.Server
             // "nothing running" by asking `_session.Active`/`.VisitId`, and both must already reflect
             // this visit having ended, not the visit itself.
             string endedState = _session.End(reason);
+            DealWire.ClearOpen();   // whatever was open was open on him; the next visit starts at 0
 
             // F3, the server half (docs/AUDIT-P4P5-2026-09-07.md): ask him to vanish before he's gone.
             // `CargoMerchant.RPC_Vanish` already exists and already does the right thing on receive --
