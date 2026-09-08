@@ -219,6 +219,20 @@ step 4).
       upstream's. **The client axis is still unswept** - no 1.0 client build exists yet; a second run is
       owed when one appears. The 15 body changes are listed in the report and none has been read yet;
       each is a recorded engine fact that may now be false.
+      **The 15 were read the same day, and there is a SECOND stop-ship, quieter than the first:**
+      `ZNet.GetAllCharacterZDOS` gained `if (m_characterID == ZDOID.None) return empty;` ABOVE the loop
+      over `m_peers`. `m_characterID` is set only by `ZNet.SetCharacterID`, called only from
+      `Game.SpawnPlayer` (the LOCAL player), and a dedicated server never spawns one - so on a 1.0
+      dedicated server the method returns an empty list forever. `VisitDirector.Gather` calls it once a
+      second and CLAUDE.md calls it "THE server-side 'where is every player'"; that fact is now false.
+      No candidate is ever found, no visit can ever happen, nothing throws, and the roll reports
+      `no eligible player: nobody online` on a full server. A listen host is unaffected. Everything else
+      holds and the report says why for each: `ZSyncTransform.OwnerSync`'s velocity path is
+      byte-identical (only the scale branch moved), `ZNetView.Awake` still never re-applies Persistent,
+      `CreateNewZDO` still does not set the prefab, and `Character.Awake` / `ZSyncAnimation.Awake` still
+      cache a root-scoped animator so BodyLoader's appended-last defence stands. One WATCH: `ZDO.IsValid`
+      is now `m_prefab != -1` rather than a `DataFlags` bit, so a ZDO is invalid between `CreateNewZDO`
+      and `SetPrefab` - a window `Spawner.Author` already closes on the next line and must keep closing.
 - [ ] **Client-only proofs he took:** the animator parameter names (a dedicated build strips controllers;
       P5's `SetBool` names must be read on a client); the rest of item 20 — Ingvar in daylight, the
       walk, the one-shot clips (CLAUDE.md "Seen fixed on a screen"); `cargo prefab odin` on a client.
