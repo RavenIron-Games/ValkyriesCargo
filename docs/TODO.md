@@ -96,8 +96,11 @@ step 4).
       his body is never in his own smoke. The fix is in `CargoMerchant.RPC_Vanish` (Wu'barrk's): hide him on
       receive — every `Renderer` under the merchant off, the AI stopped — on EVERY screen the RPC reaches, and let
       the grace go on protecting the RPC's delivery invisibly. Not the grace itself: shortening it races the
-      RPC, which is the thing F3 put the grace there for. Proposed, not built; his file. The walk-up completing
-      on the first approach is in the log (visits 13–15, 19).
+      RPC, which is the thing F3 put the grace there for. **BUILT on `a/vanish-hide` at the owner's word ("take it
+      on a branch")**: `CargoMerchant.HideForGood` from `RPC_Vanish` (renderers, LOD groups, the collider off;
+      the AI stood down on the owner; one log line `into the mist: K renderer(s) off with the smoke`). Unseen: the
+      next vanish must show him gone AS the smoke starts. The walk-up completing on the first approach is in the
+      log (visits 13–15, 19).
 
 ---
 

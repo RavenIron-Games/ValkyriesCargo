@@ -19,10 +19,11 @@ for the next cut (2026-09-08 00:40) are met but for the vanish being watched**; 
 0.1.0 proper. **Watched by him on 2026-09-08: the arrival banner works; the vanish plays but LATE** — the smoke
 plays and Ingvar stands in it until your `Clear` lands, `VanishGraceSeconds` (2 s) after `SendVanish`. Vanilla
 `Odin.Update` creates the despawn effect and calls `m_nview.Destroy()` in the same frame; Odin is never in his
-own smoke. The fix is yours and on receive, in `CargoMerchant.RPC_Vanish`: switch every `Renderer` under him off
-and stop the AI the moment the RPC arrives, on every screen, and leave the grace alone (it is there so the RPC
-lands before the ZDO goes; shortening it races that). **His word after the day's five merges (main 43149bb): no
-release yet.**
+own smoke. The fix is on receive, in `CargoMerchant.RPC_Vanish`, and **the owner had this side build it**
+(`a/vanish-hide`, your file with his word): `HideForGood` switches every `Renderer` and LOD group under him off,
+the collider off, stands the AI down on the owner, and logs `into the mist: K renderer(s) off with the smoke`;
+the grace is untouched (it is there so the RPC lands before the ZDO goes; shortening it races that). Unseen on a
+screen. **His word after the day's five merges (main 43149bb): no release yet.**
 
 **Valheim 1.0: your sweep verified from Don's machine, and HELD by the owner.** The `public-test` branch is
 password-protected and hidden from the branch list — that is why it read as absent last night, not because it

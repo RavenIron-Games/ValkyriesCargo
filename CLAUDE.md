@@ -921,7 +921,9 @@ P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormT
     the Vanish RPC. Vanilla `Odin.Update` creates `m_despawn` and calls `m_nview.Destroy()` in the same frame, so
     Odin is never in his own smoke. The fix is on receive, in Track B's `CargoMerchant.RPC_Vanish`: hide him
     (every `Renderer` under the merchant off, the AI stopped) on every screen the RPC reaches, and keep the grace,
-    which exists so the RPC lands before the ZDO goes. Proposed, not built. As
+    which exists so the RPC lands before the ZDO goes. **BUILT on `a/vanish-hide` at the owner's word**
+    (`HideForGood`: renderers, LOD groups and the collider off, the AI stood down on the owner; the line
+    `cargo merchant #N: into the mist: K renderer(s) off with the smoke; the Clear follows in 2 s`); not yet seen. As
     written: after 300 s the server log shows `visit #1 ended: timer; takings 0 coins`, the banner
     "Ingvar has gone back to the mist" shows, `cargo status` shows `visit: none; last #1 ended: timer`.
 11. **`cargo dismiss`** — admin half **DONE 2026-09-07**: `visit #2 ended: admin Nomadtest; takings 0 coins, …`,
