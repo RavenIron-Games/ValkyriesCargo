@@ -234,20 +234,27 @@ session end** (`Game.Logout`, `ZNet.Shutdown`), the cursor-leak lesson from Barr
 ```
 ┌───────────────────────────────────────────────────────────────────────┐
 │ Ingvar the Far-Travelled — Valkyrie's Cargo          03:42 left   [X] │
-│ Purse 812c            Pay with: (•) Coins 840   ( ) Barter 1,250      │
+│ His purse 812c        Your coins 840c                                 │
 ├──────────────────────────────┬────────────────────────────────────────┤
 │ HIS WARES        stock  price│ YOUR GOODS HE WANTS       has   pays   │
 │ [i] Iron           8/20  38c▲│ [i] Linen thread x14    31/90   9c     │
 │ [i] Ruby          12/45  19c▼│ [i] Deer hide x6        40/120  3c     │
 │ [i] Black Core     0/6 SOLD  │ [i] Flax x40            60/180  4c     │
 ├──────────────────────────────┴────────────────────────────────────────┤
-│ STAGING  buy: Ruby ×1 (19c)   offer: Linen ×2 (18c)   →  you pay 1c   │
-│                                 [ Confirm deal ]   [ Clear ]  [Send him off]
+│ YOU GET            count  all  x  value │ YOU GIVE        count  all  x  value │
+│ [i] Ruby @ 19c     [ 1 ] [all][x]  19c  │ [i] Linen @ 9c  [ 2 ] [all][x]  18c  │
+│ [Confirm deal] [Clear] [Cover it with my goods]   you pay 1c   [Send him off] │
 └───────────────────────────────────────────────────────────────────────┘
 ```
 
+(The sketch is the 2026-09-08 shape. Until the first playtest the header carried a `Pay with: Coins | Barter`
+switch and the tray was one line of text; the playtest found the switch unreadable and the click-per-unit staging
+unusable, so the switch went, the tray became YOU GET beside YOU GIVE with a count box and an "all" button on
+every line, and the one balance line says who pays whom. `EnableBarter=false` now means the client refuses goods
+staged beside a ware, since there is no mode to hide.)
+
 **Display terminal.** The panel renders `MarketState` and never computes a price. Clicking a ware adds it to the staging
-tray; clicking one of your goods offers it. The tray shows the server's current numbers; `MarketState.ValueChanged`
+tray (Shift five, Ctrl twenty, a typed count or "all" for the rest); clicking one of your goods offers it. The tray shows the server's current numbers; `MarketState.ValueChanged`
 redraws it while open, so **B watches the price tick while A buys**.
 
 **The Deal** (one primitive, pure, tested):
@@ -488,8 +495,9 @@ WantHalfLifeGameDays         3         0-365; a flooded Want half-clears in thre
 PurseCoins                   1500      was 800 until 2026-09-07 (docs/DECISIONS-WUBARRK.md); the carry is
                                        measured on the GROSS coins a visit took in, not the net
 PurseCarryPercent            50
-EnableBarter                 true      read on the CLIENT: it hides the terminal's Barter button; the server
-                                       settles a barter deal either way (docs/CONFIG-SHAKEDOWN.md)
+EnableBarter                 true      read on the CLIENT: the terminal refuses goods staged beside a ware and
+                                       hides "Cover it with my goods"; the server settles a barter deal either
+                                       way (docs/CONFIG-SHAKEDOWN.md)
 BarrkBotExport               true      the three barrkbot_cargo_*.json mirrors under BepInEx/config/ValkyriesCargo,
                                        written after the sidecar saves, never the source of truth (P12)
                                        (PriceChangePolicy was deleted 2026-09-07: nothing read it; only Reconfirm
@@ -500,6 +508,7 @@ ShowArrivalMessage           true
 ShowPriceTrend               true
 Theme                        Vanilla     Vanilla | BlackGold
 TerminalScale                1.0
+TerminalBackdropAlpha        0.4         0-1; the black backdrop behind the text (2026-09-08); 1 = the solid panel
 ```
 
 ---

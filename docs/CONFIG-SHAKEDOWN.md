@@ -73,7 +73,7 @@ its `AcceptableValueRange`. "agrees" means the two bounds are the same number.
 | `BackpackModGuid` | `org.bepinex.plugins.backpacks` | — | SERVER | `Server/BackpackMod.Detect` (BepInEx `Chainloader.PluginInfos`, instance loaded), at director up and every tick | trimmed; empty = never look | true | NEW 2026-09-08; a live change re-looks on the next tick and the shelf re-rolls when its size moves |
 | `PurseCoins` | `1500` (800 at the audit; raised in PR #22) | 0–100 000 | SERVER | `ModConfig.cs:215` → `Market.cs:142`, `:198`, `:199` | `Sanitize` 0–`MaxPurseCoins` 1 000 000 (`Market.cs:39`–`40`); config tighter | true | OK |
 | `PurseCarryPercent` | `50` | 0–100 | SERVER | `ModConfig.cs:216` → `Market.cs:197` | `Sanitize` 0–100 (`Market.cs:41`) — **agrees** | true | OK |
-| `EnableBarter` | `true` | — | ~~SERVER~~ → CLIENT | `CargoTerminal.cs:213` — it hides a button; the server settles a barter deal either way | — | **was false** on the side, and hid that the server does not enforce it | **fixed** |
+| `EnableBarter` | `true` | — | ~~SERVER~~ → CLIENT | `TrayModel.Validate(…, barter)` refuses goods beside a ware (`barter_off`) and `CargoTerminal.DrawButtons` hides "Cover it with my goods" (since 2026-09-08; until then it hid the Barter button, which is gone); the server settles a barter deal either way | — | **was false** on the side, and hid that the server does not enforce it | **fixed** |
 | ~~`PriceChangePolicy`~~ | — | — | — | **deleted on `main` by PR #22**: at the audit it was read by nobody (`Teardown` was never built; the tray always reconfirms, `TrayModel.Answer`) and this pass kept it with a "NOT READ" description; Wu'barrk removed it instead, with the reason in a comment where the binding was (`ModConfig.cs`) | — | — | **removed** |
 | `BarrkBotExport` | `true` | — | SERVER | `Server/BarrkBotExport.cs:53`, on the server, once every `VisitDirector.ExportCadenceSeconds` (60 s) after the sidecar has saved. New in PR #22 (P12) | — | true | OK |
 
@@ -85,6 +85,7 @@ its `AcceptableValueRange`. "agrees" means the two bounds are the same number.
 | `ShowPriceTrend` | `true` | — | CLIENT | `CargoTerminal.cs:482` | — | true | OK |
 | `Theme` | `Vanilla` | `Vanilla`\|`BlackGold` | CLIENT | `CargoTerminal.cs:250` | — | true | OK |
 | `TerminalScale` | `1.0` | 0.5–2 | CLIENT | `CargoTerminal.cs:249` | `Mathf.Clamp(0.5f, 2f)` — **agrees** | true | OK |
+| `TerminalBackdropAlpha` | `0.4` | 0–1 | CLIENT | `CargoTerminal.Theme()` → `ThemeOptions.PanelOpacity` (the vendored theme's own knob; its file is not edited) | `Mathf.Clamp01` — **agrees** | true | NEW 2026-09-08, the playtest's item 7 (a 40 % translucent black behind the text) |
 
 ### Not keys, but numbers a reader will come looking for
 

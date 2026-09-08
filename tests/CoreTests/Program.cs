@@ -564,6 +564,21 @@ namespace ValkyriesCargo.Tests
             VisitSnapshot v2 = VisitSnapshot.Parse(encoded, problems);
             Equal(v.Encode(), v2.Encode(), "Encode(Parse(Demo)) == Demo");
 
+            // Issue #59 (2026-09-08): the count of terminals open on him rides as an OPTIONAL 13th field.
+            Check(v.TerminalsOpen == 0 && encoded.Split(';').Length == 13, "Demo carries 0 terminals open as a 13th field");
+            problems.Clear();
+            VisitSnapshot old = VisitSnapshot.Parse("v1;1;trading;1;;1:1;0;30;0;300;800;7", problems);
+            Check(problems.Count == 0 && old.Phase == VisitPhase.Trading && old.TerminalsOpen == 0,
+                  "a 12-field v1 string from a side that is behind still parses, with 0 open");
+            problems.Clear();
+            VisitSnapshot busy = VisitSnapshot.Parse("v1;1;trading;1;;1:1;0;30;0;300;800;7;2", problems);
+            Check(problems.Count == 0 && busy.TerminalsOpen == 2, "and a 13th field is the count");
+            Equal("v1;1;Trading;1;;1:1;0;30;0;300;800;7;2", busy.Encode(), "which round-trips");
+            problems.Clear();
+            VisitSnapshot.Parse("v1;1;trading;1;;1:1;0;30;0;300;800;7;-1", problems);
+            Check(problems.Count > 0, "a negative count is reported");
+            Check(new VisitSnapshot { Phase = VisitPhase.Trading, TerminalsOpen = -4 }.Encode().EndsWith(";0"), "and never encoded");
+
             // Phase case insensitivity
             problems.Clear();
             v = VisitSnapshot.Parse("v1;1;flying;1;;1:1;0;30;0;300;800;7", problems);
@@ -2656,6 +2671,16 @@ namespace ValkyriesCargo.Tests
             Equal(1300.0, s.PublishedEnd, "the published deadline is the clock's");
             Equal(7, s.LastVisitId, "LastVisitId follows Begin");
 
+            // Issue #59 (2026-09-08): the deal wire's count of open terminals rides in the state.
+            Equal(0, v.TerminalsOpen, "a visit begins with no terminal open on him");
+            Check(s.SetTerminalsOpen(0) == null, "the same count again publishes nothing");
+            string busyState = s.SetTerminalsOpen(2);
+            Check(busyState != null && VisitSnapshot.Parse(busyState, null).TerminalsOpen == 2, "two terminals open: the state carries the count");
+            Equal(2, s.TerminalsOpen, "and the session remembers it");
+            Check(s.SetTerminalsOpen(2) == null, "unchanged: nothing to send");
+            Check(s.SetTerminalsOpen(-1) != null && s.TerminalsOpen == 0, "a negative count reads as 0 (a change from 2)");
+            Equal(12, s.EncodeSessionRow().Split('\t').Length, "the sidecar row does not carry it: a restart starts at 0");
+
             // Sync: the event runs in real seconds; while world time keeps pace nothing is republished.
             Check(s.Sync(1001.0, 299.0) == null, "one second in, 299 s left: the deadline matches, nothing to send");
             Check(s.Sync(1010.0, 290.4) == null, "a drift of 0.4 s is within the threshold");
@@ -2699,11 +2724,13 @@ namespace ValkyriesCargo.Tests
             Equal(VisitPhase.Dropped, vd.Phase, "with the phase unchanged");
 
             // End.
+            Check(s.SetTerminalsOpen(1) != null, "(one terminal open as the visit ends)");
             Equal("", s.End("timer"), "End publishes the empty channel");
             Check(!s.Active, "and the session is inactive");
+            Equal(0, s.TerminalsOpen, "and no terminal is open on a visit that ended");
             Equal("timer", s.LastEndReason, "with the reason kept for cargo status");
             Equal(7, s.LastVisitId, "and the id of the visit that ended");
-            Check(s.Sync(9300.0, 10.0) == null && s.SetDrop(0f, 0f, 0f) == null, "nothing publishes after the end");
+            Check(s.Sync(9300.0, 10.0) == null && s.SetDrop(0f, 0f, 0f) == null && s.SetTerminalsOpen(3) == null, "nothing publishes after the end");
             s.Begin(8, 1L, "", 0f, 0f, 0f, 0.0, 300f, -5, 0);
             Equal(0, s.Purse, "a nonsense negative purse is floored at 0");
             Equal("", s.PilotName, "a null or empty name stays empty");
@@ -3517,8 +3544,8 @@ namespace ValkyriesCargo.Tests
             t.Refresh(small);
             Check(t.Wanted == null, "a wanted line whose row vanished is dropped");
 
-            // AutoFill: highest of his prices first, until the wanted line is covered; change in coins.
-            TrayModel b = new TrayModel { Mode = PayMode.Barter };
+            // AutoFill ("Cover it with my goods"): highest of his prices first, until the wanted line is covered; change in coins.
+            TrayModel b = new TrayModel();
             MarketSnapshot m2 = DemoMarket.Default().Market;
             b.StageBuy(m2.Find("Iron"), 1);                      // 25c
             var goods = new Dictionary<string, int> { { "Wood", 100 }, { "Amber", 3 }, { "Honey", 10 } };   // pays 1, 5, 1
@@ -3533,6 +3560,47 @@ namespace ValkyriesCargo.Tests
             Check(b.Offered.Count <= 3, "and it stopped once covered");
             TrayModel c = new TrayModel();
             Equal(0, c.AutoFill(m2, hasB), "nothing wanted, nothing filled");
+
+            // The count box and the "all" button (2026-09-08, the playtest's item 4).
+            TrayModel e = new TrayModel();
+            MarketRow ironRow = m2.Find("Iron");
+            MarketRow woodRow = m2.Find("Wood");
+            Check(e.StageBuy(ironRow, 1), "stage one iron");
+            Equal(7, e.SetCount(m2, "Iron", 7, hasB), "the box sets the wanted count");
+            Equal(7, e.Wanted.Count, "on the line");
+            Equal(ironRow.Stock, e.SetCount(m2, "Iron", 999, hasB), "clamped to his stock");
+            Equal(ironRow.Stock, e.SetCount(m2, "Iron", 0, hasB), "0 leaves the line as it is: the box is being typed in");
+            Equal(ironRow.Stock, e.SetCount(m2, "Iron", -3, hasB), "and so does a negative");
+            Equal(0, e.SetCount(m2, "Wood", 5, hasB), "a prefab not in the tray answers 0 and stages nothing");
+            Check(e.FindOffered("Wood") == null, "(nothing offered)");
+            int afford = 100 / ironRow.Buy;
+            Equal(Math.Max(1, Math.Min(ironRow.Stock, afford)), e.AllOf(m2, "Iron", hasB, 100), "all = what he has and the player can pay for");
+            Equal(1, e.AllOf(m2, "Iron", hasB, 0), "with no coins, all is still 1 so the refusal is coins_short, not an empty tray");
+            Check(e.StageOffer(woodRow, 1, hasB("Wood")), "offer one wood");
+            int room = woodRow.Max - woodRow.Stock;
+            Equal(Math.Min(hasB("Wood"), room), e.AllOf(m2, "Wood", hasB, 0), "all for an offer = what the player carries, within the room on his shelf");
+            Equal(Math.Min(3, Math.Min(hasB("Wood"), room)), e.SetCount(m2, "Wood", 3, hasB), "the box sets an offer");
+            Equal(Math.Min(hasB("Wood"), room), e.SetCount(m2, "Wood", 100000, hasB), "clamped to carry and room");
+            e.Remove("Wood");
+            Check(e.FindOffered("Wood") == null, "x removes an offer");
+            e.Remove("Iron");
+            Check(e.Wanted == null && e.IsEmpty, "and the wanted line");
+            e.Remove("Iron");
+            Check(e.IsEmpty, "removing twice is harmless");
+
+            // EnableBarter off (item 5): goods beside a ware are refused on the client, and nothing else is.
+            TrayModel f = new TrayModel();
+            f.StageBuy(ironRow, 1);
+            f.StageOffer(woodRow, 2, 100);
+            Equal(TrayModel.BarterOff, f.Validate(m2, 1000, hasB, false), "barter off refuses goods beside a ware");
+            Check(f.Validate(m2, 1000, hasB, true) == null, "and on, the same tray can go");
+            Check(f.Validate(m2, 1000, hasB) == null, "(on is the default)");
+            Check(TrayModel.Words(TrayModel.BarterOff).Contains("Coins"), "with his words for it");
+            f.Remove("Iron");
+            Check(f.Validate(m2, 0, hasB, false) == null, "a plain sell is fine with barter off");
+            TrayModel g = new TrayModel();
+            g.StageBuy(ironRow, 1);
+            Check(g.Validate(m2, 1000, hasB, false) == null, "and so is a plain buy");
 
             // The offered-lines cap.
             TrayModel capped = new TrayModel();
@@ -4139,6 +4207,17 @@ namespace ValkyriesCargo.Tests
             Check(s.State == 2 && !s.Changed, "already spent: the SAME 13 m/5 s that fired it before now does nothing");
             s = MerchantPlan.Next(2, false, true, distance: 13f, timeInState: 30f, farSeconds: 5f, approachDistance: 3.5f, leashSpent: false);
             Check(s.State == 1 && s.Changed && s.Follow && s.LeashFired, "not yet spent: it still fires, flagged so the caller knows to spend it");
+
+            // Issue #59 (2026-09-08): he never walks while a terminal is open on him.
+            s = MerchantPlan.Next(2, false, true, distance: 40f, timeInState: 30f, farSeconds: 9f, approachDistance: 3.5f, leashSpent: false, busy: true);
+            Check(s.State == 2 && !s.Changed && !s.LeashFired && !s.Follow, "a terminal open on him: the leash holds however far the nearest player reads");
+            Check(s.Why.Contains("terminal"), "and says why");
+            s = MerchantPlan.Next(2, false, true, distance: 40f, timeInState: 30f, farSeconds: 9f, approachDistance: 3.5f, leashSpent: false, busy: false);
+            Check(s.State == 1 && s.LeashFired, "the terminal closed: the same numbers fire it");
+            Check(MerchantPlan.AccumulateFar(4f, 40f, 1f, busy: true) == 0f, "the far timer does not run while busy, so a close cannot fire the leash on banked seconds");
+            Check(Math.Abs(MerchantPlan.AccumulateFar(4f, 40f, 1f) - 5f) < 0.001f, "(and runs as before when not)");
+            s = MerchantPlan.Next(1, false, true, distance: 40f, timeInState: 1f, farSeconds: 0f, approachDistance: 3.5f, busy: true);
+            Check(s.State == 1 && s.Follow, "busy means nothing on the approach: nobody can open a terminal on him before he trades");
 
             Section("MerchantPlan: leaving is terminal, and the restart rule");
 

@@ -178,10 +178,16 @@ namespace RavenIron.ValkyriesCargo.Core
         /// the OLD, unscaled behaviour exactly — a flat `ApproachTimeoutSeconds` budget, never stuck,
         /// the leash always armed — so every caller written before F5 keeps its old answer untouched.
         /// `CargoMerchant` is the only caller that should ever pass the real numbers.
+        ///
+        /// `busy` (issue #59, 2026-09-08) is "a terminal is open on him": the server's count from the
+        /// deal wire, carried in VisitState, plus the owner's own terminal. While it is true he never
+        /// walks — the leash holds whatever the nearest player's distance says, because the player at
+        /// the terminal may be one this machine has not instanced at all.
         /// </summary>
         public static Step Next(int state, bool carried, bool grounded, float distance,
                                 float timeInState, float farSeconds, float approachDistance,
-                                float distanceAtEntry = 0f, float stuckSeconds = 0f, bool leashSpent = false)
+                                float distanceAtEntry = 0f, float stuckSeconds = 0f, bool leashSpent = false,
+                                bool busy = false)
         {
             // Leaving is terminal. Nothing measured on the ground pulls him back out of it: the
             // departure is the server's decision and the vanish is already running.
@@ -243,6 +249,10 @@ namespace RavenIron.ValkyriesCargo.Core
             // wanders back within `approachDistance` still reaches Trading normally either time; one
             // who does not just leaves a merchant standing wherever the second attempt ended — a
             // merchant trading from the wrong spot, not one stuck looping through "found him" forever.
+            //
+            // And it never fires while a terminal is open on him (issue #59): somebody is trading, and
+            // "somebody" may be a player this client cannot see, so the distance is not the whole story.
+            if (busy) return new Step { State = 2, Why = "trading (a terminal is open on him)" };
             if (!leashSpent && farSeconds >= TradingLeashSeconds && distance > TradingLeashDistance)
                 return new Step
                 {
@@ -255,10 +265,12 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>
         /// The leash timer, kept here so its one edge case is testable: it resets the moment he is
         /// inside the leash, and only accumulates while he is outside it. A caller that accumulates
-        /// unconditionally sends him walking after a player who never left.
+        /// unconditionally sends him walking after a player who never left. Nor does it run while a
+        /// terminal is open on him (`busy`, issue #59): otherwise the seconds bank up behind the hold
+        /// and the leash fires the instant the terminal closes.
         /// </summary>
-        public static float AccumulateFar(float farSeconds, float distance, float dt)
-            => distance > TradingLeashDistance ? farSeconds + dt : 0f;
+        public static float AccumulateFar(float farSeconds, float distance, float dt, bool busy = false)
+            => !busy && distance > TradingLeashDistance ? farSeconds + dt : 0f;
 
         /// <summary>
         /// True when this state means the carry pin should be driving his transform. Kept beside the

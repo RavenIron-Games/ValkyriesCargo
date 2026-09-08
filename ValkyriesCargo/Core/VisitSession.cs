@@ -35,6 +35,12 @@ namespace RavenIron.ValkyriesCargo.Core
         public int Republishes { get; private set; }
         /// <summary>True when this session came back from the sidecar rather than a fresh Begin.</summary>
         public bool Resumed { get; private set; }
+        /// <summary>
+        /// How many terminals are open on him right now (issue #59, 2026-09-08): the director copies the
+        /// deal wire's count in every tick and the state republishes when it moves. Never in the sidecar
+        /// row: a restart starts at 0 and the wire re-counts as the terminals reopen.
+        /// </summary>
+        public int TerminalsOpen { get; private set; }
 
         public bool Active => Phase != VisitPhase.None;
 
@@ -59,6 +65,19 @@ namespace RavenIron.ValkyriesCargo.Core
             LastEndReason = "";
             Republishes = 0;
             Resumed = false;
+            TerminalsOpen = 0;
+            return Encode();
+        }
+
+        /// <summary>
+        /// The deal wire's count of open terminals, copied in every tick. Returns the state to publish
+        /// when the count moved (and a visit is running), else null. A negative count reads as 0.
+        /// </summary>
+        public string SetTerminalsOpen(int count)
+        {
+            int n = Math.Max(0, count);
+            if (!Active || n == TerminalsOpen) return null;
+            TerminalsOpen = n;
             return Encode();
         }
 
@@ -101,6 +120,7 @@ namespace RavenIron.ValkyriesCargo.Core
         {
             if (Active) LastEndReason = string.IsNullOrEmpty(reason) ? "ended" : reason;
             Phase = VisitPhase.None;
+            TerminalsOpen = 0;
             return "";
         }
 
@@ -111,6 +131,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 VisitId = VisitId, Phase = Phase, PilotUid = PilotUid, BirdZdo = "", MerchantZdo = "",
                 DropX = DropX, DropY = DropY, DropZ = DropZ,
                 EndWorldTime = Clock != null ? Clock.EndWorldTime : 0.0, Purse = Purse, Seed = Seed,
+                TerminalsOpen = TerminalsOpen,
             };
         }
 
@@ -185,6 +206,7 @@ namespace RavenIron.ValkyriesCargo.Core
             LastEndReason = "";
             Republishes = 0;
             Resumed = true;
+            TerminalsOpen = 0;
             return Encode();
         }
 

@@ -407,8 +407,36 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       the shelf on a branch"): `Core/Shelf.cs` (pure), `Market.KindOf` as the one place the effective kind is decided,
       `Server.ShelfSize` 20 / `Server.ShelfRotationGameDays` 2, the director's roll-when-idle with its two log lines,
       `not_on_shelf`, the `cargo status` line; 1818 checks, 0 warnings, economy scenario 11, `docs/CATALOGUE.md` §7.
-      PR #57 is open and waits for the word; **unseen on a machine** (the first boot must print
-      `director up: …; shelf 20 of 72, period N, …` and the first idle tick after a period `shelf rolled: …`).
+      PR #57 is open and waits for the word; **SEEN on StormTest 2026-09-08 morning**: `director up: … shelf 20 of
+      72, period 13/14`, `shelf roll waits: visit #17 is running`, `shelf rolled: … period 14 …` with the twenty
+      names, `shelf now: …` after a restart, and visit 18 resumed across it.
+- [x] **The playtest's terminal items 4, 5 and 7** (Wu'barrk's report, 2026-09-08; the owner: "build 4, 5 and 7 on
+      a branch"). **BUILT on `a/terminal-ux` the same morning**, branched off `a/rotating-shelf`: (4) a count box on
+      every staged line, digits only, clamped to his stock / your carry / the room on his shelf and written back
+      clamped, an **all** button (a ware: as many as he has and you can pay for; goods: everything you carry that
+      fits), **x** to clear a line, Shift 5 / Ctrl 20 kept, `TrayModel.SetCount` / `AllOf` / `Remove` pure; (5) the
+      Coins/Barter switch and `PayMode` removed — the tray is always YOU GET beside YOU GIVE, one balance line
+      ("you pay N c" / "he pays you N c" / "even"), "Cover it with my goods" whenever a ware is staged, and
+      `EnableBarter=false` refuses goods beside a ware on the client (`barter_off`, a line of Ingvar's); (7) the
+      window on the theme's near-black panel at `Client.TerminalBackdropAlpha` (0.4 = the 40 % translucent black
+      asked for) with both text tones a step brighter, through `ThemeOptions` (the vendored theme untouched).
+      While a count box has the keyboard, Use/Tab/M do not close the window (`UIFocus.SetHasTextFocus` raised
+      from Tick); Enter or a click elsewhere hands it back. 1841 checks, 0 warnings. **Unseen on a screen**: the
+      box taking keystrokes in the game (IMGUI text fields do take keys in Valheim — UIFocus exists because they
+      did — but this one has not been typed into yet), the backdrop's contrast in daylight, the tray at scale 2.
+      Items 1, 2 (needs Wu'barrk's client log) and 3 (a one-line `Localize` in his `GetHoverText`) and the backpack
+      test are his: issue #59.
+- [x] **Items 2 and 3 taken from Track B** (owner, 2026-09-08: "take the first two on a branch"). **BUILT on
+      `a/merchant-busy`** (off `a/terminal-ux`): `VisitSnapshot.TerminalsOpen` as an optional 13th field (12-field
+      strings still parse; never in the sidecar row), `VisitSession.SetTerminalsOpen` publishing on change, the
+      director copying `DealWire.OpenTerminals` every tick, the wire forgetting a dropped peer's open terminal and
+      clearing at End; his side: `MerchantPlan.Next(..., busy)` holds the leash, `AccumulateFar(..., busy)` banks
+      nothing, `CargoMerchant.Busy()` = the local terminal or the server's count for this visit, one log line per
+      flip; `GetHoverText` through `Localization.instance.Localize`. 1862 checks, 0 warnings. **Unseen on a
+      machine**: `cargo merchant #N: a terminal is open on him (K on the wire): the leash holds` on the owner while a
+      SECOND player trades, the hover reading `[E] Trade`, and whether the walk-off was the leash at all (his log).
+      **Backpacks 1.3.8 is installed on StormTest and Don's client** (GUID `org.bepinex.plugins.backpacks`,
+      confirmed off the DLL; Thunderstore, the owner's download OK) — the backpack test can run from here.
 - [ ] **The buy-anything extension** (owner, 2026-09-08, the same message): Ingvar buys ANY item a player offers,
       on the shelf or not; a sale of an uncatalogued item forces a new persistent entry, classed common or rare by
       value; common rows rotate as normal inventory with a timed persistence (say 2 visits), rare rows stay until

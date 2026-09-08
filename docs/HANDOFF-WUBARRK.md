@@ -28,6 +28,20 @@ namespace, a peer-list gather, both version names, the zone type at runtime; a S
 three sites, flagged as the owner's call). **The owner said "dont change anything for 1.0": nothing is built, and
 neither side starts without his word.** The client axis is unswept everywhere.
 
+**Later the same morning: your playtest, and what is yours from it.** The shelf rolled on StormTest as designed
+(PR #57 still waits for the word), you joined by join code with Yggdrasil's Reckoning 0.1.1 on both sides, and
+your seven-item report is split on **issue #59**. Built on our side already, on `a/terminal-ux`: the count box and
+"all" on every staged line, the Coins/Barter switch gone (YOU GET / YOU GIVE, one balance line, "Cover it with
+my goods" whenever a ware is staged), and the 40 % black backdrop with brighter text. **The owner then had this
+side take two of yours** (`a/merchant-busy`, in your files with his word): "he never walks while a terminal is
+open on him" — `VisitState` carries the wire's count of open terminals (an optional 13th field), and
+`MerchantPlan.Next(..., busy)` / `AccumulateFar(..., busy)` hold the leash on the owner while any terminal is
+open, the local one at once — and the `Localization.instance.Localize` in `GetHoverText`. Still yours: the
+flight's feel (say which screen and which part; try `Server.FlightSpeed` 12 / `Server.FlightTurnRate` 30 first,
+no build) and **the walk-off's own log lines** (`cargo merchant #N: … (entered: …)` from your client), because the
+hold assumes it was the leash and the log is what says so. Backpacks 1.3.8 is installed on StormTest and Don's
+client now, so the backpack test can run from either side.
+
 **Your backpack add-on: the shelf half is built** (`a/backpack-shelf`, at the owner's word the same morning). A
 server with Backpacks loaded (`Server.BackpackModGuid`, your GUID `org.bepinex.plugins.backpacks` confirmed off
 the 1.3.8 DLL) sells from `ShelfSize × Server.BackpackShelfMultiplier` (2, range 1–4), looked up in the

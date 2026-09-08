@@ -119,7 +119,12 @@ never crossed the wire in a game, and no redelivery has ever run.**
 window on Wu'barrk's vendored gilt theme (`SharedUI.GiltFrameTheme` + `UIFocus`): the title with the countdown,
 purse and pay mode, HIS WARES (icon, name, stock/target, price, trend) and YOUR GOODS HE WANTS (icon, name, what
 you carry, his shelf, what he pays), the staging tray with the flat "you pay" line, Confirm / Clear / Fill from my
-goods / Send him off (twice), and his words in the footer. `Client/Terminal/TrayModel.cs` (pure, 74 checks) is
+goods / Send him off (twice), and his words in the footer. **Reshaped 2026-09-08 after the first playtest (branch
+`a/terminal-ux`)**: the pay-mode switch is gone, the tray is YOU GET beside YOU GIVE with a count box, "all" and x
+on every line and one balance line, "Cover it with my goods" shows whenever a ware is staged, `EnableBarter=false`
+refuses goods beside a ware on the client, and the window sits on a translucent black backdrop
+(`Client.TerminalBackdropAlpha`, 0.4) with brighter text, all through the theme's own `ThemeOptions`.
+`Client/Terminal/TrayModel.cs` (pure, 74 checks) is
 the tray: staging clamped to stock, room and what you carry, the prices copied from the snapshot and amber where
 they moved, Validate in the server's order, Build at the price on screen NOW, AutoFill for barter, the answer
 handling (Ok empties, price_changed goes amber against the new market, refusals keep the tray). The one OnGUI is
@@ -828,6 +833,24 @@ waits: …`), the `not_on_shelf` refusal with a line of Ingvar's, one line in `c
 has been seen on a machine**. The owner's second ask in the same message — Ingvar buys ANY item a player offers
 and an uncatalogued sale forces a persistent common-or-rare entry — is DESIGNED in that PR's body and NOT built
 (six decisions listed there). Thorium and Wu'barrk are the same person.
+
+**THE SAME MORNING, LATER — the shelf seen, the first two-client playtest, and the terminal reshaped.** The shelf
+PR's build ran on StormTest: `director up: … shelf 20 of 72, period 13/14`, `shelf roll waits: visit #17 is running`,
+then `shelf rolled: … period 14 …` naming the twenty, `shelf now: …` after a restart, visit 18 resumed across it
+(PR #57, unmerged). Wu'barrk joined by crossplay join code (the owner: no Tailscale, no port forward) with his
+Yggdrasil's Reckoning 0.1.1 installed both sides (one probe-signature bug filed as
+RavenIron-Games/YggdrasilsReckoning#1), and his playtest report came back in seven items: the flight clunky, the
+merchant walking off with two players trading, literal `$KEY_Use` in the hover, buying and selling working but
+click-per-unit staging unusable, Coins/Barter unreadable, the backpack test still to run, and the text contrast.
+**Items 4, 5 and 7 are BUILT on `a/terminal-ux`** (the P7 paragraph above, 1841 checks); items 1, 2, 3 and the
+backpack test went to him on issue #59, with the log lines that settle the walk-off and a proposed `terminalsOpen`
+busy input the two tracks would split. **Then the owner took items 2 and 3 back for this side ("take the first
+two on a branch"): `a/merchant-busy`, 1862 checks** — `VisitState` carries the deal wire's count of open
+terminals as an optional 13th field, the director republishes when it moves, the wire forgets a dropped peer and
+clears at the end, and on the merchant's owner `MerchantPlan.Next(..., busy)` holds the trading leash while any
+terminal is open on him (the local one at once, the server's count for the rest); the hover passes through
+`Localization.instance.Localize`. Backpacks 1.3.8 is installed on StormTest and Don's client for the backpack
+test. The owner's item spectrum ask is PR #58 (`docs/ITEM-VALUES.md`, 776 rows).
 
 **The backpack add-on's shelf half, the same day (branch `a/backpack-shelf`, off the shelf branch; the owner:
 "take the shelf multiplier on a branch").** Smoothbrain's Backpacks 1.3.8 (GUID `org.bepinex.plugins.backpacks`,

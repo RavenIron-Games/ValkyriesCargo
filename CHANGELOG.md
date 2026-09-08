@@ -55,6 +55,32 @@ after the rest of this log was written.
   persisted, so a restart mid-period shows the same twenty. `0` keeps the old fixed shelf. `docs/CATALOGUE.md` §7,
   `docs/ECONOMY-SIM.md` §11. **Seen on StormTest 2026-09-08**: `shelf roll waits: visit #17 is running`, then
   `shelf rolled: … period 14 …` naming the twenty, `shelf now: …` after a restart, visit 18 resumed across it.
+- **The terminal after the first playtest (branch `a/terminal-ux`, Track A, 1841 checks; Wu'barrk's report of
+  2026-09-08, items 4, 5 and 7; the owner: "build 4, 5 and 7 on a branch").** Click-per-unit staging was unusable
+  and the Coins/Barter switch unreadable, so: every staged line carries a **count box** (digits only; a number
+  above his stock, your carry or the room on his shelf is written back clamped), an **all** button (a ware: as many
+  as he has and you can pay for; goods: everything you carry that fits) and **x**; Shift 5 / Ctrl 20 stay. The
+  switch and `PayMode` are gone: the tray is always **YOU GET** beside **YOU GIVE** with one balance line
+  (`you pay N c` / `he pays you N c` / `even`), and "Cover it with my goods" shows whenever a ware is staged;
+  `EnableBarter=false` now refuses goods beside a ware on the client (`barter_off`, "Coins for my wares on this
+  shore, friend"), since there is no mode to hide. The window sits on the theme's near-black panel at
+  `Client.TerminalBackdropAlpha` (0.4 = the 40 % translucent black asked for) with both text tones a step
+  brighter, all through `ThemeOptions` — the vendored theme is not edited. While a count box has the keyboard the
+  text-focus token is raised (from Tick) and Use/Tab/M do not close the window; Enter or a click elsewhere hands
+  it back. `TrayModel.SetCount` / `AllOf` / `Remove` are pure and checked. **Not seen on a screen.**
+- **He never walks while a terminal is open on him, and the hover localises (branch `a/merchant-busy`, 1862 checks;
+  issue #59 items 2 and 3, taken from Track B at the owner's word 2026-09-08).** The playtest saw him walk off with
+  two players trading. The server already counted open terminals on the deal wire; now `VisitState` carries the
+  count as an OPTIONAL 13th field (a 12-field string from a side that is behind still parses, the format version
+  does not move; never in the sidecar row), the director copies the wire's count every tick and republishes when it
+  moves, the wire forgets a peer that drops with its terminal open and clears at the visit's end. On the merchant's
+  owner, `busy` = the local terminal or the server's count for this visit; `MerchantPlan.Next(..., busy)` holds the
+  leash while it is true and `AccumulateFar(..., busy)` does not bank seconds behind the hold, so a close cannot
+  fire it on stale time. One log line each way: `cargo merchant #N: a terminal is open on him (K on the wire): the
+  leash holds` / `no terminal open on him: the leash is armed again`. `GetHoverText` now passes through
+  `Localization.instance.Localize`, so `$KEY_Use` reads as the bound key. What this does NOT settle: which
+  transition walked him — the log lines from the walk-off are still asked for on #59; vanilla's idle shuffle is
+  bounded to 1.5 m by `ReassertLocal` and would show no state change at all. **Not seen on a screen.**
 - **The backpack add-on, the shelf half (branch `a/backpack-shelf`, Track A, 1831 checks; Wu'barrk's design of
   2026-09-08, the owner's "take the shelf multiplier on a branch").** A server running Smoothbrain's Backpacks
   (`Server.BackpackModGuid`, shipped `org.bepinex.plugins.backpacks`, changeable live) sells from a shelf of
