@@ -1,4 +1,4 @@
-# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 night after the first six visits
+# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 night, after nine visits and the rc2 cut
 
 You are the second engineering session on this mod. Don's session (me) built what is here; you and
 Wu'barrk take part of what is left. This file tells you everything you need to act, in the order to
@@ -9,27 +9,32 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 
 ---
 
-## 0. State on 2026-09-07 night, after the first six visits — READ THIS FIRST
+## 0. State on 2026-09-07 night, after nine visits and the rc2 cut — READ THIS FIRST
 
 **The tracker is still `docs/TODO.md`**, three tracks, each editing only its own section; when this file and
 that one disagree, that one wins. The subsection below this one is this morning's state, kept as history.
 
-**Where main is.** `e4ee83c` at the time of writing: 0 warnings, **1701/1701 off-game checks**, `probes 18/18 ok,
+**Where main is.** `67201c5` at the time of writing (code `84de90a`; the rc2 tag sits on `e4ee83c`, the
+release-docs commit): 0 warnings, **1701/1701 off-game checks**, `probes 18/18 ok,
 7 not probeable` on the real assembly. The day's PRs, **#24 to #53**, are listed in build order with their check
 counts in `CHANGELOG.md` "0.1.0-rc2". **`v0.1.0-rc2` is cut** from that commit (2026-09-07 evening, at the owner's
 word): the store zip and the bundle attached, a pre-release, uploaded to no store. `v0.1.0-rc1` is marked
 superseded on its release page and still must not reach a tester: it carries F1, and the ServerSync gate does not
 tell the two apart (both are 0.1.0), so every copy is replaced by hand. Issue #23 is closed.
 
-**Six visits have now flown on the owner's Windows client against the dedicated server StormTest** (10:39–11:38
-today), twenty deals over the wire, no exception from the mod on either side. The record with every line is
-`docs/proofs/2026-09-07-stormtest-session.md`; CLAUDE.md's verify list carries each item's line. Proven on a
-machine: the flight and the drop within a second of the simulation, Ingvar in his own body every time, the
-terminal opened ON the merchant, the price curve, the Fair Market Act, both drift knobs and the purse carry to the
-coin, dismissals both ways, a relog mid-visit adopting the merchant in his trading state, the export's trader and
-visit rows, the catalogue verbs live. **Never yet seen:** six of the merged audit fixes (F1, F2, F6, F8, F9, F11 —
-installed, never exercised; a one-line recipe each in `docs/AUDIT-STORMTEST-2026-09-07.md` §5), the two-client
-items, and the screen questions (the release over the drop point, the vanish, the bubble, the hover prompt).
+**Nine visits have now flown on the owner's Windows client against the dedicated server StormTest**: six in the
+morning (10:39–11:38, PR #46's build), twenty deals over the wire, no exception from the mod on either side; then
+three in the evening on the audit's fixes. The record with every line is `docs/proofs/2026-09-07-stormtest-session.md`
+(the evening in `2026-09-07-stormtest-evening.log.txt` beside it); CLAUDE.md's verify list carries each item's
+line. Proven on a machine: the flight and the drop within a second of the simulation, Ingvar in his own body every
+time, the terminal opened ON the merchant, the price curve, the Fair Market Act, both drift knobs and the purse
+carry to the coin, dismissals both ways, a relog mid-visit adopting the merchant in his trading state, the export's
+trader and visit rows, the catalogue verbs live. The evening added two things: **he walked backward on every
+visit** (a half-turn at the attach — `Client.BodyYawDegrees`, local, default 180, PR #53; the walk forward not yet
+seen), and **visit 9 on the fully fixed build was a no-show that settled D1's second regime** (two paragraphs
+down). **Never yet seen:** every fix merged since the audit (its six — F1, F2, F6, F8, F9, F11 — then D1 to D4 and
+the half-turn; a one-line recipe each in `docs/AUDIT-STORMTEST-2026-09-07.md` §5), the two-client items, and the
+screen questions (the release over the drop point, the vanish, the bubble, the hover prompt).
 
 **What the session found, audited the same evening** (`docs/AUDIT-STORMTEST-2026-09-07.md`, three Opus auditors
 and one refuter per finding; read §0 first):
@@ -53,10 +58,16 @@ and one refuter per finding; read §0 first):
 **D1 and D3 are built, by your side: PRs #50 and #51, merged 16:17 the same day** — the audit's diffs word for
 word plus your warning on the drop's silent miss and the elapsed-clock wording; #52 corrected your tracker
 section. Main `84de90a` carries them with D2/D4 and the body half-turn (#53). **None of the four has been seen on
-a machine yet.** Your comment on #50 reads the evening's two visits as a controlled experiment (the ZDO-entered
-first approach fails, the leash-entered second reaches) and predicts a first-approach arrival on the fixed build;
-the reply on it corrects one timing claim — the give-ups came ≥38 s and ≥20 s after the drops by the client log's
-own timestamps, not 3–5 s — so §1.3's second regime is still open and your new log line is what settles it.
+a machine yet** — except that #50's log line has now printed once and done its job. **Visit 9 (17:03, main
+`84de90a`) settled §1.3's second regime: the pilot's client loses ownership of the merchant during the carry.** At
+the drop your line read `carried -> approaching via the ZDO, 16.96 s after waking; carrier none, 135.7 m from the
+player, watching, grounded yes; walk-up budget 90 s`: the entry reset works (90 s, not 20), but the client was
+`watching`, so no `Decide` ran, he never woke, and the clock paused with nobody in range — the same shape as every
+late give-up of the morning (those came ≥38 s and ≥20 s after the drops by the client log's own timestamps, not
+the 3–5 s your #50 comment read). **The fix is in your file and is not in rc2:** keep the pilot as owner through
+the carry (`ClaimOwnership` in `Reassert` while `Pinned`, or refuse the release until owned) and print the owner
+uid in the transition line. Who takes ownership, and when, is still unknown; the evidence and the two asks are on
+#50 (00:13), and audit §1.3 carries the settled note.
 
 **The engine work, for your 1.0 track.** The probe registry (`docs/ENGINE-PROBES.md`) holds 25 named facts, 18
 probed at boot; both halves of item 24 are done — the boot on StormTest, and, tonight, the moved-version
@@ -82,10 +93,18 @@ mutate-and-restore cycle (a `git checkout --` wiped an uncommitted edit today), 
 drift knobs, ghost mode, the load-bearing set. Still open, the owner's and nobody else's (`docs/TODO.md` §1):
 the client asserting its own rested/comfort numbers, and reconfirm versus teardown on a price tick.
 
-**What Don's side wants from yours, in order:** ~~D1 and D3; your `docs/TODO.md` §2~~ done (#50, #51, #52); the
-animator parameter names and item 23 on your server, still yours; ~~issue #23 (your rc1 note)~~ closed with rc2;
-and your commits under one author name — today's arrived as `t <t@l>`, `trial <trial@local>` and one
-merge authored as the model, which is what blame and the release notes will show.
+**What Don's side wants from yours, in order:** **the ownership fix during the carry** (above; the next cut waits
+on it) with the owner uid in the line; ~~D1 and D3; your `docs/TODO.md` §2~~ done (#50, #51, #52); the animator
+parameter names and item 23 on your server, still yours; ~~issue #23 (your rc1 note)~~ closed with rc2; and your
+commits under one author name — today's arrived as `t <t@l>`, `trial <trial@local>` and one merge authored as the
+model, which is what blame and the release notes will show.
+
+**Don's test rig tonight, so the next boot is not misread.** StormTest was stopped at 17:13 with visit 9 still open
+in the sidecar; the `session 9` row was then removed (backup beside it), so the next boot adopts nothing and its
+`boot` sweep destroys the stranded persistent merchant, 135 m from the base — a `restart sweep: 1 stranded` line on
+that boot is expected and correct. StormTest and Don's Gale `Default` profile carry the same DLL, rc2's code. Every
+session on Don's side is on Windows: builds, deploys and the log watch run from a shell, the game itself needs him
+at the screen, so the fixes listed above get seen when he next sits down, not before.
 
 ### The morning of 2026-09-07, after the rc1 merge (history)
 

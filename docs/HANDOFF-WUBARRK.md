@@ -1,27 +1,30 @@
-# Handoff for Wu'barrk — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 night
+# Handoff for Wu'barrk — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-07 night, after the rc2 cut
 
 The repo is scaffolded, builds clean, tests pass, and boots headless on a dedicated server. This is
 what it is, what of yours is already in it, what we need from you, and exactly where each thing goes.
 
-## 0. Where things stand, 2026-09-07 night, after the first six visits
+## 0. Where things stand, 2026-09-07 night, after nine visits and the rc2 cut
 
 **Your list is `docs/TODO.md` section 2**; when this file and that one disagree, TODO wins. This morning's
 state is kept below as history.
 
-`main` is at e4ee83c: 0 warnings, **1701 checks**, the day's PRs #24 to #53 all in `CHANGELOG.md` "0.1.0-rc2".
+`main` is at 67201c5 (code 84de90a; the rc2 tag is on e4ee83c): 0 warnings, **1701 checks**, the day's PRs #24 to #53 all in `CHANGELOG.md` "0.1.0-rc2".
 **`v0.1.0-rc2` is cut** from that commit (2026-09-07 evening, at the owner's word): the store zip and the bundle
 attached, a pre-release, uploaded to no store. **The rc1 tag is marked superseded and still must not reach a
 tester**: it carries F1, and the ServerSync gate does not tell rc1 from rc2 (both are 0.1.0), so every copy is
 replaced by hand. Your rc1 note (issue #23) is closed. `Assets/valkyriescargo_kit` is attached to both releases,
 so Don's builds carry Ingvar.
 
-**Six visits flew today on Don's Windows client against StormTest**, twenty deals, no exception. Ingvar landed in
-his own body every time, within a second of the simulation; the terminal opened on him; the prices, the Fair
-Market Act, the drift and the purse carry all matched the design to the coin; a relog mid-visit handed him to the
-new client still trading; the export wrote its trader and visit rows. The record is
-`docs/proofs/2026-09-07-stormtest-session.md`. Not yet watched: whether she lets go over the drop point, the
-vanish, the callout bubble, the hover prompt, and the six merged fixes that nothing in six visits exercised
-(`docs/AUDIT-STORMTEST-2026-09-07.md` §5 says what would, one line each).
+**Nine visits flew today on Don's Windows client against StormTest**: six in the morning, twenty deals, no
+exception; three in the evening on the audit's fixes. Ingvar landed in his own body every time, within a second
+of the simulation; the terminal opened on him; the prices, the Fair Market Act, the drift and the purse carry all
+matched the design to the coin; a relog mid-visit handed him to the new client still trading; the export wrote its
+trader and visit rows. The record is `docs/proofs/2026-09-07-stormtest-session.md`, the evening's log beside it.
+The evening found two things: **he walked backward on every visit** — a half-turn at the attach, fixed as the
+client knob `Client.BodyYawDegrees` (default 180, PR #53), the walk forward not yet seen — and **visit 9, on the
+build with all four fixes, was a no-show** (item 1 below). Not yet watched: whether she lets go over the drop
+point, the vanish, the callout bubble, the hover prompt, and every fix merged since the audit (its six, then D1 to
+D4 and the half-turn; `docs/AUDIT-STORMTEST-2026-09-07.md` §5 says what would exercise each, one line each).
 
 **The walk-up, and what the audit found (`docs/AUDIT-STORMTEST-2026-09-07.md`, read §0):**
 1. **He reached Don on every visit — but never on the first attempt.** The first approach after the drop gives
@@ -29,8 +32,13 @@ vanish, the callout bubble, the hover prompt, and the six merged fixes that noth
    it straight into `_state`, and that path skips the reset `Decide` does, so F5's scaled budget has never run on
    a machine. On visits 4–6 the give-up came a minute or two late with him far from the pilot, which the code
    alone does not explain; the diff in §1.4 adds the one log line that settles it. **Built by you as PR #50 and
-   merged the same evening.** The next visit says whether the first approach reaches; the `via the ZDO` line
-   answers the late give-ups (they came ≥38 s and ≥20 s after the drops by the client log's own timestamps).
+   merged the same evening.** Your line has printed once, on visit 9, and it settled the late give-ups: **the
+   pilot's client loses ownership of the merchant during the carry.** At the drop it read `carried -> approaching
+   via the ZDO, 16.96 s after waking; carrier none, 135.7 m from the player, watching, grounded yes; walk-up
+   budget 90 s` — the entry reset works (90 s, not 20), but the client was `watching`, so no Decide ran and he
+   never woke. **The fix is yours and is not in rc2:** keep the pilot as owner through the carry
+   (`ClaimOwnership` in `Reassert` while `Pinned`, or refuse the release until owned) and print the owner uid in
+   the line. Who takes ownership, and when, is not known yet. The evidence and both asks are on #50 (00:13).
 2. **The visit-end sweep reports a stranded merchant at every end.** The reclaim works; `DestroyZDO` only queues,
    and the sweep runs in the same call. §2: sweep one tick later. **Built by you as PR #51 and merged**; a clean
    end now prints `merchant and bird reclaimed …` and no sweep line at all.
@@ -50,9 +58,15 @@ probe tool against it within the hour** and tells you which probes moved; the co
 untracked (release assets), the catalogue verbs, the two drift knobs (Wares never, Wants three days), ghost mode,
 the load-bearing set. **Still his, not ours:** the client-asserted comfort numbers, reconfirm versus teardown.
 
-**From you, in order:** ~~the walk-up, the sweep, your TODO §2~~ done (#50, #51, #52, merged 16:17); the animator
-parameter names and item 23 on your server; ~~the three rc1 things in issue #23~~ closed with rc2; and one author name
-on your commits (today's came as `t`, `trial` and one merge authored as the model).
+**From you, in order:** **the ownership fix during the carry** (item 1; the next cut waits on it) with the owner
+uid in the line; ~~the walk-up, the sweep, your TODO §2~~ done (#50, #51, #52, merged 16:17); the animator
+parameter names and item 23 on your server; ~~the three rc1 things in issue #23~~ closed with rc2; and one author
+name on your commits (today's came as `t`, `trial` and one merge authored as the model).
+
+**Don's rig tonight:** StormTest is down, stopped with visit 9 open and the `session 9` row then removed from the
+sidecar (backup kept), so the next boot's sweep destroys the stranded merchant; a `restart sweep: 1 stranded` line
+on that boot is expected. StormTest and his Gale `Default` profile carry rc2's code. The four fixes and the
+half-turn get seen when he next sits at the screen.
 
 ### The morning of 2026-09-07, after the rc1 merge (history)
 
