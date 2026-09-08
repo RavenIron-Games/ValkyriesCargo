@@ -374,7 +374,7 @@ or DESIGN §0). Do not reason from a member's name.
 ## 7. The contract you code against (PR #1, `docs/WORKSPLIT.md` §2)
 
 - The terminal renders `CargoRpc.Market` / `CargoRpc.Visit` and **never computes a price**.
-- It sends a `Deal` (wanted line, offered lines, coins, the unit prices the player saw) through
+- It sends a `Deal` (wanted lines, offered lines, coins, the unit prices the player saw) through
   `CargoRpc.Send` and mutates the inventory **only** inside `onAnswer` when `Ok`, by `ItemsToAdd`,
   `ItemsToRemove`, `CoinsDelta`. `price_changed` carries the whole new market; policy is reconfirm.
 - `CargoRpc.UseDemo(true)` gives a full in-process market so the window is buildable with no world;

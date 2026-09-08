@@ -486,3 +486,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       on visit 21, and the client's ServerSync line came 8 times over the whole visit instead of every 2 s. Still
       unseen: the terminal BUTTON path (the "Sending him off" wait, the farewell, `terminal closed: sent him off`)
       and a refusal on a screen (needs a modded client or a stale visit).
+- [ ] **`a/multi-wanted` — more than one ware per deal, Confirm lit only when the deal can go (2026-09-08 evening,
+      1924 checks).** PR open, unseen. Proof: stage two wares, the button lights, confirm → server `deal … sold N X
+      at a, sold M Y at b`; stage more than the purse covers → the button stays dim with `Your purse is lighter than
+      that.` beside the balance. Both sides need the DLL; a client behind can still trade one ware.

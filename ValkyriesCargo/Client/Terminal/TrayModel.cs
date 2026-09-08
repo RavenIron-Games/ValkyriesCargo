@@ -24,29 +24,37 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
     /// it copies them from the MarketSnapshot it is refreshed with, and it sends the unit price the
     /// player is looking at NOW (WORKSPLIT §2). PURE: the window feeds it snapshots, counts and answers.
     /// There is no pay mode (removed 2026-09-08, the playtest's item 5): the tray is always what the player
-    /// gets and what they give, and the one balance line says who pays whom the difference.
+    /// gets and what they give, and the one balance line says who pays whom the difference. Since the same
+    /// evening the GET side is a list too (the owner's ask: more than one ware per deal): one line per ware,
+    /// up to MaxWantedLines, the price their sum; `Wanted` is the first of them, kept for the code and the
+    /// harness that grew up with one.
     /// </summary>
     public sealed class TrayModel
     {
         public const int MaxOfferedLines = 8;
+        public const int MaxWantedLines = 8;
 
         /// <summary>The window's own refusals, beside the server's DealReason tokens.</summary>
         public const string MissingItems = "missing_items";
         /// <summary>`Server.EnableBarter` is off and the tray holds goods beside a ware: coins only for his wares there.</summary>
         public const string BarterOff = "barter_off";
 
+        private readonly List<TrayLine> _wanted = new List<TrayLine>();
         private readonly List<TrayLine> _offered = new List<TrayLine>();
 
-        public TrayLine Wanted { get; private set; }
+        /// <summary>Every ware staged to buy, in the order they were staged.</summary>
+        public IReadOnlyList<TrayLine> Wants => _wanted;
+        /// <summary>The first wanted line, or null when nothing is staged to buy.</summary>
+        public TrayLine Wanted => _wanted.Count > 0 ? _wanted[0] : null;
         public IReadOnlyList<TrayLine> Offered => _offered;
         /// <summary>The footer line: his last words, or why a confirm was stopped.</summary>
         public string Message = "";
-        public bool IsEmpty => Wanted == null && _offered.Count == 0;
+        public bool IsEmpty => _wanted.Count == 0 && _offered.Count == 0;
         public bool AnyAmber
         {
             get
             {
-                if (Wanted != null && Wanted.Amber) return true;
+                foreach (TrayLine l in _wanted) if (l.Amber) return true;
                 foreach (TrayLine l in _offered) if (l.Amber) return true;
                 return false;
             }
@@ -54,13 +62,21 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
 
         // ---- staging -----------------------------------------------------------------------------------
 
-        /// <summary>Pick a ware to buy: one wanted line per deal (the Deal primitive), clamped to his stock. False for a Want, a bare shelf, or a nonsense count.</summary>
+        /// <summary>
+        /// Pick a ware to buy: one line per ware, up to MaxWantedLines, each clamped to his stock. False for a
+        /// Want, a bare shelf, a nonsense count, or a tray with no room for another ware.
+        /// </summary>
         public bool StageBuy(MarketRow row, int count)
         {
             if (row == null || row.Kind != EntryKind.Ware || count < 1 || row.Stock < 1) return false;
-            if (Wanted != null && Wanted.Prefab == row.Prefab) Wanted.Count += count;
-            else Wanted = new TrayLine { Prefab = row.Prefab, Count = count, UnitPriceSeen = row.Buy, UnitPriceNow = row.Buy };
-            if (Wanted.Count > row.Stock) Wanted.Count = row.Stock;
+            TrayLine line = FindWanted(row.Prefab);
+            if (line == null)
+            {
+                if (_wanted.Count >= MaxWantedLines) return false;
+                line = new TrayLine { Prefab = row.Prefab, UnitPriceSeen = row.Buy, UnitPriceNow = row.Buy };
+                _wanted.Add(line);
+            }
+            line.Count = Math.Min(line.Count + count, row.Stock);
             return true;
         }
 
@@ -85,10 +101,11 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         public void Unstage(string prefab, int count)
         {
             if (count < 1) return;
-            if (Wanted != null && Wanted.Prefab == prefab)
+            TrayLine want = FindWanted(prefab);
+            if (want != null)
             {
-                Wanted.Count -= count;
-                if (Wanted.Count < 1) Wanted = null;
+                want.Count -= count;
+                if (want.Count < 1) _wanted.Remove(want);
                 return;
             }
             TrayLine line = FindOffered(prefab);
@@ -99,7 +116,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
 
         /// <summary>
         /// The count box (2026-09-08, the playtest's item 4): set a staged line to exactly `count`, clamped the
-        /// way staging clamps (his stock for the wanted line; what the player carries and the room on his shelf
+        /// way staging clamps (his stock for a wanted line; what the player carries and the room on his shelf
         /// for an offer), never below 1. Returns the count the line ended at; 0 when there is no such line, or
         /// the row is gone (the line is dropped then, as Refresh would). A count below 1 leaves the line as it
         /// is: the box is empty while the player types, and the x button is how a line goes.
@@ -108,11 +125,12 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         {
             if (m == null || string.IsNullOrEmpty(prefab)) return 0;
             MarketRow r = m.Find(prefab);
-            if (Wanted != null && Wanted.Prefab == prefab)
+            TrayLine want = FindWanted(prefab);
+            if (want != null)
             {
-                if (r == null || r.Kind != EntryKind.Ware) { Wanted = null; return 0; }
-                if (count >= 1) Wanted.Count = Math.Max(1, Math.Min(count, r.Stock));
-                return Wanted.Count;
+                if (r == null || r.Kind != EntryKind.Ware) { _wanted.Remove(want); return 0; }
+                if (count >= 1) want.Count = Math.Max(1, Math.Min(count, r.Stock));
+                return want.Count;
             }
             TrayLine line = FindOffered(prefab);
             if (line == null) return 0;
@@ -126,20 +144,22 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         }
 
         /// <summary>
-        /// The "all" button: for the wanted line, as many as he has AND the player can pay for out of their
-        /// coins plus what the tray already offers (never below 1, so a player with no coins still sees the
-        /// coins_short refusal rather than an empty tray); for an offer, everything the player carries that
-        /// fits on his shelf. Returns the count the line ended at.
+        /// The "all" button: for a wanted line, as many as he has AND the player can pay for out of their
+        /// coins plus what the tray already offers, after the OTHER wanted lines are paid (never below 1, so a
+        /// player with no coins still sees the coins_short refusal rather than an empty tray); for an offer,
+        /// everything the player carries that fits on his shelf. Returns the count the line ended at.
         /// </summary>
         public int AllOf(MarketSnapshot m, string prefab, Func<string, int> has, int coins)
         {
             if (m == null || string.IsNullOrEmpty(prefab)) return 0;
             MarketRow r = m.Find(prefab);
             if (r == null) return 0;
-            if (Wanted != null && Wanted.Prefab == prefab)
+            TrayLine want = FindWanted(prefab);
+            if (want != null)
             {
-                long unit = Math.Max(1, Wanted.UnitPriceNow);
-                long afford = (Math.Max(0, coins) + OfferedValue) / unit;
+                long unit = Math.Max(1, want.UnitPriceNow);
+                long others = Price - want.ValueNow;
+                long afford = (Math.Max(0, coins) + OfferedValue - others) / unit;
                 int n = (int)Math.Max(1, Math.Min(r.Stock, Math.Min(int.MaxValue, afford)));
                 return SetCount(m, prefab, n, has);
             }
@@ -150,15 +170,22 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         /// <summary>Take a whole line out (the x button).</summary>
         public void Remove(string prefab)
         {
-            if (Wanted != null && Wanted.Prefab == prefab) { Wanted = null; return; }
+            TrayLine want = FindWanted(prefab);
+            if (want != null) { _wanted.Remove(want); return; }
             TrayLine line = FindOffered(prefab);
             if (line != null) _offered.Remove(line);
         }
 
         public void Clear()
         {
-            Wanted = null;
+            _wanted.Clear();
             _offered.Clear();
+        }
+
+        public TrayLine FindWanted(string prefab)
+        {
+            foreach (TrayLine l in _wanted) if (l.Prefab == prefab) return l;
+            return null;
         }
 
         public TrayLine FindOffered(string prefab)
@@ -173,10 +200,10 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         public void Refresh(MarketSnapshot m)
         {
             if (m == null) return;
-            if (Wanted != null)
+            for (int i = _wanted.Count - 1; i >= 0; i--)
             {
-                MarketRow r = m.Find(Wanted.Prefab);
-                if (r == null || r.Kind != EntryKind.Ware) Wanted = null; else Wanted.UnitPriceNow = r.Buy;
+                MarketRow r = m.Find(_wanted[i].Prefab);
+                if (r == null || r.Kind != EntryKind.Ware) _wanted.RemoveAt(i); else _wanted[i].UnitPriceNow = r.Buy;
             }
             for (int i = _offered.Count - 1; i >= 0; i--)
             {
@@ -185,8 +212,11 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             }
         }
 
-        /// <summary>What he charges for the wanted line, now.</summary>
-        public long Price => Wanted != null ? Wanted.ValueNow : 0;
+        /// <summary>What he charges for the wanted lines, now.</summary>
+        public long Price
+        {
+            get { long v = 0; foreach (TrayLine l in _wanted) v += l.ValueNow; return v; }
+        }
 
         /// <summary>What he pays for the offered goods, now.</summary>
         public long OfferedValue
@@ -213,12 +243,12 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         {
             if (IsEmpty) return DealReason.EmptyDeal;
             if (m == null) return DealReason.NotConnected;
-            if (!barter && Wanted != null && _offered.Count > 0) return BarterOff;
-            if (Wanted != null)
+            if (!barter && _wanted.Count > 0 && _offered.Count > 0) return BarterOff;
+            foreach (TrayLine l in _wanted)
             {
-                MarketRow r = m.Find(Wanted.Prefab);
+                MarketRow r = m.Find(l.Prefab);
                 if (r == null || r.Kind != EntryKind.Ware) return DealReason.UnknownItem;
-                if (r.Stock < Wanted.Count) return DealReason.SoldOut;
+                if (r.Stock < l.Count) return DealReason.SoldOut;
             }
             foreach (TrayLine l in _offered)
             {
@@ -251,10 +281,10 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         public Deal Build(int visitId)
         {
             var d = new Deal { VisitId = visitId, Nonce = Deal.NewNonce() };
-            if (Wanted != null)
+            foreach (TrayLine l in _wanted)
             {
-                Wanted.UnitPriceSeen = Wanted.UnitPriceNow;
-                d.Wanted = new DealLine { Prefab = Wanted.Prefab, Count = Wanted.Count, UnitPriceSeen = Wanted.UnitPriceNow };
+                l.UnitPriceSeen = l.UnitPriceNow;
+                d.Wants.Add(new DealLine { Prefab = l.Prefab, Count = l.Count, UnitPriceSeen = l.UnitPriceNow });
             }
             foreach (TrayLine l in _offered)
             {
@@ -267,17 +297,17 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
 
         /// <summary>
         /// "Cover it with my goods" (design 3.4's barter assist): fill the offered side from the player's goods,
-        /// highest of his prices first, until it covers the wanted line; the change comes back in coins. Returns
+        /// highest of his prices first, until it covers the wanted lines; the change comes back in coins. Returns
         /// how many lines were added or grown.
         /// </summary>
         public int AutoFill(MarketSnapshot m, Func<string, int> has)
         {
-            if (m == null || Wanted == null || has == null) return 0;
+            if (m == null || _wanted.Count == 0 || has == null) return 0;
             var rows = new List<MarketRow>();
             foreach (MarketRow r in m.Rows)
             {
                 if (r.Sell < 1 || r.Max - r.Stock < 1) continue;
-                if (Wanted != null && r.Prefab == Wanted.Prefab) continue;
+                if (FindWanted(r.Prefab) != null) continue;
                 if (has(r.Prefab) < 1) continue;
                 rows.Add(r);
             }
