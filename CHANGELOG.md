@@ -26,7 +26,7 @@ a settled one; **the owner's word on 2026-09-08 after the day's five merges: no 
 Entries are in build order, except the five sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
 
-### Since 0.1.0-rc2 — the same night
+### 0.1.0-rc3 — cut 2026-09-08 evening, after the two-client session (PRs #54 to #68); a pre-release, uploaded to no store
 
 - **D5, the ownership loss during the carry (PR #54, Track B, 1718).** `HoldTheCarry` claims the merchant back
   every physics step while he hangs from the talons, on the pilot's client only (gated on owning the bird, which

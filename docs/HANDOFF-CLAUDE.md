@@ -17,7 +17,7 @@ that one disagree, that one wins. The subsections below this one are the day's e
 **Where main is.** `1dcf3ac` (docs) on `55508d6` (code, PR #64): 0 warnings, **1885/1885 off-game checks**. Merged
 today at the owner's word, in build order: #57 the rotating shelf (762df89), #58 the item value table (824f874),
 #60 the terminal (05da13e), #61 the busy hold and the hover localise (da72e00), #62 the backpack shelf half
-(43149bb), #63 the vanish hide (c81fbea), #64 the dismiss (55508d6). `CHANGELOG.md` "Since 0.1.0-rc2" carries
+(43149bb), #63 the vanish hide (c81fbea), #64 the dismiss (55508d6). `CHANGELOG.md` "0.1.0-rc3" carries
 each with its check count. **No open PR.** Issue #59 is Wu'barrk's list. **No release** — the owner's word after
 the merges and again at the close ("im happy"): `v0.1.0-rc2` stands as the last cut, rc1 must not reach a tester.
 Lesson of the day, kept in CLAUDE.md: `gh pr merge --delete-branch` on a base branch CLOSES the PRs stacked on it;
