@@ -58,6 +58,7 @@ namespace RavenIron.ValkyriesCargo.Server
         /// block clamp (PR #8's review). One author, one number, no second copy of the maths.
         /// </summary>
         public static readonly int TurnHash = Keys.Turn.GetStableHashCode();        // Vector3: the descent waypoint
+        public static readonly int AwayHash = Keys.Away.GetStableHashCode();        // Vector3: where the empty bird leaves to
         // The merchant.
         public static readonly int IngvarHash = Keys.Ingvar.GetStableHashCode();    // int visitId: this is Ingvar
         public static readonly int SeedHash = Keys.Seed.GetStableHashCode();        // int: his lines and his bearing
@@ -126,7 +127,7 @@ namespace RavenIron.ValkyriesCargo.Server
 
                 FlightPlan.Plan plan = FlightPlan.Make(px, py, pz, seed, activeArea,
                     Clamp(ModConfig.FlightStartDistance, 90f, 24f, 400f),
-                    Clamp(ModConfig.FlightStartAltitude, 120f, 20f, 400f),
+                    Clamp(ModConfig.FlightStartAltitude, FlightPlan.DefaultStartAltitude, 20f, 400f),
                     Clamp(ModConfig.FlightDescentDistance, 50f, 0f, 200f),
                     FlightPlan.DropAltitude);
 
@@ -157,6 +158,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 var start = new Vector3(plan.StartX, plan.StartY, plan.StartZ);
                 var turn = new Vector3(plan.DescentX, plan.DescentY, plan.DescentZ);
                 var drop = new Vector3(plan.DropX, plan.DropY, plan.DropZ);
+                var away = new Vector3(plan.AwayX, plan.AwayY, plan.AwayZ);
                 Quaternion look = LookAlong(plan.DropX - plan.StartX, plan.DropZ - plan.StartZ);
 
                 ZDO bird = null;
@@ -173,6 +175,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     bird.Set(CargoHash, visitId);
                     bird.Set(TargetHash, drop);
                     bird.Set(TurnHash, turn);
+                    bird.Set(AwayHash, away);
                     bird.Set(DroppedHash, false);
                     bird.SetOwner(pilotUid);               // LAST: after this the ZDO is the pilot's to write
                 }
@@ -272,7 +275,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     // authored point rather than Vector3.zero -- a missing key is a bird that never got
                     // its plan, not a drop at the world origin -- and refuse a value that has moved.
                     Vector3 at = bird.GetVec3(TargetHash, AuthoredDrop);
-                    if (!FlightPlan.DropAccepted(at.x, at.y, at.z, AuthoredDrop.x, AuthoredDrop.y, AuthoredDrop.z))
+                    if (!FlightPlan.DropAcceptedChasing(at.x, at.y, at.z, AuthoredDrop.x, AuthoredDrop.y, AuthoredDrop.z))
                     {
                         if (_liars++ < 3)
                             ValkyriesCargo.Log.LogWarning("visit #" + session.VisitId + ": the pilot reported a drop at (" +

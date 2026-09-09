@@ -164,3 +164,81 @@ readable once the one before it is clean:
 And keep a Blender pass available. Two of the five (§2, §6) were fixable at source in about a minute
 each, and a source fix costs no runtime code and helps every consumer of the asset. The other three
 could not be, so the loader carries them.
+
+---
+
+## 8. Attaching anything to a bone: `TransformVector` applies SCALE, and Valheim's bone chains are not at 1
+
+*Added 2026-09-09, from Valkyrie's Cargo. Two bugs, one family, and both reported themselves as
+perfectly healthy in every log line the mod already printed. They each cost a live session.*
+
+### 8a. The 50-metre carry
+
+A merchant was pinned to the Valkyrie's talon for a 90 m flight, using the prefab's own
+`m_attachOffset` of `(0, 0.30, 0.40)` — half a metre:
+
+```csharp
+Vector3 at = _pin.position - _pin.TransformVector(_pinOffset);   // WRONG
+```
+
+Every witness reported an **empty bird**. Every log line said the carry was fine: `awake as carried`,
+`ours`, `grounded no` at the drop, no exception. A per-second diagnostic printing his position against
+the pin's settled it in two lines:
+
+```
+carry 1: him (-334.1, 27.4, 40.5), pin (-330.4, 77.1, 36.7), off-pin 50 m, visible 22/24 renderer(s)
+carry 2: ...                                                  off-pin 50.0000038 m
+```
+
+**A constant is the whole tell.** Gravity beating a pin accelerates and the gap grows; a fixed offset
+does not move. He was owned, pinned, visible and not falling — fifty metres straight down, off the
+bottom of the screen.
+
+**`Transform.TransformVector` applies the transform's SCALE as well as its rotation.**
+`Transform.TransformDirection` applies rotation only. Valheim's creature attach points hang deep in an
+armature (`valkyrie2/Armature/.../r_foot/Attach`) whose chain is **not at unit scale** — here about
+100× — so half a metre became fifty.
+
+> **Rule:** an offset already expressed in world metres wants `TransformDirection`. Reach for
+> `TransformVector` only when the offset is genuinely in the target's local units and you *want* its
+> scale. On a bone, you almost never do.
+
+### 8b. A baked `attach_skin` prop lands in CHARACTER-ROOT space, not bone space
+
+Hanging another mod's backpack (Smoothbrain's Backpacks, `bp_explorer`) on a custom character's spine
+bone: the parts under `attach_skin/Mesh` are `SkinnedMeshRenderer`s rigged to **Valheim's** humanoid
+skeleton. `SkinnedMeshRenderer.BakeMesh` returns vertices **in the renderer's own space**, which for
+attach_skin equipment is the *character root* — geometry positioned as if on a standing player.
+
+Parent that to a chest-height bone with `localScale = 1` and `localPosition = 0` and it lands at
+`bone + (the pack's own chest-height offset)`. Measured on the real asset:
+
+```
+re-centred from (0, 47.921, 0.007) (the bake is in character-root space), size (0.667, 1.205, 0.758) m
+```
+
+**Forty-eight metres up** — the same non-unit scale factor as 8a, applied to the pack's own offset. The
+attach reported `18 part(s), 11206 tris` and looked completely healthy.
+
+> **Rule:** after baking, measure the combined bounds of every part (through each part's full local
+> **T, R and S** — a scaled or turned part pulls the centre off) and shift them so the holder's origin
+> is the prop's own centre. Then a configured offset is a nudge from something sensible instead of a
+> hunt, and it works on any rig. **Log the measured centre**, so the next wrong place names itself.
+
+### 8c. A `.glb`'s armature scale is not the runtime's
+
+`models/ingvar.glb` carries `Armature` at **scale 0.01** — the rig is authored in centimetres. That is
+real in the file and it is *not* what the runtime sees: Unity's FBX import normalises it into the bake,
+and the live rig read `bone scale 1, world scale 1`.
+
+**A first diagnosis built on the glb's number was published and was wrong.** Reading the source asset
+is not reading the runtime. If a placement is wrong, print `Transform.lossyScale` from the running game
+before theorising about the exporter.
+
+### What none of this could have been caught by
+
+A clean build, a green off-game harness, and every existing log line. All three of these are a Unity
+transform API doing something correct that the caller did not mean, on an asset whose scale nobody had
+reason to check. **The only thing that found them was a diagnostic that printed the two positions and
+the distance between them** — the numbers that are different for each competing explanation. Write that
+before writing the third guess.

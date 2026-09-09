@@ -294,6 +294,10 @@ lands on the next idle tick like any other shelf change. The scaling is pure (`S
 fixed shelf, the product is capped at `Shelf.MaxSize` (200) and, by the roll, at the catalogue, and the scaled
 shelf for a period is a superset of the unscaled one (the swaps are sequential), so the mod arriving mid-period
 swaps nothing out. On the shipped 72 entries ×4 is the whole catalogue and ×3 is 60 of it. The other half of
-the add-on — a backpack on Ingvar's body — is a bake, and Wu'barrk's. The log says what it found at director up
+the add-on — a backpack on Ingvar's body — is Wu'barrk's, and turned out NOT to be a bake: the mod's own
+`bp_explorer` prefab is in ObjectDB wherever it is loaded, so `Client/BackpackProp.cs` bakes its skinned parts
+to static meshes at bind pose and hangs them on a bone of Ingvar's own rig (`Core/Knapsack.cs` decides which,
+and reads the three placement knobs). He wears the players' own pack on a server that has the mod and nothing
+at all on one that has not. The log says what it found at director up
 (`backpack mod: org.bepinex.plugins.backpacks 1.3.8 loaded; shelf x2 (Server.BackpackShelfMultiplier)` or
 `none (…); shelf x1`) and `cargo status` repeats it.

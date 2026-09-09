@@ -453,6 +453,10 @@ namespace RavenIron.ValkyriesCargo.Patches
                           BodyLoader.BoundsWords() + "; ground offset " + F(BodyLoader.GroundOffset, "0.###") +
                           " m (the BIND-POSE box, an observation only -- the posed-mesh lift is what places him; see `cargo body preview`)");
 
+            // The backpack add-on's body half (2026-09-08): what the last attach found, which is the only
+            // way to tell "the mod is not here" from "the knobs put it somewhere you cannot see".
+            Say(args, "  backpack: " + (BackpackProp.Worn ? "on" : "none") + " - " + BackpackProp.Detail);
+
             IngvarBody p = BodyLoader.Preview;
             Say(args, "  preview: " + (p == null ? "none (cargo body preview)"
                 : "up, graph " + (p.GraphLive ? "live" : "DEAD") + ", " + p.ClipsBound + " clip(s) bound, speed " +

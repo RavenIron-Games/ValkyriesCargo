@@ -46,6 +46,7 @@ namespace ValkyriesCargo.Tests
             MarketStateTests();
             MarketCatalogueSwapTests();
             ShelfTests();
+            KnapsackTests();
             NonceRingTests();
             SchedulerTests();
             VisitClockTests();
@@ -1680,6 +1681,103 @@ namespace ValkyriesCargo.Tests
             var pool = new List<string>();
             foreach (MarketItem it in m.Items) pool.Add(it.Prefab);
             return pool;
+        }
+
+        /// <summary>
+        /// The backpack add-on's body half (2026-09-08). Ingvar's rig and Smoothbrain's pack agree on nothing,
+        /// so every number that puts one on the other is a knob - and a knob typed wrong must leave him where
+        /// the default put him, never at NaN, which in Unity takes the whole transform with it.
+        /// </summary>
+        private static void KnapsackTests()
+        {
+            Section("Knapsack: the bone's own scale, undone (the invisible pack, 2026-09-09)");
+            {
+                // The first live run reported a perfectly attached pack - "18 part(s), 11206 tris" - and
+                // put nothing on screen. models/ingvar.glb carries Armature at scale 0.01: the rig is
+                // authored in centimetres, so every bone under it has a world scale of a hundredth and a
+                // prop parented there with localScale 1 renders at 1/100th size. Five millimetres of
+                // backpack. The knobs are therefore declared in WORLD units and converted here.
+                const float RigScale = 0.01f;                  // the real number off ingvar.glb
+
+                Check(Math.Abs(Knapsack.Uncompress(RigScale) - 100f) < 0.001f,
+                      "a bone at 0.01 is undone by a factor of 100");
+                Check(Math.Abs(Knapsack.Uncompress(1f) - 1f) < 1e-6f,
+                      "a bone already at world scale needs no compensation");
+
+                // A scale of 1 must come out the pack's own authored size in the WORLD.
+                float local = Knapsack.LocalScale(1f, RigScale);
+                Check(Math.Abs(local * RigScale - 1f) < 0.001f,
+                      "scale 1 on a 0.01 rig lands at world scale 1, not 0.01");
+                Check(Math.Abs(Knapsack.LocalScale(0.75f, RigScale) * RigScale - 0.75f) < 0.001f,
+                      "scale 0.75 lands at world 0.75 whatever the rig is authored at");
+
+                // The clamp still owns the knob itself: compensation must not smuggle a value past it.
+                Check(Math.Abs(Knapsack.LocalScale(999f, RigScale) * RigScale - Knapsack.MaxScale) < 0.001f,
+                      "an absurd scale is still clamped, then compensated");
+
+                // Offsets are metres, so they scale the same way.
+                float ox = 0f, oy = 0.2f, oz = -0.15f;
+                Knapsack.LocalOffset(RigScale, ref ox, ref oy, ref oz);
+                Check(Math.Abs(oy * RigScale - 0.2f) < 0.0001f && Math.Abs(oz * RigScale - (-0.15f)) < 0.0001f,
+                      "an offset of 0.2 m really moves it 0.2 m on a 0.01 rig");
+
+                // A rig nobody can hang anything on must not produce an infinity in a transform.
+                Check(Knapsack.Uncompress(0f) == 1f, "a zero bone scale falls back to 1, never divides");
+                Check(Knapsack.Uncompress(-1f) == 1f, "a negative bone scale falls back to 1");
+                Check(Knapsack.Uncompress(float.NaN) == 1f, "NaN falls back to 1 (Unity propagates NaN through a transform)");
+                Check(Knapsack.Uncompress(float.PositiveInfinity) == 1f, "infinity falls back to 1");
+            }
+
+            Section("Knapsack (the backpack add-on's body half, 2026-09-08)");
+
+            // Ingvar's own rig, read off models/ingvar.glb: 24 joints, his spine spelled Spine/Spine01/Spine02.
+            var ingvar = new List<string> {
+                "LeftToeBase","LeftFoot","LeftLeg","LeftUpLeg","RightToeBase","RightFoot","RightLeg","RightUpLeg",
+                "LeftHand","LeftForeArm","LeftArm","LeftShoulder","head_end","headfront","Head","neck",
+                "RightHand","RightForeArm","RightArm","RightShoulder","Spine","Spine01","Spine02","Hips" };
+
+            Equal("Spine02", Knapsack.ResolveBone(ingvar, "Spine02"), "the shipped bake's own upper spine is found by name");
+            Equal("Spine02", Knapsack.ResolveBone(ingvar, ""), "an empty knob falls straight to the best fallback");
+            Equal("Spine02", Knapsack.ResolveBone(ingvar, "   "), "so does a knob that is only whitespace");
+            Equal("Head", Knapsack.ResolveBone(ingvar, "head"), "the match is case-insensitive: a person types the knob, an exporter picked the spelling");
+            Equal("Spine02", Knapsack.ResolveBone(ingvar, "NoSuchBone"),
+                  "a bone this rig has not got falls back rather than dropping the pack at his feet");
+
+            // A re-bake, or another mod's body, may spell the spine Valheim's way or not have one at all.
+            var valheimish = new List<string> { "Hips", "Spine", "Spine1", "Spine2", "Neck", "Head" };
+            Equal("Spine2", Knapsack.ResolveBone(valheimish, "Spine02"), "Valheim's own spelling is in the fallback chain");
+            Equal("Hips", Knapsack.ResolveBone(new List<string> { "Hips", "Head" }, "Spine02"),
+                  "Hips is the last resort, because every humanoid rig has one");
+            Equal("", Knapsack.ResolveBone(new List<string> { "root", "camera" }, "Spine02"),
+                  "a rig with no spine and no hips answers nothing, so the caller can say so instead of guessing");
+            Equal("", Knapsack.ResolveBone(new List<string>(), "Spine02"), "an empty rig answers nothing");
+            Equal("", Knapsack.ResolveBone(null, "Spine02"), "so does no rig at all");
+
+            float x, y, z;
+            Check(Knapsack.Triple("0.1,-0.05,0.2", out x, out y, out z), "a well-formed offset parses");
+            Check(Math.Abs(x - 0.1f) < 1e-6f && Math.Abs(y + 0.05f) < 1e-6f && Math.Abs(z - 0.2f) < 1e-6f,
+                  "and parses to the three numbers that were typed");
+            Check(Knapsack.Triple(" 1 , 2 , 3 ", out x, out y, out z), "whitespace round the components is allowed");
+            Check(x == 1f && y == 2f && z == 3f, "and does not change the numbers");
+            Check(!Knapsack.Triple("1,2", out x, out y, out z), "two components is not an offset");
+            Check(x == 0f && y == 0f && z == 0f, "and a refused parse leaves zeros, not the half it managed");
+            Check(!Knapsack.Triple("1,fish,3", out x, out y, out z), "a component that is not a number is refused");
+            Check(y == 0f, "and that component reads 0 while the others keep their values");
+            Check(x == 1f && z == 3f, "the usable components survive a partial refusal");
+            Check(!Knapsack.Triple("", out x, out y, out z), "an empty knob is refused");
+            Check(!Knapsack.Triple(null, out x, out y, out z), "so is no knob at all");
+            Check(!Knapsack.Triple("NaN,0,0", out x, out y, out z), "NaN is refused: Unity propagates it through the transform");
+            Check(x == 0f, "and reads 0 instead");
+            Check(!Knapsack.Triple("Infinity,0,0", out x, out y, out z), "so is an infinity");
+
+            Equal(1f, Knapsack.Scale(1f), "the authored size passes through");
+            Equal(0.75f, Knapsack.Scale(0.75f), "so does a sensible shrink");
+            Equal(1f, Knapsack.Scale(0f), "zero reads as 1 rather than collapsing the pack to a point");
+            Equal(1f, Knapsack.Scale(-2f), "a negative reads as 1 rather than inverting its normals");
+            Equal(1f, Knapsack.Scale(float.NaN), "NaN reads as 1");
+            Equal(1f, Knapsack.Scale(float.PositiveInfinity), "an infinity reads as 1");
+            Equal(Knapsack.MaxScale, Knapsack.Scale(1000f), "a huge knob is clamped, not honoured");
+            Equal(Knapsack.MinScale, Knapsack.Scale(0.0001f), "so is a tiny one");
         }
 
         private static void ShelfTests()
@@ -3905,6 +4003,100 @@ namespace ValkyriesCargo.Tests
                 Check(!FlightPlan.Reachable(mid.StartX, mid.StartZ, mid.DropX - mid.StartX, mid.DropZ - mid.StartZ,
                                             swungX, swungZ, FlightPlan.TurningRadius(20f, 20f)),
                       "the ORIGINAL swung waypoint is inside the prefab bird's turning circle: unreachable, which is why it orbited for 180 s");
+            }
+
+            Section("FlightPlan: the inbound is watchable - you can see the Valkyrie holding him (2026-09-08)");
+            {
+                // "we need to see the val holding him". The old 120 m start over a ~77 m run put the
+                // bird 53 degrees above the horizon: to watch the carry you had to look nearly
+                // straight up, and by the time it entered a normal view cone it was letting go.
+                var f = FlightPlan.Make(0f, 30f, 0f, 4242, 2, 90f, FlightPlan.DefaultStartAltitude, 50f);
+                Check(f.Ok, "inbound: the reference plan is flyable at the shipped altitude");
+
+                double rx = f.StartX - f.DropX, rz = f.StartZ - f.DropZ;
+                double run = Math.Sqrt(rx * rx + rz * rz);
+                double rise = f.StartY - f.DropY;
+
+                // Elevation from the DROP (where the pilot is standing) to the bird's start point.
+                double elevation = Math.Atan2(rise, run) * 180.0 / Math.PI;
+                Check(elevation < 35.0,
+                      "the start sits inside a normal view cone (under 35 deg), not overhead");
+                Check(elevation > 10.0,
+                      "the start is still up in the sky, not skimming the ground");
+
+                // The glide from the start down to the release: a glide, not a stoop.
+                double slope = Math.Atan2(rise - FlightPlan.DropAltitude, run) * 180.0 / Math.PI;
+                Check(slope < 30.0, "the glide slope is a glide (under 30 deg), not a dive");
+
+                // Above the tree line the whole way, so he is a silhouette and not lost in canopy.
+                Check(f.DescentY - f.DropY > 20.0,
+                      "the descent waypoint is still clear of the tree line (>20 m over the drop)");
+
+                // The one it cannot buy back with distance: the block clamp caps the run.
+                Check(f.StartDistance <= 90f + 0.01f,
+                      "the run is still inside the pilot's active block, so altitude is the only lever");
+            }
+
+            Section("FlightPlan: the release chases the player, and the bound that has to move with it (2026-09-09)");
+            {
+                // "he should stay in the bird until he is 20 m from player". The release used to be a
+                // fixed point authored where the pilot stood at visit start; visit #3 let him go 41 m
+                // away because the player had walked while the bird was inbound.
+                Check(Math.Abs(FlightPlan.DropNearPlayer - 20f) < 0.001f,
+                      "the bird holds him until 20 m from the player");
+                Check(FlightPlan.DropNearPlayer > FlightPlan.DropDistanceMin,
+                      "the release radius is wider than the authored drop distance, so the chase is what decides");
+
+                // The P11 trust bound MUST widen with it or every honest chased drop is refused and the
+                // session records a point the merchant is not standing on.
+                Check(FlightPlan.DropChaseXZ > FlightPlan.DropNearPlayer + FlightPlan.DropDistanceMin,
+                      "the accepted drop region covers a legitimate chase");
+                Check(FlightPlan.DropChaseXZ > FlightPlan.DropToleranceXZ,
+                      "the chase bound is the wider of the two");
+                Check(!FlightPlan.DropAccepted(0f, 30f, 40f, 0f, 30f, 0f),
+                      "the STRICT check still refuses 40 m: the fixed-point contract is untouched");
+
+                // ...and it is still a bound, not an open door: a drop across the map is refused.
+                Check(FlightPlan.DropAcceptedChasing(0f, 30f, 0f, 0f, 30f, 0f),
+                      "a drop exactly on the authored point is accepted");
+                Check(FlightPlan.DropAcceptedChasing(0f, 30f, 40f, 0f, 30f, 0f),
+                      "a drop 40 m along the approach - a real chase - is accepted");
+                Check(!FlightPlan.DropAcceptedChasing(0f, 30f, 500f, 0f, 30f, 0f),
+                      "a drop 500 m away is still refused");
+                Check(!FlightPlan.DropAcceptedChasing(0f, 500f, 0f, 0f, 30f, 0f),
+                      "the altitude bound is untouched by the chase");
+            }
+
+            Section("FlightPlan: the departure, so the empty bird is not the whole show (2026-09-08)");
+            {
+                // The complaint: "we see the bird, but he drops the dwarf way too soon, so we almost
+                // always see an empty bird". Nothing dropped early - Don's StormTest log for visits 25
+                // and 26 has the drop landing on the authored X and Z to seven figures. The departure
+                // was the problem: authored at `pilot - dir * (startDistance * 2)` and still at the
+                // full glide altitude, it was ~194 m and a climb back to 120 m, ~24 s at the shipped
+                // 8 m/s, against a ~17 s carry. The empty leg outlasted the carrying one.
+                var f = FlightPlan.Make(0f, 30f, 0f, 4242, 2, 90f, 120f, 50f);
+                Check(f.Ok, "departure: the reference plan is flyable");
+
+                double awx = f.AwayX - f.DropX, awz = f.AwayZ - f.DropZ;
+                double awayRun = Math.Sqrt(awx * awx + awz * awz);
+                Check(Math.Abs(awayRun - FlightPlan.DepartDistance) < 0.01,
+                      "the departure leaves DepartDistance past the drop, not twice the start distance");
+
+                // Direction: continuing along the approach, never doubling back over the pilot. The
+                // dot of (drop - start) with (away - drop) is positive only if it carries on.
+                double fx = f.DropX - f.StartX, fz = f.DropZ - f.StartZ;
+                Check(fx * awx + fz * awz > 0.0,
+                      "the departure carries ON past the drop rather than reversing over the pilot");
+
+                double approachRun = Math.Sqrt(fx * fx + fz * fz);
+                Check(awayRun < approachRun,
+                      "the empty leg is SHORTER than the carrying approach (the ratio the complaint was about)");
+
+                Check(Math.Abs(f.AwayY - (f.DropY + FlightPlan.DropAltitude + FlightPlan.DepartClimb)) < 0.01,
+                      "the departure climbs DepartClimb above the drop, not back to the start altitude");
+                Check(f.AwayY < f.StartY,
+                      "the bird leaves lower than it arrived, so the climb is not the exit");
             }
 
             Section("FlightPlan: the shrink and the turn (design 3.2's active-block constraint)");

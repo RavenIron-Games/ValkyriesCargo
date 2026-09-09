@@ -1,0 +1,298 @@
+Mono path[0] = 'C:/Users/donfr/ValheimServers/StormTest/valheim_server_Data/Managed'
+Mono config path = 'C:/Users/donfr/ValheimServers/StormTest/MonoBleedingEdge/etc'
+Input System module state changed to: Initialized.
+[Physics::Module] Initialized fallback backend.
+[Physics::Module] Id: 0xdecafbad
+Initialize engine version: 6000.0.61f1 (74a0adb02c31)
+[Subsystems] Discovering subsystems at path C:/Users/donfr/ValheimServers/StormTest/valheim_server_Data/UnitySubsystems
+Forcing GfxDevice: Null
+GfxDevice: creating device client; kGfxThreadingModeNonThreaded
+NullGfxDevice:
+    Version:  NULL 1.0 [1.0]
+    Renderer: Null Device
+    Vendor:   Unity Technologies
+Begin MonoManager ReloadAssembly
+- Loaded All Assemblies, in  0.072 seconds
+- Finished resetting the current domain, in  0.001 seconds
+[Physics::Module] Selected backend.
+[Physics::Module] Name: PhysX
+[Physics::Module] Id: 0xf2b8ea05
+[Physics::Module] SDK Version: 4.1.2
+[Physics::Module] Integration Version: 1.0.0
+[Physics::Module] Threading Mode: Multi-Threaded
+Microsoft Media Foundation video decoding to texture disabled: graphics device is Null, only Direct3D 11 and Direct3D 12 (only on desktop) are supported for hardware-accelerated video decoding.
+[Message:   BepInEx] BepInEx 5.4.23.3 - valheim_server (8/25/2026 4:48:05 PM)
+[Message:   BepInEx] User is running BepInExPack Valheim version 5.4.2333 from Thunderstore
+[Info   :   BepInEx] Running under Unity v6000.0.61.7643309
+[Info   :   BepInEx] CLR runtime version: 4.0.30319.42000
+[Info   :   BepInEx] Supports SRE: True
+[Info   :   BepInEx] System platform: Bits64, Windows
+[Message:   BepInEx] Preloader started
+[Info   :   BepInEx] Loaded 1 patcher method from [BepInEx.Preloader 5.4.23.3]
+[Info   :   BepInEx] 1 patcher plugin loaded
+[Info   :   BepInEx] Patching [UnityEngine.CoreModule] with [BepInEx.Chainloader]
+[Message:   BepInEx] Preloader finished
+OnGUI function detected on MonoBehaviour, but not called, because IMGUI module is stripped.
+OnGUI function detected on MonoBehaviour, but not called, because IMGUI module is stripped.
+OnGUI function detected on MonoBehaviour, but not called, because IMGUI module is stripped.
+UnloadTime: 0.258300 ms
+09/08/2026 17:17:15: Set background loading budget to Low
+09/08/2026 17:17:15: Loading first scene!
+09/08/2026 17:17:15: Preferences initialized! Activating first scene!
+UnloadTime: 0.077500 ms
+Unloading 4 Unused Serialized files (Serialized files now loaded: 9)
+09/08/2026 17:17:15: Can't return the graphics config when it's not loaded!
+09/08/2026 17:17:15: 
+09/08/2026 17:17:15: Starting to load scene:start.unity (169d7618616154c03be07e9ad3af5893)
+09/08/2026 17:17:15: Set background loading budget to Normal
+09/08/2026 17:17:15: Loaded localization file #0 - 'localization' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #1 - 'localization_extra' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #2 - 'heightmap_message' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #3 - 'localization_witch' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #4 - 'localization_ashlands' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #5 - 'localization_captions' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #6 - 'localization_combatupdate' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #7 - 'localization_celebrationupdate' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #0 - 'localization' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #1 - 'localization_extra' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #2 - 'heightmap_message' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #3 - 'localization_witch' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #4 - 'localization_ashlands' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #5 - 'localization_captions' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #6 - 'localization_combatupdate' language: 'English'
+09/08/2026 17:17:15: Loaded localization file #7 - 'localization_celebrationupdate' language: 'English'
+Unloading 170 unused Assets to reduce memory usage. Loaded Objects now: 2728.
+Total: 10.555500 ms (FindLiveObjects: 0.113600 ms CreateObjectMapping: 0.025200 ms MarkObjects: 10.279400 ms  DeleteObjects: 0.137000 ms)
+
+The referenced script on this Behaviour (Game Object '<null>') is missing!
+Unloading 2 Unused Serialized files (Serialized files now loaded: 18)
+09/08/2026 17:17:19: Set background loading budget to High
+09/08/2026 17:17:19: GPU Device: 0000:0000 (Unknown)
+09/08/2026 17:17:19: Set background loading budget to Low
+UnloadTime: 6.293000 ms
+HDR Render Texture not supported, disabling HDR on reflection probe.
+09/08/2026 17:17:19: Missing audio clip in music respawn
+OnGUI function detected on MonoBehaviour, but not called, because IMGUI module is stripped.
+09/08/2026 17:17:19: Setting -logfile to: C:\Users\donfr\ValheimServers\StormTest\stormtest-server.log
+09/08/2026 17:17:19: Setting -savedir to: C:\Users\donfr\ValheimServers\StormTest\saves
+09/08/2026 17:17:19: Get create world Dedicated
+09/08/2026 17:17:19: Using environment steamid 892970
+09/08/2026 17:17:19: Using steam APPID:892970
+Setting breakpad minidump AppID = 892970
+SteamInternal_SetMinidumpSteamID:  Caching Steam ID:  76561197960265728 [API loaded no]
+09/08/2026 17:17:19: Server ID 90071992547409920
+09/08/2026 17:17:19: Authentication:k_ESteamNetworkingAvailability_Waiting
+09/08/2026 17:17:19: Steam game server initialized
+09/08/2026 17:17:19: Valheim version: 0.221.12 (network version 36)
+09/08/2026 17:17:19: Worldgenerator version setup:2
+09/08/2026 17:17:19: Console: Valheim 0.221.12 (network version 36)
+09/08/2026 17:17:19: Console: 
+09/08/2026 17:17:19: Console: type "help" - for commands
+09/08/2026 17:17:19: Console: 
+09/08/2026 17:17:19: Render threading mode:SingleThreaded
+OnGUI function detected on MonoBehaviour, but not called, because IMGUI module is stripped.
+09/08/2026 17:17:19: Builder started
+09/08/2026 17:17:20: Failed to find item prefab FireFront_DousingBomb
+09/08/2026 17:17:20: Sending PlayFab login request (attempt 1)
+09/08/2026 17:17:20: Login postponed until ID has been set.
+The shader Hidden/Dof/DepthOfFieldHdr (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) is not supported on this platform!
+The image effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) has been disabled as it's not supported on the current platform.
+The shader Hidden/SunShaftsComposite (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) is not supported on this platform!
+The shader Hidden/SimpleClear (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) is not supported on this platform!
+The image effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) has been disabled as it's not supported on the current platform.
+09/08/2026 17:17:20: Starting music menu
+Unloading 93784 unused Assets to reduce memory usage. Loaded Objects now: 207837.
+Total: 99.054000 ms (FindLiveObjects: 14.790900 ms CreateObjectMapping: 18.358500 ms MarkObjects: 44.029100 ms  DeleteObjects: 21.875000 ms)
+
+The referenced script on this Behaviour (Game Object '<null>') is missing!
+The referenced script on this Behaviour (Game Object '<null>') is missing!
+Unloading 3 Unused Serialized files (Serialized files now loaded: 19)
+UnloadTime: 10.531400 ms
+HDR Render Texture not supported, disabling HDR on reflection probe.
+HDR Render Texture not supported, disabling HDR on reflection probe.
+09/08/2026 17:17:20: Audioman already exist, destroying self
+OnGUI function detected on MonoBehaviour, but not called, because IMGUI module is stripped.
+09/08/2026 17:17:20: Console: Valheim 0.221.12 (network version 36)
+09/08/2026 17:17:20: Console: 
+09/08/2026 17:17:20: Console: type "help" - for commands
+09/08/2026 17:17:20: Console: 
+09/08/2026 17:17:20: isModded: True
+09/08/2026 17:17:20: Zonesystem Awake 25361
+09/08/2026 17:17:20: DungeonDB Awake 25361
+09/08/2026 17:17:20: Worldgenerator version setup:2
+Registered 'com.raveniron.valkyriescargo ConfigSync' RPC - waiting for incoming connections
+Registered 'Backpacks ConfigSync' RPC - waiting for incoming connections
+Registered 'org.bepinex.plugins.backpacks ItemManager ConfigSync' RPC - waiting for incoming connections
+Registered 'wubarrk.yggdrasilsreckoning ConfigSync' RPC - waiting for incoming connections
+OnGUI function detected on MonoBehaviour, but not called, because IMGUI module is stripped.
+ArgumentNullException: Value cannot be null.
+Parameter name: shader
+  at UnityEngine.Bindings.ThrowHelper.ThrowArgumentNullException (System.Object obj, System.String parameterName) [0x00018] in <89f741081c874c65b780dbd6a0d8d33e>:0 
+  at UnityEngine.Material.CreateWithShader (UnityEngine.Material self, UnityEngine.Shader shader) [0x00003] in <89f741081c874c65b780dbd6a0d8d33e>:0 
+  at UnityEngine.Material..ctor (UnityEngine.Shader shader) [0x00008] in <89f741081c874c65b780dbd6a0d8d33e>:0 
+  at ShieldDomeImageEffect.Awake () [0x0000b] in <c366779df99d449da9e16b4e0a4d1800>:0 
+
+09/08/2026 17:17:22: Console: /w [text] - Whisper
+09/08/2026 17:17:22: Console: /s [text] - Shout
+09/08/2026 17:17:22: Console: /die - Kill yourself
+09/08/2026 17:17:22: Console: /resetspawn - Reset spawn point
+09/08/2026 17:17:22: Console: /[emote]
+09/08/2026 17:17:22: Console: Emotes: wave, sit, challenge, cheer, nonono, thumbsup, point, blowkiss, bow, cower, cry, despair, flex, comehere, headbang, kneel, laugh, roar, shrug, dance, relax, toast, rest, vibe, loveyou
+09/08/2026 17:17:22: Console: 
+Unloading 379 unused Assets to reduce memory usage. Loaded Objects now: 210654.
+Total: 73.814900 ms (FindLiveObjects: 9.820000 ms CreateObjectMapping: 11.038500 ms MarkObjects: 52.059600 ms  DeleteObjects: 0.895100 ms)
+
+09/08/2026 17:17:22: Zonesystem Start 25361
+09/08/2026 17:17:22: Added 3 locations, 0 vegetations, 0 environments, 0 biome env-setups, 0 clutter  from main
+09/08/2026 17:17:22: Added 1 locations, 0 vegetations, 2 environments, 0 biome env-setups, 0 clutter  from main
+09/08/2026 17:17:22: Added 27 locations, 25 vegetations, 5 environments, 1 biome env-setups, 3 clutter  from main
+09/08/2026 17:17:22: Added 4 locations, 0 vegetations, 1 environments, 0 biome env-setups, 0 clutter  from main
+09/08/2026 17:17:22: Added 25 locations, 33 vegetations, 8 environments, 2 biome env-setups, 2 clutter  from main
+09/08/2026 17:17:22: DungeonDB Start 25361
+09/08/2026 17:17:22: ZRpc timeout set to 30s 
+09/08/2026 17:17:22: ZNET START
+09/08/2026 17:17:22: Load world: Dedicated (Dedicated)
+09/08/2026 17:17:22: Loading 97800 zdos, my sessionID: 747428705, data version: 37
+09/08/2026 17:17:22: Loading in ZDOs
+09/08/2026 17:17:22: Adding to Dictionary
+09/08/2026 17:17:22: Adding to Sectors
+09/08/2026 17:17:22: Connecting Portals, Spawners & ZSyncTransforms
+ConnectSpawners => Connected 27 spawners and 5 'done' spawners.
+09/08/2026 17:17:22: Loaded 11512 locations
+09/08/2026 17:17:22: Random event set:valkyries_cargo
+09/08/2026 17:17:22: Unloading unused assets
+Unloading 0 Unused Serialized files (Serialized files now loaded: 19)
+09/08/2026 17:17:23: PlayFab custom ID set to "PlayFab_StormTest_2476_892794779d7566f628aef234d98ff031e7108003"
+09/08/2026 17:17:23: Sending PlayFab login request (attempt 2)
+09/08/2026 17:17:23: Semaphore type: SemaphoreSlim
+09/08/2026 17:17:23: Opened PlayFab server
+The shader Hidden/Dof/DepthOfFieldHdr (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) is not supported on this platform!
+The image effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) has been disabled as it's not supported on the current platform.
+The shader Hidden/SunShaftsComposite (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) is not supported on this platform!
+The shader Hidden/SimpleClear (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) is not supported on this platform!
+The image effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) has been disabled as it's not supported on the current platform.
+09/08/2026 17:17:23: Game server connected
+Unloading 2 unused Assets to reduce memory usage. Loaded Objects now: 210631.
+Total: 73.290200 ms (FindLiveObjects: 9.695600 ms CreateObjectMapping: 11.795200 ms MarkObjects: 51.634700 ms  DeleteObjects: 0.164100 ms)
+
+09/08/2026 17:17:23: Logged in PlayFab user via custom ID
+09/08/2026 17:17:23: PlayFab logged in as "PlayFab_StormTest_2476_892794779d7566f628aef234d98ff031e7108003"
+09/08/2026 17:17:23: PlayFab local entity ID is 8FAC91E89B45FDD6
+IPv4, returning 172.59.201.230:2476
+09/08/2026 17:17:23: New session server "StormTest" that has join code , now 0 player(s)
+09/08/2026 17:17:23: Register PlayFab server "StormTest" with IP 172.59.201.230:2476
+09/08/2026 17:17:23: Server 'StormTest' begin PlayFab create and join network for server 
+09/08/2026 17:17:24: Joined PlayFab Party network with ID "236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20="
+This is the serverIP used to register the server: 172.59.201.230:2476
+09/08/2026 17:17:24: Created PlayFab lobby with ID "2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323", ConnectionString "cv2:2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323|451107|kv1:6iGNcEZ1LBW3GmfzI1kz94tDWdj90JD9X6pPqGaXAIk=" and owned by "8FAC91E89B45FDD6"
+09/08/2026 17:17:24: Session "StormTest" registered with join code 309416
+09/08/2026 17:17:25: Retry join-code check 99
+09/08/2026 17:17:26: Session "StormTest" with join code 309416 and IP 172.59.201.230:2476 is active with 0 player(s)
+09/08/2026 17:19:38: PlayFab listen socket child connected to remote player FAB086A55A0E23A9
+09/08/2026 17:19:38: Player joined server "StormTest" that has join code 309416, now 1 player(s)
+09/08/2026 17:19:38: ZRpc timeout set to 90s 
+Sending Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 to the client.
+Sending Backpacks version 1.3.9 and minimum version 1.3.9 to the client.
+Sending org.bepinex.plugins.backpacks ItemManager version 1.3.9 and minimum version 0.0.0 to the client.
+Sending YggdrasilsReckoning version 0.1.1 and minimum version 0.1.1 to the client.
+09/08/2026 17:19:38: Muted PlayFab remote player FAB086A55A0E23A9
+09/08/2026 17:19:38: PlayFab socket with remote ID playfab/FAB086A55A0E23A9 received local Platform ID Steam_76561198392625778
+Received Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 from the client.
+09/08/2026 17:19:38: Got handshake from client playfab/FAB086A55A0E23A9
+09/08/2026 17:19:44: Network version check, their:36, mine:36
+09/08/2026 17:19:44: Server: New peer connected,sending global keys
+09/08/2026 17:19:59: Got character ZDOID from Nomadtest : -582303472:7
+09/08/2026 17:24:23: Update PlayFab entity token
+09/08/2026 17:25:45: Random event set:valkyries_cargo
+09/08/2026 17:27:23:  Connections 1 ZDOS:97800  sent:0 recv:183
+09/08/2026 17:27:35: Lobby 2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323 for world 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= refreshed
+09/08/2026 17:32:03: Keep socket for playfab/FAB086A55A0E23A9, try to reconnect before timeout
+09/08/2026 17:32:03: Player connection lost server "StormTest" that has join code 309416, now 1 player(s)
+09/08/2026 17:32:03: PlayFab network error in session 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= with type 'Error' and code '4098': the operation was called with an invalid handle
+09/08/2026 17:32:03: Failed to send, suspend TX on playfab/FAB086A55A0E23A9 while trying to reconnect
+ResetParty
+Task: LeaveNetworkTask
+Task: CleanPartyTask
+Task: InitPartyTask()
+Task: JoinPartyTask
+09/08/2026 17:32:23: Joined PlayFab Party network with ID "236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20="
+09/08/2026 17:33:33: ZRpc timeout detected
+ZPlayFabSocket::Dispose. State: CONNECTED
+ZPlayFabSocket::Dispose. leave lobby. LobbyId: 
+09/08/2026 17:33:33: Destroying abandoned non persistent zdo -582303472:7 owner -582303472
+ZPlayFabSocket::Dispose. State: CLOSED
+ZPlayFabSocket::Dispose. State: CLOSED
+09/08/2026 17:36:05: PlayFab listen socket child connected to remote player FAB086A55A0E23A9
+09/08/2026 17:36:05: Player joined server "StormTest" that has join code 309416, now 1 player(s)
+09/08/2026 17:36:05: Muted PlayFab remote player FAB086A55A0E23A9
+09/08/2026 17:36:05: PlayFab socket with remote ID playfab/FAB086A55A0E23A9 received local Platform ID Steam_76561198392625778
+09/08/2026 17:36:05: ZRpc timeout set to 90s 
+Sending Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 to the client.
+Sending Backpacks version 1.3.9 and minimum version 1.3.9 to the client.
+Sending org.bepinex.plugins.backpacks ItemManager version 1.3.9 and minimum version 0.0.0 to the client.
+Sending YggdrasilsReckoning version 0.1.1 and minimum version 0.1.1 to the client.
+Received Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 from the client.
+09/08/2026 17:36:05: Got handshake from client playfab/FAB086A55A0E23A9
+09/08/2026 17:36:17: Network version check, their:36, mine:36
+09/08/2026 17:36:17: Server: New peer connected,sending global keys
+09/08/2026 17:36:32: Got character ZDOID from Nomadtest : 102907990:1
+09/08/2026 17:37:23:  Connections 1 ZDOS:97798  sent:0 recv:183
+09/08/2026 17:38:15: Random event set:valkyries_cargo
+09/08/2026 17:40:48: Update PlayFab entity token
+09/08/2026 17:41:23: Keep socket for playfab/FAB086A55A0E23A9, try to reconnect before timeout
+09/08/2026 17:41:23: Player connection lost server "StormTest" that has join code 309416, now 1 player(s)
+09/08/2026 17:41:23: PlayFab network error in session 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= with type 'Error' and code '4098': the operation was called with an invalid handle
+09/08/2026 17:41:23: Failed to send, suspend TX on playfab/FAB086A55A0E23A9 while trying to reconnect
+ResetParty
+Task: LeaveNetworkTask
+Task: CleanPartyTask
+Task: InitPartyTask()
+Task: JoinPartyTask
+09/08/2026 17:41:43: Joined PlayFab Party network with ID "236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20="
+09/08/2026 17:42:52: ZRpc timeout detected
+ZPlayFabSocket::Dispose. State: CONNECTED
+ZPlayFabSocket::Dispose. leave lobby. LobbyId: 
+09/08/2026 17:42:52: Destroying abandoned non persistent zdo 102907990:1 owner 102907990
+ZPlayFabSocket::Dispose. State: CLOSED
+ZPlayFabSocket::Dispose. State: CLOSED
+09/08/2026 17:47:20: Available space to current user: 651467497472. Saving is blocked if below: 13178644 bytes. Warnings are given if below: 26357288
+09/08/2026 17:47:20: Sending message to save player profiles
+09/08/2026 17:47:20: PrepareSave: clone done in 12ms
+09/08/2026 17:47:20: PrepareSave: ZDOExtraData.PrepareSave done in 26 ms
+09/08/2026 17:47:20: World save writing starting
+09/08/2026 17:47:20: World save writing started
+09/08/2026 17:47:20: Saved 97797 ZDOs
+09/08/2026 17:47:20: World save writing finishing
+09/08/2026 17:47:20: World save writing finished
+09/08/2026 17:47:20: World saved ( 330.0092ms )
+09/08/2026 17:47:20: Considering autobackup. World time: 1797.219, short time: 7200, long time: 43200, backup count: 4
+09/08/2026 17:47:20: No autobackup needed yet...
+09/08/2026 17:47:23:  Connections 0 ZDOS:97797  sent:0 recv:0
+09/08/2026 17:50:51: Lobby 2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323 for world 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= refreshed
+09/08/2026 17:57:23:  Connections 0 ZDOS:97797  sent:0 recv:0
+09/08/2026 17:57:36: Update PlayFab entity token
+09/08/2026 18:01:06: Lobby 2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323 for world 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= refreshed
+09/08/2026 18:07:23:  Connections 0 ZDOS:97797  sent:0 recv:0
+09/08/2026 18:13:10: Lobby 2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323 for world 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= refreshed
+09/08/2026 18:17:03: Update PlayFab entity token
+09/08/2026 18:17:20: Available space to current user: 651191738368. Saving is blocked if below: 13171702 bytes. Warnings are given if below: 26343404
+09/08/2026 18:17:20: Sending message to save player profiles
+09/08/2026 18:17:20: PrepareSave: clone done in 13ms
+09/08/2026 18:17:20: PrepareSave: ZDOExtraData.PrepareSave done in 16 ms
+09/08/2026 18:17:20: World save writing starting
+09/08/2026 18:17:20: World save writing started
+09/08/2026 18:17:20: Saved 97797 ZDOs
+09/08/2026 18:17:20: World save writing finishing
+09/08/2026 18:17:20: World save writing finished
+09/08/2026 18:17:20: World saved ( 389.025ms )
+09/08/2026 18:17:20: Considering autobackup. World time: 3597.619, short time: 7200, long time: 43200, backup count: 4
+09/08/2026 18:17:20: Overwrite our newest autobackup since the second one isn't so old
+09/08/2026 18:17:20: Replacing backup file: Dedicated_backup_auto-20260908161652
+09/08/2026 18:17:20: Saving backup at: Dedicated_backup_auto-20260908181720
+09/08/2026 18:17:20: World auto backup saved ( 00:00:00.0110492ms )
+09/08/2026 18:17:23: Unloading unused assets
+09/08/2026 18:17:23:  Connections 0 ZDOS:97797  sent:0 recv:0
+Unloading 0 Unused Serialized files (Serialized files now loaded: 19)
+Unloading 1 unused Assets to reduce memory usage. Loaded Objects now: 211542.
+Total: 207.042300 ms (FindLiveObjects: 69.826000 ms CreateObjectMapping: 23.916800 ms MarkObjects: 113.054900 ms  DeleteObjects: 0.243700 ms)
+

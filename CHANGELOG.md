@@ -28,6 +28,117 @@ after the rest of this log was written.
 
 ### 0.1.0-rc3 — cut 2026-09-08 evening, after the two-client session (PRs #54 to #68); a pre-release, uploaded to no store
 
+- **THE EMPTY BIRD, FOUND AND SEEN FIXED: he was hanging 50 metres below the talon (Track B, 2026-09-09).** The carry
+  diagnostic answered it in its first two lines, on the first flight it ever ran on:
+  `carry 1: him (-334.1, 27.4, 40.5), pin (-330.4, 77.1, 36.7), off-pin 50 m ... visible 22/24
+  renderer(s), ours, grounded no`, then `off-pin 50.0000038 m` the next second and every second after,
+  across three visits. A CONSTANT, which is what says a fixed offset rather than gravity beating the pin -
+  he was owned, pinned, visible and not falling, just fifty metres straight down and off the bottom of the
+  screen. `PinToTalon` read `_pin.TransformVector(_pinOffset)`, and `Transform.TransformVector` applies
+  the transform's SCALE as well as its rotation. The Valkyrie's attach point hangs under
+  `valkyrie2/Armature/.../r_foot` on a bone chain that is not at unit scale, so the shipped
+  `m_attachOffset` of (0, 0.30, 0.40) - half a metre - came out as fifty. `TransformDirection` is
+  rotation-only, which is what an offset already expressed in world metres wants; the sign stays, because
+  the offset hangs him below and behind the talon, which is where something carried in a foot goes.
+  **This is the bug the whole 2026-09-08 report was about**, and neither the departure length nor the
+  start altitude was ever it - though both were real and both are fixed. No off-game check could have
+  caught it: it is a Unity transform API taking scale where the caller meant none.
+  **SEEN on a listen host the same night, visit #6** (`docs/proofs/2026-09-09-wubarrk-listenhost-visits2-6.log.txt`):
+  `off-pin 0.4999994` / `0.499998748` / `0.5000009` / `0.500000238` on every sample of the whole carry -
+  0.5 m is exactly the prefab's own attach offset - with the distance closing 92.0 -> 24.8 m and
+  `visible 19/20 renderer(s)` throughout. The carry is right.
+- **The backpack is baked in CHARACTER-ROOT space, not bone space - SEEN WORN (Track B, 2026-09-09).** With the scale
+  read correctly at 1, the pack was still nowhere to be seen. Smoothbrain's parts are `attach_skin`
+  skinned meshes bound to VALHEIM's skeleton, so `BakeMesh` returns vertices in the character root's
+  space - a pack at a standing player's chest height, well over a metre above the origin. Hung on
+  `Spine02`, itself at chest height on Ingvar, it floated about a metre and a half above his head.
+  `BackpackProp.Bake` now measures the combined bounds of every baked part (through each part's full local
+  TRS, so a scaled or turned part cannot pull the centre off) and shifts them so the holder's origin is
+  the PACK's own centre. It lands on the bone, and the configured offset is a nudge from there rather than
+  a hunt. The attach line reports the measurement, so a future wrong place is one line from obvious.
+  The measurement, live: `re-centred from (0, 47.921, 0.007) (the bake is in character-root space), size
+  (0.667, 1.205, 0.758) m` - **forty-eight metres** above the bone, the same ~100x scale factor as the
+  talon bug, applied to the pack's own chest-height offset. **SEEN ON A SCREEN by the owner, visit #5:
+  the pack is on his back** ("need to be pushed towards his back a bit more but its there"), which is a
+  `Client.BackpackOffset` nudge and not code. The add-on had never once been seen before this.
+- **A correction, recorded because it was wrong in public.** The first diagnosis of the invisible pack was
+  that Ingvar's rig is authored in centimetres - `models/ingvar.glb` really does carry `Armature` at scale
+  0.01. It is not the cause: Unity's FBX import normalises that into the bake, and the live run reported
+  `bone scale 1, world scale 1`. The compensation written for it (`Knapsack.Uncompress` and friends) is a
+  no-op on this rig and is KEPT, because it costs nothing and a re-bake that does not normalise would need
+  it - but it fixed nothing, and the two real causes are the two entries above.
+- **The invisible backpack: the rig is authored in centimetres (Track B, 2026-09-09, 1950 checks).** The
+  first live run of the add-on reported a perfectly attached pack - `body: backpack 'bp_explorer' on
+  Spine02, 18 part(s), 11206 tris` - and put NOTHING on screen. `models/ingvar.glb` carries `Armature` at
+  **scale 0.01**: the rig is authored in centimetres and scaled down by a hundred at its root, so every
+  bone under it, `Spine02` included, has a world scale of 0.01. A prop parented there with
+  `localScale = 1` renders at a hundredth of its size - the pack was about five millimetres across,
+  correctly attached and completely invisible. The configured offsets had it too: `0,0.2,-0.15` moved it
+  two millimetres. `Core/Knapsack.Uncompress` / `LocalScale` / `LocalOffset` divide the bone's real
+  `lossyScale` back out, so the knobs are declared in WORLD units - metres, and scale 1 is the pack's own
+  authored size - on this rig or any re-bake of it. A zero, negative or NaN bone scale falls back to 1
+  rather than handing Unity an infinity. Ten checks, two mutations proven.
+- **Every dimensioned config knob states its units (Track B, 2026-09-09).** The generated
+  `com.raveniron.valkyriescargo.cfg` is what an admin actually reads, and it did not say what its numbers
+  meant. `BackpackOffset` now reads `UNITS: WORLD METRES, as x,y,z` with the axis convention and an
+  explicit note that the rig's own 0.01 is divided out so nobody types bone units; `BackpackRotation`
+  `UNITS: DEGREES`, Euler, in Unity's order; `BackpackScale` `UNITS: A MULTIPLIER` of the pack's authored
+  size with its allowed range spelled out. Also `FlightSpeed` (m/s), `FlightTurnRate` (deg/s),
+  `FlightStartAltitude` / `FlightStartDistance` / `FlightDescentDistance` (metres), `CooldownRadius` (m),
+  `MerchantLifespanSeconds` (world seconds), `BodyYawDegrees` (deg), `TerminalBackdropAlpha` (0-1).
+- **The bird carries him until it reaches YOU (Track B, 2026-09-09; the owner's words: "he should stay in
+  the bird until he is 20 m from player").** The release was a fixed point authored where the pilot stood
+  when the visit began, so a player who walked while the bird was inbound got a drop wherever they used to
+  be - visit #3 on 2026-09-09 released him 41 m away, and the carry was over before it was ever close
+  enough to look at. `CargoFlight` now aims the last leg at the player's LIVE position and releases at
+  `FlightPlan.DropNearPlayer` (20 m), and `Drop()` writes where the bird actually caught them.
+  **This widens a P11 trust boundary and it is deliberate:** the server refused a client-reported drop
+  more than `DropToleranceXZ` (8 m) from the authored point, which would reject every honest chased drop.
+  `DropAccepted` and the three tests that guard it are UNTOUCHED - a new `DropAcceptedChasing` at
+  `DropChaseXZ` (96 m, the flight's own reach: a drop across the map is still refused) is used only by the
+  chase path. Seven checks, two mutations proven.
+- **The carry, reported once a second (Track B, 2026-09-09).** "We still see an empty bird flying in", and
+  every line the mod printed said the carry was fine: `awake as carried`, `ours`, `grounded no` at the
+  drop. `CargoMerchant.CarryReport` prints his position, the talon's, the gap between them, the distance to
+  the player, how many of his renderers are actually visible, the owner and whether he is grounded - the
+  four things that would each explain it, and they are different numbers. Owner and watcher both, because
+  the two screens are moved by different code. Capped at 30 lines.
+- **The inbound flight is watchable: the start altitude 120 m -> 45 m (Track B, 2026-09-08, 1931 checks).**
+  The other half of the empty-bird report, and the owner's ask in his own words: "we need to see the val
+  holding him". At 120 m over a ~77 m run the bird sat **53 degrees above the horizon** from where the
+  pilot stood — to watch the carry you had to look nearly straight up, and by the time the Valkyrie
+  entered a normal view cone she was already letting go. 45 m over the same run is a **27-degree**
+  approach and a **~24-degree glide slope**: a bird you notice while walking around, low enough that
+  Ingvar reads as a shape hanging from the talons, and still well clear of the tree line. It cannot be
+  bought with distance instead — the start is clamped inside the pilot's 3x3 zone block, so ~90 m out is
+  the ceiling and altitude is the only lever. `FlightPlan.DefaultStartAltitude` is the one place the
+  number is typed; `ModConfig` and `Spawner`'s fallback both read it, so a stale 120 cannot survive in a
+  third place. The approach is now ~10.6 s against ~17 s, but the old seventeen were mostly spent
+  invisible; `Server.FlightSpeed` remains the knob for duration. Six new checks that BRACKET the value —
+  two mutations proven, 120 m fails "inside a normal view cone" and "a glide, not a dive", 12 m fails
+  "still up in the sky" and "clear of the tree line". `docs/DESIGN.md` and CLAUDE.md updated.
+- **The backpack add-on, the body half (Track B, 2026-09-08, 1917 checks).** On a server running the backpack
+  mod Ingvar now wears the players' own pack; on any other server he wears nothing and none of this code runs.
+  It is NOT a bake. Smoothbrain's pack is one prefab, `bp_explorer`, put into ObjectDB by the mod's own
+  ItemManager, with its geometry at `attach_skin/Mesh` as `SkinnedMeshRenderer`s rigged to VALHEIM's skeleton —
+  and Ingvar's rig is his own (24 joints, `Hips -> Spine -> Spine01 -> Spine02 -> neck -> Head`). So vanilla's
+  way of wearing a pack is closed twice over: equipping it would have `VisEquipment` bind it to the Dverger
+  chassis, whose renderers `BodyLoader.HideStandIn` switches off, and even visible it would follow bones nobody
+  can see. `Client/BackpackProp.cs` bakes the skinned parts to static meshes once, at bind pose (a pack does not
+  deform), on a throwaway instance rather than on the ObjectDB prefab — mutating that would change the pack for
+  every player on the machine — and hangs them on a named bone of Ingvar's own rig, UNDER the body object, which
+  is what keeps them visible through both the attach-time hide and the 2 s re-hide. `Core/Knapsack.cs` is pure:
+  the bone resolution and its fallback chain (`Spine02`, `Spine2`, `Spine01`, `Spine1`, `Chest`, `Spine`,
+  `Hips`, case-insensitive), the `x,y,z` knob parse — a component that is not a finite number reads 0, never
+  NaN, which Unity propagates through the transform and takes the whole body with it — and the scale clamp.
+  Six client knobs: `BackpackOnIngvar`, `BackpackPrefab`, `BackpackBone`, `BackpackOffset`, `BackpackRotation`,
+  `BackpackScale`. The pack goes on `cargo body preview` too, because dialling the placement in by eye is the
+  only way it can be settled, and `cargo body` and `cargo status` each carry a `backpack:` line saying what the
+  last attach found. Detection is the prefab lookup itself, not the chainloader: no prefab means no mod, which
+  is a stronger test than a plugin GUID that can be present for a mod that failed to register. **Nothing here
+  has been on a screen** — the offset, rotation and scale are placeholders at 0/0/1 and no off-game check can
+  say where a pack sits on a shoulder.
+
 - **D5, the ownership loss during the carry (PR #54, Track B, 1718).** `HoldTheCarry` claims the merchant back
   every physics step while he hangs from the talons, on the pilot's client only (gated on owning the bird, which
   the engine's sweep never touches); both log lines say who holds him (`ours|watching (owner N)`) and the

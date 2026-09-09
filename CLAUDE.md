@@ -1079,7 +1079,8 @@ P4, the flight (Wu'barrk's two-client proof; a visit on a server, the pilot's cl
     before; the bird's departure logs `ground unknown at (…) (the zone has likely not finished generating); the
     altitude is left alone` (F7's path, live). The glide ON SCREEN and the second client are still unreported;
     the pilot's log shows `cargo flight #N: flying from ... via ... to
-    ..., 76.5 m out at 8 m/s, turning 45 deg/s (radius 10.2 m)`; a Valkyrie appears about 90 m out and 120 m up,
+    ..., 76.5 m out at 8 m/s, turning 45 deg/s (radius 10.2 m)`; a Valkyrie appears about 90 m out and 45 m up
+    (120 until 2026-09-08, when the carry turned out to be unwatchable at 53 deg of elevation),
     glides straight in over about 17 s, and `dropped at (...) after N s` prints near 12 m above the drop point; then
     it turns and leaves. A second client nearby sees the same glide, not a stutter (`s_velHash`).
 22. **The edges**: `cargo status` on a client shows the `flight:` line with the runtime `m_activeArea`; the pilot

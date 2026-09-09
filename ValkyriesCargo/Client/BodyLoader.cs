@@ -570,13 +570,18 @@ namespace RavenIron.ValkyriesCargo.Client
                 go.transform.localPosition = new Vector3(0f, lift, 0f);
                 int hidden = HideStandIn(c.transform, go.transform);
 
+                // The backpack add-on's body half: under the body's own transform, so `HideStandIn` above and
+                // the driver's 2 s re-hide both skip it. Nothing when the backpack mod is not on this machine.
+                bool pack = BackpackProp.Attach(go.transform);
+
                 IngvarBody body = go.AddComponent<IngvarBody>();
                 body.Bind(c);
                 ValkyriesCargo.Log.LogInfo(
                     "body: Ingvar attached to '" + c.name + "' at local y " + lift.ToString("0.###") +
                     ", turned " + yaw.ToString("0") + " deg (Client.BodyYawDegrees)" +
                     "; " + stray + " stray renderer(s) in the bundle switched off; " + hidden + " stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, " +
-                    "CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)");
+                    "CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)" +
+                    "; backpack " + (pack ? "on" : "none") + " (" + BackpackProp.Detail + ")");
                 return body;
             }
             catch (Exception ex)
@@ -655,6 +660,11 @@ namespace RavenIron.ValkyriesCargo.Client
             PreviewLift = MeasureLift(go.transform.parent, go);
             go.transform.position = groundPos + new Vector3(0f, PreviewLift, 0f);
 
+            // The pack too, and for the reason the two steps above are here: the preview is the cheap way to
+            // SEE a body, so it has to show the same one. It is also the only way to dial the three knobs in
+            // without waiting for a visit.
+            BackpackProp.Attach(go.transform);
+
             _preview = go;
             Preview = go.AddComponent<IngvarBody>();
             return Preview;
@@ -697,7 +707,8 @@ namespace RavenIron.ValkyriesCargo.Client
             return "body: " + Source.ToString().ToLowerInvariant() +
                    ", prefab " + (_prefab != null ? "yes" : "no") +
                    ", " + _clips.Count + " clip(s)" +
-                   ", CustomBody " + (ModConfig.CustomBody != null ? ModConfig.CustomBody.Value.ToString().ToLowerInvariant() : "unbound");
+                   ", CustomBody " + (ModConfig.CustomBody != null ? ModConfig.CustomBody.Value.ToString().ToLowerInvariant() : "unbound") +
+                   ", backpack " + (BackpackProp.Worn ? "on" : "none");
         }
     }
 }

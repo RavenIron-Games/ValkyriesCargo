@@ -57,6 +57,68 @@ namespace RavenIron.ValkyriesCargo.Core
         public const float DropAltitude = 10f;
 
         /// <summary>
+        /// How close to the PLAYER the bird gets before it lets Ingvar go (owner, 2026-09-09: "he should
+        /// stay in the bird until he is 20 m from player").
+        ///
+        /// The release used to be a fixed point, authored where the pilot stood when the visit began. A
+        /// player who walked while the bird was inbound got a drop wherever they used to be - visit #3 on
+        /// 2026-09-09 released him 41 m away - and the carry was over before it was ever near enough to
+        /// look at. Chasing the player instead means the bird is closing on YOU for the whole approach and
+        /// lets go at a distance where a dwarf on a talon is a thing you can actually see.
+        /// </summary>
+        public const float DropNearPlayer = 20f;
+
+        /// <summary>
+        /// How far PAST the drop the bird flies before it destroys itself, measured on the approach
+        /// bearing from the drop point.
+        ///
+        /// The number is small on purpose, and it is the fix for what the 2026-09-08 session called
+        /// "we almost always see an empty bird". The departure used to be authored at
+        /// `pilot - dir * (startDistance * 2)` and still at the full glide altitude - about 194 m of
+        /// ground and a climb back to 120 m, which at the shipped 8 m/s is ~24 s. The carrying
+        /// approach is ~17 s (77 m out, 120 m down). So the bird was empty for LONGER than it was
+        /// ever carrying, and the empty leg is the one flown low and overhead where it is easy to
+        /// watch, while the carry is a speck coming down a 57-degree line. Nothing was dropping
+        /// early; the ratio was simply upside down. Don's StormTest log for visits 25 and 26 has the
+        /// drop landing on the authored X and Z to seven figures, and the client log has
+        /// `Destroying valkyrie` 24 s after it.
+        ///
+        /// At 8 m/s this is under 7 s, and it ends with the bird well past the player rather than
+        /// back where it came from.
+        /// </summary>
+/// <summary>
+        /// How high above the pilot the Valkyrie starts, and the reason the inbound flight is worth
+        /// watching at all.
+        ///
+        /// It was 120 m over a ~77 m run. That is a 53-degree line of sight: to watch the bird carry
+        /// Ingvar in you had to be looking nearly straight up, and by the time it entered a normal
+        /// view cone it was already letting go. The 2026-09-08 report - "we see the bird, but he drops
+        /// the dwarf way too soon" - was that, plus the long empty departure `DepartDistance` fixes.
+        /// Nothing was ever dropping early: Don's StormTest log for visits 25 and 26 has the release
+        /// landing on the authored X and Z to seven figures.
+        ///
+        /// 45 m over the same run is a 27-degree approach - a bird you see while walking around, low
+        /// enough that Ingvar reads as a shape hanging from the talons, and still far above the tree
+        /// line (~15-20 m). The glide slope from here to `DropAltitude` is ~24 degrees, which is a
+        /// glide rather than the old stoop. It cannot be bought with distance instead: the start is
+        /// clamped inside the pilot's 3x3 zone block, so ~90 m out is the ceiling.
+        ///
+        /// The horizontal run is unchanged, so the flight is shorter in seconds than the old one
+        /// (~10.6 s against ~17 s at 8 m/s) - but the old seventeen were mostly spent invisible, and
+        /// `Server.FlightSpeed` is the knob for the duration.
+        /// </summary>
+        public const float DefaultStartAltitude = 45f;
+
+                public const float DepartDistance = 55f;
+
+        /// <summary>
+        /// How much the bird climbs on the way out, above the drop. A departure that climbs back to
+        /// the full start altitude is a bird that hangs on screen while it does it; this is enough to
+        /// read as leaving and little enough to be gone quickly.
+        /// </summary>
+        public const float DepartClimb = 30f;
+
+        /// <summary>
         /// The descent waypoint never eats more than this much of the run. Without it a shrunk start
         /// (54 m out, a 42 m run) puts the configured 50 m descent past the start point, the waypoint
         /// lands ON the start, and the flight silently degenerates to one leg carrying the whole
@@ -80,6 +142,24 @@ namespace RavenIron.ValkyriesCargo.Core
         /// the one doing the work.
         /// </summary>
         public const float DropToleranceY = 64f;
+
+        /// <summary>
+        /// **A DELIBERATE WIDENING OF THE P11 TRUST BOUNDARY, 2026-09-09 - read before changing it back.**
+        ///
+        /// `DropToleranceXZ` (8 m) was right while the drop was a fixed authored point: the honest delta
+        /// was zero, because `CargoFlight.Drop` wrote back the very `VCargo_target` it was handed. Since
+        /// `DropNearPlayer`, the bird CHASES the player and lets go where it catches them, so a legitimate
+        /// drop is now anywhere along the approach - and an 8 m check would reject every honest one and
+        /// pin the session's record to a point the merchant is not standing on.
+        ///
+        /// This is still a real bound and not an open door. It is the flight's own reach - the pilot's
+        /// active block is 3x3 zones of 64 m - so a client can move the drop to somewhere the bird could
+        /// plausibly have flown, and cannot claim a drop across the map. The server still refuses anything
+        /// beyond it and keeps the authored point, and `DropToleranceY` is untouched.
+        ///
+        /// If the chase is ever reverted, this must go back to `DropToleranceXZ` in the same commit.
+        /// </summary>
+        public const float DropChaseXZ = 96f;
 
         // ---- zones ---------------------------------------------------------------------------------
 
@@ -182,6 +262,19 @@ namespace RavenIron.ValkyriesCargo.Core
                                         float authoredX, float authoredY, float authoredZ)
         {
             if (!(Dist(atX, atZ, authoredX, authoredZ) <= DropToleranceXZ)) return false;
+            return Math.Abs(atY - authoredY) <= DropToleranceY;
+        }
+
+        /// <summary>
+        /// The same trust check for a flight that CHASES the player (`DropNearPlayer`). Separate from
+        /// `DropAccepted` on purpose: that one is the contract for a fixed authored drop, its 8 m is
+        /// still exactly right for it, and its checks still guard it. Redefining it underneath would
+        /// have quietly widened a boundary three existing tests are there to hold.
+        /// </summary>
+        public static bool DropAcceptedChasing(float atX, float atY, float atZ,
+                                               float authoredX, float authoredY, float authoredZ)
+        {
+            if (!(Dist(atX, atZ, authoredX, authoredZ) <= DropChaseXZ)) return false;
             return Math.Abs(atY - authoredY) <= DropToleranceY;
         }
 
@@ -335,10 +428,15 @@ namespace RavenIron.ValkyriesCargo.Core
                         StartX = sx, StartY = pilotY + startAltitude, StartZ = sz,
                         DescentX = ddx, DescentY = ddy, DescentZ = ddz,
                         DropX = pilotX + dx * drop, DropY = pilotY, DropZ = pilotZ + dz * drop,
-                        // Away along the entry line, still at altitude: a lateral exit, never a
-                        // vertical one. It only has to survive long enough to leave the screen; the
-                        // bird destroys itself, so this point may sit outside the block.
-                        AwayX = pilotX - dx * (d * 2f), AwayY = pilotY + startAltitude, AwayZ = pilotZ - dz * (d * 2f),
+                        // Away along the entry line, CONTINUING past the drop rather than doubling
+                        // back over the pilot, and anchored on the drop rather than on the pilot so
+                        // the empty leg is the same short length whatever the start distance was.
+                        // `dx`/`dz` point pilot -> start, so the flight direction is -dx/-dz. It only
+                        // has to survive long enough to leave the screen; the bird destroys itself,
+                        // so this point may sit outside the block.
+                        AwayX = pilotX + dx * drop - dx * DepartDistance,
+                        AwayY = pilotY + dropAltitude + DepartClimb,
+                        AwayZ = pilotZ + dz * drop - dz * DepartDistance,
                     };
                 }
             }
@@ -350,7 +448,7 @@ namespace RavenIron.ValkyriesCargo.Core
                               StartX = pilotX, StartY = pilotY + startAltitude, StartZ = pilotZ,
                               DescentX = pilotX, DescentY = pilotY + dropAltitude, DescentZ = pilotZ,
                               DropX = pilotX, DropY = pilotY, DropZ = pilotZ,
-                              AwayX = pilotX, AwayY = pilotY + startAltitude, AwayZ = pilotZ };
+                              AwayX = pilotX, AwayY = pilotY + dropAltitude + DepartClimb, AwayZ = pilotZ };
         }
 
         /// <summary>One planned flight: three waypoints and the drop, all in world XZ with an altitude.</summary>
