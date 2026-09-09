@@ -28,6 +28,34 @@ after the rest of this log was written.
 
 ### Since 0.1.0-rc2 — the same night
 
+- **The empty bird: the departure cut from ~24 s to under 7 s (Track B, 2026-09-08, 1925 checks).** The
+  playtest report was "we see the bird, but he drops the dwarf way too soon, so we almost always see an
+  empty bird". Nothing was dropping early — Don's StormTest log for visits 25 and 26 has the drop landing
+  on the authored X and Z to seven figures (`drop (-60.3884239, 56.27856)` → `dropped at (-60.3884239,
+  79.11107, 56.27856)`). The RATIO was upside down. The departure was authored at
+  `pilot - dir * (startDistance * 2)` and still at the full glide altitude: ~194 m of ground and a climb
+  back to 120 m, which at the shipped 8 m/s is ~24 s, against a carrying approach of ~17 s (77 m out and
+  120 m down, a 57-degree line flown too high and far to read). The bird was empty for LONGER than it was
+  ever carrying, and the empty leg is the one flown low and overhead. The client log confirms it to the
+  second: `Destroying valkyrie` lands 24 s after the drop. `FlightPlan.DepartDistance` (55 m) and
+  `DepartClimb` (30 m) now anchor the departure ON the drop, continuing along the approach bearing instead
+  of doubling back over the pilot, and climbing enough to read as leaving and no more.
+  **And the client had a second copy of that geometry**: `CargoFlight.Awake` rebuilt the away point itself
+  rather than reading the plan's, and its rebuild pointed the other way (`_drop - dir * (run * 2 + 40)`
+  sends the bird back where it came from) — the same two-sources-of-truth defect PR #8's review already
+  caught once for the turn point. The departure is now authored on the bird's ZDO as `VCargo_away`
+  (`Core/Keys.cs`, `Server/Spawner.cs`) and read whole, with a fallback of the plan's own shape so the two
+  can no longer disagree. Six new checks, three mutations proven: the old length, a reversed departure and
+  a climb back to the start altitude each fail it.
+- **The backpack add-on says why he is bare (Track B, 2026-09-08).** `BackpackProp.Attach` logged on
+  exactly two paths, success and a thrown exception; six others set a `Detail` string and returned in
+  silence. Every path now reports once through `Bare(...)`, repeats held down by reason so a config edit or
+  a mod arriving mid-session is still visible, and two of the messages now carry the evidence needed to act
+  on them: a bone miss names the rig's actual bones, a mesh-path miss names the prefab's actual children.
+  The house rule this closes is `docs/knowledge-base/`'s: a silent success and a silent no-op look the same
+  from outside the game. **The 2026-09-08 two-client session did not test the backpack** — the profile's
+  plugin was a build with no backpack code in it (Gale reinstalled over the hand-copied DLL two minutes
+  after it was staged), so the add-on has still never run.
 - **The backpack add-on, the body half (Track B, 2026-09-08, 1917 checks).** On a server running the backpack
   mod Ingvar now wears the players' own pack; on any other server he wears nothing and none of this code runs.
   It is NOT a bake. Smoothbrain's pack is one prefab, `bp_explorer`, put into ObjectDB by the mod's own

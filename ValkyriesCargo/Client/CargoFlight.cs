@@ -121,8 +121,16 @@ namespace RavenIron.ValkyriesCargo.Client
             Vector3 fallback = _drop + dir * -descent;
             fallback.y = _drop.y + _dropHeight + (transform.position.y - _drop.y - _dropHeight) * frac;
             _descentStart = zdo.GetVec3(Spawner.TurnHash, fallback);
-            _away = _drop - dir * (run * 2f + 40f);
-            _away.y = transform.position.y;
+            // The departure is the SERVER'S, whole, for the same reason the descent waypoint is: a
+            // second copy of the geometry here drifted from the plan's and nobody noticed. This one
+            // had drifted in DIRECTION - `_drop - dir * ...` sends the bird back the way it came,
+            // while the plan authors it continuing past the pilot - and in LENGTH, ~194 m against the
+            // plan's `DepartDistance`. That is the empty-bird complaint of 2026-09-08: at 8 m/s the
+            // old leg was ~24 s of visible, low, empty bird against a ~17 s carry flown high and
+            // steep. The fallback below is the plan's own shape, so the two can no longer disagree.
+            Vector3 awayFallback = _drop + dir * FlightPlan.DepartDistance;   // `dir` is start -> drop: PAST the drop, not back
+            awayFallback.y = _drop.y + FlightPlan.DepartClimb;
+            _away = zdo.GetVec3(Spawner.AwayHash, awayFallback);
             _descent = _dropped;
 
             ValkyriesCargo.Log.LogInfo("cargo flight #" + _visitId + ": " + (_nview.IsOwner() ? "flying" : "watching") +

@@ -3893,6 +3893,38 @@ namespace ValkyriesCargo.Tests
                       "the ORIGINAL swung waypoint is inside the prefab bird's turning circle: unreachable, which is why it orbited for 180 s");
             }
 
+            Section("FlightPlan: the departure, so the empty bird is not the whole show (2026-09-08)");
+            {
+                // The complaint: "we see the bird, but he drops the dwarf way too soon, so we almost
+                // always see an empty bird". Nothing dropped early - Don's StormTest log for visits 25
+                // and 26 has the drop landing on the authored X and Z to seven figures. The departure
+                // was the problem: authored at `pilot - dir * (startDistance * 2)` and still at the
+                // full glide altitude, it was ~194 m and a climb back to 120 m, ~24 s at the shipped
+                // 8 m/s, against a ~17 s carry. The empty leg outlasted the carrying one.
+                var f = FlightPlan.Make(0f, 30f, 0f, 4242, 2, 90f, 120f, 50f);
+                Check(f.Ok, "departure: the reference plan is flyable");
+
+                double awx = f.AwayX - f.DropX, awz = f.AwayZ - f.DropZ;
+                double awayRun = Math.Sqrt(awx * awx + awz * awz);
+                Check(Math.Abs(awayRun - FlightPlan.DepartDistance) < 0.01,
+                      "the departure leaves DepartDistance past the drop, not twice the start distance");
+
+                // Direction: continuing along the approach, never doubling back over the pilot. The
+                // dot of (drop - start) with (away - drop) is positive only if it carries on.
+                double fx = f.DropX - f.StartX, fz = f.DropZ - f.StartZ;
+                Check(fx * awx + fz * awz > 0.0,
+                      "the departure carries ON past the drop rather than reversing over the pilot");
+
+                double approachRun = Math.Sqrt(fx * fx + fz * fz);
+                Check(awayRun < approachRun,
+                      "the empty leg is SHORTER than the carrying approach (the ratio the complaint was about)");
+
+                Check(Math.Abs(f.AwayY - (f.DropY + FlightPlan.DropAltitude + FlightPlan.DepartClimb)) < 0.01,
+                      "the departure climbs DepartClimb above the drop, not back to the start altitude");
+                Check(f.AwayY < f.StartY,
+                      "the bird leaves lower than it arrived, so the climb is not the exit");
+            }
+
             Section("FlightPlan: the shrink and the turn (design 3.2's active-block constraint)");
 
             // Every position in a 3x3 block, every bearing: the plan must never put a waypoint outside.

@@ -26,6 +26,7 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string Target = "VCargo_target";     // Vector3: where to put him down
         public const string Dropped = "VCargo_dropped";   // bool: he is on the ground
         public const string Turn = "VCargo_turn";         // Vector3: the descent waypoint
+        public const string Away = "VCargo_away";         // Vector3: where the empty bird leaves to
 
         // The merchant's ZDO (Server/Spawner.cs): the PERSISTENT half of the pair.
         public const string Ingvar = "VCargo_ingvar";     // int visitId: this is Ingvar

@@ -58,6 +58,7 @@ namespace RavenIron.ValkyriesCargo.Server
         /// block clamp (PR #8's review). One author, one number, no second copy of the maths.
         /// </summary>
         public static readonly int TurnHash = Keys.Turn.GetStableHashCode();        // Vector3: the descent waypoint
+        public static readonly int AwayHash = Keys.Away.GetStableHashCode();        // Vector3: where the empty bird leaves to
         // The merchant.
         public static readonly int IngvarHash = Keys.Ingvar.GetStableHashCode();    // int visitId: this is Ingvar
         public static readonly int SeedHash = Keys.Seed.GetStableHashCode();        // int: his lines and his bearing
@@ -157,6 +158,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 var start = new Vector3(plan.StartX, plan.StartY, plan.StartZ);
                 var turn = new Vector3(plan.DescentX, plan.DescentY, plan.DescentZ);
                 var drop = new Vector3(plan.DropX, plan.DropY, plan.DropZ);
+                var away = new Vector3(plan.AwayX, plan.AwayY, plan.AwayZ);
                 Quaternion look = LookAlong(plan.DropX - plan.StartX, plan.DropZ - plan.StartZ);
 
                 ZDO bird = null;
@@ -173,6 +175,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     bird.Set(CargoHash, visitId);
                     bird.Set(TargetHash, drop);
                     bird.Set(TurnHash, turn);
+                    bird.Set(AwayHash, away);
                     bird.Set(DroppedHash, false);
                     bird.SetOwner(pilotUid);               // LAST: after this the ZDO is the pilot's to write
                 }

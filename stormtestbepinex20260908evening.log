@@ -1,0 +1,467 @@
+[Message:   BepInEx] BepInEx 5.4.23.3 - valheim_server (8/25/2026 4:48:05 PM)
+[Message:   BepInEx] User is running BepInExPack Valheim version 5.4.2333 from Thunderstore
+[Info   :   BepInEx] Running under Unity v6000.0.61.7643309
+[Info   :   BepInEx] CLR runtime version: 4.0.30319.42000
+[Info   :   BepInEx] Supports SRE: True
+[Info   :   BepInEx] System platform: Bits64, Windows
+[Message:   BepInEx] Preloader started
+[Info   :   BepInEx] Loaded 1 patcher method from [BepInEx.Preloader 5.4.23.3]
+[Info   :   BepInEx] 1 patcher plugin loaded
+[Info   :   BepInEx] Patching [UnityEngine.CoreModule] with [BepInEx.Chainloader]
+[Message:   BepInEx] Preloader finished
+[Message:   BepInEx] Chainloader ready
+[Message:   BepInEx] Chainloader started
+[Info   :   BepInEx] 3 plugins to load
+[Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.0]
+[Info   :Valkyrie's Cargo] built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 19/19 ok, 7 not probeable.
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches 18/18 applied, catalogue=72 entries, engine: same build 0.221.12 (net 36, player 43, world 37); probes 19/19 ok, 7 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :   BepInEx] Loading [Backpacks 1.3.9]
+[Info   :   BepInEx] Loading [YggdrasilsReckoning 0.1.1]
+[Warning:  HarmonyX] AccessTools.Method: Could not find method for type Player and name PlacePiece and parameters (Piece)
+[Error  :YggdrasilsReckoning] YR: capability 'Player.PlacePiece' failed to bind (not found). The feature group that needs it will stand down and degrade to vanilla behaviour.
+[Info   :YggdrasilsReckoning] YR: capability probe - Registration=True Pieces=False Altar=True Merchant=True Dewfall=True Tap=True Combat=True Localization=True
+[Info   :YggdrasilsReckoning] YR: Harmony patch classes applied: 20 ok, 0 failed.
+[Info   :YggdrasilsReckoning] YggdrasilsReckoning v0.1.1 loaded. Seek the Tears of Yggdrasil.
+[Message:   BepInEx] Chainloader startup complete
+[Info   : Unity Log] 09/08/2026 17:17:15: Set background loading budget to Low
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loading first scene!
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Preferences initialized! Activating first scene!
+
+[Error  : Unity Log] 09/08/2026 17:17:15: Can't return the graphics config when it's not loaded!
+
+[Info   : Unity Log] 09/08/2026 17:17:15: 
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Starting to load scene:start.unity (169d7618616154c03be07e9ad3af5893)
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Set background loading budget to Normal
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #0 - 'localization' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #1 - 'localization_extra' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #2 - 'heightmap_message' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #3 - 'localization_witch' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #4 - 'localization_ashlands' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #5 - 'localization_captions' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #6 - 'localization_combatupdate' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #7 - 'localization_celebrationupdate' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #0 - 'localization' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #1 - 'localization_extra' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #2 - 'heightmap_message' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #3 - 'localization_witch' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #4 - 'localization_ashlands' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #5 - 'localization_captions' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #6 - 'localization_combatupdate' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:15: Loaded localization file #7 - 'localization_celebrationupdate' language: 'English'
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Set background loading budget to High
+
+[Info   : Unity Log] 09/08/2026 17:17:19: GPU Device: 0000:0000 (Unknown)
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Set background loading budget to Low
+
+[Warning: Unity Log] HDR Render Texture not supported, disabling HDR on reflection probe.
+[Warning: Unity Log] 09/08/2026 17:17:19: Missing audio clip in music respawn
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Setting -logfile to: C:\Users\donfr\ValheimServers\StormTest\stormtest-server.log
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Setting -savedir to: C:\Users\donfr\ValheimServers\StormTest\saves
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Get create world Dedicated
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Using environment steamid 892970
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Using steam APPID:892970
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Server ID 90071992547409920
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Authentication:k_ESteamNetworkingAvailability_Waiting
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Steam game server initialized
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Valheim version: 0.221.12 (network version 36)
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Worldgenerator version setup:2
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Console: Valheim 0.221.12 (network version 36)
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Console: 
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Console: type "help" - for commands
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Console: 
+
+[Info   : Unity Log] 09/08/2026 17:17:19: Render threading mode:SingleThreaded
+
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Tear' from 'DragonTear'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_Eikthyr' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_gd_king' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_Bonemass' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_Dragon' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_GoblinKing' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_SeekerQueen' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_Fader' from 'AmberPearl'.
+[Error  :YggdrasilsReckoning] YR: donor 'piece_beehive' not found - cannot build the Worldroot Tap yet.
+[Error  :YggdrasilsReckoning] YR: donor 'blackforge' not found - cannot build Yggdrasil's Anvil yet.
+[Info   : Unity Log] 09/08/2026 17:17:20: Failed to find item prefab FireFront_DousingBomb
+
+[Info   : Unity Log] 09/08/2026 17:17:20: Sending PlayFab login request (attempt 1)
+
+[Info   : Unity Log] 09/08/2026 17:17:20: Login postponed until ID has been set.
+
+[Info   : Unity Log] The shader Hidden/Dof/DepthOfFieldHdr (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) is not supported on this platform!
+[Warning: Unity Log] The image effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) has been disabled as it's not supported on the current platform.
+[Info   : Unity Log] The shader Hidden/SunShaftsComposite (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) is not supported on this platform!
+[Info   : Unity Log] The shader Hidden/SimpleClear (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) is not supported on this platform!
+[Warning: Unity Log] The image effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) has been disabled as it's not supported on the current platform.
+[Info   : Unity Log] 09/08/2026 17:17:20: Starting music menu
+
+[Warning: Unity Log] HDR Render Texture not supported, disabling HDR on reflection probe.
+[Warning: Unity Log] HDR Render Texture not supported, disabling HDR on reflection probe.
+[Info   : Unity Log] 09/08/2026 17:17:20: Audioman already exist, destroying self
+
+[Info   : Unity Log] 09/08/2026 17:17:20: Console: Valheim 0.221.12 (network version 36)
+
+[Info   : Unity Log] 09/08/2026 17:17:20: Console: 
+
+[Info   : Unity Log] 09/08/2026 17:17:20: Console: type "help" - for commands
+
+[Info   : Unity Log] 09/08/2026 17:17:20: Console: 
+
+[Info   : Unity Log] 09/08/2026 17:17:20: isModded: True
+
+[Info   : Unity Log] 09/08/2026 17:17:20: Zonesystem Awake 25361
+
+[Info   : Unity Log] 09/08/2026 17:17:20: DungeonDB Awake 25361
+
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+[Info   :YggdrasilsReckoning] YR: registered the Celestial Dewfall random event.
+[Info   : Unity Log] 09/08/2026 17:17:20: Worldgenerator version setup:2
+
+[Info   : Unity Log] Registered 'com.raveniron.valkyriescargo ConfigSync' RPC - waiting for incoming connections
+[Info   : Unity Log] Registered 'Backpacks ConfigSync' RPC - waiting for incoming connections
+[Info   : Unity Log] Registered 'org.bepinex.plugins.backpacks ItemManager ConfigSync' RPC - waiting for incoming connections
+[Info   : Unity Log] Registered 'wubarrk.yggdrasilsreckoning ConfigSync' RPC - waiting for incoming connections
+[Info   :YggdrasilsReckoning] YR: forged boss-mechanic prop 'YR_Pylon' from 'sign_notext'.
+[Info   :YggdrasilsReckoning] YR: forged boss-mechanic prop 'YR_StoneSpike' from 'sign_notext'.
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Eikthyr_sovereign_tempest' from 'Eikthyr' (health x2.2, damage x1.3, PylonRing).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Eikthyr_tempest_crowned' from 'Eikthyr' (health x2.2, damage x1.3, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Eikthyr_wrath_of_gale' from 'Eikthyr' (health x2, damage x1.4, PeriodicDebuff).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_gd_king_worldroot_colossus' from 'gd_king' (health x2.4, damage x1.3, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_gd_king_primordial_forest' from 'gd_king' (health x2.3, damage x1.3, SummonAdds).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_gd_king_bramble_king' from 'gd_king' (health x2.3, damage x1.3, DamageReflect).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Bonemass_miasma_sovereign' from 'Bonemass' (health x2.3, damage x1.3, PeriodicDebuff).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Bonemass_bile_lord' from 'Bonemass' (health x2.3, damage x1.35, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Bonemass_rotten_patriarch' from 'Bonemass' (health x2.3, damage x1.3, SummonAdds).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Dragon_queen_of_whiteout' from 'Dragon' (health x2.2, damage x1.4, PeriodicDebuff).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Dragon_glacial_matriarch' from 'Dragon' (health x2.2, damage x1.4, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Dragon_terror_of_blizzard' from 'Dragon' (health x2.2, damage x1.4, PeriodicDebuff).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_GoblinKing_solar_emperor' from 'GoblinKing' (health x2.4, damage x1.4, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_GoblinKing_cinder_king' from 'GoblinKing' (health x2.4, damage x1.4, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_GoblinKing_godless' from 'GoblinKing' (health x2.4, damage x1.35, PeriodicDebuff).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_SeekerQueen_broodmother_sovereign' from 'SeekerQueen' (health x2.3, damage x1.3, SummonAdds).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_SeekerQueen_hollow_depths' from 'SeekerQueen' (health x2.3, damage x1.3, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Fader_ashen_cataclysm' from 'Fader' (health x2.2, damage x1.4, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Fader_arch_drakon' from 'Fader' (health x2.2, damage x1.4, PeriodicDebuff).
+[Error  : Unity Log] ArgumentNullException: Value cannot be null.
+Parameter name: shader
+Stack trace:
+UnityEngine.Bindings.ThrowHelper.ThrowArgumentNullException (System.Object obj, System.String parameterName) (at <89f741081c874c65b780dbd6a0d8d33e>:0)
+UnityEngine.Material.CreateWithShader (UnityEngine.Material self, UnityEngine.Shader shader) (at <89f741081c874c65b780dbd6a0d8d33e>:0)
+UnityEngine.Material..ctor (UnityEngine.Shader shader) (at <89f741081c874c65b780dbd6a0d8d33e>:0)
+ShieldDomeImageEffect.Awake () (at <c366779df99d449da9e16b4e0a4d1800>:0)
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Console: /w [text] - Whisper
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Console: /s [text] - Shout
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Console: /die - Kill yourself
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Console: /resetspawn - Reset spawn point
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Console: /[emote]
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Console: Emotes: wave, sit, challenge, cheer, nonono, thumbsup, point, blowkiss, bow, cower, cry, despair, flex, comehere, headbang, kneel, laugh, roar, shrug, dance, relax, toast, rest, vibe, loveyou
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Console: 
+
+[Info   :YggdrasilsReckoning] YR: no 'yggdrasil_kit' embedded resource yet - pieces will use donor meshes and materials.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_WorldrootTap' from 'piece_beehive'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Anvil' from 'blackforge'.
+[Info   :YggdrasilsReckoning] YR: registered 'YR_WorldrootTap' (hash -1343836587) in ZNetScene.
+[Info   :YggdrasilsReckoning] YR: registered 'YR_Anvil' (hash 1953657056) in ZNetScene.
+[Info   :YggdrasilsReckoning] YR: added 'Yggdrasil Tap' to the hammer's build table.
+[Info   :YggdrasilsReckoning] YR: added 'Yggdrasil's Anvil' to the hammer's build table.
+[Info   :YggdrasilsReckoning] YR: routed RPCs registered for this session.
+[Info   : Unity Log] 09/08/2026 17:17:22: Zonesystem Start 25361
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Added 3 locations, 0 vegetations, 0 environments, 0 biome env-setups, 0 clutter  from main
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Added 1 locations, 0 vegetations, 2 environments, 0 biome env-setups, 0 clutter  from main
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Added 27 locations, 25 vegetations, 5 environments, 1 biome env-setups, 3 clutter  from main
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Added 4 locations, 0 vegetations, 1 environments, 0 biome env-setups, 0 clutter  from main
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Added 25 locations, 33 vegetations, 8 environments, 2 biome env-setups, 2 clutter  from main
+
+[Info   : Unity Log] 09/08/2026 17:17:22: DungeonDB Start 25361
+
+[Info   : Unity Log] 09/08/2026 17:17:22: ZRpc timeout set to 30s 
+
+[Info   : Unity Log] 09/08/2026 17:17:22: ZNET START
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Load world: Dedicated (Dedicated)
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Loading 97800 zdos, my sessionID: 747428705, data version: 37
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Loading in ZDOs
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Adding to Dictionary
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Adding to Sectors
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Connecting Portals, Spawners & ZSyncTransforms
+
+[Info   : Unity Log] ConnectSpawners => Connected 27 spawners and 5 'done' spawners.
+[Info   : Unity Log] 09/08/2026 17:17:22: Loaded 11512 locations
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Random event set:valkyries_cargo
+
+[Info   : Unity Log] 09/08/2026 17:17:22: Unloading unused assets
+
+[Info   : Unity Log] 09/08/2026 17:17:23: PlayFab custom ID set to "PlayFab_StormTest_2476_892794779d7566f628aef234d98ff031e7108003"
+
+[Info   : Unity Log] 09/08/2026 17:17:23: Sending PlayFab login request (attempt 2)
+
+[Info   : Unity Log] 09/08/2026 17:17:23: Semaphore type: SemaphoreSlim
+
+[Info   : Unity Log] 09/08/2026 17:17:23: Opened PlayFab server
+
+[Info   : Unity Log] The shader Hidden/Dof/DepthOfFieldHdr (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) is not supported on this platform!
+[Warning: Unity Log] The image effect Main Camera (UnityStandardAssets.ImageEffects.DepthOfField) has been disabled as it's not supported on the current platform.
+[Info   : Unity Log] The shader Hidden/SunShaftsComposite (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) is not supported on this platform!
+[Info   : Unity Log] The shader Hidden/SimpleClear (UnityEngine.Shader) on effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) is not supported on this platform!
+[Warning: Unity Log] The image effect Main Camera (UnityStandardAssets.ImageEffects.SunShafts) has been disabled as it's not supported on the current platform.
+[Info   :Valkyrie's Cargo] role: dedicated server
+[Info   :Valkyrie's Cargo] admin wire up for this session: VCargo_admin is registered on each peer's OWN socket as it connects and VCargo_reply answers on the same socket; the caller's identity is that socket, never a field in the packet
+[Info   :Valkyrie's Cargo] backpack mod: org.bepinex.plugins.backpacks 1.3.9 loaded; shelf x2 (Server.BackpackShelfMultiplier)
+[Info   :Valkyrie's Cargo] director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 99964, next visit #25, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_4690126.dat (81 rows loaded, a saved visit waits for its event); shelf 40 of 72, period 15, rolls every 2 game day(s), next in 0.92 game day(s)
+[Info   :Valkyrie's Cargo] shelf now: Bronze, Iron, Silver, BlackMetal, FlametalNew, AmberPearl, Ruby, SilverNecklace, ArrowIron, ArrowFrost, BoltIron, MeadHealthMinor, MeadStaminaMinor, Wood, RoundLog, YggdrasilWood, Resin, Stone, Flint, Feathers, TrollHide, LoxPelt, ScaleHide, LinenThread, JuteRed, JuteBlue, CopperOre, SilverOre, FlametalOreNew, Guck, Entrails, Ooze, Obsidian, Crystal, FreezeGland, Carapace, WitheredBone, TrophyNeck, TrophyWolf, TrophyGoblin
+[Info   : Unity Log] 09/08/2026 17:17:23: Game server connected
+
+[Info   : Unity Log] 09/08/2026 17:17:23: Logged in PlayFab user via custom ID
+
+[Info   : Unity Log] 09/08/2026 17:17:23: PlayFab logged in as "PlayFab_StormTest_2476_892794779d7566f628aef234d98ff031e7108003"
+
+[Info   : Unity Log] 09/08/2026 17:17:23: PlayFab local entity ID is 8FAC91E89B45FDD6
+
+[Info   : Unity Log] IPv4, returning 172.59.201.230:2476
+[Info   : Unity Log] 09/08/2026 17:17:23: New session server "StormTest" that has join code , now 0 player(s)
+
+[Info   : Unity Log] 09/08/2026 17:17:23: Register PlayFab server "StormTest" with IP 172.59.201.230:2476
+
+[Info   : Unity Log] 09/08/2026 17:17:23: Server 'StormTest' begin PlayFab create and join network for server 
+
+[Info   :Valkyrie's Cargo] visit #24 RESUMED after a restart: pilot Nomadtest, 00:49 left by the saved clock (the event's own timer corrects it next tick)
+[Info   :Valkyrie's Cargo] visit #24 resumed: merchant ZDO 1:60463 rebound (the bird did not survive the restart - non-persistent by design)
+[Info   :Valkyrie's Cargo] visit #24: one minute left
+[Info   : Unity Log] 09/08/2026 17:17:24: Joined PlayFab Party network with ID "236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20="
+
+[Info   : Unity Log] This is the serverIP used to register the server: 172.59.201.230:2476
+[Info   : Unity Log] 09/08/2026 17:17:24: Created PlayFab lobby with ID "2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323", ConnectionString "cv2:2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323|451107|kv1:6iGNcEZ1LBW3GmfzI1kz94tDWdj90JD9X6pPqGaXAIk=" and owned by "8FAC91E89B45FDD6"
+
+[Info   : Unity Log] 09/08/2026 17:17:24: Session "StormTest" registered with join code 309416
+
+[Info   : Unity Log] 09/08/2026 17:17:25: Retry join-code check 99
+
+[Info   : Unity Log] 09/08/2026 17:17:26: Session "StormTest" with join code 309416 and IP 172.59.201.230:2476 is active with 0 player(s)
+
+[Info   : Unity Log] 09/08/2026 17:19:38: PlayFab listen socket child connected to remote player FAB086A55A0E23A9
+
+[Info   : Unity Log] 09/08/2026 17:19:38: Player joined server "StormTest" that has join code 309416, now 1 player(s)
+
+[Info   : Unity Log] 09/08/2026 17:19:38: ZRpc timeout set to 90s 
+
+[Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 to the client.
+[Info   : Unity Log] Sending Backpacks version 1.3.9 and minimum version 1.3.9 to the client.
+[Info   : Unity Log] Sending org.bepinex.plugins.backpacks ItemManager version 1.3.9 and minimum version 0.0.0 to the client.
+[Info   : Unity Log] Sending YggdrasilsReckoning version 0.1.1 and minimum version 0.1.1 to the client.
+[Info   : Unity Log] 09/08/2026 17:19:38: Muted PlayFab remote player FAB086A55A0E23A9
+
+[Info   : Unity Log] 09/08/2026 17:19:38: PlayFab socket with remote ID playfab/FAB086A55A0E23A9 received local Platform ID Steam_76561198392625778
+
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 from the client.
+[Info   : Unity Log] 09/08/2026 17:19:38: Got handshake from client playfab/FAB086A55A0E23A9
+
+[Info   : Unity Log] 09/08/2026 17:19:44: Network version check, their:36, mine:36
+
+[Info   : Unity Log] 09/08/2026 17:19:44: Server: New peer connected,sending global keys
+
+[Info   :Valkyrie's Cargo] admin wire registered for Nomadtest (-582303472)
+[Info   :Valkyrie's Cargo] deal wire registered for Nomadtest (-582303472)
+[Info   : Unity Log] 09/08/2026 17:19:59: Got character ZDOID from Nomadtest : -582303472:7
+
+[Info   :Valkyrie's Cargo] visit #24 ended: timer; takings 0 coins, purse 99964, 8 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] visit #24: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 not rested
+[Info   : Unity Log] 09/08/2026 17:24:23: Update PlayFab entity token
+
+[Info   :Valkyrie's Cargo] admin Nomadtest (-582303472): cargo visit 
+[Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-46.43184, 53.1588936); 1 eligible, 1 ticket(s)
+[Info   : Unity Log] 09/08/2026 17:25:45: Random event set:valkyries_cargo
+
+[Info   :Valkyrie's Cargo] visit #25 begins: pilot Nomadtest (uid -582303472) at (-46.43184, 53.1588936), 300 s, purse 100000, seed 1212364026
+[Info   :Valkyrie's Cargo] visit #25: flight authored: start (-134.264343, 72.79179) at 198.385437, descent (-109.184258, 67.18572) at 161.041611 (50 m short), drop (-60.3884239, 56.27856) at 78.38544, straight in 90 m out; bird 747428705:97801, Dverger 747428705:97802, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #25: dropped at (-60.3884239, 79.11107, 56.27856)
+[Info   :Valkyrie's Cargo] deal w4790ce-25-1 with Nomadtest: sold 1 Ruby at 35, sold 2 ArrowFrost at 3, sold 1 ArrowIron at 2, sold 3 FlametalNew at 140, sold 1 BlackMetal at 62, bought 4 BlackCore at 210, bought 5 Eitr at 36, bought 1 FlametalNew at 77, coins +572 to the player; purse 99428
+[Info   : Unity Log] 09/08/2026 17:27:23:  Connections 1 ZDOS:97800  sent:0 recv:183
+
+[Info   : Unity Log] 09/08/2026 17:27:35: Lobby 2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323 for world 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= refreshed
+
+[Info   :Valkyrie's Cargo] visit #25: one minute left
+[Info   :Valkyrie's Cargo] visit #25 ended: timer; takings 0 coins, purse 99428, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+[Info   :Valkyrie's Cargo] visit #25: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   : Unity Log] 09/08/2026 17:32:03: Keep socket for playfab/FAB086A55A0E23A9, try to reconnect before timeout
+
+[Info   : Unity Log] 09/08/2026 17:32:03: Player connection lost server "StormTest" that has join code 309416, now 1 player(s)
+
+[Warning: Unity Log] 09/08/2026 17:32:03: PlayFab network error in session 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= with type 'Error' and code '4098': the operation was called with an invalid handle
+
+[Info   : Unity Log] 09/08/2026 17:32:03: Failed to send, suspend TX on playfab/FAB086A55A0E23A9 while trying to reconnect
+
+[Info   : Unity Log] ResetParty
+[Info   : Unity Log] Task: LeaveNetworkTask
+[Info   : Unity Log] Task: CleanPartyTask
+[Info   : Unity Log] Task: InitPartyTask()
+[Info   : Unity Log] Task: JoinPartyTask
+[Info   : Unity Log] 09/08/2026 17:32:23: Joined PlayFab Party network with ID "236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20="
+
+[Warning: Unity Log] 09/08/2026 17:33:33: ZRpc timeout detected
+
+[Info   : Unity Log] ZPlayFabSocket::Dispose. State: CONNECTED
+[Info   : Unity Log] ZPlayFabSocket::Dispose. leave lobby. LobbyId: 
+[Info   : Unity Log] 09/08/2026 17:33:33: Destroying abandoned non persistent zdo -582303472:7 owner -582303472
+
+[Info   : Unity Log] ZPlayFabSocket::Dispose. State: CLOSED
+[Info   : Unity Log] ZPlayFabSocket::Dispose. State: CLOSED
+[Info   :Valkyrie's Cargo] roll: no eligible player: nobody online
+[Info   : Unity Log] 09/08/2026 17:36:05: PlayFab listen socket child connected to remote player FAB086A55A0E23A9
+
+[Info   : Unity Log] 09/08/2026 17:36:05: Player joined server "StormTest" that has join code 309416, now 1 player(s)
+
+[Info   : Unity Log] 09/08/2026 17:36:05: Muted PlayFab remote player FAB086A55A0E23A9
+
+[Info   : Unity Log] 09/08/2026 17:36:05: PlayFab socket with remote ID playfab/FAB086A55A0E23A9 received local Platform ID Steam_76561198392625778
+
+[Info   : Unity Log] 09/08/2026 17:36:05: ZRpc timeout set to 90s 
+
+[Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 to the client.
+[Info   : Unity Log] Sending Backpacks version 1.3.9 and minimum version 1.3.9 to the client.
+[Info   : Unity Log] Sending org.bepinex.plugins.backpacks ItemManager version 1.3.9 and minimum version 0.0.0 to the client.
+[Info   : Unity Log] Sending YggdrasilsReckoning version 0.1.1 and minimum version 0.1.1 to the client.
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 from the client.
+[Info   : Unity Log] 09/08/2026 17:36:05: Got handshake from client playfab/FAB086A55A0E23A9
+
+[Info   : Unity Log] 09/08/2026 17:36:17: Network version check, their:36, mine:36
+
+[Info   : Unity Log] 09/08/2026 17:36:17: Server: New peer connected,sending global keys
+
+[Info   :Valkyrie's Cargo] admin wire registered for Nomadtest (102907990)
+[Info   :Valkyrie's Cargo] deal wire registered for Nomadtest (102907990)
+[Info   : Unity Log] 09/08/2026 17:36:32: Got character ZDOID from Nomadtest : 102907990:1
+
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 not rested
+[Info   : Unity Log] 09/08/2026 17:37:23:  Connections 1 ZDOS:97798  sent:0 recv:183
+
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 on cooldown
+[Info   :Valkyrie's Cargo] admin Nomadtest (102907990): cargo visit 
+[Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-48.17742, 54.64115); 1 eligible, 1 ticket(s)
+[Info   : Unity Log] 09/08/2026 17:38:15: Random event set:valkyries_cargo
+
+[Info   :Valkyrie's Cargo] visit #26 begins: pilot Nomadtest (uid 102907990) at (-48.17742, 54.64115), 300 s, purse 100000, seed 1836718833
+[Info   :Valkyrie's Cargo] visit #26: flight authored: start (-128.580841, 14.2024412) at 198.196808, descent (-104.099792, 26.51513) at 159.2535 (50 m short), drop (-59.43122, 48.98108) at 78.19681, straight in 90 m out; bird 747428705:97803, Dverger 747428705:97804, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #26: dropped at (-59.43122, 79.7262955, 48.98108)
+[Info   :Valkyrie's Cargo] deal w4790ce-26-1 with Nomadtest: bought 1 Resin at 1, coins +1 to the player; purse 99999
+[Info   :Valkyrie's Cargo] admin Nomadtest (102907990): cargo dismiss 
+[Info   :Valkyrie's Cargo] visit #26 ended: admin Nomadtest; takings 0 coins, purse 99999, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+[Info   :Valkyrie's Cargo] visit #26: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   : Unity Log] 09/08/2026 17:40:48: Update PlayFab entity token
+
+[Info   : Unity Log] 09/08/2026 17:41:23: Keep socket for playfab/FAB086A55A0E23A9, try to reconnect before timeout
+
+[Info   : Unity Log] 09/08/2026 17:41:23: Player connection lost server "StormTest" that has join code 309416, now 1 player(s)
+
+[Warning: Unity Log] 09/08/2026 17:41:23: PlayFab network error in session 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= with type 'Error' and code '4098': the operation was called with an invalid handle
+
+[Info   : Unity Log] 09/08/2026 17:41:23: Failed to send, suspend TX on playfab/FAB086A55A0E23A9 while trying to reconnect
+
+[Info   : Unity Log] ResetParty
+[Info   : Unity Log] Task: LeaveNetworkTask
+[Info   : Unity Log] Task: CleanPartyTask
+[Info   : Unity Log] Task: InitPartyTask()
+[Info   : Unity Log] Task: JoinPartyTask
+[Info   : Unity Log] 09/08/2026 17:41:43: Joined PlayFab Party network with ID "236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20="
+
+[Warning: Unity Log] 09/08/2026 17:42:52: ZRpc timeout detected
+
+[Info   : Unity Log] ZPlayFabSocket::Dispose. State: CONNECTED
+[Info   : Unity Log] ZPlayFabSocket::Dispose. leave lobby. LobbyId: 
+[Info   : Unity Log] 09/08/2026 17:42:52: Destroying abandoned non persistent zdo 102907990:1 owner 102907990
+
+[Info   : Unity Log] ZPlayFabSocket::Dispose. State: CLOSED
+[Info   : Unity Log] ZPlayFabSocket::Dispose. State: CLOSED
+[Info   :Valkyrie's Cargo] roll: no eligible player: nobody online
+[Info   : Unity Log] 09/08/2026 17:47:20: Available space to current user: 651467497472. Saving is blocked if below: 13178644 bytes. Warnings are given if below: 26357288
+
+[Info   : Unity Log] 09/08/2026 17:47:20: Sending message to save player profiles
+
+[Info   : Unity Log] 09/08/2026 17:47:20: PrepareSave: clone done in 12ms
+
+[Info   : Unity Log] 09/08/2026 17:47:20: PrepareSave: ZDOExtraData.PrepareSave done in 26 ms
+
+[Info   : Unity Log] 09/08/2026 17:47:23:  Connections 0 ZDOS:97797  sent:0 recv:0
+
+[Info   : Unity Log] 09/08/2026 17:50:51: Lobby 2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323 for world 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= refreshed
+
+[Info   : Unity Log] 09/08/2026 17:57:23:  Connections 0 ZDOS:97797  sent:0 recv:0
+
+[Info   : Unity Log] 09/08/2026 17:57:36: Update PlayFab entity token
+
+[Info   : Unity Log] 09/08/2026 18:01:06: Lobby 2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323 for world 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= refreshed
+
+[Info   : Unity Log] 09/08/2026 18:07:23:  Connections 0 ZDOS:97797  sent:0 recv:0
+
+[Info   : Unity Log] 09/08/2026 18:13:10: Lobby 2dff76f7-dc39-4fad-82ac-58dea739c786.r-20260323 for world 'StormTest' and network 236c7a8d-6dee-40f5-b175-6736c58eb3f9|AwDyLen6LGbza39ohUePGjOzzSonOldlc3RVcwAAAAAAAAAAAAAAAAAAn3hhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtNjYxYzc2OGEtNmMwNi00MDM1LTkyM2EtNDdmODYwNzdiODkxLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= refreshed
+
+[Info   : Unity Log] 09/08/2026 18:17:03: Update PlayFab entity token
+
+[Info   : Unity Log] 09/08/2026 18:17:20: Available space to current user: 651191738368. Saving is blocked if below: 13171702 bytes. Warnings are given if below: 26343404
+
+[Info   : Unity Log] 09/08/2026 18:17:20: Sending message to save player profiles
+
+[Info   : Unity Log] 09/08/2026 18:17:20: PrepareSave: clone done in 13ms
+
+[Info   : Unity Log] 09/08/2026 18:17:20: PrepareSave: ZDOExtraData.PrepareSave done in 16 ms
+
+[Info   : Unity Log] 09/08/2026 18:17:23: Unloading unused assets
+
+[Info   : Unity Log] 09/08/2026 18:17:23:  Connections 0 ZDOS:97797  sent:0 recv:0
+

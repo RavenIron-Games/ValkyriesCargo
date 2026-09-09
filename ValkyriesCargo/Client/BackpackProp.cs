@@ -53,7 +53,7 @@ namespace RavenIron.ValkyriesCargo.Client
         public static bool Attach(Transform bodyRoot)
         {
             Worn = false;
-            if (bodyRoot == null) { Detail = "no body to hang it on"; return false; }
+            if (bodyRoot == null) return Bare("no body to hang it on");
 
             try
             {
@@ -62,8 +62,7 @@ namespace RavenIron.ValkyriesCargo.Client
 
                 if (ModConfig.BackpackOnIngvar != null && !ModConfig.BackpackOnIngvar.Value)
                 {
-                    Detail = "switched off (Client.BackpackOnIngvar)";
-                    return false;
+                    return Bare("switched off (Client.BackpackOnIngvar)");
                 }
 
                 string prefabName = Name();
@@ -73,15 +72,14 @@ namespace RavenIron.ValkyriesCargo.Client
                     // The honest reading of a miss: the backpack mod is not on THIS machine. The prefab is in
                     // ObjectDB only because the mod put it there, so its absence is the detection - a stronger
                     // test than the chainloader, which can say "loaded" for a mod that failed to register.
-                    Detail = "no prefab '" + prefabName + "' in ObjectDB (the backpack mod is not loaded here)";
-                    return false;
+                    return Bare("no prefab '" + prefabName + "' in ObjectDB (the backpack mod is not loaded here)");
                 }
 
                 Transform meshRoot = source.transform.Find(MeshPath);
                 if (meshRoot == null)
                 {
-                    Detail = "prefab '" + prefabName + "' has no '" + MeshPath + "' (the mod's layout has moved)";
-                    return false;
+                    return Bare("prefab '" + prefabName + "' has no '" + MeshPath + "' (the mod's layout has moved); it has " +
+                                Children(source.transform));
                 }
 
                 // The rig, by name, as `Core/Knapsack` decides it.
@@ -93,15 +91,14 @@ namespace RavenIron.ValkyriesCargo.Client
                 string boneName = Knapsack.ResolveBone(boneNames, wanted);
                 if (boneName.Length == 0)
                 {
-                    Detail = "this rig has no bone named '" + wanted + "' and none of the fallbacks " +
-                             string.Join("/", Knapsack.Fallbacks) + "; nothing to hang it on";
-                    return false;
+                    return Bare("this rig has no bone named '" + wanted + "' and none of the fallbacks " +
+                                string.Join("/", Knapsack.Fallbacks) + "; the rig has " + Rig(all));
                 }
 
                 Transform bone = null;
                 for (int i = 0; i < all.Length; i++)
                     if (all[i].name == boneName) { bone = all[i]; break; }
-                if (bone == null) { Detail = "bone '" + boneName + "' vanished between the read and the attach"; return false; }
+                if (bone == null) return Bare("bone '" + boneName + "' vanished between the read and the attach");
 
                 GameObject holder = Bake(meshRoot, prefabName);
                 if (holder == null) return false;                     // Bake set Detail
@@ -111,6 +108,7 @@ namespace RavenIron.ValkyriesCargo.Client
                 Place(holder.transform);
 
                 Worn = true;
+                _said = null;                                  // a later failure is news again
                 Detail = "'" + prefabName + "' on " + boneName + ", " + _parts + " part(s), " + _triangles + " tris" +
                          "; local " + Words(holder.transform.localPosition) +
                          ", turned " + Words(holder.transform.localEulerAngles) +
@@ -126,6 +124,50 @@ namespace RavenIron.ValkyriesCargo.Client
                 if (_throws++ < 3) ValkyriesCargo.Log.LogWarning("body: backpack " + Detail);
                 return false;
             }
+        }
+
+        private static string _said;
+
+        /// <summary>
+        /// He goes bare, and the log SAYS SO. Every path out of `Attach` that is not a success now
+        /// comes through here, because the version that only spoke on success and on a throw taught us
+        /// nothing on the one night it mattered: the 2026-09-08 two-client session ran with a build
+        /// that had no backpack code in it at all, and a reader could not tell that from a build whose
+        /// add-on had quietly declined. House rule, from `docs/knowledge-base/`: a silent success and a
+        /// silent no-op look the same from outside the game.
+        ///
+        /// Repeats are held down rather than counted: the same reason logs once, a CHANGED reason logs
+        /// again, so a config edit or a mod arriving mid-session is visible without the attach cadence
+        /// filling the log.
+        /// </summary>
+        private static bool Bare(string why)
+        {
+            Worn = false;
+            Detail = why;
+            if (_said != why)
+            {
+                _said = why;
+                ValkyriesCargo.Log.LogInfo("body: no backpack - " + why);
+            }
+            return false;
+        }
+
+        /// <summary>The prefab's own top-level children, so a rename upstream reads as a rename and not as a mystery.</summary>
+        private static string Children(Transform t)
+        {
+            var names = new List<string>();
+            for (int i = 0; i < t.childCount && names.Count < 12; i++) names.Add(t.GetChild(i).name);
+            return names.Count == 0 ? "no children at all" : string.Join("/", names.ToArray());
+        }
+
+        /// <summary>The bone names actually on this rig, so a miss names the alternatives instead of implying none exist.</summary>
+        private static string Rig(Transform[] all)
+        {
+            var names = new List<string>();
+            for (int i = 0; i < all.Length && names.Count < 12; i++)
+                if (all[i] != null && all[i] != all[0]) names.Add(all[i].name);
+            return names.Count == 0 ? "no child transforms at all"
+                                    : names.Count + "+ bones incl. " + string.Join("/", names.ToArray());
         }
 
         private static int _parts;
@@ -181,7 +223,7 @@ namespace RavenIron.ValkyriesCargo.Client
                 if (_parts == 0)
                 {
                     UnityEngine.Object.Destroy(holder);
-                    Detail = "prefab '" + prefabName + "' has '" + MeshPath + "' but no skinned mesh under it";
+                    Bare("prefab '" + prefabName + "' has '" + MeshPath + "' but no skinned mesh under it");
                     return null;
                 }
                 return holder;

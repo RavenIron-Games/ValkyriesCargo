@@ -57,6 +57,33 @@ namespace RavenIron.ValkyriesCargo.Core
         public const float DropAltitude = 10f;
 
         /// <summary>
+        /// How far PAST the drop the bird flies before it destroys itself, measured on the approach
+        /// bearing from the drop point.
+        ///
+        /// The number is small on purpose, and it is the fix for what the 2026-09-08 session called
+        /// "we almost always see an empty bird". The departure used to be authored at
+        /// `pilot - dir * (startDistance * 2)` and still at the full glide altitude - about 194 m of
+        /// ground and a climb back to 120 m, which at the shipped 8 m/s is ~24 s. The carrying
+        /// approach is ~17 s (77 m out, 120 m down). So the bird was empty for LONGER than it was
+        /// ever carrying, and the empty leg is the one flown low and overhead where it is easy to
+        /// watch, while the carry is a speck coming down a 57-degree line. Nothing was dropping
+        /// early; the ratio was simply upside down. Don's StormTest log for visits 25 and 26 has the
+        /// drop landing on the authored X and Z to seven figures, and the client log has
+        /// `Destroying valkyrie` 24 s after it.
+        ///
+        /// At 8 m/s this is under 7 s, and it ends with the bird well past the player rather than
+        /// back where it came from.
+        /// </summary>
+        public const float DepartDistance = 55f;
+
+        /// <summary>
+        /// How much the bird climbs on the way out, above the drop. A departure that climbs back to
+        /// the full start altitude is a bird that hangs on screen while it does it; this is enough to
+        /// read as leaving and little enough to be gone quickly.
+        /// </summary>
+        public const float DepartClimb = 30f;
+
+        /// <summary>
         /// The descent waypoint never eats more than this much of the run. Without it a shrunk start
         /// (54 m out, a 42 m run) puts the configured 50 m descent past the start point, the waypoint
         /// lands ON the start, and the flight silently degenerates to one leg carrying the whole
@@ -335,10 +362,15 @@ namespace RavenIron.ValkyriesCargo.Core
                         StartX = sx, StartY = pilotY + startAltitude, StartZ = sz,
                         DescentX = ddx, DescentY = ddy, DescentZ = ddz,
                         DropX = pilotX + dx * drop, DropY = pilotY, DropZ = pilotZ + dz * drop,
-                        // Away along the entry line, still at altitude: a lateral exit, never a
-                        // vertical one. It only has to survive long enough to leave the screen; the
-                        // bird destroys itself, so this point may sit outside the block.
-                        AwayX = pilotX - dx * (d * 2f), AwayY = pilotY + startAltitude, AwayZ = pilotZ - dz * (d * 2f),
+                        // Away along the entry line, CONTINUING past the drop rather than doubling
+                        // back over the pilot, and anchored on the drop rather than on the pilot so
+                        // the empty leg is the same short length whatever the start distance was.
+                        // `dx`/`dz` point pilot -> start, so the flight direction is -dx/-dz. It only
+                        // has to survive long enough to leave the screen; the bird destroys itself,
+                        // so this point may sit outside the block.
+                        AwayX = pilotX + dx * drop - dx * DepartDistance,
+                        AwayY = pilotY + dropAltitude + DepartClimb,
+                        AwayZ = pilotZ + dz * drop - dz * DepartDistance,
                     };
                 }
             }
@@ -350,7 +382,7 @@ namespace RavenIron.ValkyriesCargo.Core
                               StartX = pilotX, StartY = pilotY + startAltitude, StartZ = pilotZ,
                               DescentX = pilotX, DescentY = pilotY + dropAltitude, DescentZ = pilotZ,
                               DropX = pilotX, DropY = pilotY, DropZ = pilotZ,
-                              AwayX = pilotX, AwayY = pilotY + startAltitude, AwayZ = pilotZ };
+                              AwayX = pilotX, AwayY = pilotY + dropAltitude + DepartClimb, AwayZ = pilotZ };
         }
 
         /// <summary>One planned flight: three waypoints and the drop, all in world XZ with an altitude.</summary>
