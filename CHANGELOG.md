@@ -26,7 +26,7 @@ a settled one; **the owner's word on 2026-09-08 after the day's five merges: no 
 Entries are in build order, except the five sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
 
-### Since 0.1.0-rc2 — the same night
+### 0.1.0-rc3 — cut 2026-09-08 evening, after the two-client session (PRs #54 to #68); a pre-release, uploaded to no store
 
 - **D5, the ownership loss during the carry (PR #54, Track B, 1718).** `HoldTheCarry` claims the merchant back
   every physics step while he hangs from the talons, on the pilot's client only (gated on owning the bird, which
@@ -116,6 +116,18 @@ after the rest of this log was written.
   walk a Shift+E dismiss was taken first try, `VCargo_dismissed: ok` on the client, **0 clock republishes** (543 on
   visit 21) and the ServerSync line 8 times over the visit instead of every 2 s. The terminal button path itself is
   not yet seen on a screen.
+- **More than one ware per deal, and Confirm lit only when the deal can go (branch `a/multi-wanted`, 1924 checks).**
+  The owner's ask after the two-client session (visits 23 and 24). The deal's wanted side is a list on the wire like
+  the offered side (a single line encodes as before, so a one-ware deal still parses on a side that is behind; a
+  two-ware deal fails that side's parse loudly; the same ware twice is refused at parse); `Deal.Wants` beside
+  `Offered`, `Wanted` the first line for the code that had one; `Market.Settle` checks every wanted line in the
+  design's order and refuses the deal whole on the first that fails; the tray's GET side is a list (`MaxWantedLines`
+  8) with the count box, "all" (which pays for the other lines first) and x on every line, both wells drawn the same
+  way. The Confirm button is enabled only when the tray's own Validate passes, run on every draw, and his reason
+  for a no shows dim beside the balance line before anything is pressed; its lit face is the theme's bright gold
+  (the owner on the first screen: "confirm has to be brighter"). SEEN on visits 25 and 26 (2026-09-08, PR #68
+  merged): one deal of five wares taken and three kinds given, `w4790ce-25-1 … coins +572 to the player`,
+  settled and applied line for line; the owner: "love it."
 - **The walk-off inside Trading (branch `a/follow-assert`, Wu'barrk's diagnosis on issue #59, his file at the
   owner's word).** His visit-16 client log has no leash transition at all: Ingvar entered Trading at 25 s and was
   still in it 185 s later, so #61's busy hold (which holds the LEASH) never covered the walk-off he saw. His read:

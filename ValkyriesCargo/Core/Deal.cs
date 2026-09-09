@@ -45,9 +45,11 @@ namespace RavenIron.ValkyriesCargo.Core
     }
 
     /// <summary>
-    /// The one trade primitive (design 3.4): buy = Wanted + coins; sell = Offered only; barter =
-    /// Wanted + Offered, change in coins. "v1;visitId;nonce;wanted;offered;coinsOffered" where wanted is
-    /// one line or empty and offered is a '|' list. PURE.
+    /// The one trade primitive (design 3.4): buy = Wants + coins; sell = Offered only; barter =
+    /// Wants + Offered, change in coins. "v1;visitId;nonce;wanted;offered;coinsOffered" where wanted and
+    /// offered are '|' lists. Wanted was ONE line or empty until 2026-09-08 (the owner's ask: more than one
+    /// ware per deal); a single line encodes the same either way, so a one-ware deal still parses on a side
+    /// that is behind, and a two-ware deal fails that side's parse loudly rather than settling half. PURE.
     /// </summary>
     public sealed class Deal
     {
@@ -55,14 +57,33 @@ namespace RavenIron.ValkyriesCargo.Core
 
         public int VisitId;
         public long Nonce;
-        public DealLine Wanted;
+        /// <summary>Every ware the player takes, one line per prefab.</summary>
+        public List<DealLine> Wants = new List<DealLine>();
         public List<DealLine> Offered = new List<DealLine>();
         public int CoinsOffered;
 
-        public bool IsBuy => Wanted != null && Offered.Count == 0;
-        public bool IsSell => Wanted == null && Offered.Count > 0;
-        public bool IsBarter => Wanted != null && Offered.Count > 0;
-        public bool IsEmpty => Wanted == null && Offered.Count == 0;
+        /// <summary>
+        /// The first wanted line, or null: the one-ware view the code and the harness grew up with. Setting
+        /// it replaces the whole wanted side with that one line.
+        /// </summary>
+        public DealLine Wanted
+        {
+            get => Wants.Count > 0 ? Wants[0] : null;
+            set { Wants.Clear(); if (value != null) Wants.Add(value); }
+        }
+
+        public bool IsBuy => Wants.Count > 0 && Offered.Count == 0;
+        public bool IsSell => Wants.Count == 0 && Offered.Count > 0;
+        public bool IsBarter => Wants.Count > 0 && Offered.Count > 0;
+        public bool IsEmpty => Wants.Count == 0 && Offered.Count == 0;
+
+        /// <summary>The price of the wanted lines at the unit prices the player saw.</summary>
+        public int WantedValueSeen()
+        {
+            long sum = 0;
+            for (int i = 0; i < Wants.Count; i++) sum += (long)Wants[i].Count * Wants[i].UnitPriceSeen;
+            return sum > int.MaxValue ? int.MaxValue : (int)sum;
+        }
 
         /// <summary>The value of the offered goods at the prices the player saw.</summary>
         public int OfferedValueSeen()
@@ -74,7 +95,7 @@ namespace RavenIron.ValkyriesCargo.Core
 
         public string Encode() =>
             "v" + Wire.Int(FormatVersion) + Wire.Field + Wire.Int(VisitId) + Wire.Field + Wire.Long(Nonce) + Wire.Field +
-            (Wanted != null ? Wanted.Encode() : "") + Wire.Field + DealLine.EncodeList(Offered) + Wire.Field + Wire.Int(CoinsOffered);
+            DealLine.EncodeList(Wants) + Wire.Field + DealLine.EncodeList(Offered) + Wire.Field + Wire.Int(CoinsOffered);
 
         /// <summary>Never throws; returns null (and reports) when the message is not a deal at all.</summary>
         public static Deal Parse(string s, List<string> problems)
@@ -86,12 +107,12 @@ namespace RavenIron.ValkyriesCargo.Core
             var d = new Deal();
             if (!Wire.TryInt(f[1], out d.VisitId)) { Wire.Report(problems, "deal: visitId did not parse"); return null; }
             if (!Wire.TryLong(f[2], out d.Nonce)) { Wire.Report(problems, "deal: nonce did not parse"); return null; }
-            if (f[3].Length > 0)
-            {
-                d.Wanted = DealLine.Parse(f[3], problems);
-                if (d.Wanted == null) return null;
-            }
             int before = problems != null ? problems.Count : 0;
+            d.Wants = DealLine.ParseList(f[3], problems);
+            if (problems != null && problems.Count > before) return null;
+            for (int i = 1; i < d.Wants.Count; i++)
+                for (int j = 0; j < i; j++)
+                    if (d.Wants[i].Prefab == d.Wants[j].Prefab) { Wire.Report(problems, "deal: '" + d.Wants[i].Prefab + "' wanted twice; one line per ware"); return null; }
             d.Offered = DealLine.ParseList(f[4], problems);
             if (problems != null && problems.Count > before) return null;
             if (!Wire.TryInt(f[5], out d.CoinsOffered) || d.CoinsOffered < 0) { Wire.Report(problems, "deal: coinsOffered must be 0 or more"); return null; }
