@@ -1661,6 +1661,44 @@ namespace ValkyriesCargo.Tests
         /// </summary>
         private static void KnapsackTests()
         {
+            Section("Knapsack: the bone's own scale, undone (the invisible pack, 2026-09-09)");
+            {
+                // The first live run reported a perfectly attached pack - "18 part(s), 11206 tris" - and
+                // put nothing on screen. models/ingvar.glb carries Armature at scale 0.01: the rig is
+                // authored in centimetres, so every bone under it has a world scale of a hundredth and a
+                // prop parented there with localScale 1 renders at 1/100th size. Five millimetres of
+                // backpack. The knobs are therefore declared in WORLD units and converted here.
+                const float RigScale = 0.01f;                  // the real number off ingvar.glb
+
+                Check(Math.Abs(Knapsack.Uncompress(RigScale) - 100f) < 0.001f,
+                      "a bone at 0.01 is undone by a factor of 100");
+                Check(Math.Abs(Knapsack.Uncompress(1f) - 1f) < 1e-6f,
+                      "a bone already at world scale needs no compensation");
+
+                // A scale of 1 must come out the pack's own authored size in the WORLD.
+                float local = Knapsack.LocalScale(1f, RigScale);
+                Check(Math.Abs(local * RigScale - 1f) < 0.001f,
+                      "scale 1 on a 0.01 rig lands at world scale 1, not 0.01");
+                Check(Math.Abs(Knapsack.LocalScale(0.75f, RigScale) * RigScale - 0.75f) < 0.001f,
+                      "scale 0.75 lands at world 0.75 whatever the rig is authored at");
+
+                // The clamp still owns the knob itself: compensation must not smuggle a value past it.
+                Check(Math.Abs(Knapsack.LocalScale(999f, RigScale) * RigScale - Knapsack.MaxScale) < 0.001f,
+                      "an absurd scale is still clamped, then compensated");
+
+                // Offsets are metres, so they scale the same way.
+                float ox = 0f, oy = 0.2f, oz = -0.15f;
+                Knapsack.LocalOffset(RigScale, ref ox, ref oy, ref oz);
+                Check(Math.Abs(oy * RigScale - 0.2f) < 0.0001f && Math.Abs(oz * RigScale - (-0.15f)) < 0.0001f,
+                      "an offset of 0.2 m really moves it 0.2 m on a 0.01 rig");
+
+                // A rig nobody can hang anything on must not produce an infinity in a transform.
+                Check(Knapsack.Uncompress(0f) == 1f, "a zero bone scale falls back to 1, never divides");
+                Check(Knapsack.Uncompress(-1f) == 1f, "a negative bone scale falls back to 1");
+                Check(Knapsack.Uncompress(float.NaN) == 1f, "NaN falls back to 1 (Unity propagates NaN through a transform)");
+                Check(Knapsack.Uncompress(float.PositiveInfinity) == 1f, "infinity falls back to 1");
+            }
+
             Section("Knapsack (the backpack add-on's body half, 2026-09-08)");
 
             // Ingvar's own rig, read off models/ingvar.glb: 24 joints, his spine spelled Spine/Spine01/Spine02.
@@ -3923,6 +3961,36 @@ namespace ValkyriesCargo.Tests
                 // The one it cannot buy back with distance: the block clamp caps the run.
                 Check(f.StartDistance <= 90f + 0.01f,
                       "the run is still inside the pilot's active block, so altitude is the only lever");
+            }
+
+            Section("FlightPlan: the release chases the player, and the bound that has to move with it (2026-09-09)");
+            {
+                // "he should stay in the bird until he is 20 m from player". The release used to be a
+                // fixed point authored where the pilot stood at visit start; visit #3 let him go 41 m
+                // away because the player had walked while the bird was inbound.
+                Check(Math.Abs(FlightPlan.DropNearPlayer - 20f) < 0.001f,
+                      "the bird holds him until 20 m from the player");
+                Check(FlightPlan.DropNearPlayer > FlightPlan.DropDistanceMin,
+                      "the release radius is wider than the authored drop distance, so the chase is what decides");
+
+                // The P11 trust bound MUST widen with it or every honest chased drop is refused and the
+                // session records a point the merchant is not standing on.
+                Check(FlightPlan.DropChaseXZ > FlightPlan.DropNearPlayer + FlightPlan.DropDistanceMin,
+                      "the accepted drop region covers a legitimate chase");
+                Check(FlightPlan.DropChaseXZ > FlightPlan.DropToleranceXZ,
+                      "the chase bound is the wider of the two");
+                Check(!FlightPlan.DropAccepted(0f, 30f, 40f, 0f, 30f, 0f),
+                      "the STRICT check still refuses 40 m: the fixed-point contract is untouched");
+
+                // ...and it is still a bound, not an open door: a drop across the map is refused.
+                Check(FlightPlan.DropAcceptedChasing(0f, 30f, 0f, 0f, 30f, 0f),
+                      "a drop exactly on the authored point is accepted");
+                Check(FlightPlan.DropAcceptedChasing(0f, 30f, 40f, 0f, 30f, 0f),
+                      "a drop 40 m along the approach - a real chase - is accepted");
+                Check(!FlightPlan.DropAcceptedChasing(0f, 30f, 500f, 0f, 30f, 0f),
+                      "a drop 500 m away is still refused");
+                Check(!FlightPlan.DropAcceptedChasing(0f, 500f, 0f, 0f, 30f, 0f),
+                      "the altitude bound is untouched by the chase");
             }
 
             Section("FlightPlan: the departure, so the empty bird is not the whole show (2026-09-08)");

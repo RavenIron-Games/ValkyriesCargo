@@ -28,6 +28,42 @@ after the rest of this log was written.
 
 ### Since 0.1.0-rc2 — the same night
 
+- **The invisible backpack: the rig is authored in centimetres (Track B, 2026-09-09, 1950 checks).** The
+  first live run of the add-on reported a perfectly attached pack - `body: backpack 'bp_explorer' on
+  Spine02, 18 part(s), 11206 tris` - and put NOTHING on screen. `models/ingvar.glb` carries `Armature` at
+  **scale 0.01**: the rig is authored in centimetres and scaled down by a hundred at its root, so every
+  bone under it, `Spine02` included, has a world scale of 0.01. A prop parented there with
+  `localScale = 1` renders at a hundredth of its size - the pack was about five millimetres across,
+  correctly attached and completely invisible. The configured offsets had it too: `0,0.2,-0.15` moved it
+  two millimetres. `Core/Knapsack.Uncompress` / `LocalScale` / `LocalOffset` divide the bone's real
+  `lossyScale` back out, so the knobs are declared in WORLD units - metres, and scale 1 is the pack's own
+  authored size - on this rig or any re-bake of it. A zero, negative or NaN bone scale falls back to 1
+  rather than handing Unity an infinity. Ten checks, two mutations proven.
+- **Every dimensioned config knob states its units (Track B, 2026-09-09).** The generated
+  `com.raveniron.valkyriescargo.cfg` is what an admin actually reads, and it did not say what its numbers
+  meant. `BackpackOffset` now reads `UNITS: WORLD METRES, as x,y,z` with the axis convention and an
+  explicit note that the rig's own 0.01 is divided out so nobody types bone units; `BackpackRotation`
+  `UNITS: DEGREES`, Euler, in Unity's order; `BackpackScale` `UNITS: A MULTIPLIER` of the pack's authored
+  size with its allowed range spelled out. Also `FlightSpeed` (m/s), `FlightTurnRate` (deg/s),
+  `FlightStartAltitude` / `FlightStartDistance` / `FlightDescentDistance` (metres), `CooldownRadius` (m),
+  `MerchantLifespanSeconds` (world seconds), `BodyYawDegrees` (deg), `TerminalBackdropAlpha` (0-1).
+- **The bird carries him until it reaches YOU (Track B, 2026-09-09; the owner's words: "he should stay in
+  the bird until he is 20 m from player").** The release was a fixed point authored where the pilot stood
+  when the visit began, so a player who walked while the bird was inbound got a drop wherever they used to
+  be - visit #3 on 2026-09-09 released him 41 m away, and the carry was over before it was ever close
+  enough to look at. `CargoFlight` now aims the last leg at the player's LIVE position and releases at
+  `FlightPlan.DropNearPlayer` (20 m), and `Drop()` writes where the bird actually caught them.
+  **This widens a P11 trust boundary and it is deliberate:** the server refused a client-reported drop
+  more than `DropToleranceXZ` (8 m) from the authored point, which would reject every honest chased drop.
+  `DropAccepted` and the three tests that guard it are UNTOUCHED - a new `DropAcceptedChasing` at
+  `DropChaseXZ` (96 m, the flight's own reach: a drop across the map is still refused) is used only by the
+  chase path. Seven checks, two mutations proven.
+- **The carry, reported once a second (Track B, 2026-09-09).** "We still see an empty bird flying in", and
+  every line the mod printed said the carry was fine: `awake as carried`, `ours`, `grounded no` at the
+  drop. `CargoMerchant.CarryReport` prints his position, the talon's, the gap between them, the distance to
+  the player, how many of his renderers are actually visible, the owner and whether he is grounded - the
+  four things that would each explain it, and they are different numbers. Owner and watcher both, because
+  the two screens are moved by different code. Capped at 30 lines.
 - **The inbound flight is watchable: the start altitude 120 m -> 45 m (Track B, 2026-09-08, 1931 checks).**
   The other half of the empty-bird report, and the owner's ask in his own words: "we need to see the val
   holding him". At 120 m over a ~77 m run the bird sat **53 degrees above the horizon** from where the

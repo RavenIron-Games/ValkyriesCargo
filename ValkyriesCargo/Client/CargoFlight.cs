@@ -179,8 +179,17 @@ namespace RavenIron.ValkyriesCargo.Client
                 return;
             }
 
-            Vector3 target = _dropped ? _away : (_descent ? _drop : _descentStart);
-            if (DistanceXZ(target, transform.position) < ArriveDistance)
+            // The carrying legs: out to the descent waypoint, then in on the PLAYER rather than on a
+            // point authored before they moved (owner, 2026-09-09: "he should stay in the bird until he
+            // is 20 m from player"). The empty-looking fly-in was partly this - visit #3 released him
+            // 41 m away because that is where the pilot had been standing when the visit was authored.
+            Vector3 target = _dropped ? _away : (_descent ? CarryTarget() : _descentStart);
+
+            if (_descent && !_dropped && CaughtThePlayer())
+            {
+                Drop();
+            }
+            else if (DistanceXZ(target, transform.position) < ArriveDistance)
             {
                 if (!_descent) _descent = true;
                 else if (!_dropped) Drop();
@@ -216,6 +225,30 @@ namespace RavenIron.ValkyriesCargo.Client
         }
 
         /// <summary>
+        /// Where the bird is heading on the last carrying leg: the player, at the authored drop altitude,
+        /// so the approach closes on whoever is actually there. Falls back to the authored drop when
+        /// there is no player to find - a bird with nobody to deliver to still finishes its flight.
+        /// `Player.GetClosestPlayer` is the same public call `CargoMerchant.Decide` already measures with;
+        /// nothing here touches `Player.m_localPlayer`, which is the whole reason our bird skips vanilla
+        /// `Valkyrie.Awake` in the first place.
+        /// </summary>
+        private Vector3 CarryTarget()
+        {
+            Player near = Player.GetClosestPlayer(transform.position, 9999f);
+            if (near == null) return _drop;
+            Vector3 at = near.transform.position;
+            at.y = _drop.y;
+            return at;
+        }
+
+        /// <summary>True once the bird is within `FlightPlan.DropNearPlayer` of somebody, measured flat.</summary>
+        private bool CaughtThePlayer()
+        {
+            Player near = Player.GetClosestPlayer(transform.position, 9999f);
+            return near != null && DistanceXZ(near.transform.position, transform.position) <= FlightPlan.DropNearPlayer;
+        }
+
+        /// <summary>
         /// The owner puts him down: mark the bird dropped, write the drop point the merchant will stand
         /// on, and cut the carry link so `CargoMerchant` stops pinning him to the talons and falls the
         /// last few metres. The server reads `VCargo_dropped` on its next tick and moves the visit's phase.
@@ -225,10 +258,12 @@ namespace RavenIron.ValkyriesCargo.Client
             _dropped = true;
             _descent = true;
 
-            // F7: if the ground under the drop point is not known yet, keep the AUTHORED y (the pilot's
-            // own altitude plus DropAltitude, from FlightPlan.Make) rather than overwrite it with
-            // anything -- a guess here is what P5 stands the merchant on.
-            Vector3 at = _drop;
+            // Where he is LET GO, which since the chase is where the bird caught the player and no longer
+            // the authored point. The server bounds it with `FlightPlan.DropChaseXZ` instead of the old
+            // 8 m, and keeps the authored point if it is further than the flight could plausibly reach.
+            // F7: if the ground under it is not known yet, keep the y we have rather than guess -- a
+            // guess here is what P5 stands the merchant on.
+            Vector3 at = new Vector3(transform.position.x, _drop.y, transform.position.z);
             if (TryFloorAt(at, out float dropFloor)) at.y = dropFloor;
             ZDO zdo = _nview.GetZDO();
             if (zdo != null)

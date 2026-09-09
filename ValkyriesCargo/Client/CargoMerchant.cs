@@ -366,6 +366,7 @@ namespace RavenIron.ValkyriesCargo.Client
                 ResolveCarrier();
                 HoldTheCarry();
                 if (Pinned) PinToTalon();            // physics step: beat the Rigidbody
+                CarryReport(dt);                     // 2026-09-09: why does the bird look empty?
                 if (_nview.IsOwner()) Decide(dt);
             }
             catch (Exception ex)
@@ -430,6 +431,63 @@ namespace RavenIron.ValkyriesCargo.Client
             _nview.ClaimOwnership();
             _reclaims++;
         }
+
+        private float _carrySaid;
+        private int _carryLines;
+
+        /// <summary>
+        /// The carry, once a second, because "we still see an empty bird flying in" (owner, 2026-09-09)
+        /// and every line the mod already printed said the carry was fine: `awake as carried`, `ours`,
+        /// `grounded no` at the drop. Something between "he is pinned to the talon" and "you can see him
+        /// on it" is not true, and no existing line could tell which.
+        ///
+        /// So this prints the things that would each explain it, and they are different numbers:
+        ///   - `pin` far from `him`: the pin is not running, or is putting him somewhere else.
+        ///   - `dist` large: he is on the talon but the bird is still a long way off.
+        ///   - `vis 0/N`: he is in the right place with every renderer switched off - the `HideStandIn`
+        ///     path or `Character.SetVisible` having the last word.
+        ///   - `y` far below the bird: the pin lost and gravity is winning between the writes.
+        ///
+        /// Owner and watcher both print it, because the pilot's screen and everyone else's are moved by
+        /// completely different code and the report has only ever come from one of them at a time. It
+        /// stops at 30 lines - a carry is ~10 s - so a stuck visit cannot fill a log with it.
+        /// </summary>
+        private void CarryReport(float dt)
+        {
+            if (!Pinned || _carryLines >= 30) return;
+            _carrySaid += dt;
+            if (_carrySaid < 1f) return;
+            _carrySaid = 0f;
+            _carryLines++;
+
+            try
+            {
+                Vector3 him = transform.position;
+                Vector3 pin = _pin != null ? _pin.position : Vector3.zero;
+                Player near = Player.GetClosestPlayer(him, 9999f);
+                float dist = near != null ? Vector3.Distance(him, near.transform.position) : -1f;
+
+                int total = 0, on = 0;
+                Renderer[] rs = GetComponentsInChildren<Renderer>(true);
+                for (int i = 0; i < rs.Length; i++) { total++; if (rs[i].enabled && rs[i].gameObject.activeInHierarchy) on++; }
+
+                ValkyriesCargo.Log.LogInfo("cargo merchant #" + _visitId + " carry " + _carryLines + ": him " + Vec(him) +
+                    ", pin " + (_pin != null ? Vec(pin) : "NONE") +
+                    ", off-pin " + (_pin != null ? Wire.Float(Vector3.Distance(him, pin)) : "-") + " m" +
+                    ", dist to player " + Wire.Float(dist) + " m" +
+                    ", visible " + on + "/" + total + " renderer(s)" +
+                    ", " + OwnerTag(_nview.GetZDO()) +
+                    ", grounded " + (_character == null || _character.IsOnGround() ? "yes" : "no"));
+            }
+            catch (Exception ex)
+            {
+                _carryLines = 30;
+                ValkyriesCargo.Log.LogWarning("cargo merchant #" + _visitId + ": the carry report threw, dropping it: " + ex.Message);
+            }
+        }
+
+        private static string Vec(Vector3 v) =>
+            "(" + v.x.ToString("0.#") + ", " + v.y.ToString("0.#") + ", " + v.z.ToString("0.#") + ")";
 
         /// <summary>
         /// Vanilla's own carry writes the transform from FixedUpdate AND LateUpdate, because the

@@ -275,7 +275,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     // authored point rather than Vector3.zero -- a missing key is a bird that never got
                     // its plan, not a drop at the world origin -- and refuse a value that has moved.
                     Vector3 at = bird.GetVec3(TargetHash, AuthoredDrop);
-                    if (!FlightPlan.DropAccepted(at.x, at.y, at.z, AuthoredDrop.x, AuthoredDrop.y, AuthoredDrop.z))
+                    if (!FlightPlan.DropAcceptedChasing(at.x, at.y, at.z, AuthoredDrop.x, AuthoredDrop.y, AuthoredDrop.z))
                     {
                         if (_liars++ < 3)
                             ValkyriesCargo.Log.LogWarning("visit #" + session.VisitId + ": the pilot reported a drop at (" +

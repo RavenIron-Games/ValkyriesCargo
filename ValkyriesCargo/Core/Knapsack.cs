@@ -88,7 +88,53 @@ namespace RavenIron.ValkyriesCargo.Core
             return ok;
         }
 
-        public const float MinScale = 0.05f;
+/// <summary>
+        /// The bone's own world scale, undone.
+        ///
+        /// This is the whole reason the first live test showed no pack at all while the log reported a
+        /// perfectly attached one ("18 part(s), 11206 tris", 2026-09-09). `models/ingvar.glb` carries
+        /// `Armature` at **scale 0.01** - the rig is authored in centimetres and scaled down by a
+        /// hundred at its root - so every bone under it, `Spine02` included, has a world scale of 0.01.
+        /// A prop parented to that bone with `localScale = 1` renders at a HUNDREDTH of its size: the
+        /// pack was about five millimetres across, correctly attached and completely invisible.
+        ///
+        /// So the knobs are declared to be in WORLD units - metres, and a scale of 1 means the pack's
+        /// own authored size - and this converts them into the bone's local space. It is general: it
+        /// reads whatever scale the rig actually has, so a re-bake at metre scale needs no config edit
+        /// and no code change.
+        ///
+        /// A bone scale of zero, negative or not-a-number is not a rig anybody can hang anything on;
+        /// rather than divide by it and hand Unity an infinity, this falls back to 1 (no compensation),
+        /// which leaves the pack visibly wrong rather than invisibly broken.
+        /// </summary>
+        public static float Uncompress(float boneWorldScale)
+        {
+            if (boneWorldScale <= 0f || float.IsNaN(boneWorldScale) || float.IsInfinity(boneWorldScale)) return 1f;
+            return 1f / boneWorldScale;
+        }
+
+        /// <summary>
+        /// The local scale to give the pack so it ends up <paramref name="configured"/> times its authored
+        /// size in the WORLD, whatever the bone underneath is scaled to. `Scale` still clamps the knob
+        /// itself, so a typo cannot produce a pack the size of a house.
+        /// </summary>
+        public static float LocalScale(float configured, float boneWorldScale)
+        {
+            return Scale(configured) * Uncompress(boneWorldScale);
+        }
+
+        /// <summary>
+        /// The local offset for a displacement given in METRES. Same reason as `LocalScale`: on a rig at
+        /// 0.01 an offset of "0,0.2,-0.15" would have moved the pack two millimetres, so the knob would
+        /// have read as doing nothing at all and been dialled to absurd numbers to compensate.
+        /// </summary>
+        public static void LocalOffset(float boneWorldScale, ref float x, ref float y, ref float z)
+        {
+            float k = Uncompress(boneWorldScale);
+            x *= k; y *= k; z *= k;
+        }
+
+                public const float MinScale = 0.05f;
         public const float MaxScale = 5f;
 
         /// <summary>

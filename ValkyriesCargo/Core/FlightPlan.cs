@@ -57,6 +57,18 @@ namespace RavenIron.ValkyriesCargo.Core
         public const float DropAltitude = 10f;
 
         /// <summary>
+        /// How close to the PLAYER the bird gets before it lets Ingvar go (owner, 2026-09-09: "he should
+        /// stay in the bird until he is 20 m from player").
+        ///
+        /// The release used to be a fixed point, authored where the pilot stood when the visit began. A
+        /// player who walked while the bird was inbound got a drop wherever they used to be - visit #3 on
+        /// 2026-09-09 released him 41 m away - and the carry was over before it was ever near enough to
+        /// look at. Chasing the player instead means the bird is closing on YOU for the whole approach and
+        /// lets go at a distance where a dwarf on a talon is a thing you can actually see.
+        /// </summary>
+        public const float DropNearPlayer = 20f;
+
+        /// <summary>
         /// How far PAST the drop the bird flies before it destroys itself, measured on the approach
         /// bearing from the drop point.
         ///
@@ -130,6 +142,24 @@ namespace RavenIron.ValkyriesCargo.Core
         /// the one doing the work.
         /// </summary>
         public const float DropToleranceY = 64f;
+
+        /// <summary>
+        /// **A DELIBERATE WIDENING OF THE P11 TRUST BOUNDARY, 2026-09-09 - read before changing it back.**
+        ///
+        /// `DropToleranceXZ` (8 m) was right while the drop was a fixed authored point: the honest delta
+        /// was zero, because `CargoFlight.Drop` wrote back the very `VCargo_target` it was handed. Since
+        /// `DropNearPlayer`, the bird CHASES the player and lets go where it catches them, so a legitimate
+        /// drop is now anywhere along the approach - and an 8 m check would reject every honest one and
+        /// pin the session's record to a point the merchant is not standing on.
+        ///
+        /// This is still a real bound and not an open door. It is the flight's own reach - the pilot's
+        /// active block is 3x3 zones of 64 m - so a client can move the drop to somewhere the bird could
+        /// plausibly have flown, and cannot claim a drop across the map. The server still refuses anything
+        /// beyond it and keeps the authored point, and `DropToleranceY` is untouched.
+        ///
+        /// If the chase is ever reverted, this must go back to `DropToleranceXZ` in the same commit.
+        /// </summary>
+        public const float DropChaseXZ = 96f;
 
         // ---- zones ---------------------------------------------------------------------------------
 
@@ -232,6 +262,19 @@ namespace RavenIron.ValkyriesCargo.Core
                                         float authoredX, float authoredY, float authoredZ)
         {
             if (!(Dist(atX, atZ, authoredX, authoredZ) <= DropToleranceXZ)) return false;
+            return Math.Abs(atY - authoredY) <= DropToleranceY;
+        }
+
+        /// <summary>
+        /// The same trust check for a flight that CHASES the player (`DropNearPlayer`). Separate from
+        /// `DropAccepted` on purpose: that one is the contract for a fixed authored drop, its 8 m is
+        /// still exactly right for it, and its checks still guard it. Redefining it underneath would
+        /// have quietly widened a boundary three existing tests are there to hold.
+        /// </summary>
+        public static bool DropAcceptedChasing(float atX, float atY, float atZ,
+                                               float authoredX, float authoredY, float authoredZ)
+        {
+            if (!(Dist(atX, atZ, authoredX, authoredZ) <= DropChaseXZ)) return false;
             return Math.Abs(atY - authoredY) <= DropToleranceY;
         }
 

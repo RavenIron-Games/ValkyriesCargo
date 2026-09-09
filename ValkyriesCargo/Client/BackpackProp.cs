@@ -105,14 +105,16 @@ namespace RavenIron.ValkyriesCargo.Client
 
                 holder.name = ChildName;
                 holder.transform.SetParent(bone, false);
-                Place(holder.transform);
+                Place(holder.transform, bone);
 
                 Worn = true;
                 _said = null;                                  // a later failure is news again
                 Detail = "'" + prefabName + "' on " + boneName + ", " + _parts + " part(s), " + _triangles + " tris" +
-                         "; local " + Words(holder.transform.localPosition) +
+                         "; bone scale " + _boneScale.ToString("0.####") +
+                         (Math.Abs(_boneScale - 1f) > 0.0001f ? " (undone: the rig is authored at that scale)" : "") +
+                         ", world scale " + holder.transform.lossyScale.x.ToString("0.###") +
+                         ", offset " + Words(holder.transform.localPosition * _boneScale) + " m" +
                          ", turned " + Words(holder.transform.localEulerAngles) +
-                         ", scale " + holder.transform.localScale.x.ToString("0.###") +
                          " (Client.BackpackOffset / BackpackRotation / BackpackScale)";
                 ValkyriesCargo.Log.LogInfo("body: backpack " + Detail);
                 return true;
@@ -234,20 +236,39 @@ namespace RavenIron.ValkyriesCargo.Client
             }
         }
 
-        /// <summary>The three knobs, applied. Every one of them is why this is worth having as config at all.</summary>
-        private static void Place(Transform t)
+        /// <summary>
+        /// The three knobs, applied - in WORLD units, not the bone's.
+        ///
+        /// `models/ingvar.glb` carries `Armature` at scale 0.01 (the rig is authored in centimetres), so
+        /// every bone under it has a world scale of a hundredth. Hanging the pack with `localScale = 1`
+        /// put a five-millimetre backpack on him: attached, reported, invisible - which is exactly what
+        /// the first live test showed on 2026-09-09. `Core/Knapsack` undoes whatever the rig's scale
+        /// actually is, so a scale of 1 means the pack's own authored size and an offset of 0.2 means
+        /// twenty centimetres, on this rig or any re-bake of it.
+        /// </summary>
+        private static void Place(Transform t, Transform bone)
         {
+            // lossyScale is the bone's true world scale, the whole chain folded in - which is what a
+            // prop parented to it actually inherits. Uniform on this rig; x is the honest read of it.
+            float boneScale = bone != null ? bone.lossyScale.x : 1f;
+
             float x, y, z;
             Knapsack.Triple(ModConfig.BackpackOffset != null ? ModConfig.BackpackOffset.Value : "", out x, out y, out z);
+            Knapsack.LocalOffset(boneScale, ref x, ref y, ref z);
             t.localPosition = new Vector3(x, y, z);
 
             float rx, ry, rz;
             Knapsack.Triple(ModConfig.BackpackRotation != null ? ModConfig.BackpackRotation.Value : "", out rx, out ry, out rz);
-            t.localRotation = Quaternion.Euler(rx, ry, rz);
+            t.localRotation = Quaternion.Euler(rx, ry, rz);   // rotation is scale-free
 
-            float s = Knapsack.Scale(ModConfig.BackpackScale != null ? ModConfig.BackpackScale.Value : 1f);
+            float s = Knapsack.LocalScale(ModConfig.BackpackScale != null ? ModConfig.BackpackScale.Value : 1f, boneScale);
             t.localScale = new Vector3(s, s, s);
+
+            _boneScale = boneScale;
         }
+
+        /// <summary>What the last attach found the bone scaled to, so `cargo body` can say it out loud.</summary>
+        private static float _boneScale = 1f;
 
         private static string Name()
         {

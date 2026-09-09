@@ -143,10 +143,10 @@ namespace RavenIron.ValkyriesCargo.Config
                 "Real minutes before the same player can be chosen again; stamped at dispatch. Read on the SERVER.",
                 new AcceptableValueRange<float>(0f, 1440f));
             CooldownRadius = S(cfg, "Server", "CooldownRadius", 60f,
-                "Metres: a base on cooldown blocks its neighbours within this radius. Read on the SERVER.",
+                "UNITS: METRES. Metres: a base on cooldown blocks its neighbours within this radius. Read on the SERVER.",
                 new AcceptableValueRange<float>(0f, 500f));
             MerchantLifespanSeconds = S(cfg, "Server", "MerchantLifespanSeconds", 300f,
-                "How long Ingvar stays, as the vanilla random event's duration. Ours alone: Odin's prefab says 60, not the 300 his field initialiser says, so this number was never inherited from him. Read on the SERVER.",
+                "UNITS: SECONDS of world time (it pauses when nobody is within 96 m). How long Ingvar stays, as the vanilla random event's duration. Ours alone: Odin's prefab says 60, not the 300 his field initialiser says, so this number was never inherited from him. Read on the SERVER.",
                 new AcceptableValueRange<float>(30f, 1800f));
             ApproachDistance = S(cfg, "Server", "ApproachDistance", 3.5f,
                 "Metres from the player at which Ingvar stops walking up (P5, CargoMerchant). Read on the CLIENT that owns the merchant, synced from the server.",
@@ -156,23 +156,23 @@ namespace RavenIron.ValkyriesCargo.Config
             CustomBody = S(cfg, "Server", "CustomBody", true,
                 "Put Ingvar's own body on the BodyPrefab clone from the AssetBundle embedded in this DLL. False keeps the Dverger stand-in visible, and so does a build with no bundle embedded (`cargo body` says which). This is the switch, NOT BodyPrefab: BodyPrefab stays the engine prefab the merchant is cloned from, because Character, MonsterAI and the collider all come from it. Read on the CLIENT, synced from the server; a dedicated server never reads it.");
             FlightStartDistance = S(cfg, "Server", "FlightStartDistance", 90f,
-                "Metres from the pilot where the Valkyrie appears; shrunk at runtime, 12 m at a time, until the start fits inside the pilot's active zone block. The floor is FlightPlan.MinimumStartDistance (30 m): below that the bird would appear on top of the player. Read on the SERVER.",
+                "UNITS: METRES. Metres from the pilot where the Valkyrie appears; shrunk at runtime, 12 m at a time, until the start fits inside the pilot's active zone block. The floor is FlightPlan.MinimumStartDistance (30 m): below that the bird would appear on top of the player. Read on the SERVER.",
                 new AcceptableValueRange<float>(30f, 200f));
             FlightStartAltitude = S(cfg, "Server", "FlightStartAltitude", Core.FlightPlan.DefaultStartAltitude,
-                "Altitude of the Valkyrie's start point, metres above the drop. The default 45 puts the approach at about 27 degrees above the horizon from ~90 m out, so the bird is in a normal view cone the whole way in and Ingvar can be seen hanging from the talons; the old 120 was a 53-degree line nobody could watch. Read on the SERVER.",
+                "UNITS: METRES above the pilot's own ground height. Altitude of the Valkyrie's start point, metres above the drop. The default 45 puts the approach at about 27 degrees above the horizon from ~90 m out, so the bird is in a normal view cone the whole way in and Ingvar can be seen hanging from the talons; the old 120 was a 53-degree line nobody could watch. Read on the SERVER.",
                 new AcceptableValueRange<float>(30f, 400f));
             FlightDescentDistance = S(cfg, "Server", "FlightDescentDistance", 50f,
-                "Metres out at which the descent leg begins. Read on the SERVER.",
+                "UNITS: METRES, measured back along the approach from the drop point. Metres out at which the descent leg begins. Read on the SERVER.",
                 new AcceptableValueRange<float>(10f, 200f));
             // Ours, not the prefab's. Vanilla's Valkyrie is tuned for a 500 m approach: at its 20 m/s
             // our 76 m run is over in seven seconds, where design 3.2 asks for fifteen to twenty. At 8
             // the same flight takes 17 s. The turn rate is ours for the same reason, and because the
             // prefab's 20 deg/s is a 57 m turning circle - wider than the whole approach (PR #8).
             FlightSpeed = S(cfg, "Server", "FlightSpeed", 8f,
-                "Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. Read on the CLIENT that owns the bird (CargoFlight.Awake), synced from the server; the server never reads it.",
+                "UNITS: METRES PER SECOND. Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. Read on the CLIENT that owns the bird (CargoFlight.Awake), synced from the server; the server never reads it.",
                 new AcceptableValueRange<float>(2f, 40f));
             FlightTurnRate = S(cfg, "Server", "FlightTurnRate", 45f,
-                "Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the CLIENT that owns the bird, synced from the server; the server never reads it.",
+                "UNITS: DEGREES PER SECOND. Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the CLIENT that owns the bird, synced from the server; the server never reads it.",
                 new AcceptableValueRange<float>(5f, 360f));
             CatalogueLine = S(cfg, "Server", "Catalogue", Catalogue.DefaultLine,
                 "What Ingvar sells and buys: Prefab:BasePrice:TargetStock:MaxStock:Kind entries separated by commas; Kind is Ware (sells and buys back) or Want (buys only). Every number's reason is in docs/CATALOGUE.md. A prefab this game has no item for is dropped with one log line when the shelf is built (at boot, and on every live edit). Editable on a running server: `cargo catalogue add|remove|reset` (admin), or Configuration Manager as an admin; a change applies as soon as no visit is running. Read on the SERVER.");
@@ -241,11 +241,11 @@ namespace RavenIron.ValkyriesCargo.Config
                 "Terminal size multiplier. Read on the CLIENT.",
                 new AcceptableValueRange<float>(0.5f, 2f));
             TerminalBackdropAlpha = C(cfg, "Client", "TerminalBackdropAlpha", 0.4f,
-                "Opacity of the black backdrop behind the terminal's text: 0.4 is a 40% translucent black (the playtest's ask, 2026-09-08), " +
+                "UNITS: 0 to 1, where 0 is fully transparent and 1 fully opaque. Opacity of the black backdrop behind the terminal's text: 0.4 is a 40% translucent black (the playtest's ask, 2026-09-08), " +
                 "1 is the solid panel of before, 0 is the frame alone over the world. Read on the CLIENT.",
                 new AcceptableValueRange<float>(0f, 1f));
             BodyYawDegrees = C(cfg, "Client", "BodyYawDegrees", 180f,
-                "Degrees Ingvar's body is turned about the vertical when it is attached to the merchant (and in `cargo body preview`). " +
+                "UNITS: DEGREES of yaw about the vertical axis. Degrees Ingvar's body is turned about the vertical when it is attached to the merchant (and in `cargo body preview`). " +
                 "180 because the shipped bundle's forward axis faces the Dverger's back, so with 0 he walks backward (seen 2026-09-07). " +
                 "Set 0 for a bake that comes out facing forward. Read on the CLIENT.",
                 new AcceptableValueRange<float>(-180f, 180f));
@@ -260,12 +260,17 @@ namespace RavenIron.ValkyriesCargo.Config
                 "Which bone of Ingvar's own rig the pack hangs on. His spine runs Hips/Spine/Spine01/Spine02; a name the rig does not have falls back through " +
                 "Spine02, Spine2, Spine01, Spine1, Chest, Spine, Hips. Read on the CLIENT.");
             BackpackOffset = C(cfg, "Client", "BackpackOffset", "0,0,0",
-                "Where the pack sits on that bone, in bone-local metres, as x,y,z. Ingvar is about 1.37 m to a player's 1.8, so a pack authored for a player " +
-                "needs dialling in: change it, then `cargo body preview` to see it without waiting for a visit. Read on the CLIENT.");
+                "Where the pack sits on that bone. UNITS: WORLD METRES, as x,y,z - so 0,0.2,-0.15 moves it 20 cm up and 15 cm back, on this rig or any re-bake of it. " +
+                "(Ingvar's rig is authored in centimetres - models/ingvar.glb has Armature at scale 0.01 - and the mod divides that out for you, so you never type bone units here.) " +
+                "+x is his left, +y up, +z the way he faces. Ingvar is about 1.37 m to a player's 1.8, so a pack authored for a player needs dialling in: " +
+                "change it, then `cargo body preview` to see it without waiting for a visit. Read on the CLIENT.");
             BackpackRotation = C(cfg, "Client", "BackpackRotation", "0,0,0",
-                "How the pack is turned on that bone, as x,y,z degrees. Read on the CLIENT.");
+                "How the pack is turned on that bone. UNITS: DEGREES, as x,y,z Euler angles applied in Unity's order (Z, then X, then Y). Rotation is unaffected by the rig's scale. Read on the CLIENT.");
             BackpackScale = C(cfg, "Client", "BackpackScale", 1f,
-                "How big the pack is on him. 1 is the size the backpack mod authored for a player. Read on the CLIENT.",
+                "How big the pack is on him. UNITS: A MULTIPLIER of the pack's own authored size, where 1 is exactly the size the backpack mod made for a full-size player " +
+                "and 0.75 is three quarters of it. This is a WORLD size: the rig's own 0.01 scale is divided out, so 1 really does mean player-sized. " +
+                "Allowed " + Core.Knapsack.MinScale.ToString(System.Globalization.CultureInfo.InvariantCulture) + " to " +
+                Core.Knapsack.MaxScale.ToString(System.Globalization.CultureInfo.InvariantCulture) + ". Read on the CLIENT.",
                 new AcceptableValueRange<float>(Core.Knapsack.MinScale, Core.Knapsack.MaxScale));
 
             VisitState  = new CustomSyncedValue<string>(Sync, "visit", "");
