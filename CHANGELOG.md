@@ -28,6 +28,36 @@ after the rest of this log was written.
 
 ### Since 0.1.0-rc2 — the same night
 
+- **THE EMPTY BIRD, FOUND: he was hanging 50 metres below the talon (Track B, 2026-09-09).** The carry
+  diagnostic answered it in its first two lines, on the first flight it ever ran on:
+  `carry 1: him (-334.1, 27.4, 40.5), pin (-330.4, 77.1, 36.7), off-pin 50 m ... visible 22/24
+  renderer(s), ours, grounded no`, then `off-pin 50.0000038 m` the next second and every second after,
+  across three visits. A CONSTANT, which is what says a fixed offset rather than gravity beating the pin -
+  he was owned, pinned, visible and not falling, just fifty metres straight down and off the bottom of the
+  screen. `PinToTalon` read `_pin.TransformVector(_pinOffset)`, and `Transform.TransformVector` applies
+  the transform's SCALE as well as its rotation. The Valkyrie's attach point hangs under
+  `valkyrie2/Armature/.../r_foot` on a bone chain that is not at unit scale, so the shipped
+  `m_attachOffset` of (0, 0.30, 0.40) - half a metre - came out as fifty. `TransformDirection` is
+  rotation-only, which is what an offset already expressed in world metres wants; the sign stays, because
+  the offset hangs him below and behind the talon, which is where something carried in a foot goes.
+  **This is the bug the whole 2026-09-08 report was about**, and neither the departure length nor the
+  start altitude was ever it - though both were real and both are fixed. No off-game check could have
+  caught it: it is a Unity transform API taking scale where the caller meant none.
+- **The backpack is baked in CHARACTER-ROOT space, not bone space (Track B, 2026-09-09).** With the scale
+  read correctly at 1, the pack was still nowhere to be seen. Smoothbrain's parts are `attach_skin`
+  skinned meshes bound to VALHEIM's skeleton, so `BakeMesh` returns vertices in the character root's
+  space - a pack at a standing player's chest height, well over a metre above the origin. Hung on
+  `Spine02`, itself at chest height on Ingvar, it floated about a metre and a half above his head.
+  `BackpackProp.Bake` now measures the combined bounds of every baked part (through each part's full local
+  TRS, so a scaled or turned part cannot pull the centre off) and shifts them so the holder's origin is
+  the PACK's own centre. It lands on the bone, and the configured offset is a nudge from there rather than
+  a hunt. The attach line reports the measurement, so a future wrong place is one line from obvious.
+- **A correction, recorded because it was wrong in public.** The first diagnosis of the invisible pack was
+  that Ingvar's rig is authored in centimetres - `models/ingvar.glb` really does carry `Armature` at scale
+  0.01. It is not the cause: Unity's FBX import normalises that into the bake, and the live run reported
+  `bone scale 1, world scale 1`. The compensation written for it (`Knapsack.Uncompress` and friends) is a
+  no-op on this rig and is KEPT, because it costs nothing and a re-bake that does not normalise would need
+  it - but it fixed nothing, and the two real causes are the two entries above.
 - **The invisible backpack: the rig is authored in centimetres (Track B, 2026-09-09, 1950 checks).** The
   first live run of the add-on reported a perfectly attached pack - `body: backpack 'bp_explorer' on
   Spine02, 18 part(s), 11206 tris` - and put NOTHING on screen. `models/ingvar.glb` carries `Armature` at

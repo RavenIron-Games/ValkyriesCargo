@@ -110,6 +110,8 @@ namespace RavenIron.ValkyriesCargo.Client
                 Worn = true;
                 _said = null;                                  // a later failure is news again
                 Detail = "'" + prefabName + "' on " + boneName + ", " + _parts + " part(s), " + _triangles + " tris" +
+                         "; re-centred from " + Words(_span.center) + " (the bake is in character-root space), size " +
+                         Words(_span.size) + " m" +
                          "; bone scale " + _boneScale.ToString("0.####") +
                          (Math.Abs(_boneScale - 1f) > 0.0001f ? " (undone: the rig is authored at that scale)" : "") +
                          ", world scale " + holder.transform.lossyScale.x.ToString("0.###") +
@@ -174,6 +176,7 @@ namespace RavenIron.ValkyriesCargo.Client
 
         private static int _parts;
         private static int _triangles;
+        private static Bounds _span;
 
         /// <summary>
         /// Smoothbrain's parts are skinned to a skeleton Ingvar does not have, so each is baked ONCE at its
@@ -220,7 +223,27 @@ namespace RavenIron.ValkyriesCargo.Client
 
                     _parts++;
                     _triangles += baked.triangles.Length / 3;
+
+                    // Where this part's geometry actually lies, in the holder's space.
+                    // The part carries the source renderer's full local TRS, so the bounds have to be
+                    // put through all three or a scaled or turned part pulls the centre off.
+                    Bounds b = baked.bounds;
+                    Vector3 c = Vector3.Scale(b.center, part.transform.localScale);
+                    b.center = part.transform.localPosition + part.transform.localRotation * c;
+                    b.size = Vector3.Scale(b.size, part.transform.localScale);
+                    if (_parts == 1) _span = b; else _span.Encapsulate(b);
                 }
+
+                // RECENTRE, and this is the whole reason the pack was nowhere to be seen on 2026-09-09
+                // even at the right scale. Smoothbrain's parts are `attach_skin` skinned meshes bound to
+                // VALHEIM'S skeleton, so `BakeMesh` hands back vertices in the CHARACTER ROOT's space -
+                // a pack sitting at a standing player's chest height, well over a metre above the origin.
+                // Hanging that on `Spine02`, which is already at chest height on Ingvar, put it about a
+                // metre and a half above his head: attached, full size, and out of frame. Shifting every
+                // part by the combined centre makes the holder's origin the PACK's own centre, so it
+                // lands on the bone and the configured offset is a nudge from there rather than a hunt.
+                for (int i = 0; i < holder.transform.childCount; i++)
+                    holder.transform.GetChild(i).localPosition -= _span.center;
 
                 if (_parts == 0)
                 {

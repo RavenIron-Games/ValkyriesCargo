@@ -591,10 +591,27 @@ namespace RavenIron.ValkyriesCargo.Client
             return distance;
         }
 
+        /// <summary>
+        /// Hang him off the talon at the prefab's own attach offset.
+        ///
+        /// THE 50 METRES (2026-09-09, the carry diagnostic's first two lines). This used to read
+        /// `_pin.TransformVector(_pinOffset)`, and `Transform.TransformVector` applies the transform's
+        /// SCALE as well as its rotation. The Valkyrie's attach point lives under
+        /// `valkyrie2/Armature/.../r_foot` on a bone chain that is not at unit scale, so the shipped
+        /// `m_attachOffset` of (0, 0.30, 0.40) - half a metre - came out as a FIFTY METRE displacement
+        /// and he hung fifty metres below the bird for the whole flight. Owned, pinned, visible, not
+        /// falling, and completely off the bottom of the screen: the "empty bird flying in" exactly.
+        /// The report read `off-pin 50.0000038 m` on consecutive seconds - a constant, which is what
+        /// says a fixed offset rather than gravity beating the pin.
+        ///
+        /// `TransformDirection` is rotation-only, which is what an offset already expressed in world
+        /// metres wants. The sign stays: the offset hangs him BELOW and BEHIND the talon, which is where
+        /// something carried in a foot goes.
+        /// </summary>
         private void PinToTalon()
         {
             if (_pin == null) { Pinned = false; return; }
-            Vector3 at = _pin.position - _pin.TransformVector(_pinOffset);
+            Vector3 at = _pin.position - _pin.TransformDirection(_pinOffset);
             transform.position = at;
             transform.rotation = _pin.rotation;
             if (_body != null)
