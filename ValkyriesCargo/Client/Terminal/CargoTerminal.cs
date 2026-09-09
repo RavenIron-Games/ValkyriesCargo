@@ -65,7 +65,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         private bool _awaiting;
         private int _coins;
         private Rect _rect;
-        private Vector2 _scrollWares, _scrollWants, _scrollTray;
+        private Vector2 _scrollWares, _scrollWants, _scrollTray, _scrollGet;
         private int _throws;
         /// <summary>The count box being typed in (its IMGUI control name) and the digits typed so far: the box
         /// shows these while it has the keyboard, so it can be emptied and retyped; the tray's own count is
@@ -78,6 +78,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         /// <summary>Where the focused box is on screen: a click anywhere else hands the keyboard back.</summary>
         private Rect _focusedBox;
         private GUIStyle _small, _smallFrom;
+        private GUIStyle _confirm, _confirmFrom;
 
         public bool IsOpen { get; private set; }
         public string LastCloseReason { get; private set; } = "";
@@ -111,7 +112,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             _countAge = CountRefreshSeconds;
             _tray.Clear();
             _editName = ""; _editText = ""; _fieldFocused = false;
-            _scrollTray = Vector2.zero;
+            _scrollTray = Vector2.zero; _scrollGet = Vector2.zero;
             _tray.Message = Lines.Open;
             IsOpen = true;
             Opens++;
@@ -449,31 +450,38 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             GiltFrameTheme.DrawInset(getWell);
             GiltFrameTheme.DrawInset(giveWell);
 
-            if (_tray.Wanted != null)
-                DrawTrayLine(new Rect(getWell.x + S(2f), getWell.y + S(2f), getWell.width - S(4f), rowH), _tray.Wanted, m, true, Vector2.zero);
-            else
+            // Both wells the same way since 2026-09-08 (the owner's ask: more than one ware per deal): a list
+            // of lines, scrolling past TrayRows, each with its count box, "all" and x.
+            if (_tray.Wants.Count == 0)
                 GUI.Label(new Rect(getWell.x + S(8f), getWell.y, getWell.width - S(16f), getWell.height),
-                          "click a ware on the left to buy it\nShift = 5, Ctrl = 20; type a count, or press all", GiltFrameTheme.Note);
+                          "click a ware on the left to buy it; click another to add it\nShift = 5, Ctrl = 20; type a count, or press all", GiltFrameTheme.Note);
+            else
+                DrawWell(getWell, _tray.Wants, m, true, ref _scrollGet, rowH);
 
             if (_tray.Offered.Count == 0)
-            {
                 GUI.Label(new Rect(giveWell.x + S(8f), giveWell.y, giveWell.width - S(16f), giveWell.height),
                           "click one of your goods on the right to offer it\nright-click takes one back; x clears the line", GiltFrameTheme.Note);
-                return;
-            }
-            Rect inner = new Rect(giveWell.x + S(2f), giveWell.y + S(2f), giveWell.width - S(4f), giveWell.height - S(4f));
-            int n = _tray.Offered.Count;
+            else
+                DrawWell(giveWell, _tray.Offered, m, false, ref _scrollTray, rowH);
+        }
+
+        /// <summary>One well of staged lines inside its own scroll view; `scroll` is the well's remembered position.</summary>
+        private void DrawWell(Rect well, IReadOnlyList<TrayLine> lines, MarketSnapshot m, bool get, ref Vector2 scroll, float rowH)
+        {
+            float S(float v) => GiltFrameTheme.S(v);
+            Rect inner = new Rect(well.x + S(2f), well.y + S(2f), well.width - S(4f), well.height - S(4f));
+            int n = lines.Count;
             bool scrolls = n > TrayRows;
             Rect view = new Rect(0, 0, inner.width - (scrolls ? S(16f) : 0f), Mathf.Max(inner.height, n * rowH));
-            _scrollTray = GUI.BeginScrollView(inner, _scrollTray, view);
+            scroll = GUI.BeginScrollView(inner, scroll, view);
             try
             {
-                Vector2 origin = inner.position - _scrollTray;   // view-local to screen, for the focused box
-                for (int i = 0; i < n && i < _tray.Offered.Count; i++)
+                Vector2 origin = inner.position - scroll;   // view-local to screen, for the focused box
+                for (int i = 0; i < n && i < lines.Count; i++)
                 {
-                    TrayLine l = _tray.Offered[i];
-                    DrawTrayLine(new Rect(0, i * rowH, view.width, rowH), l, m, false, origin);
-                    if (i >= _tray.Offered.Count || _tray.Offered[i] != l) break;   // x took it out; the rest redraws next frame
+                    TrayLine l = lines[i];
+                    DrawTrayLine(new Rect(0, i * rowH, view.width, rowH), l, m, get, origin);
+                    if (i >= lines.Count || lines[i] != l) break;   // x took it out; the rest redraws next frame
                 }
             }
             finally { GUI.EndScrollView(); }
@@ -546,6 +554,26 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             return _small;
         }
 
+        /// <summary>
+        /// The theme's Primary button with its face in the theme's BRIGHT gold (the owner, 2026-09-08 evening:
+        /// "confirm has to be brighter"). Primary's own face is the metal colour, which on BlackGold is a dark
+        /// gilt that reads as dim even when the button is live; the disabled draw halves the alpha on top of
+        /// that, so lit and dim looked alike. Rebuilt whenever the theme rebuilds its styles.
+        /// </summary>
+        private GUIStyle ConfirmButton()
+        {
+            if (_confirm == null || !ReferenceEquals(_confirmFrom, GiltFrameTheme.Primary))
+            {
+                _confirmFrom = GiltFrameTheme.Primary;
+                _confirm = new GUIStyle(GiltFrameTheme.Primary);
+                _confirm.normal.textColor = GiltFrameTheme.GoldBright;
+                _confirm.hover.textColor = Color.white;
+                _confirm.active.textColor = Color.white;
+                _confirm.focused.textColor = GiltFrameTheme.GoldBright;
+            }
+            return _confirm;
+        }
+
         private static string Digits(string s)
         {
             if (string.IsNullOrEmpty(s)) return "";
@@ -559,16 +587,20 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         {
             float S(float v) => GiltFrameTheme.S(v);
             float bh = r.height, bx = r.x;
+            // Lit only when the deal can go (2026-09-08, the owner's ask): the checks Confirm runs, run on every
+            // draw, so the button says yes before it is pressed and his reason shows beside the balance when it
+            // says no. A few lookups per line per frame; the tray is never more than sixteen lines.
+            string why = _tray.IsEmpty ? null : _tray.Validate(m, _coins, Has, ModConfig.EnableBarter.Value);
             try
             {
-                GUI.enabled = !_awaiting && !_tray.IsEmpty;
-                if (GUI.Button(new Rect(bx, r.y, S(150f), bh), _tray.AnyAmber ? "Confirm new price" : "Confirm deal", GiltFrameTheme.Primary)) Confirm(m);
+                GUI.enabled = !_awaiting && !_tray.IsEmpty && why == null;
+                if (GUI.Button(new Rect(bx, r.y, S(150f), bh), _tray.AnyAmber ? "Confirm new price" : "Confirm deal", ConfirmButton())) Confirm(m);
                 GUI.enabled = !_awaiting;
                 bx += S(158f);
                 if (GUI.Button(new Rect(bx, r.y, S(90f), bh), "Clear", GiltFrameTheme.Button)) { _tray.Clear(); _tray.Message = ""; }
                 bx += S(98f);
                 // Whenever a ware is staged (no mode to switch into any more), unless the server turned barter off.
-                if (ModConfig.EnableBarter.Value && _tray.Wanted != null)
+                if (ModConfig.EnableBarter.Value && _tray.Wants.Count > 0)
                 {
                     if (GUI.Button(new Rect(bx, r.y, S(190f), bh), "Cover it with my goods", GiltFrameTheme.Button))
                     {
@@ -584,6 +616,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             long net = _tray.Net;
             string balance = _tray.IsEmpty ? "" : net > 0 ? "you pay " + net + "c" : net < 0 ? "he pays you " + (-net) + "c" : "even";
             if (_tray.AnyAmber && balance.Length > 0) balance += "  <color=" + HexAmber + ">(a price moved)</color>";
+            if (why != null && balance.Length > 0) balance += "  <color=" + HexDim + ">" + TrayModel.Words(why) + "</color>";
             GUI.Label(new Rect(bx, r.y, Mathf.Max(0f, r.xMax - S(158f) - bx), bh), balance, GiltFrameTheme.SubTitle);
 
             string dismiss = _dismissSentAt > 0f ? "Sending him off" : _dismissArmedUntil > 0f ? "Ask once more" : "Send him off";
@@ -625,10 +658,10 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         private static DealResult Provisional(Deal d)
         {
             var r = new DealResult { Ok = true, Nonce = d.Nonce, DeliveryId = "pre" };
-            if (d.Wanted != null) r.ItemsToAdd.Add(d.Wanted);
+            foreach (DealLine l in d.Wants) r.ItemsToAdd.Add(l);
             foreach (DealLine l in d.Offered) r.ItemsToRemove.Add(l);
             long offered = 0; foreach (DealLine l in d.Offered) offered += (long)l.Count * l.UnitPriceSeen;
-            long price = d.Wanted != null ? (long)d.Wanted.Count * d.Wanted.UnitPriceSeen : 0;
+            long price = d.WantedValueSeen();
             r.CoinsDelta = (int)Math.Max(int.MinValue, Math.Min(int.MaxValue, offered - price));
             return r;
         }

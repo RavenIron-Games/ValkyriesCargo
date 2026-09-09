@@ -653,6 +653,35 @@ namespace ValkyriesCargo.Tests
             int offerValue = barter.OfferedValueSeen();
             Check(offerValue == 40, "OfferedValueSeen sums count * unit");
 
+            // More than one ware per deal (2026-09-08): a '|' list on the wanted side, the old one-line form
+            // still parsing, the same ware twice refused, and `Wanted` the first line for the code that had one.
+            Deal two = new Deal { VisitId = 1, Nonce = 7 };
+            two.Wants.Add(new DealLine { Prefab = "Iron", Count = 2, UnitPriceSeen = 38 });
+            two.Wants.Add(new DealLine { Prefab = "Bronze", Count = 3, UnitPriceSeen = 20 });
+            Check(two.IsBuy && !two.IsEmpty, "two wanted lines and nothing offered is a buy");
+            Equal(2 * 38 + 3 * 20, two.WantedValueSeen(), "WantedValueSeen sums every wanted line");
+            Equal("Iron", two.Wanted.Prefab, "Wanted is the first wanted line");
+            problems.Clear();
+            Deal twoBack = Deal.Parse(two.Encode(), problems);
+            Check(twoBack != null && problems.Count == 0, "a two-ware deal parses");
+            Equal(two.Encode(), twoBack.Encode(), "and round-trips byte-exact");
+            Equal(2, twoBack.Wants.Count, "with both lines");
+            Check(two.Encode().Contains("Iron:2:38|Bronze:3:20"), "the wanted side is a '|' list on the wire");
+            problems.Clear();
+            Deal oneOld = Deal.Parse("v1;1;9;Iron:5:38;;190", problems);
+            Check(oneOld != null && oneOld.Wants.Count == 1 && oneOld.Wanted.Count == 5, "the one-line form of before still parses");
+            Equal(buy.Encode(), Deal.Parse(buy.Encode(), problems).Encode(), "and a one-ware deal encodes as it always did");
+            problems.Clear();
+            Check(Deal.Parse("v1;1;10;Iron:1:38|Iron:2:38;;0", problems) == null && problems.Count > 0, "the same ware twice is refused");
+            Check(problems[0].Contains("wanted twice"), "and says why");
+            Deal setBack = new Deal { VisitId = 1, Nonce = 11 };
+            setBack.Wants.Add(new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = 38 });
+            setBack.Wants.Add(new DealLine { Prefab = "Bronze", Count = 1, UnitPriceSeen = 20 });
+            setBack.Wanted = new DealLine { Prefab = "Silver", Count = 1, UnitPriceSeen = 50 };
+            Check(setBack.Wants.Count == 1 && setBack.Wanted.Prefab == "Silver", "setting Wanted replaces the whole wanted side");
+            setBack.Wanted = null;
+            Check(setBack.IsEmpty, "and setting it null empties it");
+
             // Count 0 is refused
             problems.Clear();
             Deal badCount = Deal.Parse("v1;1;0;Iron:0:38;;0", problems);
@@ -3548,7 +3577,10 @@ namespace ValkyriesCargo.Tests
             Check(t.StageBuy(iron, 3), "staging the same ware again");
             Equal(5, t.Wanted.Count, "adds to it");
             Check(t.StageBuy(bronze, 1), "staging another ware");
-            Equal("Bronze", t.Wanted.Prefab, "replaces the wanted line: one wanted per deal");
+            Equal("Iron", t.Wanted.Prefab, "keeps the first line");
+            Equal(2, t.Wants.Count, "and adds a second: more than one ware per deal (2026-09-08)");
+            Equal("Bronze", t.Wants[1].Prefab, "in staging order");
+            Equal(5 * 25 + (long)bronze.Buy, t.Price, "the price is the sum of the wanted lines");
             Check(!t.StageBuy(wood, 1), "a Want cannot be bought");
             Check(!t.StageBuy(iron, 0), "nor a count of 0");
             t.Clear();
@@ -3558,6 +3590,48 @@ namespace ValkyriesCargo.Tests
             Equal(15, t.Wanted.Count, "right-click takes some back");
             t.Unstage("Iron", 100);
             Check(t.Wanted == null, "and all of it empties the line");
+
+            // Two wares in one tray, through the count box, "all", x, Validate, Build and the settle.
+            {
+                TrayModel two = new TrayModel();
+                Check(two.StageBuy(iron, 2) && two.StageBuy(bronze, 3), "two wares stage");
+                Equal(2 * 25 + 3 * bronze.Buy, (int)two.Price, "the price is their sum");
+                Equal(4, two.SetCount(m, "Bronze", 4, has), "the count box sets the second line");
+                Equal(4, two.Wants[1].Count, "and it is that line that moved");
+                Equal(2, two.Wants[0].Count, "not the first");
+                int coinsForAll = 2 * 25 + 3 * bronze.Buy;
+                Equal(3, two.AllOf(m, "Bronze", has, coinsForAll), "\"all\" on the second line pays for the first line first");
+                Check(two.Validate(m, 2 * 25 + 3 * bronze.Buy, has) == null, "both lines validate together");
+                Equal(DealReason.CoinsShort, two.Validate(m, 2 * 25 + 3 * bronze.Buy - 1, has), "one coin short across the sum is coins_short");
+                Deal built = two.Build(1);
+                Equal(2, built.Wants.Count, "Build carries every wanted line");
+                Equal("Bronze", built.Wants[1].Prefab, "in order");
+                DemoMarket settleDemo = DemoMarket.Default();
+                int ironBefore = settleDemo.Market.Find("Iron").Stock, bronzeBefore = settleDemo.Market.Find("Bronze").Stock;
+                DealResult settled = settleDemo.Settle(built, 100000);
+                Check(settled != null && settled.Ok, "the demo market settles a two-ware deal: " + (settled != null ? settled.Reason : "null"));
+                Equal(2, settled.ItemsToAdd.Count, "with both wares delivered");
+                Equal(-(2 * 25 + 3 * bronze.Buy), settled.CoinsDelta, "for the sum of both");
+                Equal(ironBefore - 2, settleDemo.Market.Find("Iron").Stock, "his iron stock down by the first line");
+                Equal(bronzeBefore - 3, settleDemo.Market.Find("Bronze").Stock, "his bronze stock down by the second");
+                TrayModel again = new TrayModel();
+                Check(again.StageBuy(iron, 2) && again.StageBuy(bronze, 999), "a second tray, the second line at his whole stock");
+                DemoMarket bare = DemoMarket.Default();
+                bare.Settle(new Deal { VisitId = 1, Nonce = 77, Wanted = new DealLine { Prefab = "Bronze", Count = bare.Market.Find("Bronze").Stock, UnitPriceSeen = bronze.Buy } }, 100000);
+                DealResult soldOut = bare.Settle(again.Build(1), 100000);
+                Check(soldOut != null && !soldOut.Ok && soldOut.Reason == DealReason.SoldOut, "one line sold out refuses the whole deal, nothing half-settled");
+                Equal(ironBefore, bare.Market.Find("Iron").Stock, "and the other line's stock is untouched");
+                two.Remove("Iron");
+                Equal(1, two.Wants.Count, "x on the first line leaves the second");
+                Equal("Bronze", two.Wanted.Prefab, "which is now the first");
+                two.Unstage("Bronze", 100);
+                Check(two.IsEmpty, "and taking it all back empties the tray");
+                TrayModel full = new TrayModel();
+                int staged = 0;
+                foreach (MarketRow row in m.Rows) if (row.Kind == EntryKind.Ware && row.Stock > 0 && full.StageBuy(row, 1)) staged++;
+                Equal(TrayModel.MaxWantedLines, full.Wants.Count, "no more than MaxWantedLines wares stage");
+                Check(staged == TrayModel.MaxWantedLines, "the rest are refused, not silently dropped");
+            }
 
             // Offering.
             Check(t.StageOffer(wood, 10, has("Wood")), "goods the player carries stage as an offer");

@@ -124,7 +124,12 @@ goods / Send him off (twice), and his words in the footer. **Reshaped 2026-09-08
 `a/terminal-ux`)**: the pay-mode switch is gone, the tray is YOU GET beside YOU GIVE with a count box, "all" and x
 on every line and one balance line, "Cover it with my goods" shows whenever a ware is staged, `EnableBarter=false`
 refuses goods beside a ware on the client, and the window sits on a translucent black backdrop
-(`Client.TerminalBackdropAlpha`, 0.4) with brighter text, all through the theme's own `ThemeOptions`.
+(`Client.TerminalBackdropAlpha`, 0.4) with brighter text, all through the theme's own `ThemeOptions`. **Since
+the same evening (PR #68, seen on visits 25 and 26): more than one ware per deal** — the deal's wanted side is a
+list on the wire like the offered side (`Deal.Wants`; `Wanted` is the first line), `Market.Settle` refuses the
+deal whole on the first wanted line that fails, the tray's GET side holds up to eight wares, and the Confirm
+button is lit (in the theme's bright gold) only while the tray's own Validate passes, his reason shown dim
+beside the balance when it does not.
 `Client/Terminal/TrayModel.cs` (pure, 74 checks) is
 the tray: staging clamped to stock, room and what you carry, the prices copied from the snapshot and amber where
 they moved, Validate in the server's order, Build at the price on screen NOW, AutoFill for barter, the answer

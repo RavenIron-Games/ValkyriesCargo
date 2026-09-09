@@ -511,6 +511,11 @@ namespace RavenIron.ValkyriesCargo.Client
             if (zdo == null) { Pinned = false; return; }
             int was = _state;
             _state = zdo.GetInt(Spawner.StateHash, _state);
+            // Issue #59 (Wu'barrk's visit-16 log): RPC_Vanish sets Leaving on every machine but only the
+            // owner writes the ZDO, so a watcher's next read here stepped him back to Trading and re-ran
+            // EnterState (the clocks, the strip-band check) until the owner's write landed 0.12 s later.
+            // Leaving is the end of the plan: a lower state off the ZDO is stale, never a step back.
+            if (was >= MerchantState.Leaving && _state < MerchantState.Leaving) _state = was;
 
             ZDOID carrier = zdo.GetZDOID(Spawner.CarrierKey);
             GameObject bird = (carrier.IsNone() || ZNetScene.instance == null) ? null : ZNetScene.instance.FindInstance(carrier);
@@ -588,6 +593,14 @@ namespace RavenIron.ValkyriesCargo.Client
                 _distanceAtApproachEntry = distance;
                 _progress = default;
             }
+            // Issue #59 (Wu'barrk, 2026-09-08): the patrol point on EVERY Trading entry, the ZDO path
+            // included, so the machine that owns him next has one. `SetPatrolPoint` writes s_patrol and
+            // s_patrolPoint on the ZDO (BaseAI asm:269), hence owner only; BaseAI.GetPatrolPoint re-reads
+            // them every second, so it reaches the next owner. Without one, IdleMovement centres a tamed
+            // creature's random walk on its own position and he drifts without bound; with one,
+            // RandomMovement steers back past m_randomMoveRange * 2.
+            if (state == MerchantState.Trading && _ai != null && _nview != null && _nview.IsOwner())
+                _ai.SetPatrolPoint();
             return distance;
         }
 
@@ -679,8 +692,13 @@ namespace RavenIron.ValkyriesCargo.Client
             MerchantPlan.Step step = MerchantPlan.Next(_state, Pinned, grounded, distance, _timeInState, _farSeconds,
                 approach, _distanceAtApproachEntry, _progress.StuckSeconds, _leashSpent, busy);
 
-            if (step.Follow && _ai != null)
-                _ai.SetFollowTarget(near != null ? near.gameObject : null);
+            // Issue #59 (Wu'barrk's visit-16 log, 2026-09-08): assert the target the plan wants EVERY tick,
+            // including the null. `m_follow` is a plain non-replicated field and it beats the patrol point
+            // in MonsterAI.UpdateAI (asm:6081), so a target left over from Approaching on a machine that
+            // later re-acquires him mid-Trading walks him off after that player - and `step.Changed` is
+            // false on that path, so a clear on the entry alone never runs. Idempotent field write, owner only.
+            if (_ai != null)
+                _ai.SetFollowTarget(step.Follow && near != null ? near.gameObject : null);
 
             if (!step.Changed) return;
 
@@ -695,7 +713,6 @@ namespace RavenIron.ValkyriesCargo.Client
 
             if (_state == MerchantState.Trading)
             {
-                if (_ai != null) { _ai.SetFollowTarget(null); _ai.SetPatrolPoint(); }
                 if (step.CallOut && !_calledOut)
                 {
                     _calledOut = true;

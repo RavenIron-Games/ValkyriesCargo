@@ -453,8 +453,13 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       nothing, `CargoMerchant.Busy()` = the local terminal or the server's count for this visit, one log line per
       flip; `GetHoverText` through `Localization.instance.Localize`. 1862 checks, 0 warnings. **Unseen on a
       machine**: `cargo merchant #N: a terminal is open on him (K on the wire): the leash holds` on the owner while a
-      SECOND player trades, and whether the walk-off was the leash at all (his log). The hover key: **seen, the
-      owner 2026-09-08 ("all that looks fine")**; the hold line on his own terminal: seen on visits 19 and 20.
+      SECOND player trades, and whether the walk-off was the leash at all (his log). **SEEN with a second player,
+      2026-09-08 evening, visits 23 and 24 (Wu'barrk on as "Wubarrk Dev", both on main's build): the owner's
+      client printed `cargo merchant #23: a terminal is open on him (1 on the wire): the leash holds` with his own
+      terminal closed, then `no terminal open on him: the leash is armed again` when Wu'barrk's closed; the same
+      pair on visit 24; the owner: "2 client worked."** The walk-off was NOT the leash (his visit-16 log; PR #66).
+      The hover key: **seen, the owner 2026-09-08 ("all that looks fine")**; the hold line on his own terminal:
+      seen on visits 19 and 20.
       **Backpacks 1.3.8 is installed on StormTest and Don's client** (GUID `org.bepinex.plugins.backpacks`,
       confirmed off the DLL; Thunderstore, the owner's download OK) — the backpack test can run from here.
 - [ ] **The buy-anything extension** (owner, 2026-09-08, the same message): Ingvar buys ANY item a player offers,
@@ -503,3 +508,17 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       on visit 21, and the client's ServerSync line came 8 times over the whole visit instead of every 2 s. Still
       unseen: the terminal BUTTON path (the "Sending him off" wait, the farewell, `terminal closed: sent him off`)
       and a refusal on a screen (needs a modded client or a stale visit).
+- [x] **`a/multi-wanted` — more than one ware per deal, Confirm lit only when the deal can go (PR #68 MERGED
+      2026-09-08 evening, 1924 checks).** SEEN on visit 25: `deal w4790ce-25-1 with Nomadtest: sold 1 Ruby at 35,
+      sold 2 ArrowFrost at 3, sold 1 ArrowIron at 2, sold 3 FlametalNew at 140, sold 1 BlackMetal at 62, bought 4
+      BlackCore at 210, bought 5 Eitr at 36, bought 1 FlametalNew at 77, coins +572 to the player`, applied line
+      for line on the client; the lit Confirm in the bright gold on visit 26 (the owner: "love it"). Open note: the
+      same ware may sit on both sides of a deal (three Flametal bought at 140, one sold back at 77) — costs the
+      player, never the purse; refuse it only at the owner's word.
+- [ ] **`a/follow-assert` — the walk-off inside Trading, Wu'barrk's two diffs plus the vanish-flap guard
+      (2026-09-08 evening, his file at the owner's word).** PR #66 MERGED at the owner's word ("github issues
+      need solved"), UNSEEN on a screen. Proof needs TWO clients: a leash-free visit
+      where ownership moves off the pilot (watch `ours|watching (owner N)` on both logs) and Ingvar stays at his
+      patrol point; and no `leaving -> trading via the ZDO` line on the watcher at the vanish. Open question for
+      Wu'barrk on the issue: was Ingvar armed, was anything hostile near the base on visit 16 (a combat target
+      beats the follow and the idle walk alike, state unchanged).

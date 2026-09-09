@@ -260,18 +260,18 @@ redraws it while open, so **B watches the price tick while A buys**.
 
 **The Deal** (one primitive, pure, tested):
 ```
-Deal { v, visitId, nonce, wanted: (prefab, n) | none, offered: [(prefab, n)], coinsOffered, expected: {wantedUnit, offeredUnits[]} }
+Deal { v, visitId, nonce, wanted: [(prefab, n)], offered: [(prefab, n)], coinsOffered, expected: {wantedUnits[], offeredUnits[]} }
 net = price(wanted) − value(offered)      // at the SERVER's current prices
 net > 0 : player pays net coins;  net < 0 : merchant pays −net from his purse
 ```
-Buy = wanted + coins. Sell = offered only. Barter = wanted + offered (the tray is the basket; auto-fill picks highest value
+Buy = wanted lines + coins (one line per ware, more than one ware per deal since 2026-09-08). Sell = offered only. Barter = wanted + offered (the tray is the basket; auto-fill picks highest value
 first until value ≥ price; change in coins). `expected` carries the unit prices the player saw (v5's `ExpectedPrice`).
 
 **Guarantees, stated honestly** (v5's five, corrected by the review):
 1. **Replay immunity**: 64-bit `nonce` per deal; the server keeps a 500-entry ring of settled nonces per visit and refuses
    repeats (a direct socket does not stop a replayed packet by itself).
 2. **Server-side atomicity**: one main thread, one visit: validate in `Core/Market.Settle`'s order (empty, stale visit, duplicate nonce; the
-   wanted line: unknown, bad count, sold out, price changed; each offered line: unknown, bad count, over max, price
+   each wanted line: unknown, not on shelf, bad count, the same ware twice, sold out, price changed; each offered line: unknown, bad count, over max, price
    changed; coins short; purse empty), then commit stock, purse, `MarketState`, then answer. Price is checked before
    the purse so Reconfirm gets the price answer, not `purse_empty`. Two deals for the last unit arrive
    in order; the second gets `sold out`.

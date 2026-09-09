@@ -436,25 +436,34 @@ namespace RavenIron.ValkyriesCargo.Core
         /// </summary>
         public DealResult Settle(Deal d, int playerCoins, double worldTime)
         {
-            if (d == null || d.Offered == null) return DealResult.Refuse(d == null ? 0 : d.Nonce, DealReason.Malformed);
+            if (d == null || d.Offered == null || d.Wants == null) return DealResult.Refuse(d == null ? 0 : d.Nonce, DealReason.Malformed);
             for (int i = 0; i < d.Offered.Count; i++) if (d.Offered[i] == null) return DealResult.Refuse(d.Nonce, DealReason.Malformed);
             if (d.IsEmpty) return DealResult.Refuse(d.Nonce, DealReason.EmptyDeal);
             if (d.VisitId != VisitId) return DealResult.Refuse(d.Nonce, DealReason.StaleVisit);
             if (!_nonces.Add(d.Nonce)) return DealResult.Refuse(d.Nonce, DealReason.Duplicate);
 
-            MarketItem want = null;
-            int wantCharge = 0;
-            if (d.Wanted != null)
+            // Every wanted line (one ware per deal until 2026-09-08), each checked in the order the design
+            // lists, the deal refused whole on the first that fails: a player never gets half a basket.
+            var wants = new List<MarketItem>(d.Wants.Count);
+            var wantCharges = new List<int>(d.Wants.Count);
+            long price = 0;
+            for (int i = 0; i < d.Wants.Count; i++)
             {
-                want = Find(d.Wanted.Prefab);
+                DealLine line = d.Wants[i];
+                if (line == null) return Refuse(d, DealReason.Malformed);
+                MarketItem want = Find(line.Prefab);
                 if (want == null) return Refuse(d, DealReason.UnknownItem);
                 // A catalogue entry he is not selling: off this period's shelf when it rotates (its own reason,
                 // so a stale pane says why), a Want when it is fixed (the reason it always had).
                 if (KindOf(want) != EntryKind.Ware) return Refuse(d, Rotating ? DealReason.NotOnShelf : DealReason.UnknownItem);
-                if (d.Wanted.Count < 1) return Refuse(d, DealReason.BadCount);
-                if (want.Stock < d.Wanted.Count) return Refuse(d, DealReason.SoldOut);
-                wantCharge = Charge(want);
-                if (wantCharge != d.Wanted.UnitPriceSeen) return Refuse(d, DealReason.PriceChanged, Snapshot().Encode());
+                if (line.Count < 1) return Refuse(d, DealReason.BadCount);
+                for (int j = 0; j < wants.Count; j++) if (wants[j] == want) return Refuse(d, DealReason.BadCount);   // one line per ware
+                if (want.Stock < line.Count) return Refuse(d, DealReason.SoldOut);
+                int charge = Charge(want);
+                if (charge != line.UnitPriceSeen) return Refuse(d, DealReason.PriceChanged, Snapshot().Encode());
+                price += (long)line.Count * charge;
+                wants.Add(want);
+                wantCharges.Add(charge);
             }
 
             long offeredValue = 0;
@@ -481,12 +490,11 @@ namespace RavenIron.ValkyriesCargo.Core
                 offeredPays.Add(pays);
             }
 
-            long price = want != null ? (long)d.Wanted.Count * wantCharge : 0;
             long net = price - offeredValue;
             if (net > 0 && playerCoins < net) return Refuse(d, DealReason.CoinsShort);
             if (net < 0 && Purse < -net) return Refuse(d, DealReason.PurseEmpty);
 
-            if (want != null) { want.Stock -= d.Wanted.Count; want.UpdatedWorldTime = worldTime; }
+            for (int i = 0; i < wants.Count; i++) { wants[i].Stock -= d.Wants[i].Count; wants[i].UpdatedWorldTime = worldTime; }
             for (int i = 0; i < offered.Count; i++) { offered[i].Stock += d.Offered[i].Count; offered[i].UpdatedWorldTime = worldTime; }
             Purse += (int)net;
             if (net > 0) _coinedThisVisit += (int)net;   // GROSS in; see Coined
@@ -497,7 +505,8 @@ namespace RavenIron.ValkyriesCargo.Core
                 DeliveryId = _salt + "-" + Wire.Int(VisitId) + "-" + Wire.Int(++_deliverySeq),
                 CoinsDelta = (int)(-net),
             };
-            if (want != null) r.ItemsToAdd.Add(new DealLine { Prefab = want.Prefab, Count = d.Wanted.Count, UnitPriceSeen = wantCharge });
+            for (int i = 0; i < wants.Count; i++)
+                r.ItemsToAdd.Add(new DealLine { Prefab = wants[i].Prefab, Count = d.Wants[i].Count, UnitPriceSeen = wantCharges[i] });
             for (int i = 0; i < offered.Count; i++)
                 r.ItemsToRemove.Add(new DealLine { Prefab = offered[i].Prefab, Count = d.Offered[i].Count, UnitPriceSeen = offeredPays[i] });
             return r;
