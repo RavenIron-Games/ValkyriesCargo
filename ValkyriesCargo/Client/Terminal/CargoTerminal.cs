@@ -78,6 +78,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
         /// <summary>Where the focused box is on screen: a click anywhere else hands the keyboard back.</summary>
         private Rect _focusedBox;
         private GUIStyle _small, _smallFrom;
+        private GUIStyle _confirm, _confirmFrom;
 
         public bool IsOpen { get; private set; }
         public string LastCloseReason { get; private set; } = "";
@@ -553,6 +554,26 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             return _small;
         }
 
+        /// <summary>
+        /// The theme's Primary button with its face in the theme's BRIGHT gold (the owner, 2026-09-08 evening:
+        /// "confirm has to be brighter"). Primary's own face is the metal colour, which on BlackGold is a dark
+        /// gilt that reads as dim even when the button is live; the disabled draw halves the alpha on top of
+        /// that, so lit and dim looked alike. Rebuilt whenever the theme rebuilds its styles.
+        /// </summary>
+        private GUIStyle ConfirmButton()
+        {
+            if (_confirm == null || !ReferenceEquals(_confirmFrom, GiltFrameTheme.Primary))
+            {
+                _confirmFrom = GiltFrameTheme.Primary;
+                _confirm = new GUIStyle(GiltFrameTheme.Primary);
+                _confirm.normal.textColor = GiltFrameTheme.GoldBright;
+                _confirm.hover.textColor = Color.white;
+                _confirm.active.textColor = Color.white;
+                _confirm.focused.textColor = GiltFrameTheme.GoldBright;
+            }
+            return _confirm;
+        }
+
         private static string Digits(string s)
         {
             if (string.IsNullOrEmpty(s)) return "";
@@ -573,7 +594,7 @@ namespace RavenIron.ValkyriesCargo.Client.Terminal
             try
             {
                 GUI.enabled = !_awaiting && !_tray.IsEmpty && why == null;
-                if (GUI.Button(new Rect(bx, r.y, S(150f), bh), _tray.AnyAmber ? "Confirm new price" : "Confirm deal", GiltFrameTheme.Primary)) Confirm(m);
+                if (GUI.Button(new Rect(bx, r.y, S(150f), bh), _tray.AnyAmber ? "Confirm new price" : "Confirm deal", ConfirmButton())) Confirm(m);
                 GUI.enabled = !_awaiting;
                 bx += S(158f);
                 if (GUI.Button(new Rect(bx, r.y, S(90f), bh), "Clear", GiltFrameTheme.Button)) { _tray.Clear(); _tray.Message = ""; }
