@@ -74,7 +74,30 @@ namespace RavenIron.ValkyriesCargo.Core
         /// At 8 m/s this is under 7 s, and it ends with the bird well past the player rather than
         /// back where it came from.
         /// </summary>
-        public const float DepartDistance = 55f;
+/// <summary>
+        /// How high above the pilot the Valkyrie starts, and the reason the inbound flight is worth
+        /// watching at all.
+        ///
+        /// It was 120 m over a ~77 m run. That is a 53-degree line of sight: to watch the bird carry
+        /// Ingvar in you had to be looking nearly straight up, and by the time it entered a normal
+        /// view cone it was already letting go. The 2026-09-08 report - "we see the bird, but he drops
+        /// the dwarf way too soon" - was that, plus the long empty departure `DepartDistance` fixes.
+        /// Nothing was ever dropping early: Don's StormTest log for visits 25 and 26 has the release
+        /// landing on the authored X and Z to seven figures.
+        ///
+        /// 45 m over the same run is a 27-degree approach - a bird you see while walking around, low
+        /// enough that Ingvar reads as a shape hanging from the talons, and still far above the tree
+        /// line (~15-20 m). The glide slope from here to `DropAltitude` is ~24 degrees, which is a
+        /// glide rather than the old stoop. It cannot be bought with distance instead: the start is
+        /// clamped inside the pilot's 3x3 zone block, so ~90 m out is the ceiling.
+        ///
+        /// The horizontal run is unchanged, so the flight is shorter in seconds than the old one
+        /// (~10.6 s against ~17 s at 8 m/s) - but the old seventeen were mostly spent invisible, and
+        /// `Server.FlightSpeed` is the knob for the duration.
+        /// </summary>
+        public const float DefaultStartAltitude = 45f;
+
+                public const float DepartDistance = 55f;
 
         /// <summary>
         /// How much the bird climbs on the way out, above the drop. A departure that climbs back to

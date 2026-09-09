@@ -127,7 +127,7 @@ namespace RavenIron.ValkyriesCargo.Server
 
                 FlightPlan.Plan plan = FlightPlan.Make(px, py, pz, seed, activeArea,
                     Clamp(ModConfig.FlightStartDistance, 90f, 24f, 400f),
-                    Clamp(ModConfig.FlightStartAltitude, 120f, 20f, 400f),
+                    Clamp(ModConfig.FlightStartAltitude, FlightPlan.DefaultStartAltitude, 20f, 400f),
                     Clamp(ModConfig.FlightDescentDistance, 50f, 0f, 200f),
                     FlightPlan.DropAltitude);
 

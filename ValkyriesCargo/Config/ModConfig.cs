@@ -158,8 +158,8 @@ namespace RavenIron.ValkyriesCargo.Config
             FlightStartDistance = S(cfg, "Server", "FlightStartDistance", 90f,
                 "Metres from the pilot where the Valkyrie appears; shrunk at runtime, 12 m at a time, until the start fits inside the pilot's active zone block. The floor is FlightPlan.MinimumStartDistance (30 m): below that the bird would appear on top of the player. Read on the SERVER.",
                 new AcceptableValueRange<float>(30f, 200f));
-            FlightStartAltitude = S(cfg, "Server", "FlightStartAltitude", 120f,
-                "Altitude of the Valkyrie's start point, metres above the drop. Read on the SERVER.",
+            FlightStartAltitude = S(cfg, "Server", "FlightStartAltitude", Core.FlightPlan.DefaultStartAltitude,
+                "Altitude of the Valkyrie's start point, metres above the drop. The default 45 puts the approach at about 27 degrees above the horizon from ~90 m out, so the bird is in a normal view cone the whole way in and Ingvar can be seen hanging from the talons; the old 120 was a 53-degree line nobody could watch. Read on the SERVER.",
                 new AcceptableValueRange<float>(30f, 400f));
             FlightDescentDistance = S(cfg, "Server", "FlightDescentDistance", 50f,
                 "Metres out at which the descent leg begins. Read on the SERVER.",

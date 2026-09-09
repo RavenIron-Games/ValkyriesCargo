@@ -28,6 +28,27 @@ after the rest of this log was written.
 
 ### Since 0.1.0-rc2 — the same night
 
+- **The inbound flight is watchable: the start altitude 120 m -> 45 m (Track B, 2026-09-08, 1931 checks).**
+  The other half of the empty-bird report, and the owner's ask in his own words: "we need to see the val
+  holding him". At 120 m over a ~77 m run the bird sat **53 degrees above the horizon** from where the
+  pilot stood — to watch the carry you had to look nearly straight up, and by the time the Valkyrie
+  entered a normal view cone she was already letting go. 45 m over the same run is a **27-degree**
+  approach and a **~24-degree glide slope**: a bird you notice while walking around, low enough that
+  Ingvar reads as a shape hanging from the talons, and still well clear of the tree line. It cannot be
+  bought with distance instead — the start is clamped inside the pilot's 3x3 zone block, so ~90 m out is
+  the ceiling and altitude is the only lever. `FlightPlan.DefaultStartAltitude` is the one place the
+  number is typed; `ModConfig` and `Spawner`'s fallback both read it, so a stale 120 cannot survive in a
+  third place. The approach is now ~10.6 s against ~17 s, but the old seventeen were mostly spent
+  invisible; `Server.FlightSpeed` remains the knob for duration. Six new checks that BRACKET the value —
+  two mutations proven, 120 m fails "inside a normal view cone" and "a glide, not a dive", 12 m fails
+  "still up in the sky" and "clear of the tree line". `docs/DESIGN.md` and CLAUDE.md updated.
+- **The store page rewritten (2026-09-08).** `HexiumDist/README.md` is the Thunderstore/Hexium page and
+  was still describing an 800-coin purse, a fixed 72-item shelf and no rotation. It now carries the
+  shipped numbers (purse 1500, 20 of 72 re-rolled every 2 game days, the Fair Market Act, the Backpacks
+  add-on and its x2 shelf), the console table, the configuration defaults, an honest 0.1.0 status, and
+  the credit both founders asked for: **Raven Iron is NomadicWar & Wu'barrk**, stated at the top of the
+  page and again in the credits, with what each of them built. The root README's byline and credits
+  match it.
 - **The empty bird: the departure cut from ~24 s to under 7 s (Track B, 2026-09-08, 1925 checks).** The
   playtest report was "we see the bird, but he drops the dwarf way too soon, so we almost always see an
   empty bird". Nothing was dropping early — Don's StormTest log for visits 25 and 26 has the drop landing

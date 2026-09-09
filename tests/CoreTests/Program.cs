@@ -3893,6 +3893,38 @@ namespace ValkyriesCargo.Tests
                       "the ORIGINAL swung waypoint is inside the prefab bird's turning circle: unreachable, which is why it orbited for 180 s");
             }
 
+            Section("FlightPlan: the inbound is watchable - you can see the Valkyrie holding him (2026-09-08)");
+            {
+                // "we need to see the val holding him". The old 120 m start over a ~77 m run put the
+                // bird 53 degrees above the horizon: to watch the carry you had to look nearly
+                // straight up, and by the time it entered a normal view cone it was letting go.
+                var f = FlightPlan.Make(0f, 30f, 0f, 4242, 2, 90f, FlightPlan.DefaultStartAltitude, 50f);
+                Check(f.Ok, "inbound: the reference plan is flyable at the shipped altitude");
+
+                double rx = f.StartX - f.DropX, rz = f.StartZ - f.DropZ;
+                double run = Math.Sqrt(rx * rx + rz * rz);
+                double rise = f.StartY - f.DropY;
+
+                // Elevation from the DROP (where the pilot is standing) to the bird's start point.
+                double elevation = Math.Atan2(rise, run) * 180.0 / Math.PI;
+                Check(elevation < 35.0,
+                      "the start sits inside a normal view cone (under 35 deg), not overhead");
+                Check(elevation > 10.0,
+                      "the start is still up in the sky, not skimming the ground");
+
+                // The glide from the start down to the release: a glide, not a stoop.
+                double slope = Math.Atan2(rise - FlightPlan.DropAltitude, run) * 180.0 / Math.PI;
+                Check(slope < 30.0, "the glide slope is a glide (under 30 deg), not a dive");
+
+                // Above the tree line the whole way, so he is a silhouette and not lost in canopy.
+                Check(f.DescentY - f.DropY > 20.0,
+                      "the descent waypoint is still clear of the tree line (>20 m over the drop)");
+
+                // The one it cannot buy back with distance: the block clamp caps the run.
+                Check(f.StartDistance <= 90f + 0.01f,
+                      "the run is still inside the pilot's active block, so altitude is the only lever");
+            }
+
             Section("FlightPlan: the departure, so the empty bird is not the whole show (2026-09-08)");
             {
                 // The complaint: "we see the bird, but he drops the dwarf way too soon, so we almost

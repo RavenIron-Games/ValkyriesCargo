@@ -132,7 +132,8 @@ add|remove|reset` are admin too; `cargo status`, `cargo stock`, `cargo catalogue
 holds (`|zone − centre| ≤ m_activeArea − 1`, 64 m zones). Outside it `RemoveObjects` destroys the instance, and a
 non-persistent owned ZDO with it. Vanilla's intro survives 500 m only because the passenger's reference position rides the
 bird. So the server picks a start point **inside the pilot's block**: bearing `seed` at `FlightStartDistance` (90 m),
-shrunk by 12 m until `InActiveArea` holds; altitude `FlightStartAltitude` (120 m), descent at `FlightDescentDistance`
+shrunk by 12 m until `InActiveArea` holds; altitude `FlightStartAltitude` (45 m since 2026-09-08; it was 120, which put the
+approach 53 deg above the horizon and made the carry unwatchable), descent at `FlightDescentDistance`
 (50 m). At `m_speed` 10 m/s that is a 15–20 s flight, visible from the first frame. `cargo status` prints the runtime
 `ZoneSystem.instance.m_activeArea` (decompiled default 1; the prefab may raise it) and the clamp it implies.
 
@@ -474,7 +475,7 @@ CustomBody                   true      put Ingvar's own body on that clone, from
                                        false keeps the stand-in visible, and so does a build with no bundle (P8)
 FlightStartDistance          90        30-200; clamped into the pilot's active block at runtime, shrunk in 12 m
                                        steps, never below FlightPlan.MinimumStartDistance (30)
-FlightStartAltitude          120       30-400 (the code clamps at 400, so the config says 400)
+FlightStartAltitude          45        30-400 (the code clamps at 400, so the config says 400; was 120 until 2026-09-08)
 FlightDescentDistance        50        10-200; also capped at MaxDescentFraction (0.75) of the run
 FlightSpeed                  8         2-40; ours, not the prefab's 20; read on the CLIENT that owns the bird (P4)
 FlightTurnRate               45        5-360; ours, not the prefab's 20; read on the CLIENT that owns the bird (P4)
@@ -542,7 +543,7 @@ Pilot's private line at dispatch: "Wings beat in the upper skies... an emissary 
 | The merchant's state key | `VCargo_state` is a client-to-client rendering hint (which pose on each screen). The server writes it at authoring and on adoption and never reads it; the visit's phase lives in `VisitState`, written by `VisitSession.SetPhase`. A server decision must never consult it, because whichever client's block holds the persistent merchant owns the ZDO and writes the key (`docs/TRUST-BOUNDARY.md` §3) | locked (P11, 2026-09-07; verified against P5 as merged) |
 | Event tie-in | Real `RandomEvent`, `m_random=false`, scheduled by us, ended by vanilla or `ResetRandomEvent` | locked |
 | Object creation | Server authors both ZDOs with owner = pilot; pilot's `ZNetScene` instantiates them | proposed; v1 pending-flag spawn is the fallback |
-| Flight start | Inside the pilot's active block, ~90 m out, ~120 m up; never 500 m | locked by the engine |
+| Flight start | Inside the pilot's active block, ~90 m out, ~45 m up (was ~120: unwatchable); never 500 m | locked by the engine |
 | Carry | Real merchant pinned to the talons on every machine; `InIntro` postfix on the owner; no IK | locked |
 | Where market state lives | ServerSync custom values + sidecar save; never on the merchant ZDO | locked by the engine |
 | **Trade UI** | **A terminal of our own**, opened from our `Interactable`; `StoreGui` untouched | **locked (owner, 2026-09-06); built (P7)** |
