@@ -124,7 +124,10 @@ after the rest of this log was written.
   design's order and refuses the deal whole on the first that fails; the tray's GET side is a list (`MaxWantedLines`
   8) with the count box, "all" (which pays for the other lines first) and x on every line, both wells drawn the same
   way. The Confirm button is enabled only when the tray's own Validate passes, run on every draw, and his reason
-  for a no shows dim beside the balance line before anything is pressed. Unseen on a screen.
+  for a no shows dim beside the balance line before anything is pressed; its lit face is the theme's bright gold
+  (the owner on the first screen: "confirm has to be brighter"). SEEN on visits 25 and 26 (2026-09-08, PR #68
+  merged): one deal of five wares taken and three kinds given, `w4790ce-25-1 … coins +572 to the player`,
+  settled and applied line for line; the owner: "love it."
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 

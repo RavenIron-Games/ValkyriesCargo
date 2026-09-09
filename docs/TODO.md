@@ -486,7 +486,10 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       on visit 21, and the client's ServerSync line came 8 times over the whole visit instead of every 2 s. Still
       unseen: the terminal BUTTON path (the "Sending him off" wait, the farewell, `terminal closed: sent him off`)
       and a refusal on a screen (needs a modded client or a stale visit).
-- [ ] **`a/multi-wanted` — more than one ware per deal, Confirm lit only when the deal can go (2026-09-08 evening,
-      1924 checks).** PR open, unseen. Proof: stage two wares, the button lights, confirm → server `deal … sold N X
-      at a, sold M Y at b`; stage more than the purse covers → the button stays dim with `Your purse is lighter than
-      that.` beside the balance. Both sides need the DLL; a client behind can still trade one ware.
+- [x] **`a/multi-wanted` — more than one ware per deal, Confirm lit only when the deal can go (PR #68 MERGED
+      2026-09-08 evening, 1924 checks).** SEEN on visit 25: `deal w4790ce-25-1 with Nomadtest: sold 1 Ruby at 35,
+      sold 2 ArrowFrost at 3, sold 1 ArrowIron at 2, sold 3 FlametalNew at 140, sold 1 BlackMetal at 62, bought 4
+      BlackCore at 210, bought 5 Eitr at 36, bought 1 FlametalNew at 77, coins +572 to the player`, applied line
+      for line on the client; the lit Confirm in the bright gold on visit 26 (the owner: "love it"). Open note: the
+      same ware may sit on both sides of a deal (three Flametal bought at 140, one sold back at 77) — costs the
+      player, never the purse; refuse it only at the owner's word.
