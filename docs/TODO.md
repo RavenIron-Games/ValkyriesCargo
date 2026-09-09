@@ -499,7 +499,8 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       same ware may sit on both sides of a deal (three Flametal bought at 140, one sold back at 77) — costs the
       player, never the purse; refuse it only at the owner's word.
 - [ ] **`a/follow-assert` — the walk-off inside Trading, Wu'barrk's two diffs plus the vanish-flap guard
-      (2026-09-08 evening, his file at the owner's word).** PR open. Proof needs TWO clients: a leash-free visit
+      (2026-09-08 evening, his file at the owner's word).** PR #66 MERGED at the owner's word ("github issues
+      need solved"), UNSEEN on a screen. Proof needs TWO clients: a leash-free visit
       where ownership moves off the pilot (watch `ours|watching (owner N)` on both logs) and Ingvar stays at his
       patrol point; and no `leaving -> trading via the ZDO` line on the watcher at the vanish. Open question for
       Wu'barrk on the issue: was Ingvar armed, was anything hostile near the base on visit 16 (a combat target
