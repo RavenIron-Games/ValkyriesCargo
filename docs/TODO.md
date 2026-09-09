@@ -453,8 +453,13 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       nothing, `CargoMerchant.Busy()` = the local terminal or the server's count for this visit, one log line per
       flip; `GetHoverText` through `Localization.instance.Localize`. 1862 checks, 0 warnings. **Unseen on a
       machine**: `cargo merchant #N: a terminal is open on him (K on the wire): the leash holds` on the owner while a
-      SECOND player trades, and whether the walk-off was the leash at all (his log). The hover key: **seen, the
-      owner 2026-09-08 ("all that looks fine")**; the hold line on his own terminal: seen on visits 19 and 20.
+      SECOND player trades, and whether the walk-off was the leash at all (his log). **SEEN with a second player,
+      2026-09-08 evening, visits 23 and 24 (Wu'barrk on as "Wubarrk Dev", both on main's build): the owner's
+      client printed `cargo merchant #23: a terminal is open on him (1 on the wire): the leash holds` with his own
+      terminal closed, then `no terminal open on him: the leash is armed again` when Wu'barrk's closed; the same
+      pair on visit 24; the owner: "2 client worked."** The walk-off was NOT the leash (his visit-16 log; PR #66).
+      The hover key: **seen, the owner 2026-09-08 ("all that looks fine")**; the hold line on his own terminal:
+      seen on visits 19 and 20.
       **Backpacks 1.3.8 is installed on StormTest and Don's client** (GUID `org.bepinex.plugins.backpacks`,
       confirmed off the DLL; Thunderstore, the owner's download OK) — the backpack test can run from here.
 - [ ] **The buy-anything extension** (owner, 2026-09-08, the same message): Ingvar buys ANY item a player offers,
