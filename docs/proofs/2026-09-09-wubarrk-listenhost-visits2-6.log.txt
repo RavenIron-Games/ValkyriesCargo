@@ -1,0 +1,420 @@
+# Wu'barrk's LISTEN HOST run, 2026-09-09 00:14-00:40, visits 2 to 6
+#
+# Machine: Wu'barrk's Linux box, Gale profile "TestywithDon", single-player world 2484912131 =
+# server + client in one process. Backpacks 1.3.9 loaded. No dedicated server, no second client.
+#
+# WHY IT EXISTS. The 2026-09-08 playtest reported "we see the bird, but he drops the dwarf way too
+# soon, so we almost always see an empty bird" and "no backpack". Both were reproduced here and both
+# are settled. THREE separate bugs, none of which any off-game check could have caught, and two of
+# which every existing log line reported as healthy.
+#
+# 1. THE EMPTY BIRD = he hung FIFTY METRES BELOW THE TALON for the whole flight.
+#    Found by the carry diagnostic added the same night, on its first flight:
+#      cargo merchant #4 carry 1: him (-334.1, 27.4, 40.5), pin (-330.4, 77.1, 36.7), off-pin 50 m,
+#        dist to player 87.10128 m, visible 22/24 renderer(s), ours (owner 1614081553), grounded no
+#      cargo merchant #4 carry 2: ... off-pin 50.0000038 m ...
+#      cargo merchant #5 carry 7: ... off-pin 49.9999962 m ...
+#    A CONSTANT across three visits and every second of each - which is what says a fixed offset and
+#    not gravity beating the pin. He was owned, pinned, visible and not falling, just fifty metres
+#    straight down. Cause: `PinToTalon` used `Transform.TransformVector`, which applies SCALE as well
+#    as rotation, and the Valkyrie's attach point hangs on a bone chain that is not at unit scale, so
+#    the prefab's own m_attachOffset of (0, 0.30, 0.40) - half a metre - came out as fifty.
+#    Fixed with `TransformDirection` (rotation only). Visit #6, every sample:
+#      carry 1  off-pin 0.4999994 m    dist 92.0
+#      carry 3  off-pin 0.499998748 m  dist 75.5
+#      carry 6  off-pin 0.5000009 m    dist 52.1
+#      carry 9  off-pin 0.500000238 m  dist 24.8
+#    0.5 m is exactly the prefab's attach offset. THE CARRY IS RIGHT.
+#
+# 2. THE BACKPACK = baked 47.9 METRES ABOVE the bone, and reported as perfectly attached.
+#      body: backpack 'bp_explorer' on Spine02, 18 part(s), 11206 tris  <- said this while invisible
+#    Smoothbrain's parts are `attach_skin` skinned meshes bound to VALHEIM's skeleton, so BakeMesh
+#    returns them in the character root's space. Measured after the fix:
+#      re-centred from (0, 47.921, 0.007) (the bake is in character-root space), size (0.667, 1.205, 0.758) m
+#    SEEN ON A SCREEN by the owner, visit #5: the pack is on his back. His words: "need to be pushed
+#    towards his back a bit more but its there" - a config nudge (Client.BackpackOffset), not code.
+#
+#    A CORRECTION, kept because it was published wrong: the first diagnosis was that Ingvar's rig is
+#    authored in centimetres. models/ingvar.glb really does carry Armature at scale 0.01, but Unity's
+#    FBX import normalises it and the live run read `bone scale 1, world scale 1`. That was NOT the
+#    cause. The compensation written for it is a harmless no-op and was kept only because a re-bake
+#    that does not normalise would need it.
+#
+# 3. THE EMPTY TAIL, fixed the night before and confirmed here. Visit #6: drop at ~00:39:46,
+#    `Destroying valkyrie` at 00:39:55 - about 8 s, against the 24 s measured on 2026-09-08.
+#
+# ALSO SEEN, all on this run: the inbound at the new 45 m start altitude (a 27-degree approach, not
+# the old 53); the release chasing the player and firing at 20 m FLAT (the log's 24.14 m is 3D with
+# the bird still ~15 m up); two deals settled including barter both ways; the busy hold arming and
+# disarming; the leash firing at 12.88 m for 5.02 s and `reached the player`; a clean dismiss and
+# reclaim; `19 renderer(s) off with the smoke` = his body plus all 18 pack parts going into the mist
+# together, which is what says the pack is parented under the body and not the chassis.
+#
+# NOT settled here: anything needing two clients or a dedicated server. This is one machine.
+#
+[Message:   BepInEx] BepInEx 5.4.23.3 - valheim (8/14/2026 3:15:55 AM)
+[Message:   BepInEx] User is running BepInExPack Valheim version 5.4.2333 from Thunderstore
+[Info   :   BepInEx] Running under Unity vUnknown (post-2017)
+[Info   :   BepInEx] CLR runtime version: 4.0.30319.42000
+[Info   :   BepInEx] Supports SRE: True
+[Info   :   BepInEx] System platform: Bits64, Linux
+[Message:   BepInEx] Preloader started
+[Info   :   BepInEx] Loaded 1 patcher method from [BepInEx.Preloader 5.4.23.3]
+[Info   :   BepInEx] 1 patcher plugin loaded
+[Info   :   BepInEx] Patching [UnityEngine.CoreModule] with [BepInEx.Chainloader]
+[Message:   BepInEx] Preloader finished
+[Info   :   BepInEx] Detected Unity version: v6000.0.61f1
+[Message:   BepInEx] Chainloader ready
+[Message:   BepInEx] Chainloader started
+[Info   :   BepInEx] 7 plugins to load
+[Info   :   BepInEx] Loading [Configuration Manager 18.4.1]
+[Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.0]
+[Info   :Valkyrie's Cargo] built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 19/19 ok, 7 not probeable.
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=True, patches 18/18 applied, catalogue=72 entries, engine: same build 0.221.12 (net 36, player 43, world 37); probes 19/19 ok, 7 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :   BepInEx] Loading [Server Devcommands 1.109]
+[Info   :   BepInEx] Loading [World Edit Commands 1.74]
+[Info   :   BepInEx] Loading [Infinity Hammer 1.80]
+[Info   :   BepInEx] Loading [Backpacks 1.3.9]
+[Info   :   BepInEx] Loading [YggdrasilsReckoning 0.1.1]
+[Warning:  HarmonyX] AccessTools.Method: Could not find method for type Player and name PlacePiece and parameters (Piece)
+[Error  :YggdrasilsReckoning] YR: capability 'Player.PlacePiece' failed to bind (not found). The feature group that needs it will stand down and degrade to vanilla behaviour.
+[Info   :YggdrasilsReckoning] YR: capability probe - Registration=True Pieces=False Altar=True Merchant=True Dewfall=True Tap=True Combat=True Localization=True
+[Info   :YggdrasilsReckoning] YR: Harmony patch classes applied: 20 ok, 0 failed.
+[Info   :YggdrasilsReckoning] YggdrasilsReckoning v0.1.1 loaded. Seek the Tears of Yggdrasil.
+[Message:   BepInEx] Chainloader startup complete
+[Info   : Unity Log] 09/09/2026 00:37:37: Using steam_appid.txt
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Using steam APPID:892970
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Authentication:k_ESteamNetworkingAvailability_Attempting
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Platform doesn't implement Process Lifetime Management! Don't initialize suspend manager.
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Initialized platform!
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Platform doesn't implement matchmaking! Don't initialize matchmaking manager.
+
+[Info   : Unity Log] 09/09/2026 00:37:37: All files in local storage save data:
+/home/rohan/.config/unity3d/IronGate/Valheim/Player-prev.log (64540)
+/home/rohan/.config/unity3d/IronGate/Valheim/Player.log (32503)
+/home/rohan/.config/unity3d/IronGate/Valheim/adminlist.txt (63)
+/home/rohan/.config/unity3d/IronGate/Valheim/bannedlist.txt (40)
+/home/rohan/.config/unity3d/IronGate/Valheim/permittedlist.txt (42)
+/home/rohan/.config/unity3d/IronGate/Valheim/prefs (6778)
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Cloud storage is not supported or enabled
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Initializing preferences provider...
+
+[Info   : Unity Log] 09/09/2026 00:37:37: No preference provider available for this platform!
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Set background loading budget to Low
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loading first scene!
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Preferences initialized! Activating first scene!
+
+[Info   : Unity Log] 09/09/2026 00:37:37: 
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Starting to load scene:start.unity (169d7618616154c03be07e9ad3af5893)
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Set background loading budget to Normal
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #0 - 'localization' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #1 - 'localization_extra' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #2 - 'heightmap_message' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #3 - 'localization_witch' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #4 - 'localization_ashlands' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #5 - 'localization_captions' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #6 - 'localization_combatupdate' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #7 - 'localization_celebrationupdate' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #0 - 'localization' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #1 - 'localization_extra' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #2 - 'heightmap_message' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #3 - 'localization_witch' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #4 - 'localization_ashlands' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #5 - 'localization_captions' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #6 - 'localization_combatupdate' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:37: Loaded localization file #7 - 'localization_celebrationupdate' language: 'English'
+
+[Info   : Unity Log] 09/09/2026 00:37:41: Set background loading budget to High
+
+[Info   : Unity Log] 09/09/2026 00:37:41: GPU Device: 10DE:2860 (NVIDIA)
+
+[Info   : Unity Log] 09/09/2026 00:37:42: Set background loading budget to Low
+
+[Warning: Unity Log] Only custom filters can be played. Please add a custom filter or an audioclip to the audiosource (Amb_MainMenu).
+[Warning: Unity Log] 09/09/2026 00:37:42: Missing audio clip in music respawn
+
+[Info   : Unity Log] 09/09/2026 00:37:42: Steam initialized, persona:The Rohan
+
+[Info   : Unity Log] 09/09/2026 00:37:42: Valheim version: l-0.221.12 (network version 36)
+
+[Info   : Unity Log] 09/09/2026 00:37:42: Worldgenerator version setup:2
+
+[Info   :Server Devcommands] Reloading 9 alias data.
+[Info   :Server Devcommands] Reloading 0 bind data.
+[Info   :Server Devcommands] Reloading 17 tools.
+[Info   : Unity Log] 09/09/2026 00:37:42: Render threading mode:MultiThreaded
+
+[Info   : Unity Log] 09/09/2026 00:37:42: Checking for installed DLCs
+
+[Info   : Unity Log] 09/09/2026 00:37:42: DLC:beta installed:False
+
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Tear' from 'DragonTear'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_Eikthyr' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_gd_king' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_Bonemass' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_Dragon' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_GoblinKing' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_SeekerQueen' from 'AmberPearl'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Essence_Fader' from 'AmberPearl'.
+[Error  :YggdrasilsReckoning] YR: donor 'piece_beehive' not found - cannot build the Worldroot Tap yet.
+[Error  :YggdrasilsReckoning] YR: donor 'blackforge' not found - cannot build Yggdrasil's Anvil yet.
+[Info   : Unity Log] 09/09/2026 00:37:43: Sending PlayFab login request (attempt 1)
+
+[Info   : Unity Log] 09/09/2026 00:37:43: Starting music menu
+
+[Info   :Server Devcommands] Reloading 9 alias data.
+[Info   : Unity Log] 09/09/2026 00:37:43: Session auth respons callback
+
+[Info   : Unity Log] 09/09/2026 00:37:43: Logged in PlayFab user via Steam auth session ticket
+
+[Info   : Unity Log] 09/09/2026 00:37:43: PlayFab local entity ID is 427F3A7198767B50
+
+[Info   : Unity Log] 09/09/2026 00:37:43: Released session ticket
+
+[Info   : Unity Log] 09/09/2026 00:37:54: show character selection
+
+[Info   : Unity Log] 09/09/2026 00:37:57: OnCharacterStart
+
+[Info   : Unity Log] 09/09/2026 00:38:01: Loading main scene
+
+[Info   : Unity Log] 09/09/2026 00:38:01: Audioman already exist, destroying self
+
+[Info   : Unity Log] 09/09/2026 00:38:01: Steam initialized, persona:The Rohan
+
+[Info   : Unity Log] 09/09/2026 00:38:01: Loading player profile wubarrk dev
+
+[Info   : Unity Log] 09/09/2026 00:38:01: isModded: True
+
+[Info   : Unity Log] 09/09/2026 00:38:01: Zonesystem Awake 1117
+
+[Info   : Unity Log] 09/09/2026 00:38:01: DungeonDB Awake 1117
+
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+[Info   :YggdrasilsReckoning] YR: registered the Celestial Dewfall random event.
+[Info   : Unity Log] 09/09/2026 00:38:01: Steam initialized, persona:The Rohan
+
+[Info   : Unity Log] 09/09/2026 00:38:01: Worldgenerator version setup:2
+
+[Info   : Unity Log] Registered 'com.raveniron.valkyriescargo ConfigSync' RPC - waiting for incoming connections
+[Info   : Unity Log] Registered 'Backpacks ConfigSync' RPC - waiting for incoming connections
+[Info   : Unity Log] Registered 'org.bepinex.plugins.backpacks ItemManager ConfigSync' RPC - waiting for incoming connections
+[Info   : Unity Log] Registered 'wubarrk.yggdrasilsreckoning ConfigSync' RPC - waiting for incoming connections
+[Info   :YggdrasilsReckoning] YR: forged boss-mechanic prop 'YR_Pylon' from 'sign_notext'.
+[Info   :YggdrasilsReckoning] YR: forged boss-mechanic prop 'YR_StoneSpike' from 'sign_notext'.
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Eikthyr_sovereign_tempest' from 'Eikthyr' (health x2.2, damage x1.3, PylonRing).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Eikthyr_tempest_crowned' from 'Eikthyr' (health x2.2, damage x1.3, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Eikthyr_wrath_of_gale' from 'Eikthyr' (health x2, damage x1.4, PeriodicDebuff).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_gd_king_worldroot_colossus' from 'gd_king' (health x2.4, damage x1.3, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_gd_king_primordial_forest' from 'gd_king' (health x2.3, damage x1.3, SummonAdds).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_gd_king_bramble_king' from 'gd_king' (health x2.3, damage x1.3, DamageReflect).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Bonemass_miasma_sovereign' from 'Bonemass' (health x2.3, damage x1.3, PeriodicDebuff).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Bonemass_bile_lord' from 'Bonemass' (health x2.3, damage x1.35, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Bonemass_rotten_patriarch' from 'Bonemass' (health x2.3, damage x1.3, SummonAdds).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Dragon_queen_of_whiteout' from 'Dragon' (health x2.2, damage x1.4, PeriodicDebuff).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Dragon_glacial_matriarch' from 'Dragon' (health x2.2, damage x1.4, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Dragon_terror_of_blizzard' from 'Dragon' (health x2.2, damage x1.4, PeriodicDebuff).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_GoblinKing_solar_emperor' from 'GoblinKing' (health x2.4, damage x1.4, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_GoblinKing_cinder_king' from 'GoblinKing' (health x2.4, damage x1.4, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_GoblinKing_godless' from 'GoblinKing' (health x2.4, damage x1.35, PeriodicDebuff).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_SeekerQueen_broodmother_sovereign' from 'SeekerQueen' (health x2.3, damage x1.3, SummonAdds).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_SeekerQueen_hollow_depths' from 'SeekerQueen' (health x2.3, damage x1.3, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Fader_ashen_cataclysm' from 'Fader' (health x2.2, damage x1.4, GroundHazard).
+[Info   :YggdrasilsReckoning] YR: forged boss variant 'YR_Fader_arch_drakon' from 'Fader' (health x2.2, damage x1.4, PeriodicDebuff).
+[Info   : Unity Log] 09/09/2026 00:38:03: Checking for installed DLCs
+
+[Info   : Unity Log] 09/09/2026 00:38:03: DLC:beta installed:False
+
+[Info   :Server Devcommands] Reloading 0 bind data.
+[Info   :YggdrasilsReckoning] YR: no 'yggdrasil_kit' embedded resource yet - pieces will use donor meshes and materials.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_WorldrootTap' from 'piece_beehive'.
+[Info   :YggdrasilsReckoning] YR: forged 'YR_Anvil' from 'blackforge'.
+[Info   :YggdrasilsReckoning] YR: registered 'YR_WorldrootTap' (hash -1343836587) in ZNetScene.
+[Info   :YggdrasilsReckoning] YR: registered 'YR_Anvil' (hash 1953657056) in ZNetScene.
+[Info   :YggdrasilsReckoning] YR: added 'Yggdrasil Tap' to the hammer's build table.
+[Info   :YggdrasilsReckoning] YR: added 'Yggdrasil's Anvil' to the hammer's build table.
+[Info   :YggdrasilsReckoning] YR: routed RPCs registered for this session.
+[Info   : Unity Log] 09/09/2026 00:38:03: Zonesystem Start 1117
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Added 3 locations, 0 vegetations, 0 environments, 0 biome env-setups, 0 clutter  from main
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Added 1 locations, 0 vegetations, 2 environments, 0 biome env-setups, 0 clutter  from main
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Added 27 locations, 25 vegetations, 5 environments, 1 biome env-setups, 3 clutter  from main
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Added 4 locations, 0 vegetations, 1 environments, 0 biome env-setups, 0 clutter  from main
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Added 25 locations, 33 vegetations, 8 environments, 2 biome env-setups, 2 clutter  from main
+
+[Info   :Server Devcommands] Reloading 1 permission data.
+[Info   :Server Devcommands] Loaded 0 data entries.
+[Info   : Unity Log] 09/09/2026 00:38:03: DungeonDB Start 1117
+
+[Info   : Unity Log] 09/09/2026 00:38:03: ZRpc timeout set to 30s 
+
+[Info   : Unity Log] 09/09/2026 00:38:03: ZNET START
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Load world: argoest (argoest)
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Loading 8244 zdos, my sessionID: 3051894658, data version: 37
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Loading in ZDOs
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Adding to Dictionary
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Adding to Sectors
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Connecting Portals, Spawners & ZSyncTransforms
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Loaded 11264 locations
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Random event set:valkyries_cargo
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Unloading unused assets
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Starting respawn
+
+[Info   :Valkyrie's Cargo] role: listen host (server + client)
+[Info   :Valkyrie's Cargo] admin wire up for this session: VCargo_admin is registered on each peer's OWN socket as it connects and VCargo_reply answers on the same socket; the caller's identity is that socket, never a field in the packet
+[Info   :Valkyrie's Cargo] backpack mod: org.bepinex.plugins.backpacks 1.3.9 loaded; shelf x2 (Server.BackpackShelfMultiplier)
+[Info   :Valkyrie's Cargo] director up: salt w941cc003, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 100000, next visit #6, roll every 60 s at 100%, first roll one interval from now; sidecar valkyriescargo_2484912131.dat (85 rows loaded, a saved visit waits for its event); shelf 40 of 72, period 1, rolls every 2 game day(s), next in 1.07 game day(s)
+[Info   :Valkyrie's Cargo] shelf now: Bronze, Silver, BlackMetal, BlackCore, Amber, SilverNecklace, ArrowIron, ArrowFrost, BoltIron, MeadStaminaMinor, Wood, FineWood, YggdrasilWood, Resin, Coal, Flint, Feathers, LeatherScraps, LoxPelt, AskHide, BjornHide, Flax, Barley, JuteRed, SilverOre, FlametalOreNew, Guck, Bloodbag, Entrails, Chain, Chitin, Obsidian, Crystal, FreezeGland, Needle, Carapace, WitheredBone, TrophyNeck, TrophyDraugr, TrophyWolf
+[Info   : Unity Log] 09/09/2026 00:38:03: Loading minimap textures done [185ms]
+
+[Info   : Unity Log] 09/09/2026 00:38:03: Minimap: unpacking compressed mapData 8225 => 8388617 bytes
+
+[Info   : Unity Log] 09/09/2026 00:38:03: tip:$loadscreen_tip12
+
+[Info   :Valkyrie's Cargo] visit #5 RESUMED after a restart: pilot Wubarrk Dev, 04:45 left by the saved clock (the event's own timer corrects it next tick)
+[Info   :Valkyrie's Cargo] visit #5 resumed: merchant ZDO 1:2965 rebound (the bird did not survive the restart - non-persistent by design)
+[Info   : Unity Log] 09/09/2026 00:38:06: Force generating hmap (-320.00, 0.00, -64.00)
+
+[Info   : Unity Log] 09/09/2026 00:38:06: Force generating hmap (-384.00, 0.00, -64.00)
+
+[Info   : Unity Log] 09/09/2026 00:38:06: Force generating hmap (-384.00, 0.00, 0.00)
+
+[Info   : Unity Log] 09/09/2026 00:38:06: Force generating hmap (-320.00, 0.00, 0.00)
+
+[Error  : Unity Log] Desired shader compiler platform 18 is not available in shader blob
+[Info   :Valkyrie's Cargo] body: source embedded, prefab 'ingvar', 6 clip(s) [Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s], SkinnedMeshRenderer=True, bones=24, tris=31112, mesh bounds y -0.244 to 0.244 (0.94 x 0.49 x 1.37 m), ground offset 0.244 m
+[Info   :Valkyrie's Cargo] body: the BIND-POSE box implies a 0.244 m offset, which on this asset is an artefact of that box and not a real lift -- the source is authored on a different up-axis and FBX axis conversion does not touch bind-pose bounds. Nothing is placed from this number: Attach and the preview both measure the POSED mesh (BakeMesh). Kept because it is still the fastest way to see a bake come out sideways.
+[Info   :Valkyrie's Cargo] body: dressed Ingvar in a copy of the Dverger's own material ('DvergerBody', shader 'Custom/Creature') with our albedo in it. A baked bundle carries Unity's Standard, which Valheim lights only from direct light.
+[Info   :Valkyrie's Cargo] body: backpack 'bp_explorer' on Spine02, 18 part(s), 11206 tris; re-centred from (0, 47.921, 0.007) (the bake is in character-root space), size (0.667, 1.205, 0.758) m; bone scale 1, world scale 1, offset (0, 0, 0) m, turned (0, 0, 0) (Client.BackpackOffset / BackpackRotation / BackpackScale)
+[Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working); backpack on ('bp_explorer' on Spine02, 18 part(s), 11206 tris; re-centred from (0, 47.921, 0.007) (the bake is in character-root space), size (0.667, 1.205, 0.758) m; bone scale 1, world scale 1, offset (0, 0, 0) m, turned (0, 0, 0) (Client.BackpackOffset / BackpackRotation / BackpackScale))
+[Info   :Valkyrie's Cargo] cargo merchant #5: awake as trading, ours (owner 3051894658), body=Ingvar
+[Info   : Unity Log] 09/09/2026 00:38:11: Spawned after 8.019993
+
+[Warning: Unity Log] 09/09/2026 00:38:11: Character ID for player ([Wubarrk Dev, 0:0], [The Rohan, 0:0], The Rohan) was 0:0. Skipping.
+
+[Info   : Unity Log] 09/09/2026 00:38:11: Skipping unloading unused assets
+
+[Info   : Unity Log] 09/09/2026 00:38:11: Minimap: Adding unique location (-256.42, 34.50, -5.46)
+
+[Info   :Valkyrie's Cargo] visit #5 dismissed (dismissed by Wubarrk Dev)
+[Info   :Valkyrie's Cargo] cargo merchant #5: into the mist: 19 renderer(s) off with the smoke; the Clear follows in 2 s
+[Info   :Valkyrie's Cargo] visit #5 ended: dismissed by Wubarrk Dev; takings 0 coins, purse 100000, 5 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] visit #5: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   :Valkyrie's Cargo] roll: forced visit: Wubarrk Dev at (-259.485352, 7.033735); 1 eligible, 1 ticket(s)
+[Info   : Unity Log] 09/09/2026 00:39:37: Random event set:valkyries_cargo
+
+[Info   :Valkyrie's Cargo] visit #6 begins: pilot Wubarrk Dev (uid 3051894658) at (-259.485352, 7.033735), 300 s, purse 100000, seed 7705872
+[Info   :Valkyrie's Cargo] visit #6: flight authored: start (-270.76535, -82.25659) at 79.56831, descent (-267.308655, -54.8940659) at 67.12567 (50 m short), drop (-261.042, -5.28833) at 34.56831, straight in 90 m out; bird 3051894658:8301, Dverger 3051894658:8302, both owned by the pilot
+[Info   :Valkyrie's Cargo] cargo flight #6: flying from (-270.76535, 79.56831, -82.25659) via (-267.308655, 67.12567, -54.8940659) to (-261.042, 34.56831, -5.28833), 77.58 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+[Info   :Valkyrie's Cargo] body: backpack 'bp_explorer' on Spine02, 18 part(s), 11206 tris; re-centred from (0, 47.921, 0.007) (the bake is in character-root space), size (0.667, 1.205, 0.758) m; bone scale 1, world scale 1, offset (0, 0, 0) m, turned (0, 0, 0) (Client.BackpackOffset / BackpackRotation / BackpackScale)
+[Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working); backpack on ('bp_explorer' on Spine02, 18 part(s), 11206 tris; re-centred from (0, 47.921, 0.007) (the bake is in character-root space), size (0.667, 1.205, 0.758) m; bone scale 1, world scale 1, offset (0, 0, 0) m, turned (0, 0, 0) (Client.BackpackOffset / BackpackRotation / BackpackScale))
+[Info   :Valkyrie's Cargo] cargo merchant #6: awake as carried, ours (owner 3051894658), body=Ingvar
+[Info   :Valkyrie's Cargo] cargo merchant #6 carry 1: him (-269.8, 76.6, -74.2), pin (-269.7, 77.1, -74.2), off-pin 0.4999994 m, dist to player 92.0461349 m, visible 19/20 renderer(s), ours (owner 3051894658), grounded no
+[Info   :Valkyrie's Cargo] cargo merchant #6 carry 2: him (-268.8, 72.9, -66.9), pin (-268.8, 73.4, -66.9), off-pin 0.500002 m, dist to player 83.79482 m, visible 19/20 renderer(s), ours (owner 3051894658), grounded no
+[Info   :Valkyrie's Cargo] cargo merchant #6 carry 3: him (-267.9, 69.2, -59.6), pin (-267.9, 69.7, -59.6), off-pin 0.499998748 m, dist to player 75.549324 m, visible 19/20 renderer(s), ours (owner 3051894658), grounded no
+[Info   :Valkyrie's Cargo] cargo merchant #6 carry 4: him (-267.1, 65.9, -53.3), pin (-267.1, 66.3, -53.1), off-pin 0.5000002 m, dist to player 68.43817 m, visible 19/20 renderer(s), ours (owner 3051894658), grounded no
+[Info   :Valkyrie's Cargo] cargo merchant #6 carry 5: him (-266.2, 62.1, -46.2), pin (-266.2, 62.5, -45.9), off-pin 0.499997377 m, dist to player 60.2783966 m, visible 19/20 renderer(s), ours (owner 3051894658), grounded no
+[Info   :Valkyrie's Cargo] cargo merchant #6 carry 6: him (-265.3, 58.3, -39), pin (-265.3, 58.7, -38.7), off-pin 0.5000009 m, dist to player 52.11833 m, visible 19/20 renderer(s), ours (owner 3051894658), grounded no
+[Info   :Valkyrie's Cargo] cargo merchant #6 carry 7: him (-264.3, 54.4, -31.2), pin (-264.3, 54.9, -31.1), off-pin 0.50000006 m, dist to player 43.3127632 m, visible 19/20 renderer(s), ours (owner 3051894658), grounded no
+[Info   :Valkyrie's Cargo] cargo merchant #6 carry 8: him (-263.3, 51.7, -23), pin (-263.3, 52.2, -23.1), off-pin 0.500001 m, dist to player 32.4122047 m, visible 19/20 renderer(s), ours (owner 3051894658), grounded no
+[Info   :Valkyrie's Cargo] cargo merchant #6 carry 9: him (-262.4, 49.5, -15.2), pin (-262.4, 50, -15.4), off-pin 0.500000238 m, dist to player 24.7643452 m, visible 19/20 renderer(s), ours (owner 3051894658), grounded no
+[Info   :Valkyrie's Cargo] cargo flight #6: dropped at (-262.38266, 34.490715, -15.4497862) after 9.280022 s
+[Info   :Valkyrie's Cargo] cargo merchant #6: carried -> approaching via the ZDO, 9.280022 s after waking; carrier none, 24.1367512 m from the player, ours (owner 3051894658), 0 reclaim(s) during the carry, grounded no; walk-up budget 20 s
+[Info   :Valkyrie's Cargo] visit #6: dropped at (-262.38266, 34.490715, -15.4497862)
+[Info   :Valkyrie's Cargo] cargo merchant #6: trading (entered: reached the player) [callout]
+[Info   : Unity Log] 09/09/2026 00:39:55: Destroying valkyrie
+
+[Info   :Valkyrie's Cargo] terminal opened: visit #6 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] cargo merchant #6: a terminal is open on him (0 on the wire): the leash holds
+[Info   :Valkyrie's Cargo] deal w941cc003-6-1 with Wubarrk Dev: sold 47 ArrowIron at 2, bought 1 MeadStaminaMinor at 8, coins -86 to the player; purse 100086
+[Info   : Unity Log] 09/09/2026 00:40:11: adding ArrowIron  47
+
+[Info   :Valkyrie's Cargo] terminal deal on visit #6: ok w941cc003-6-1 +47 ArrowIron, -1 MeadStaminaMinor, -86 coins
+[Info   :Valkyrie's Cargo] deal w941cc003-6-2 with Wubarrk Dev: sold 13 BoltIron at 3, bought 10 TrollHide at 4, coins +1 to the player; purse 100085
+[Info   : Unity Log] 09/09/2026 00:40:39: adding BoltIron  13
+
+[Info   : Unity Log] 09/09/2026 00:40:39: Queue unlock msg:$msg_newitem:$item_bolt_iron
+
+[Info   : Unity Log] 09/09/2026 00:40:39: adding Coins  1
+
+[Info   :Valkyrie's Cargo] terminal deal on visit #6: ok w941cc003-6-2 +13 BoltIron, -10 TrollHide, +1 coins
+[Info   :Valkyrie's Cargo] terminal closed: close button
+[Info   :Valkyrie's Cargo] cargo merchant #6: no terminal open on him: the leash is armed again
+[Info   : Unity Log] 09/09/2026 00:40:46: Activating default element Continue
+
+[Info   : Unity Log] 09/09/2026 00:40:48: Available space to current user: 772988735488. Saving is blocked if below: 1499852 bytes. Warnings are given if below: 2999704
+
+[Info   : Unity Log] 09/09/2026 00:40:48: Game - OnApplicationQuit
+
+[Info   : Unity Log] 09/09/2026 00:40:48: Available space to current user: 772988735488. Saving is blocked if below: 1499852 bytes. Warnings are given if below: 2999704
+
+[Info   : Unity Log] 09/09/2026 00:40:48: Shutting down
+
+[Info   : Unity Log] 09/09/2026 00:40:48: Minimap: compressed mapData 8388617 => 8228 bytes
+
+[Info   : Unity Log] 09/09/2026 00:40:48: Considering autobackup. World time: 163.0399, short time: 7200, long time: 43200, backup count: 4
+
+[Info   : Unity Log] 09/09/2026 00:40:48: Skipping backup. World session not long enough.
+
+[Info   : Unity Log] 09/09/2026 00:40:48: ZNet Shutdown
+
+[Info   : Unity Log] 09/09/2026 00:40:48: PrepareSave: clone done in 1ms
+
+[Info   : Unity Log] 09/09/2026 00:40:48: PrepareSave: ZDOExtraData.PrepareSave done in 6 ms
+
+[Info   : Unity Log] 09/09/2026 00:40:48: Unloading unused assets
+
+[Info   : Unity Log] 09/09/2026 00:40:48: Sending disconnect msg
+
+[Info   : Unity Log] ZPlayFabMatchmaking::UnregisterServer - unregistering server now. State: Uninitialized
+[Info   : Unity Log] 09/09/2026 00:40:48: Stopping build thread
+
+[Info   : Unity Log] 09/09/2026 00:40:51: Steam manager on destroy
+
+[Warning: Unity Log] 09/09/2026 00:40:51: Local player destroyed
+
+[Info   : Unity Log] 09/09/2026 00:40:51: ZNet OnDestroy
+
+[Info   : Unity Log] 09/09/2026 00:40:51: Net scene destroyed
+

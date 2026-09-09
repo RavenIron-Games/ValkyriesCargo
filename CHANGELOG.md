@@ -28,7 +28,7 @@ after the rest of this log was written.
 
 ### 0.1.0-rc3 — cut 2026-09-08 evening, after the two-client session (PRs #54 to #68); a pre-release, uploaded to no store
 
-- **THE EMPTY BIRD, FOUND: he was hanging 50 metres below the talon (Track B, 2026-09-09).** The carry
+- **THE EMPTY BIRD, FOUND AND SEEN FIXED: he was hanging 50 metres below the talon (Track B, 2026-09-09).** The carry
   diagnostic answered it in its first two lines, on the first flight it ever ran on:
   `carry 1: him (-334.1, 27.4, 40.5), pin (-330.4, 77.1, 36.7), off-pin 50 m ... visible 22/24
   renderer(s), ours, grounded no`, then `off-pin 50.0000038 m` the next second and every second after,
@@ -43,7 +43,11 @@ after the rest of this log was written.
   **This is the bug the whole 2026-09-08 report was about**, and neither the departure length nor the
   start altitude was ever it - though both were real and both are fixed. No off-game check could have
   caught it: it is a Unity transform API taking scale where the caller meant none.
-- **The backpack is baked in CHARACTER-ROOT space, not bone space (Track B, 2026-09-09).** With the scale
+  **SEEN on a listen host the same night, visit #6** (`docs/proofs/2026-09-09-wubarrk-listenhost-visits2-6.log.txt`):
+  `off-pin 0.4999994` / `0.499998748` / `0.5000009` / `0.500000238` on every sample of the whole carry -
+  0.5 m is exactly the prefab's own attach offset - with the distance closing 92.0 -> 24.8 m and
+  `visible 19/20 renderer(s)` throughout. The carry is right.
+- **The backpack is baked in CHARACTER-ROOT space, not bone space - SEEN WORN (Track B, 2026-09-09).** With the scale
   read correctly at 1, the pack was still nowhere to be seen. Smoothbrain's parts are `attach_skin`
   skinned meshes bound to VALHEIM's skeleton, so `BakeMesh` returns vertices in the character root's
   space - a pack at a standing player's chest height, well over a metre above the origin. Hung on
@@ -52,6 +56,11 @@ after the rest of this log was written.
   TRS, so a scaled or turned part cannot pull the centre off) and shifts them so the holder's origin is
   the PACK's own centre. It lands on the bone, and the configured offset is a nudge from there rather than
   a hunt. The attach line reports the measurement, so a future wrong place is one line from obvious.
+  The measurement, live: `re-centred from (0, 47.921, 0.007) (the bake is in character-root space), size
+  (0.667, 1.205, 0.758) m` - **forty-eight metres** above the bone, the same ~100x scale factor as the
+  talon bug, applied to the pack's own chest-height offset. **SEEN ON A SCREEN by the owner, visit #5:
+  the pack is on his back** ("need to be pushed towards his back a bit more but its there"), which is a
+  `Client.BackpackOffset` nudge and not code. The add-on had never once been seen before this.
 - **A correction, recorded because it was wrong in public.** The first diagnosis of the invisible pack was
   that Ingvar's rig is authored in centimetres - `models/ingvar.glb` really does carry `Armature` at scale
   0.01. It is not the cause: Unity's FBX import normalises that into the bake, and the live run reported
