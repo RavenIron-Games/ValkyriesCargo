@@ -128,6 +128,18 @@ after the rest of this log was written.
   (the owner on the first screen: "confirm has to be brighter"). SEEN on visits 25 and 26 (2026-09-08, PR #68
   merged): one deal of five wares taken and three kinds given, `w4790ce-25-1 … coins +572 to the player`,
   settled and applied line for line; the owner: "love it."
+- **The walk-off inside Trading (branch `a/follow-assert`, Wu'barrk's diagnosis on issue #59, his file at the
+  owner's word).** His visit-16 client log has no leash transition at all: Ingvar entered Trading at 25 s and was
+  still in it 185 s later, so #61's busy hold (which holds the LEASH) never covered the walk-off he saw. His read:
+  a stale `MonsterAI.m_follow` — set only while Approaching, cleared only on a Trading entry the owner's own
+  Decide drove, a plain non-replicated field that beats the patrol point in `UpdateAI` — on a machine that
+  re-acquires him mid-Trading. Built: the follow target asserted every tick including the null, the patrol point
+  set on EVERY Trading entry in `EnterState` (the ZDO path included; owner-gated, it writes the ZDO; `GetPatrolPoint`
+  re-reads it every second so it reaches the next owner), the Decide-path duplicate gone, and a watcher never
+  steps back below Leaving on a stale ZDO read (his vanish flap, two lines 0.12 s apart). Caveat kept on the
+  issue: his own log shows the pilot's client driving both transitions with a constant owner, which clears the
+  follow, so visit 16 is not proven to be this mechanism; a combat target walks him off the same way. Needs two
+  clients to see. 1885 checks, no pure change.
 
 ### 0.1.0-rc2 — cut 2026-09-07 at the end of the day the first visits flew (PRs #24 to #53)
 
