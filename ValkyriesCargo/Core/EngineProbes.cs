@@ -73,6 +73,8 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string ZdoBodies = "zdo_bodies";
         /// <summary>Rank 3. `ZNetScene.InActiveArea` and the zone maths every waypoint is clamped by.</summary>
         public const string ZoneMaths = "zone_maths";
+        /// <summary>Rank 3, a body: the metre test behind `InActiveArea` and the ownership sweep (1.0).</summary>
+        public const string ActiveAreaRule = "active_area_rule";
         /// <summary>Rank 4. `ZSyncTransform`'s velocity cache, which is why the owner's own `s_velHash` write survives.</summary>
         public const string VelocityCache = "velocity_cache";
         /// <summary>Rank 5. The Valkyrie fields the flight and the carry read.</summary>
@@ -142,8 +144,10 @@ namespace RavenIron.ValkyriesCargo.Core
                                      "the whole authored-ZDO design; a body change here is silent", ProbeState.NotProbeable);
             Declare(ZdoBodies, 2, "ZDO.Set ignores okForNotOwner on every overload, so a non-owner write is a silent desync the owner overwrites; ZDO.Load renumbers every ZDOID, so an id never persists; ZDOMan.CreateNewZDO does not set the prefab, and DestroyZDO is a no-op for a non-owner",
                                   "the carry link, the restart sweep and every owner-only write; a body change here is silent", ProbeState.NotProbeable);
-            Declare(ZoneMaths, 3, "ZNetScene.InActiveArea's three static overloads, ZoneSystem.instance / GetZone / GetGroundHeight(Vector3, out float), m_zoneSize, m_activeArea, m_waterLevel",
-                                  "the flight's block clamp and the drop's ground height (Spawner, FlightPlan, CargoFlight)");
+            Declare(ZoneMaths, 3, "ZNetScene.InActiveArea's two static overloads (a point against a Vector2s zone or a Vector3 centre), ZoneSystem.instance / GetZone / GetZonePos / GetGroundHeight(Vector3, out float), m_zoneSize, m_waterLevel, and the 1.0 size of the area: ZNet.GetSyncedSimulationDistance, SimulationDistance.NearSimulationDistance / IsClassic",
+                                  "the flight's area clamp, D5's keep-window and the drop's ground height (Spawner, FlightPlan, ZoneOwnership, CargoFlight)");
+            Declare(ActiveAreaRule, 3, "ZNetScene.PointInsideActiveArea keeps a point within 1.5 zones (96 m) of the reference zone's centre on both axes, 1 zone at near simulation distance 1, and strictly inside a 1.75-zone circle at near 2 off classic; ZDOMan.ReleaseNearbyZDOS strips and grants claims by it every 2 s; SimulationDistance.OriginalDistance is near 2 classic",
+                                       "D5's keep-window and the flight's clamp (Core/ActiveArea.cs); a body change here is silent", ProbeState.NotProbeable);
             Declare(VelocityCache, 4, "ZSyncTransform.m_velocityCached and ZDOVars.s_velHash",
                                       "the glide on every screen but the pilot's (CargoFlight)");
             Declare(ValkyrieFields, 5, "Valkyrie.m_attachPoint / m_attachOffset / m_dropHeight / m_speed / m_turnRate",
@@ -163,7 +167,7 @@ namespace RavenIron.ValkyriesCargo.Core
             // The quietest failure on the list: a member ADDED to either interface means CargoMerchant no
             // longer implements it whole, and the runtime refuses to load the class at all - inside every
             // patch that names it, three logged throws each and then silence, and no merchant ever.
-            Declare(Interfaces, 6, "Interactable is exactly Interact(Humanoid, bool, bool) + UseItem(Humanoid, ItemDrop.ItemData) and Hoverable is exactly GetHoverText() + GetHoverName(): the four members CargoMerchant implements, and no fifth",
+            Declare(Interfaces, 6, "Interactable is exactly Interact(Humanoid, bool, bool) + UseItem(Humanoid, ItemDrop.ItemData) and Hoverable is exactly GetHoverText() + GetHoverName() + GetHoverOffset() (1.0's third): the five members CargoMerchant implements, and no sixth",
                                    "CargoMerchant cannot be loaded at all: a TypeLoadException in every patch that names it, on every targeting decision, every hover and every Awake");
             Declare(DamagePath, 6, "Character.Damage is a thin sender to RPC_Damage; RPC_Damage's owner gate is partway down, so its first lines run on every peer; ApplyDamage is the status-effect path that never passes RPC_Damage; OnDeath ends in ZNetScene.Destroy; fall damage in UpdateGroundContact is IsPlayer-gated; UpdateMotion zeroes the body's velocity under InIntro; RPC_SetTamed assigns only on the owner",
                                    "the immortality, the carry pin and the taming; a body change here is silent", ProbeState.NotProbeable);

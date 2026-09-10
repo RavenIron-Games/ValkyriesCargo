@@ -62,7 +62,7 @@ namespace RavenIron.ValkyriesCargo.Core
     /// Why the numbers are copied here rather than read from `Version`: the game's `Version` type is
     /// INTERNAL and its three numbers are `const`. A direct reference would be inlined AT OUR COMPILE
     /// TIME and would cheerfully report our own baseline back to us as if it were the live value - the
-    /// comparison would be `36 == 36` for ever, on every build of Valheim ever released. `EngineCheck`
+    /// comparison would be `39 == 39` for ever, on every build of Valheim ever released. `EngineCheck`
     /// reads the live ones by reflection over the loaded metadata; this file is the other half.
     ///
     /// PURE: no Unity types, harness-tested.
@@ -70,25 +70,25 @@ namespace RavenIron.ValkyriesCargo.Core
     public static class EngineBaseline
     {
         /// <summary>`Version.CurrentVersion.ToString()` on the build this was written against.</summary>
-        public const string GameVersion = "0.221.12";
-        public const int GameMajor = 0;
-        public const int GameMinor = 221;
-        public const int GamePatch = 12;
+        public const string GameVersion = "1.0.7";
+        public const int GameMajor = 1;
+        public const int GameMinor = 0;
+        public const int GamePatch = 7;
 
-        /// <summary>`Version.m_networkVersion` (a `uint` const in the real assembly). The handshake and the wire.</summary>
-        public const int NetworkVersion = 36;
-        /// <summary>`Version.m_playerVersion`. The character save format.</summary>
-        public const int PlayerVersion = 43;
-        /// <summary>`Version.m_worldVersion`. The world save format the sidecar sits beside.</summary>
-        public const int WorldVersion = 37;
+        /// <summary>`Version.c_networkVersion` (a `uint` const in the real assembly; `m_networkVersion` before 1.0). The handshake and the wire.</summary>
+        public const int NetworkVersion = 39;
+        /// <summary>`Version.c_PlayerVersion`, the `Version.Player` enum (`DeepNorth` = 46 on 1.0.7). The character save format.</summary>
+        public const int PlayerVersion = 46;
+        /// <summary>`Version.c_WorldVersion`, the `Version.World` enum (`DeepNorth` = 41 on 1.0.7). The world save format the sidecar sits beside.</summary>
+        public const int WorldVersion = 41;
 
         /// <summary>Steam build id of app 892970 (the client) as installed when the bodies were read.</summary>
-        public const int ClientBuildId = 21981559;
+        public const int ClientBuildId = 25185596;
         /// <summary>Steam build id of app 896660 (the dedicated server).</summary>
-        public const int ServerBuildId = 21981590;
+        public const int ServerBuildId = 25185644;
 
         /// <summary>When the method bodies this mod depends on were read. A branch re-push keeps the version and changes the bodies, so this date matters as much as the numbers.</summary>
-        public const string ReadOn = "2026-09-06";
+        public const string ReadOn = "2026-09-09";
 
         /// <summary>The baseline in one line, for the boot log.</summary>
         public static string Describe() =>

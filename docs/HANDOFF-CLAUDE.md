@@ -14,6 +14,25 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 **The tracker is still `docs/TODO.md`**, three tracks, each editing only its own section; when this file and
 that one disagree, that one wins. The subsections below this one are the day's earlier states, kept as history.
 
+**2026-09-10 — VALHEIM 1.0.7 IS OUT, AND `a/valheim-1.0` IS BUILT ON IT (read this before the rest of §0).** Steam
+moved Don's client (build 25185596) and the Steam dedicated-server folder (25185644) to 1.0.7 on 2026-09-09 (network
+39, `Version.Player.DeepNorth` 46, `Version.World.DeepNorth` 41, Unity 6000.0.75, still Mono). Swept from here the
+same day on BOTH axes with the P10a tools unmodified (`docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md`):
+**the two playtest stop-ships did not ship** (`GetStableHashCode` one-argument again, `GetAllCharacterZDOS` with no
+early return). What the release broke, and the branch's answer at the owner's word (the 1.0.7 publicized set handed
+over 2026-09-10): `Hoverable.GetHoverOffset()` — CargoMerchant could not load at all, the `interfaces` probe's quiet
+failure, one method in his file; `ZoneSystem.m_activeArea` / `m_activeDistantArea` GONE — the active area is the
+synced `SimulationDistance` (near 1..5, classic) and a metre test behind `InActiveArea`: `Core/ActiveArea.cs` (pure)
+and `ActiveAreaLive.cs` (the one read), `ZoneOwnership` and `FlightPlan` rebuilt on them (a stock server's area is
+0.221.12's 3x3 block exactly; the descent-slide loop is gone and its bound is a harness check); `ZRoutedRpc.Everybody`
+a `const`; `MessageHud.ShowMessage` / the `ConsoleCommand` constructor / `EffectList.Create` each +1 optional
+parameter (recompiled, rows re-pinned); `Version.c_*` (EngineCheck, EngineBaseline 1.0.7 / 39 / 46 / 41 / build ids).
+`libs/` is the 1.0.7 set; **0.221.12 is no longer a build target**. 0 warnings, 1956 checks; the offline probe tool on
+both 1.0.7 assemblies reads `same build 1.0.7 (net 39, player 46, world 41); probes 19/19 ok, 8 not probeable`.
+Bodies read and holding: the 2 s event broadcast, `ZDO.IsValid` (`m_prefab != -1`), `ZNetView.Awake`, `CreateNewZDO`,
+`RPC_Damage` (gate reordered; our prefix still first), `OwnerSync`'s velocity path, `Valkyrie.UpdateValkyrie`'s maths,
+`DropPlayer` (+`WaitForRespawn`, a watch); 25 unread. **SEEN ON A MACHINE 2026-09-10, 07:11 to 07:48, on Storm10 (a fresh 1.0.7 dedicated server, a new world, our DLL and ServerDevcommands 1.110 only) with Don's 1.0.7 client: both boot lines `running same build 1.0.7 (net 39, player 46, world 41); probes 19/19 ok, 8 not probeable`, `patches 18/18 applied`; a forced visit (`forced visit: Nomadtest … 1 eligible, 1 ticket(s)`), the flight authored 54 m out and dropped after 14.8 s, `2 reclaim(s) during the carry` (D5 against the rebuilt area maths), the walk-up to trading, the terminal open with the leash holding and re-arming, two deals settled line for line (`bought 75 Resin at 1`; `sold 5 SurtlingCore at 15, bought 7 Flint at 1, bought 2 Wood at 1`), the admin dismiss answered (`visit #1 dismissed (admin Nomadtest)`, `0 clock republish(es)`), the vanish (`into the mist: 1 renderer(s) off with the smoke`) and the reclaim. Not one line from the mod above Info on either side. ONE 1.0 FINDING on the way: `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want the DISPLAY id, `V_<steamid>` (Splatform.dll's `PlatformUserID.FilterPlatformUserID`: Steam→V, Xbox→X, PlayStation→S, Nintendo→N, GameCenter→A; `ZNet.ListContainsId` on 1.0.7 lets that filtered match OVERRIDE the bare and `Steam_` forms, which is why vanilla's devcommands and our AdminGate refused Don in the same breath until the `V_` line was added; the list reloads on change).** StormTest stays 0.221.12 and Don's client can no longer join it; Storm10 (port 2477) is the testbed. BepInExPack 5.4.2350 shipped 2026-09-09 and Don's Gale profile runs it (BepInEx 5.4.23.5) with ServerDevcommands 1.110.0 (Jere's 1.0 build); Backpacks has no 1.0 build yet; ServerSync upstream has no 1.0 commit.
+
 **Where main is.** `1dcf3ac` (docs) on `55508d6` (code, PR #64): 0 warnings, **1885/1885 off-game checks**. Merged
 today at the owner's word, in build order: #57 the rotating shelf (762df89), #58 the item value table (824f874),
 #60 the terminal (05da13e), #61 the busy hold and the hover localise (da72e00), #62 the backpack shelf half

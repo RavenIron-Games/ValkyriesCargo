@@ -128,13 +128,14 @@ add|remove|reset` are admin too; `cargo status`, `cargo stock`, `cargo catalogue
 > `GameCamera.UpdateMouseCapture`, `ZNet.Awake`, `ZNet.RPC_PeerInfo`); the report names each and why the other
 > five change nothing here.
 
-**The active-block constraint.** A client instantiates a ZDO only while `ZNetScene.InActiveArea(zone(zdo), zone(client))`
-holds (`|zone − centre| ≤ m_activeArea − 1`, 64 m zones). Outside it `RemoveObjects` destroys the instance, and a
+**The active-area constraint.** A client instantiates a ZDO only while `ZNetScene.InActiveArea(position, zone(client))`
+holds — on 1.0 a metre test about the centre of the client's zone, sized by the synced simulation distance: 96 m each
+way on a stock server, the 3x3 block of 64 m zones (`Core/ActiveArea.cs`). Outside it `RemoveObjects` destroys the instance, and a
 non-persistent owned ZDO with it. Vanilla's intro survives 500 m only because the passenger's reference position rides the
 bird. So the server picks a start point **inside the pilot's block**: bearing `seed` at `FlightStartDistance` (90 m),
 shrunk by 12 m until `InActiveArea` holds; altitude `FlightStartAltitude` (120 m), descent at `FlightDescentDistance`
 (50 m). At `m_speed` 10 m/s that is a 15–20 s flight, visible from the first frame. `cargo status` prints the runtime
-`ZoneSystem.instance.m_activeArea` (decompiled default 1; the prefab may raise it) and the clamp it implies.
+simulation distance (`ZNet.GetSyncedSimulationDistance()`; `ZoneSystem.m_activeArea` until 1.0) and the area it implies.
 
 **Drop point** (server, XZ, no terrain): 12–15 m from the pilot on the seeded bearing, inside the same block, beside
 something built (`Homestead.IsNearPlayerBuilt`, Ragnarok's Wrath). The pilot refines Y on arrival.
@@ -677,7 +678,7 @@ Source of truth: the **resized** GLB from the v5 zip (1.37 m tall). Measured: on
 
 ## 12. Risks and open questions
 
-- **Runtime `m_activeArea`** (default 1 in code; the prefab may raise it): `cargo status` prints it; the clamp handles it.
+- **The runtime simulation distance** (1.0; near 2 classic unless the server sets otherwise): `cargo status` prints it; the clamp handles every shape.
 - **Valkyrie prefab registration** with `ZNetScene`: existence proof is the intro on dedicated servers; check first; the
   v1 fallback stays documented.
 - **ZDO authoring**: `CreateNewZDO` + `SetPrefab` + `SetOwner(peer)` is what vanilla does for portals and spawners; verify the

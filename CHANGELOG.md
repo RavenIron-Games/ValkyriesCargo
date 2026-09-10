@@ -26,6 +26,32 @@ a settled one; **the owner's word on 2026-09-08 after the day's five merges: no 
 Entries are in build order, except the five sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
 
+### Since 0.1.0-rc3 — Valheim 1.0.7
+
+- **Valheim 1.0.7 (branch `a/valheim-1.0`, 2026-09-10, 1956 checks).** Steam moved both installs to the
+  release on 2026-09-09 (client build 25185596, server 25185644; network 39, player 46, world 41; Unity
+  6000.0.75). Swept from here the same day, both axes, the P10a tools unmodified
+  (`docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md`): the two playtest stop-ships
+  did not ship (`GetStableHashCode` is one-argument again, `GetAllCharacterZDOS` has no early return); the
+  0.221.12 build of the mod broke in six places on the release, all fixed here at the owner's word (the
+  1.0.7 publicized assemblies handed over): `Hoverable` gained `GetHoverOffset()` (CargoMerchant could not
+  load at all — the `interfaces` probe's quiet failure, exactly as written; one method in his file, his
+  character's value); `ZoneSystem.m_activeArea` / `m_activeDistantArea` are gone and the active area is
+  the synced simulation distance with a metre test behind `InActiveArea` (`Core/ActiveArea.cs`,
+  `ActiveAreaLive.cs`; `ZoneOwnership` and `FlightPlan` rebuilt on it, the same 3x3 block on a stock
+  server; the descent-slide loop removed, its bound proven in the harness instead); `ZRoutedRpc.Everybody`
+  a `const`; `MessageHud.ShowMessage`, the `ConsoleCommand` constructor and `EffectList.Create` each with
+  a new optional parameter (recompiled, the probe rows re-pinned); `Version.c_*` in place of `m_*`
+  (EngineCheck reads the new names; EngineBaseline carries 1.0.7). One new body fact,
+  `active_area_rule`; `libs/` is the 1.0.7 set and 0.221.12 is no longer a build target. The offline
+  probe tool on both 1.0.7 assemblies: `same build 1.0.7 (net 39, player 46, world 41); probes 19/19 ok,
+  8 not probeable`. **Seen on a machine 2026-09-10** on Storm10, a fresh 1.0.7 dedicated server, with the 1.0.7
+  client: both boot lines as above with `patches 18/18 applied`, a forced visit, the flight dropped after 14.8 s,
+  `2 reclaim(s) during the carry`, the walk-up, the terminal, two deals settled line for line, the admin dismiss
+  answered with `0 clock republish(es)`, the vanish with the smoke — nothing thrown on either side. Found on the way:
+  1.0's admin, permitted and banned lists want the display id `V_<steamid>` (a filter in the new Splatform.dll
+  overrides the old bare and `Steam_` match); the docs carry the table.
+
 ### 0.1.0-rc3 — cut 2026-09-08 evening, after the two-client session (PRs #54 to #68); a pre-release, uploaded to no store
 
 - **D5, the ownership loss during the carry (PR #54, Track B, 1718).** `HoldTheCarry` claims the merchant back

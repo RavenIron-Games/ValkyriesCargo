@@ -160,9 +160,10 @@ Requires [BepInExPack Valheim](https://thunderstore.io/c/valheim/p/denikson/BepI
 and nothing else: no Jotunn, no JSON library (the BarrkBOT export writes its files through the mod's
 own `Core/Json.cs`). `manifest.json`'s dependency list is that one entry.
 
-Built against the assemblies of the Valheim install of 2026-09-06 (0.221.x); that install's
-`UnityPlayer.dll` reports **Unity 6000.0.61f1**, which is the Editor version any asset bundle for
-this mod must be built with.
+Built against the assemblies of Valheim **1.0.7** (the install of 2026-09-09); that install's
+`UnityPlayer.dll` reports **Unity 6000.0.75**, which is the Editor version any asset bundle for
+this mod must be built with. 0.221.12 is no longer a build target (Steam's `default_pre1_0` branch
+keeps it; `v0.1.0-rc3` was the last build for it).
 
 ---
 
@@ -179,7 +180,7 @@ itself is what arms the lock.
 
 | Key | Default | Range | Meaning |
 |---|---|---|---|
-| `LockConfiguration` | `true` | | Server enforces every `Server.*` value on every client. Admins on `adminlist.txt` may still change them. |
+| `LockConfiguration` | `true` | | Server enforces every `Server.*` value on every client. Admins on `adminlist.txt` may still change them. On Valheim 1.0 the list wants the display id, `V_<steamid>` for Steam (`X_`, `S_`, `N_`, `A_` for the other platforms); the bare number and `Steam_<id>` no longer match. |
 | `Enabled` | `true` | | Roll visits at all. |
 | `RequireRested` | `true` | | A player must carry the Rested effect to be eligible. |
 | `MinComfortLevel` | `4` | 0-20 | Minimum comfort level (the number in the Rested tooltip) for eligibility. A bed, a fire and a roof give 3; 4 needs a chair or a banner. |

@@ -58,6 +58,7 @@ namespace ValkyriesCargo.Tests
             PatchLedgerTests();
             GhostTests();
             ZoneOwnershipTests();
+            ActiveAreaTests();
             JsonTests();
             SessionRowTests();
             BodyMotionTests();
@@ -2933,39 +2934,95 @@ namespace ValkyriesCargo.Tests
             Equal(-1, ZoneOwnership.ZoneIndex(-96f), "still zone -1 at -96");
             Equal(-2, ZoneOwnership.ZoneIndex(-97f), "and -97 has crossed into zone -2");
 
-            // The strip branch keeps a claim inside a block of `m_activeArea - 1` zones in EVERY
-            // direction (asm:69735 is a Chebyshev test, not a Euclidean one).
-            Equal(true, ZoneOwnership.InActiveArea(1, 1, 0, 0, 1), "a diagonal neighbour is inside the 3x3 block");
-            Equal(false, ZoneOwnership.InActiveArea(2, 0, 0, 0, 1), "two zones east is outside it");
-            Equal(false, ZoneOwnership.InActiveArea(0, -2, 0, 0, 1), "and so is two zones south");
+            // The strip branch keeps a claim inside the owner's ACTIVE AREA, which on a stock server
+            // (near 2 classic, 1.0's default) is 96 m each way from the centre of the owner's zone:
+            // the 3x3 block. `Core/ActiveArea.cs` carries the rule; this is D5 against it.
+            var stock = SimDistance.Original;
 
             // THE DEFECT ITSELF. The merchant is authored at the flight start, 90 m from the pilot, and
             // whether that survives the sweep depends on where the pair falls on the grid — which is
             // exactly why six visits in a row lost him and nobody could see a pattern in the distances.
             // Same 90 m, both answers:
-            Equal(false, ZoneOwnership.WouldStripClaim(90f, 0f, 0f, 0f, 2),
-                "90 m due east of the origin still shares the 3x3 block: the claim survives");
-            Equal(true, ZoneOwnership.WouldStripClaim(120f, 0f, 30f, 0f, 2),
-                "the SAME 90 m, shifted along the grid, straddles three zones: the claim is stripped");
+            Equal(false, ZoneOwnership.WouldStripClaim(90f, 0f, 0f, 0f, stock),
+                "90 m due east of the origin is still inside the origin zone's area: the claim survives");
+            Equal(true, ZoneOwnership.WouldStripClaim(120f, 0f, 30f, 0f, stock),
+                "the SAME 90 m, shifted along the grid, is 120 m from the zone centre: the claim is stripped");
             // And the cliff edge the flight start sits next to: measured from the origin the claim holds
-            // to 95 m and is gone at 97 m. `FlightPlan` starts the bird 90 m out, about six metres from
+            // to 96 m and is gone at 97 m. `FlightPlan` starts the bird 90 m out, about six metres from
             // that edge — which is why the pilot's own position on the grid decided every visit.
-            Equal(false, ZoneOwnership.WouldStripClaim(95f, 0f, 0f, 0f, 2), "95 m from the origin: the last metre that holds");
-            Equal(true, ZoneOwnership.WouldStripClaim(97f, 0f, 0f, 0f, 2), "97 m from the origin: two zones out, stripped");
+            Equal(false, ZoneOwnership.WouldStripClaim(96f, 0f, 0f, 0f, stock), "96 m from the origin: the last metre that holds");
+            Equal(true, ZoneOwnership.WouldStripClaim(97f, 0f, 0f, 0f, stock), "97 m from the origin: past the wall, stripped");
 
             // Altitude is not a defence. The Valkyrie starts ~155 m up and the sweep never looks at y.
-            Equal(ZoneOwnership.WouldStripClaim(120f, 0f, 30f, 0f, 2), ZoneOwnership.WouldStripClaim(120f, 0f, 30f, 0f, 2),
-                "the test takes no y at all — zones are a 2D grid, so 155 m of altitude changes nothing");
+            Equal(ZoneOwnership.WouldStripClaim(120f, 0f, 30f, 0f, stock), ZoneOwnership.WouldStripClaim(120f, 0f, 30f, 0f, stock),
+                "the test takes no y at all — the area is a 2D shape, so 155 m of altitude changes nothing");
 
-            // The runtime value is what matters. `m_activeArea` reads 2 on a live scene and the compiled
-            // default is 1; reading the default would shrink the keep-window to a SINGLE zone and report
-            // a strip for a merchant standing 40 m from the pilot.
-            Equal(false, ZoneOwnership.WouldStripClaim(40f, 0f, 0f, 0f, 2), "40 m out, activeArea 2: the claim holds");
-            Equal(true, ZoneOwnership.WouldStripClaim(40f, 0f, 0f, 0f, 1),
-                "the same 40 m read against the COMPILED default 1 would claim a strip that never happens");
+            // The LIVE setting is what matters. On 0.221.12 the danger was reading the compiled default
+            // (1) instead of the scene's 2; on 1.0 it is the server's simulation distance, which a
+            // server may set to near 1 — and then the same 70 m is a strip.
+            Equal(false, ZoneOwnership.WouldStripClaim(70f, 0f, 0f, 0f, stock), "70 m out on a stock server: the claim holds");
+            Equal(true, ZoneOwnership.WouldStripClaim(70f, 0f, 0f, 0f, new SimDistance(1, true)),
+                "the same 70 m at near 1 (a 64 m wall) is stripped");
+            Equal(true, ZoneOwnership.WouldStripClaim(95f, 95f, 0f, 0f, new SimDistance(2, false)),
+                "at near 2 off classic the block's corner is cut by the 112 m circle: stripped there");
+            Equal(false, ZoneOwnership.WouldStripClaim(95f, 95f, 0f, 0f, stock), "and kept on classic");
 
             // And the drop, which is where a healthy visit ends up: metres from the pilot, never stripped.
-            Equal(false, ZoneOwnership.WouldStripClaim(13f, 0f, 0f, 0f, 2), "the drop point, 13 m from the pilot: safe");
+            Equal(false, ZoneOwnership.WouldStripClaim(13f, 0f, 0f, 0f, stock), "the drop point, 13 m from the pilot: safe");
+        }
+
+        private static void ActiveAreaTests()
+        {
+            Section("ActiveArea: 1.0's simulation distance and the metre test behind InActiveArea");
+
+            // The grid, once more, from the file both callers now share.
+            Equal(0, ActiveArea.ZoneOf(31.9f), "zone 0 runs out at +32");
+            Equal(1, ActiveArea.ZoneOf(32f), "+32 is the first metre of zone 1");
+            Equal(-1, ActiveArea.ZoneOf(-33f), "a negative coordinate floors");
+            Equal(128f, ActiveArea.ZoneCentre(2), "a zone's centre is zone * 64 (GetZonePos)");
+
+            // The struct: vanilla's default, the clamp, equality, the words.
+            Check(SimDistance.Original.Near == 2 && SimDistance.Original.Classic, "the default is near 2 classic (SimulationDistance.OriginalDistance)");
+            Equal(1, new SimDistance(0, true).Near, "a near distance below 1 is read as 1");
+            Check(new SimDistance(2, true).Equals(SimDistance.Original) && !new SimDistance(2, false).Equals(SimDistance.Original), "equality is both numbers");
+            Equal("near 2 classic", SimDistance.Original.ToString(), "and the words are the two numbers");
+            Equal("near 3", new SimDistance(3, false).ToString(), "with 'classic' only when it is");
+
+            // The four shapes. Stock: 96 m each way, the 3x3 block; near 1: 64 m; near 2 off classic:
+            // the block cut by a 112 m circle; near 5: the block again.
+            var stock = SimDistance.Original;
+            var near1 = new SimDistance(1, true);
+            var circle = new SimDistance(2, false);
+            var far = new SimDistance(5, true);
+            Equal(96f, ActiveArea.Reach(stock), "stock reach is 1.5 zones");
+            Equal(64f, ActiveArea.Reach(near1), "near 1 reach is one zone");
+            Equal(96f, ActiveArea.Reach(far), "near 5 keeps the 1.5-zone reach: only near 1 shrinks it");
+            Equal(0f, ActiveArea.Radius(stock), "no circle on a classic setting");
+            Equal(112f, ActiveArea.Radius(circle), "the circle at near 2 off classic is 1.75 zones");
+            Equal(0f, ActiveArea.Radius(far), "and no circle at near 5");
+
+            Check(ActiveArea.Contains(96f, 96f, 0, 0, stock), "stock: the block's corner, 96 m out on both axes, is inside (<=)");
+            Check(!ActiveArea.Contains(96.1f, 0f, 0, 0, stock), "stock: a tenth past the wall is out");
+            Check(ActiveArea.Contains(-96f, 50f, 0, 0, stock), "stock: symmetric on the negative side");
+            Check(ActiveArea.Contains(64f, 64f, 0, 0, near1) && !ActiveArea.Contains(64.1f, 0f, 0, 0, near1), "near 1: the wall is at 64 m");
+            Check(ActiveArea.Contains(96f, 0f, 0, 0, circle), "circle: 96 m along one axis is inside the block and the 112 m circle");
+            Check(!ActiveArea.Contains(95f, 95f, 0, 0, circle), "circle: the block's corner is cut off (134 m from the centre)");
+            Check(ActiveArea.Contains(79.1f, 79.1f, 0, 0, circle) && !ActiveArea.Contains(79.2f, 79.2f, 0, 0, circle), "circle: the diagonal wall sits at 79.2 m, and the test is strict");
+            Check(ActiveArea.Contains(96f, 96f, 0, 0, far), "near 5: the corner is inside again");
+
+            // About another zone's centre, and by reference position.
+            Check(ActiveArea.Contains(200f, 0f, 2, 0, stock) && !ActiveArea.Contains(225f, 0f, 2, 0, stock), "about zone 2 (centre 128): 200 m is inside, 225 m is out");
+            Check(ActiveArea.ContainsPoint(200f, 0f, 100f, 0f, stock), "a reference at 100 m is zone 2, so 200 m is inside its area");
+            Check(!ActiveArea.ContainsPoint(31f, 0f, 100f, 0f, stock), "and 31 m, in zone 0, is out of it");
+
+            // The margin.
+            Check(ActiveArea.ContainsWithMargin(88f, 0f, 0, 0, stock, 8f) && !ActiveArea.ContainsWithMargin(88.1f, 0f, 0, 0, stock, 8f), "stock with an 8 m margin: the wall moves in to 88 m");
+            Check(!ActiveArea.ContainsWithMargin(75f, 75f, 0, 0, circle, 8f) && ActiveArea.ContainsWithMargin(70f, 70f, 0, 0, circle, 8f), "the circle shrinks by the margin too (104 m radius)");
+            Equal(56f, ActiveArea.MinimumReach(8f), "the smallest half-width any setting gives, less the margin, is 56 m");
+
+            // The words for cargo status.
+            Equal("near 2 classic: a claim is kept within 96 m of the reference zone's centre on both axes", ActiveArea.Describe(stock), "stock, in one line");
+            Check(ActiveArea.Describe(circle).EndsWith("and inside a 112 m circle"), "the circle is named when there is one");
         }
 
         private static void GhostTests()
@@ -3792,6 +3849,7 @@ namespace ValkyriesCargo.Tests
 
         private static void FlightPlanTests()
         {
+            var near1 = new SimDistance(1, true);
             Section("FlightPlan: zones and the active block");
 
             // The zone maths must agree with the game's, so the stub is the oracle: it carries
@@ -3807,11 +3865,12 @@ namespace ValkyriesCargo.Tests
                   "the zone boundary is at +32, not 0 (the zone is centred on its coordinate)");
             Check(FlightPlan.ZoneOf(-32.1f) == -1, "the boundary is symmetric below zero");
 
-            // activeArea 1 = the pilot's own zone only; 2 = the 3x3 block around it.
-            Check(FlightPlan.InActiveArea(0, 0, 0, 0, 1), "activeArea 1: the pilot's own zone is active");
-            Check(!FlightPlan.InActiveArea(1, 0, 0, 0, 1), "activeArea 1: the next zone is NOT active");
-            Check(FlightPlan.InActiveArea(1, 1, 0, 0, 2), "activeArea 2: the diagonal neighbour is active");
-            Check(!FlightPlan.InActiveArea(2, 0, 0, 0, 2), "activeArea 2: two zones out is NOT active");
+            // The area on a stock server (near 2 classic) is the 3x3 block; at near 1 it is one zone's
+            // width each way from the zone centre (Core/ActiveArea.cs).
+            Check(FlightPlan.PointInBlock(64f, 64f, 0f, 0f, SimDistance.Original), "stock: the diagonal neighbour's centre is inside the area");
+            Check(!FlightPlan.PointInBlock(128f, 0f, 0f, 0f, SimDistance.Original), "stock: two zones out is NOT inside");
+            Check(FlightPlan.PointInBlock(60f, 0f, 0f, 0f, near1), "near 1: 60 m from the zone centre is inside");
+            Check(!FlightPlan.PointInBlock(70f, 0f, 0f, 0f, near1), "near 1: 70 m is NOT");
 
             Section("FlightPlan: the seed decides the flight, identically everywhere");
 
@@ -3831,13 +3890,13 @@ namespace ValkyriesCargo.Tests
             Section("FlightPlan: every waypoint lands inside the block");
 
             // The pilot in the middle of a 3x3 block: the configured 90 m should survive whole.
-            var mid = FlightPlan.Make(0f, 30f, 0f, 4242, 2, 90f, 120f, 50f);
+            var mid = FlightPlan.Make(0f, 30f, 0f, 4242, SimDistance.Original, 90f, 120f, 50f);
             Check(mid.Ok, "a pilot in the middle of a 3x3 block gets a plan");
             Check(Math.Abs(mid.StartDistance - 90f) < 0.01f, "and keeps the full 90 m start distance");
             Check(Math.Abs(mid.StartY - 150f) < 0.01f, "the start is the pilot's ground plus the 120 m altitude");
-            Check(FlightPlan.PointInBlock(mid.StartX, mid.StartZ, 0f, 0f, 2), "the start is inside the block");
-            Check(FlightPlan.PointInBlock(mid.DescentX, mid.DescentZ, 0f, 0f, 2), "the descent waypoint is inside the block");
-            Check(FlightPlan.PointInBlock(mid.DropX, mid.DropZ, 0f, 0f, 2), "the drop is inside the block");
+            Check(FlightPlan.PointInBlock(mid.StartX, mid.StartZ, 0f, 0f, SimDistance.Original), "the start is inside the block");
+            Check(FlightPlan.PointInBlock(mid.DescentX, mid.DescentZ, 0f, 0f, SimDistance.Original), "the descent waypoint is inside the block");
+            Check(FlightPlan.PointInBlock(mid.DropX, mid.DropZ, 0f, 0f, SimDistance.Original), "the drop is inside the block");
 
             // The drop is 12-15 m from the pilot, on the same bearing as the start: the bird comes
             // in along one line and puts him down short of you.
@@ -3917,14 +3976,14 @@ namespace ValkyriesCargo.Tests
                 {
                     for (int seed = 1; seed < 4000; seed += 397)
                     {
-                        var p = FlightPlan.Make(px, 30f, pz, seed, 2, 90f, 120f, 50f);
+                        var p = FlightPlan.Make(px, 30f, pz, seed, SimDistance.Original, 90f, 120f, 50f);
                         if (!p.Ok) { failed++; continue; }
                         planned++;
                         if (p.Turned) turned++;
                         if (p.StartDistance < 90f) shrunk++;
-                        if (!FlightPlan.PointInBlock(p.StartX, p.StartZ, px, pz, 2) ||
-                            !FlightPlan.PointInBlock(p.DescentX, p.DescentZ, px, pz, 2) ||
-                            !FlightPlan.PointInBlock(p.DropX, p.DropZ, px, pz, 2))
+                        if (!FlightPlan.PointInBlock(p.StartX, p.StartZ, px, pz, SimDistance.Original) ||
+                            !FlightPlan.PointInBlock(p.DescentX, p.DescentZ, px, pz, SimDistance.Original) ||
+                            !FlightPlan.PointInBlock(p.DropX, p.DropZ, px, pz, SimDistance.Original))
                         {
                             Check(false, $"a waypoint left the block at pilot ({px}, {pz}) seed {seed}");
                             return;
@@ -3955,28 +4014,29 @@ namespace ValkyriesCargo.Tests
             Check(shrunk > 0 && turned == 0,
                   $"the block bites: {shrunk} of {planned} plans shrank the start distance, and none had to turn");
 
-            // The tightest case the design admits: activeArea 1, one 64 m zone, the pilot in a corner.
-            var corner = FlightPlan.Make(30f, 30f, 30f, 99, 1, 90f, 120f, 50f);
-            Check(!corner.Ok || FlightPlan.PointInBlock(corner.StartX, corner.StartZ, 30f, 30f, 1),
-                  "activeArea 1 in a zone corner: the plan either declines or stays inside the one zone");
+            // The tightest case 1.0 admits: near 1, 64 m each way from the zone centre, the pilot in a corner.
+            var corner = FlightPlan.Make(30f, 30f, 30f, 99, near1, 90f, 120f, 50f);
+            Check(!corner.Ok || FlightPlan.PointInBlock(corner.StartX, corner.StartZ, 30f, 30f, near1),
+                  "near 1 in a zone corner: the plan either declines or stays inside the area");
 
             int oneZoneOk = 0, oneZoneNo = 0, oneZoneTurned = 0;
             for (float px = -28f; px <= 28f; px += 4f)
                 for (float pz = -28f; pz <= 28f; pz += 4f)
                 {
-                    var p = FlightPlan.Make(px, 30f, pz, 7, 1, 90f, 120f, 50f);
+                    var p = FlightPlan.Make(px, 30f, pz, 7, near1, 90f, 120f, 50f);
                     if (p.Ok)
                     {
                         oneZoneOk++;
                         if (p.Turned) oneZoneTurned++;
-                        if (!FlightPlan.PointInBlock(p.StartX, p.StartZ, px, pz, 1))
-                        { Check(false, $"activeArea 1: start left the zone at ({px}, {pz})"); return; }
-                        if (p.StartDistance > 64f) { Check(false, "activeArea 1: a start further than one zone"); return; }
+                        if (!FlightPlan.PointInBlock(p.StartX, p.StartZ, px, pz, near1))
+                        { Check(false, $"near 1: start left the area at ({px}, {pz})"); return; }
+                        if (!FlightPlan.PointInBlockWithMargin(p.StartX, p.StartZ, px, pz, near1))
+                        { Check(false, $"near 1: a start inside the area but not by the margin at ({px}, {pz})"); return; }
                     }
                     else oneZoneNo++;
                 }
             Check(oneZoneOk + oneZoneNo == 225 && oneZoneOk > 0,
-                  $"activeArea 1 (one 64 m zone): {oneZoneOk} of 225 positions still get a flight, {oneZoneNo} decline");
+                  $"near 1 (64 m each way from the zone centre): {oneZoneOk} of 225 positions still get a flight, {oneZoneNo} decline");
             // This is what the turn is for: one seed, one bearing, and the pilot standing where that
             // bearing points at the zone wall. Without the turn these positions would all decline.
             Check(oneZoneTurned > 0,
@@ -3984,7 +4044,7 @@ namespace ValkyriesCargo.Tests
 
             Section("FlightPlan: a declined plan is safe to use");
 
-            var none = FlightPlan.Make(31.9f, 30f, 31.9f, 1, 1, 90f, 120f, 50f);
+            var none = FlightPlan.Make(31.9f, 30f, 31.9f, 1, near1, 90f, 120f, 50f);
             Check(none.Ok || (none.StartDistance == 0f && none.DropX == 31.9f && none.DropZ == 31.9f),
                   "a declined plan drops on the pilot rather than returning nonsense to fly");
             Check(!double.IsNaN(none.Bearing), "a declined plan still carries a readable bearing");
@@ -4111,64 +4171,42 @@ namespace ValkyriesCargo.Tests
                       "(the +10 m/step climb F7 found, restored as a mutation, must fail this)");
             }
 
-            Section("FlightPlan: the descent-slide loop -- N1 (2026-09-07 audit)");
+            Section("FlightPlan: the descent waypoint needs no slide on any 1.0 shape of the area");
 
-            // N1 claimed the slide inside Make's descent-waypoint placement never fires once activeArea
-            // is 2 or more (the convexity argument in the comment above the loop). Confirmed here by
-            // reconstructing, from OUTSIDE Make, what the descent distance would have been before any
-            // slide (Min(configured, run * MaxDescentFraction), clamped to >= 0) and comparing it against
-            // what Make actually returned, across the same 3x3-block sweep already run above: if they
-            // ever differ, the slide changed something and N1 is wrong.
-            int slidAt2 = 0, sweptAt2 = 0;
-            for (float px = -96f; px <= 96f; px += 8f)
+            // 0.221.12's one-zone setting could put the pre-slide descent waypoint outside the margin
+            // box (N2, the 2026-09-07 audit), and Make carried a loop that walked it back toward the
+            // start. 1.0's smallest area is 64 m each way from the zone centre (near 1), 56 m with the
+            // margin off, while the drop is at most 15 m from a pilot at most 32 m from that centre:
+            // 47 m. Every shape is convex, so the segment start-drop is inside whole and the loop had
+            // nothing left to fire on; it is gone, and this is the bound that let it go, measured
+            // rather than argued: the waypoint Make returns is exactly the plain glide fraction, and it
+            // sits inside the margin box, on every shape, across the whole grid.
+            var shapes = new[] { SimDistance.Original, near1, new SimDistance(2, false), new SimDistance(5, true) };
+            foreach (SimDistance shape in shapes)
             {
-                for (float pz = -96f; pz <= 96f; pz += 8f)
-                {
-                    for (int seed = 1; seed < 4000; seed += 397)
-                    {
-                        var p = FlightPlan.Make(px, 30f, pz, seed, 2, 90f, 120f, 50f);
-                        if (!p.Ok) continue;
-                        sweptAt2++;
-                        float run = p.StartDistance - FlightPlan.DropDistance(seed);
-                        float preSlide = run > 0f ? Math.Min(50f, run * FlightPlan.MaxDescentFraction) : 0f;
-                        if (preSlide < 0f) preSlide = 0f;
-                        if (Math.Abs(preSlide - p.DescentDistance) > 0.01f) slidAt2++;
-                    }
-                }
-            }
-            Check(sweptAt2 > 0 && slidAt2 == 0,
-                  $"activeArea 2: the descent-slide never changed the waypoint across {sweptAt2} plans (N1's convexity argument holds where this mod actually ships)");
-
-            // The same reconstruction at activeArea 1, where N2 says the convexity shortcut can fail:
-            // this is the harness answering whether the loop is dead code everywhere, or only where the
-            // shipped block size makes it unreachable. Not a widening of scope -- it reuses the existing
-            // one-zone sweep above and adds one comparison per plan.
-            // seed 7 alone (the pre-existing sweep's choice) never reaches it: by hand, the slide needs a
-            // pilot near the 32 m zone edge on ONE axis with a bearing close to aligned with the OTHER
-            // axis -- e.g. pilotX = -28 (|-28| = 28 > 24, already outside the margin at t=0) and a
-            // bearing with a small dx, so the ray only re-enters the 24 m margin box on x well past the
-            // 12-15 m drop distance. seed 7's bearing is not that shape, so a handful more are tried
-            // rather than declaring the loop dead on one sample.
-            int slidAt1 = 0, sweptAt1 = 0;
-            foreach (int seed1 in new[] { 7, 11, 23, 41, 59, 97, 131, 173, 211, 257, 311, 379, 433, 501, 577 })
-            {
+                int swept = 0;
                 for (float px = -31f; px <= 31f; px += 2f)
                 {
                     for (float pz = -31f; pz <= 31f; pz += 2f)
                     {
-                        var p = FlightPlan.Make(px, 30f, pz, seed1, 1, 90f, 120f, 50f);
-                        if (!p.Ok) continue;
-                        sweptAt1++;
-                        float run = p.StartDistance - FlightPlan.DropDistance(seed1);
-                        float preSlide = run > 0f ? Math.Min(50f, run * FlightPlan.MaxDescentFraction) : 0f;
-                        if (preSlide < 0f) preSlide = 0f;
-                        if (Math.Abs(preSlide - p.DescentDistance) > 0.01f) slidAt1++;
+                        foreach (int seed in new[] { 7, 11, 23, 41, 59, 97, 131, 173, 211, 257, 311, 379, 433, 501, 577 })
+                        {
+                            var p = FlightPlan.Make(px, 30f, pz, seed, shape, 90f, 120f, 50f);
+                            if (!p.Ok) continue;
+                            swept++;
+                            float run = p.StartDistance - FlightPlan.DropDistance(seed);
+                            float plain = run > 0f ? Math.Min(50f, run * FlightPlan.MaxDescentFraction) : 0f;
+                            if (Math.Abs(plain - p.DescentDistance) > 0.01f)
+                            { Check(false, $"{shape}: the descent distance is not the plain glide fraction at ({px}, {pz}) seed {seed}"); return; }
+                            if (!FlightPlan.PointInBlockWithMargin(p.DescentX, p.DescentZ, px, pz, shape))
+                            { Check(false, $"{shape}: the descent waypoint left the margin box at ({px}, {pz}) seed {seed}"); return; }
+                        }
                     }
                 }
+                Check(swept > 0, $"{shape}: {swept} plans across 15 seeds and a 32-square grid, every descent waypoint inside the margin box with no slide");
             }
-            Check(sweptAt1 > 0, $"activeArea 1: {sweptAt1} plans to check across 15 seeds and a 32-square grid");
-            Check(slidAt1 > 0,
-                  $"activeArea 1: the slide DID fire ({slidAt1}/{sweptAt1}) -- N1 confirmed precisely: load-bearing at activeArea 1, dead only at activeArea >= 2 where this mod ships");
+            Check(ActiveArea.MinimumReach(FlightPlan.EdgeMargin) > 32f + FlightPlan.DropDistanceMin + FlightPlan.DropDistanceSpan,
+                  "the bound itself: the smallest margin box (56 m) holds a pilot 32 m off centre plus the 15 m drop (47 m)");
         }
 
         private static void MerchantPlanTests()
@@ -4779,14 +4817,14 @@ namespace ValkyriesCargo.Tests
             Section("EngineBaseline: the build this DLL was written on (P10b)");
 
             // The four numbers are the identity of a build. They were read off
-            // assembly_valheim.dll's `Version` type on 2026-09-06 and confirmed again for P10b.
-            Equal("0.221.12", EngineBaseline.GameVersion, "the baseline game version");
-            Equal(36, EngineBaseline.NetworkVersion, "the baseline network version");
-            Equal(43, EngineBaseline.PlayerVersion, "the baseline player version");
-            Equal(37, EngineBaseline.WorldVersion, "the baseline world version");
-            Equal(21981559, EngineBaseline.ClientBuildId, "the Steam build id of the client");
-            Equal(21981590, EngineBaseline.ServerBuildId, "and of the dedicated server");
-            Check(EngineBaseline.Describe().Contains("0.221.12") && EngineBaseline.Describe().Contains("21981590") &&
+            // assembly_valheim.dll's `Version` type on 2026-09-09: 1.0.7, the release build.
+            Equal("1.0.7", EngineBaseline.GameVersion, "the baseline game version");
+            Equal(39, EngineBaseline.NetworkVersion, "the baseline network version");
+            Equal(46, EngineBaseline.PlayerVersion, "the baseline player version (Version.Player.DeepNorth)");
+            Equal(41, EngineBaseline.WorldVersion, "the baseline world version (Version.World.DeepNorth)");
+            Equal(25185596, EngineBaseline.ClientBuildId, "the Steam build id of the client");
+            Equal(25185644, EngineBaseline.ServerBuildId, "and of the dedicated server");
+            Check(EngineBaseline.Describe().Contains("1.0.7") && EngineBaseline.Describe().Contains("25185644") &&
                   EngineBaseline.Describe().Contains(EngineBaseline.ReadOn),
                   "Describe names the version, both build ids and the date the bodies were read");
 
@@ -4805,54 +4843,54 @@ namespace ValkyriesCargo.Tests
             Check(!EngineBaseline.TryParse("0.221.rc0", out ma, out mi, out pa), "and so is rc0, which is not a candidate for anything");
 
             // ---- ordering ----
-            Equal(0, EngineBaseline.Order(0, 221, 12), "the baseline orders equal to itself");
-            Equal(1, EngineBaseline.Order(1, 0, 0), "a bigger major is newer");
-            Equal(-1, EngineBaseline.Order(0, 220, 99), "a smaller minor is older however big the patch");
-            Equal(1, EngineBaseline.Order(0, 222, 0), "a bigger minor is newer however small the patch");
-            Equal(1, EngineBaseline.Order(0, 221, 13), "a bigger patch is newer");
-            Equal(-1, EngineBaseline.Order(0, 221, 11), "a smaller patch is older");
-            Equal(-1, EngineBaseline.Order(0, 221, -1), "and a release candidate sorts BELOW its own release");
+            Equal(0, EngineBaseline.Order(1, 0, 7), "the baseline orders equal to itself");
+            Equal(1, EngineBaseline.Order(2, 0, 0), "a bigger major is newer");
+            Equal(-1, EngineBaseline.Order(0, 221, 12), "the last pre-1.0 stable is older however big its minor");
+            Equal(1, EngineBaseline.Order(1, 1, 0), "a bigger minor is newer however small the patch");
+            Equal(1, EngineBaseline.Order(1, 0, 8), "a bigger patch is newer");
+            Equal(-1, EngineBaseline.Order(1, 0, 6), "a smaller patch is older");
+            Equal(-1, EngineBaseline.Order(1, 0, -1), "and a release candidate sorts BELOW its own release");
 
             // ---- the verdicts, one per direction of movement ----
-            EngineComparison same = EngineBaseline.Compare("0.221.12", 36, 43, 37);
+            EngineComparison same = EngineBaseline.Compare("1.0.7", 39, 46, 41);
             Check(same.Same, "the exact build is the same build");
-            Equal("same build 0.221.12 (net 36, player 43, world 37)", same.Verdict, "and says so in one line");
+            Equal("same build 1.0.7 (net 39, player 46, world 41)", same.Verdict, "and says so in one line");
             Check(!same.WireAtRisk && !same.SavesAtRisk, "with nothing at risk");
 
-            EngineComparison newer = EngineBaseline.Compare("0.222.1", 36, 43, 37);
+            EngineComparison newer = EngineBaseline.Compare("1.1.0", 39, 46, 41);
             Equal(VersionDrift.Newer, newer.Game, "a later game version reads as newer");
-            Equal("newer game version (0.222.1 vs 0.221.12)", newer.Verdict, "and names both");
+            Equal("newer game version (1.1.0 vs 1.0.7)", newer.Verdict, "and names both");
             Check(!newer.Same, "and is not the same build");
 
-            EngineComparison older = EngineBaseline.Compare("0.220.3", 36, 43, 37);
-            Equal(VersionDrift.Older, older.Game, "an earlier game version reads as older");
-            Equal("older game version (0.220.3 vs 0.221.12)", older.Verdict, "and names both");
+            EngineComparison older = EngineBaseline.Compare("0.221.12", 39, 46, 41);
+            Equal(VersionDrift.Older, older.Game, "the last pre-1.0 stable reads as older");
+            Equal("older game version (0.221.12 vs 1.0.7)", older.Verdict, "and names both");
 
-            EngineComparison unreadable = EngineBaseline.Compare("", 36, 43, 37);
+            EngineComparison unreadable = EngineBaseline.Compare("", 39, 46, 41);
             Equal(VersionDrift.Unreadable, unreadable.Game, "an unreadable version is its own verdict");
-            Equal("game version unreadable ('' vs 0.221.12)", unreadable.Verdict, "which never reads as a match");
+            Equal("game version unreadable ('' vs 1.0.7)", unreadable.Verdict, "which never reads as a match");
             Check(!unreadable.Same, "and never counts as the same build");
 
             // The dangerous one: the network version is the handshake and the packet layout.
-            EngineComparison net = EngineBaseline.Compare("0.221.12", 37, 43, 37);
-            Equal("network version moved (37 vs 36)", net.Verdict, "a moved network version is called out on its own");
+            EngineComparison net = EngineBaseline.Compare("1.0.7", 40, 46, 41);
+            Equal("network version moved (40 vs 39)", net.Verdict, "a moved network version is called out on its own");
             Check(net.WireAtRisk, "and flags the wire");
             Check(!net.SavesAtRisk, "without implicating the saves");
 
-            EngineComparison player = EngineBaseline.Compare("0.221.12", 36, 44, 37);
-            Equal("player version moved (44 vs 43)", player.Verdict, "a moved player version is its own line");
+            EngineComparison player = EngineBaseline.Compare("1.0.7", 39, 47, 41);
+            Equal("player version moved (47 vs 46)", player.Verdict, "a moved player version is its own line");
             Check(player.SavesAtRisk && !player.WireAtRisk, "and flags the saves, not the wire");
 
-            EngineComparison world = EngineBaseline.Compare("0.221.12", 36, 43, 38);
-            Equal("world version moved (38 vs 37)", world.Verdict, "a moved world version is its own line");
+            EngineComparison world = EngineBaseline.Compare("1.0.7", 39, 46, 42);
+            Equal("world version moved (42 vs 41)", world.Verdict, "a moved world version is its own line");
             Check(world.SavesAtRisk, "and flags the saves");
 
-            EngineComparison all = EngineBaseline.Compare("0.222.0", 37, 44, 38);
-            Equal("newer game version (0.222.0 vs 0.221.12); network version moved (37 vs 36); player version moved (44 vs 43); world version moved (38 vs 37)",
+            EngineComparison all = EngineBaseline.Compare("1.1.0", 40, 47, 42);
+            Equal("newer game version (1.1.0 vs 1.0.7); network version moved (40 vs 39); player version moved (47 vs 46); world version moved (42 vs 41)",
                   all.Verdict, "everything moving reads game, network, player, world, in that order, every time");
             Check(all.WireAtRisk && all.SavesAtRisk, "with both risks raised");
 
-            EngineComparison nulled = EngineBaseline.Compare(null, 36, 43, 37);
+            EngineComparison nulled = EngineBaseline.Compare(null, 39, 46, 41);
             Equal(VersionDrift.Unreadable, nulled.Game, "a null version does not throw");
             Equal("", nulled.ActualGame, "and is kept as an empty string");
             Equal(all.Verdict, all.ToString(), "ToString is the verdict, so a comparison drops straight into a log line");
@@ -4867,7 +4905,7 @@ namespace ValkyriesCargo.Tests
             var p = new EngineProbes();
 
             // ---- the shape of the registry ----
-            Equal(26, p.All.Count, "twenty-six engine facts are registered (save_path added 2026-09-08 with the 1.0 fix)");
+            Equal(27, p.All.Count, "twenty-seven engine facts are registered (active_area_rule added 2026-09-09 with 1.0)");
             var names = new HashSet<string>();
             bool unique = true, ordered = true;
             int last = 0;
@@ -4923,9 +4961,9 @@ namespace ValkyriesCargo.Tests
                   p.Find(EngineProbes.ConsoleApi).State == ProbeState.NotRun,
                   "and the three new probes start not-run, like every other");
             string inter = p.Find(EngineProbes.Interfaces).What;
-            Check(inter.Contains("Interact(Humanoid, bool, bool)") && inter.Contains("UseItem") && inter.Contains("GetHoverText()") && inter.Contains("GetHoverName()"),
-                  "the interface probe names the four members CargoMerchant implements");
-            Check(inter.Contains("no fifth"), "and says that a fifth is the failure");
+            Check(inter.Contains("Interact(Humanoid, bool, bool)") && inter.Contains("UseItem") && inter.Contains("GetHoverText()") && inter.Contains("GetHoverName()") && inter.Contains("GetHoverOffset()"),
+                  "the interface probe names the five members CargoMerchant implements (GetHoverOffset since 1.0)");
+            Check(inter.Contains("no sixth"), "and says that a sixth is the failure");
             Check(p.Find(EngineProbes.CharacterAi).What.Contains("ApplyDamage") && p.Find(EngineProbes.CharacterAi).Degrades.Contains("ApplyDamage"),
                   "the Character probe stands for the second immortality choke point, ApplyDamage (F6)");
             Check(p.Find(EngineProbes.CharacterAi).What.Contains("GetHoverText"), "and for the hover patch's targets (F2)");
@@ -4947,12 +4985,12 @@ namespace ValkyriesCargo.Tests
 
             // ---- nothing has run: everything is permitted ----
             Equal(0, p.Run, "nothing has run");
-            Equal(7, p.NotProbeable, "seven facts are method BODIES and cannot be probed cheaply");
+            Equal(8, p.NotProbeable, "eight facts are method BODIES and cannot be probed cheaply");
             Check(p.Ok(EngineProbes.RandEvent), "a probe that has not run says YES");
             Check(p.Ok(EngineProbes.EventClock), "a not-probeable fact says YES");
             Check(p.Ok("no such probe"), "and so does a name nobody registered: a missing probe must NEVER disable a feature");
             Equal("", p.Reason(EngineProbes.RandEvent), "a probe that has not failed has no reason to give");
-            Equal("probes not run, 7 not probeable", p.Encode(), "and the status line says exactly that");
+            Equal("probes not run, 8 not probeable", p.Encode(), "and the status line says exactly that");
             Equal(EngineProbes.SweepNote, p.Find(EngineProbes.ServerRefPin).Message,
                   "each not-probeable fact carries the sweep note verbatim, so cargo status never implies a pass");
 
@@ -4986,12 +5024,12 @@ namespace ValkyriesCargo.Tests
             Equal(4, p.Problems.Count, "each of the four refusals is on the record");
 
             // ---- the words ----
-            Equal("probes 1/2 ok, 7 not probeable, FAILED: body", p.Encode(), "the status line names the failures");
+            Equal("probes 1/2 ok, 8 not probeable, FAILED: body", p.Encode(), "the status line names the failures");
             Check(p.Record(EngineProbes.ZdoAuthoring, false, "ZDO.Persistent has no setter"), "a second, worse failure");
-            Equal("probes 1/3 ok, 7 not probeable, FAILED: zdo_authoring, body", p.Encode(),
+            Equal("probes 1/3 ok, 8 not probeable, FAILED: zdo_authoring, body", p.Encode(),
                   "and the failures are listed worst rank FIRST, whatever order they were recorded in");
             Equal("zdo_authoring", p.Failed[0].Name, "the Failed list is in rank order too");
-            Equal(26, p.Report().Count, "cargo engine prints one line per registered fact");
+            Equal(27, p.Report().Count, "cargo engine prints one line per registered fact");
             Check(p.Report()[0].StartsWith("[1] randevent: PASSED"), "worst first, with the rank, the name and the state");
             Check(p.Report()[0].Contains("; checks ") && p.Report()[0].Contains("; on failure "),
                   "and each line says what it looked at and what turns itself off");

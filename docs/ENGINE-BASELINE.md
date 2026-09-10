@@ -4,6 +4,37 @@
 tell whether the build under your hands is still that one.** P10a; the brief is
 `docs/P10-P11-FOR-DON.md`.
 
+**THE BASELINE MOVED ON 2026-09-09: Valheim 1.0.7.** Steam updated the installed client (build 25185596,
+05:58 local) and the installed dedicated server (build 25185644, 05:57) to the release, and both were
+read the same day: `Version.CurrentVersion` **1.0.7**, `c_networkVersion` **39**, `c_PlayerVersion`
+`Version.Player.DeepNorth` = **46**, `c_WorldVersion` `Version.World.DeepNorth` = **41**, the same four
+on both apps; Unity **6000.0.75** (`UnityPlayer.dll` 6000.0.75.2503836), still Mono. The three `const`
+fields were `m_networkVersion` / `m_playerVersion` / `m_worldVersion` until 1.0, and the last two are
+enums now. `Core/EngineBaseline.cs` carries these numbers since `a/valheim-1.0` (2026-09-10); the sweeps
+that moved the baseline are `docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md`. The
+decompiled 1.0.7 builds are `~/valheim-shadows/src/{server,client}-1.0.7`, behind junctions
+`~/valheim-shadows/{server,client}-1.0.7` onto the Steam installs (the P10a tools unmodified). Type
+counts: server 693 + 97 + 26, client 691 + 97 + 26. Fingerprints:
+
+| build | assembly | bytes | modified | SHA-256 (first 16) |
+|---|---|---|---|---|
+| installed client 1.0.7 | `assembly_valheim.dll` | 2,566,144 | 2026-09-09 05:58 | `A5130F5A957AB51C` |
+| installed client 1.0.7 | `assembly_utils.dll` | 241,664 | 2026-09-09 05:58 | `9333361C9D2A2A94` |
+| installed client 1.0.7 | `assembly_guiutils.dll` | 37,376 | 2026-09-09 05:58 | `96376C4E4864D54D` |
+| installed server 1.0.7 | `assembly_valheim.dll` | 2,557,952 | 2026-09-09 05:57 | `9DF99B0011B4CA0A` |
+| installed server 1.0.7 | `assembly_utils.dll` | 241,152 | 2026-09-09 05:57 | `F85F21C2F115EF8D` |
+| installed server 1.0.7 | `assembly_guiutils.dll` | 37,376 | 2026-09-09 05:57 | `D86658217EBBB5CC` |
+
+    client assembly_valheim.dll  A5130F5A957AB51CB6538F5412CBE57B43F927F4A679918BFF199B5C905D01BC
+    server assembly_valheim.dll  9DF99B0011B4CA0A448E6D935C77368B4E3B98EEE7B0AC8D1B43B34E267471B2
+
+**0.221.12 is no longer a build target.** `libs/` holds the 1.0.7 publicized set (handed over 2026-09-10);
+the 0.221.12 references are kept beside the shadows (`~/valheim-shadows/libs-0.221.12`) and Steam's
+`default_pre1_0` branch keeps the old build fetchable. Everything below this line is the 0.221.12 record
+of 2026-09-07, kept as history: "installed" there means the 0.221.12 install.
+
+---
+
 Baseline taken **2026-09-07**. The four version numbers below were read out of the assembly, not
 copied from anywhere: `ilspycmd -t Version` on `assembly_valheim.dll`, whose `Version` type is
 `internal` and carries `CurrentVersion` (a `GameVersion` property) plus the three `const` fields
@@ -32,6 +63,9 @@ care about - are identical.
 | **installed client** (THE baseline) | 892970 | public | 21981559 | 0.221.12 | 36 | 43 | 37 | already on the machine |
 | **installed server** (THE baseline) | 896660 | public | 21981590 | 0.221.12 | 36 | 43 | 37 | already on the machine |
 | shadow `server-live` | 896660 | public | 21981590 | 0.221.12 | 36 | 43 | 37 | 2026-09-07, steamcmd |
+| shadow `server-public-test` | 896660 | public-test (hidden) | 23105022 | 0.221.13 | 37 | — | 40 (`World.ChunkedSave`) | 2026-09-08, steamcmd; the playtest, not what shipped |
+| **installed client 1.0.7** | 892970 | public | 25185596 | 1.0.7 | 39 | 46 | 41 | Steam's own update, 2026-09-09 05:58 |
+| **installed server 1.0.7** | 896660 | public | 25185644 | 1.0.7 | 39 | 46 | 41 | Steam's own update, 2026-09-09 05:57 |
 | shadow `server-test` | 896660 | public-test | — | — | — | — | — | **NOT FETCHED: the branch does not exist today** (see below) |
 | shadow `client-live` | 892970 | public | — | — | — | — | — | not fetched: needs the owner's account |
 | shadow `client-test` | 892970 | public-test | — | — | — | — | — | not fetched: the branch does not exist today |
@@ -126,6 +160,12 @@ client build, so a `client-live` shadow would be the same zero-difference result
         baseline-client\   the installed client, decompiled
         baseline-server\   the installed dedicated server, decompiled
         server-live\       the shadow, decompiled
+        server-public-test\ the 0.221.13 playtest, decompiled (2026-09-08)
+        server-1.0.7\      the installed 1.0.7 dedicated server, decompiled (2026-09-09)
+        client-1.0.7\      the installed 1.0.7 client, decompiled (2026-09-09)
+      server-1.0.7 -> C:\Program Files (x86)\Steam\steamapps\common\Valheim dedicated server   (junction)
+      client-1.0.7 -> C:\Program Files (x86)\Steam\steamapps\common\Valheim                    (junction)
+      libs-0.221.12\     the 0.221.12 reference assemblies the mod was built against until 2026-09-10
 
 **Nothing here is in the repo and nothing here ever should be.** The builds are Iron Gate's and the
 decompiled trees are a hundred thousand lines of somebody else's source. `tools/fetch-builds.ps1`
@@ -183,9 +223,10 @@ today, checked twice, on two different operating systems.
 
 ## The same numbers, compiled into the DLL (P10b)
 
-`ValkyriesCargo/Core/EngineBaseline.cs` carries this table's identity as constants — `0.221.12`,
-network `36`, player `43`, world `37`, client build `21981559`, server build `21981590`, plus the
-date the method BODIES were read (`2026-09-06`) — and `EngineCheck` compares them against the four
+`ValkyriesCargo/Core/EngineBaseline.cs` carries the baseline's identity as constants — since
+2026-09-10 `1.0.7`, network `39`, player `46`, world `41`, client build `25185596`, server build
+`25185644`, bodies read `2026-09-09` (before that `0.221.12` / `36` / `43` / `37` / `21981559` /
+`21981590` / `2026-09-06`) — and `EngineCheck` compares them against the four
 numbers of whatever Valheim is actually under the mod at boot. `cargo engine` prints both sides. If a
 future sweep moves any row above, that file's constants move with it: they are the same fact written
 twice, once for a human and once for the running mod. **The date matters as much as the numbers**,
@@ -204,3 +245,7 @@ probeable* and pointed back here. The probes themselves are `docs/ENGINE-PROBES.
   sweep, run through the `.sh` tools on Linux instead of the `.ps1` ones on Windows, against the
   manifest as it stood after P10a picked up P5's rows. Same six differences; zero manifest problems
   on all 257 rows.
+- `docs/engine-sweeps/2026-09-08-server-0.221.12-vs-0.221.13.md` — the hidden `public-test` playtest
+  build, server axis: the two stop-ships that did NOT ship.
+- `docs/engine-sweeps/2026-09-09-server-0.221.12-vs-1.0.7.md` and `-client-` — **the release**, both
+  axes, the sweeps that moved the baseline: 208 / 206 unchanged, 33 / 35 body, 9 signature, 7 gone.
