@@ -27,8 +27,11 @@ BepInExPack 5.4.2350. No Yggdrasil's Reckoning on the 1.0 test server, Don's wor
 same morning** (Storm10, a fresh 1.0.7 dedicated server; Don's client): the boot lines, a forced visit, the flight and the
 drop, `2 reclaim(s) during the carry`, the walk-up, two deals, the dismiss, the vanish — nothing thrown. **For your own
 servers: 1.0's `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want `V_<steamid>`** (a display-prefix filter
-in the new `Splatform.dll`; the old bare and `Steam_` forms refuse everyone on 1.0.7). Your P10a tooling should add
-`Splatform.dll` to the decompiled set; it is where `PlatformUserID` lives now.
+in `Splatform.dll`; the old bare and `Steam_` forms refuse everyone on 1.0.7). `Splatform.dll` — on 0.221.12 too,
+never decompiled until now — is the fourth assembly in `tools/decompile-builds.*` since PR #71, and the 25 + 2 unread body changes
+were read from this side, all holding — `docs/engine-sweeps/2026-09-10-1.0.7-bodies-read.md`; one for your file:
+`GameCamera.UpdateMouseCapture` now goes through `ZCursor`, which UIFocus's cursor handling should be re-read against
+(it worked on Storm10). `v0.1.0-rc4` is the 1.0.7 cut; rc3 stays the last 0.221.12 build.
 
 `main` is at 1dcf3ac (docs) on 55508d6 (code, PR #64): 0 warnings, **1885 checks**. Merged today at Don's word, in
 order: #57 the rotating shelf, #58 the item value table, #60 the terminal (count boxes, no pay mode, the 40 % black

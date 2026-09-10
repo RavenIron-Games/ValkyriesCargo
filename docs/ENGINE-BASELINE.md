@@ -14,7 +14,10 @@ enums now. `Core/EngineBaseline.cs` carries these numbers since `a/valheim-1.0` 
 that moved the baseline are `docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md`. The
 decompiled 1.0.7 builds are `~/valheim-shadows/src/{server,client}-1.0.7`, behind junctions
 `~/valheim-shadows/{server,client}-1.0.7` onto the Steam installs (the P10a tools unmodified). Type
-counts: server 693 + 97 + 26, client 691 + 97 + 26. Fingerprints:
+counts: server 693 + 97 + 26, client 691 + 97 + 26, plus `Splatform.dll` (53,248 bytes, 104 types, the platform ids;
+in the decompile set since #71 — it was on 0.221.12 too, 47,104 bytes and 92 types, never decompiled then, and the
+0.221.12 CLIENT tree has no Splatform folder because that build left this machine before #71; the server tree does).
+Fingerprints:
 
 | build | assembly | bytes | modified | SHA-256 (first 16) |
 |---|---|---|---|---|
@@ -177,7 +180,7 @@ it at all three.
 
 ```powershell
 .\tools\fetch-builds.ps1                       # server, both branches; prints build ids and versions
-.\tools\decompile-builds.ps1 -Baseline -All    # ilspycmd -p over all three assemblies, idempotent
+.\tools\decompile-builds.ps1 -Baseline -All    # ilspycmd -p over all four assemblies, idempotent
 node tools\diff-engine.js --surface docs\ENGINE-SURFACE.md `
      --from C:\Users\donfr\valheim-shadows\src\baseline-server `
      --to   C:\Users\donfr\valheim-shadows\src\server-live `
@@ -193,7 +196,7 @@ end to end on Wu'barrk's box (2026-09-07 — see below):
 
 ```bash
 ./tools/fetch-builds.sh                         # server, both branches; prints build ids and versions
-./tools/decompile-builds.sh --baseline --all    # ilspycmd -p over all three assemblies, idempotent
+./tools/decompile-builds.sh --baseline --all    # ilspycmd -p over all four assemblies, idempotent
 node tools/diff-engine.js --surface docs/ENGINE-SURFACE.md \
      --from ~/valheim-shadows/src/baseline-server \
      --to   ~/valheim-shadows/src/server-live \

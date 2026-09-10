@@ -518,8 +518,10 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       player 46, world 41); probes 19/19 ok, 8 not probeable`, `patches 18/18 applied`; a forced visit, the flight
       dropped after 14.8 s, `2 reclaim(s) during the carry`, the walk-up, the terminal and the leash, two deals settled
       line for line, the admin dismiss answered (`0 clock republish(es)`), the vanish, the reclaim; nothing thrown.
-      Merge on the word. Then the 25 unread body changes, one by one, and `Splatform.dll` into the decompile set
-      (`tools/decompile-builds.*` name three assemblies; `PlatformUserID` lives in the fourth now).
+      **MERGED at the word, main 04f4156 (2026-09-10 ~07:55).** The 25 unread bodies (+2 client-only) READ the same
+      morning, all holding (`docs/engine-sweeps/2026-09-10-1.0.7-bodies-read.md`); `Splatform.dll` is the fourth
+      assembly in the decompile set with four surface rows (PR #71). **rc4 cut** the same morning: `v0.1.0-rc4`,
+      the 1.0.7 build, a pre-release, no store.
       **1.0 finding:** `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want `V_<steamid>` (Steam V, Xbox X,
       PlayStation S, Nintendo N, Game Center A; `ZNet.ListContainsId`'s filtered match overrides the old forms). Don's
       other 1.0 servers need their lists rewritten; in CLAUDE.md's engine facts and the README.
