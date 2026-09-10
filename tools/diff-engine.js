@@ -7,7 +7,7 @@
 //        --from <srcA> --to <srcB> --out <report.md> [--all-types]
 //
 // <srcA> and <srcB> are decompiled trees written by tools/decompile-builds.ps1: a directory
-// holding assembly_valheim/, assembly_utils/ and assembly_guiutils/, one .cs file per type.
+// holding assembly_valheim/, assembly_utils/, assembly_guiutils/ and (1.0) Splatform/, one .cs file per type.
 //
 // A raw diff of two builds is thousands of files and a hundred thousand lines. This walks
 // docs/ENGINE-SURFACE.md - every game member this mod actually names - and gives each one of
@@ -363,7 +363,7 @@ function declarationLine(header) {
 
 // ---- the trees ------------------------------------------------------------------------------
 
-const ASSEMBLIES = ['assembly_valheim', 'assembly_utils', 'assembly_guiutils'];
+const ASSEMBLIES = ['assembly_valheim', 'assembly_utils', 'assembly_guiutils', 'Splatform'];
 
 function walk(dir, base, out) {
   let entries;

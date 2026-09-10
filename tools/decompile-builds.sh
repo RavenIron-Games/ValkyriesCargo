@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Decompiles the three Valheim assemblies of one or more builds into project trees, one file per
+# Decompiles the four Valheim assemblies of one or more builds into project trees, one file per
 # type, so two builds can be compared with a directory diff. P10a, docs/P10-P11-FOR-DON.md.
 # The Linux twin of decompile-builds.ps1 -- same assemblies, same stamp files, same output shape.
 #
@@ -11,7 +11,9 @@
 # OUTPUT LIVES OUTSIDE THE REPO: $SHADOW_ROOT/src/<build>/<assembly>/. Decompiled Valheim is a
 # hundred thousand lines of somebody else's code and none of it is ever committed.
 #
-# The three assemblies are all of them: assembly_valheim (the game), assembly_utils (ZDO,
+# The four assemblies are all of them: Splatform (PlatformUserID and the platform ids the admin
+# lists are matched with; on 0.221.12 too, 92 types, but never decompiled before PR #71; a build
+# without it is skipped with a line), assembly_valheim (the game), assembly_utils (ZDO,
 # ZPackage, the networking primitives) and assembly_guiutils - the last a real dependency since
 # P7 (Localization). The others in Managed/ (googleanalytics, lux, postprocessing,
 # simplemeshcombine, sunshafts) are named nowhere in this mod.
@@ -37,7 +39,7 @@
 #     nothing here names, not a sign the decompile went wrong.
 set -euo pipefail
 
-ASSEMBLIES=(assembly_valheim assembly_utils assembly_guiutils)
+ASSEMBLIES=(assembly_valheim assembly_utils assembly_guiutils Splatform)
 
 # The two installed builds. NEVER WRITTEN TO - only ever read from here; the output goes to the
 # shadow root like everything else. Resolved through Valve's own stable symlink (see header).

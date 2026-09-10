@@ -26,7 +26,19 @@ a settled one; **the owner's word on 2026-09-08 after the day's five merges: no 
 Entries are in build order, except the five sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
 
-### Since 0.1.0-rc3 — Valheim 1.0.7
+### 0.1.0-rc4 — cut 2026-09-10, the Valheim 1.0.7 build (PRs #70 and #71, plus #66 from the night before, which rc3 did not carry); a pre-release, uploaded to no store
+
+- **The 1.0.7 sweep's second half, and Splatform.dll in the tools (branch `a/rc4-prep`, PR #71).** The 25 body
+  changes the sweep left unread on the server axis and the 2 more on the client axis were read, one verdict each,
+  in `docs/engine-sweeps/2026-09-10-1.0.7-bodies-read.md`: **every one holds**. Two are worth knowing beyond
+  that: `ZNet.ListContainsId` (the `V_<steamid>` lists, found live the same morning) and `ZNet.RPC_PeerInfo`,
+  where an invite secret key now bypasses the server password. `Splatform.dll`, the assembly `PlatformUserID`
+  lives in — on 0.221.12 too (92 types), never decompiled until now; 1.0.7 added the filter (104 types) — is the
+  fourth assembly in `tools/decompile-builds.*` and `tools/diff-engine.js` (a build without it is skipped with a
+  line), with four surface rows on it: on the server axis `TryParse` reads as a body change (it accepts the `V_`
+  form now) and the filter and its table as new; the 0.221.12 client tree predates the change and cannot be
+  re-cut, so those four read "absent from <from>" on the client axis until the next sweep starts from 1.0.7.
+  No code change.
 
 - **Valheim 1.0.7 (branch `a/valheim-1.0`, 2026-09-10, 1956 checks).** Steam moved both installs to the
   release on 2026-09-09 (client build 25185596, server 25185644; network 39, player 46, world 41; Unity
