@@ -7,12 +7,14 @@ namespace RavenIron.ValkyriesCargo.Core
     /// PURE: floats in, floats out, no Unity type and no engine call, so the whole geometry is
     /// proven off-game and the game side is left with nothing but "read the terrain, write the ZDO".
     ///
-    /// The one hard constraint is the ACTIVE BLOCK. A client instantiates a ZDO only while
-    /// `ZNetScene.InActiveArea(zone(zdo), zone(client))` holds, and destroys the instance the moment
-    /// it stops holding; a non-persistent owned ZDO dies with it. Vanilla's intro survives its 500 m
-    /// approach only because the passenger rides the bird and drags the reference position along.
-    /// Ours has no passenger, so every waypoint has to be inside the pilot's own block from the first
-    /// frame. That is why the numbers are 90/120/50 and not the prefab's 500/500/200.
+    /// The one hard constraint is the ACTIVE AREA. A client instantiates a ZDO only while
+    /// `ZNetScene.InActiveArea(position, zone(client))` holds, and destroys the instance the moment
+    /// it stops holding; a non-persistent owned ZDO dies with it. The area is `Core/ActiveArea.cs`: on
+    /// 1.0 a square of metres about the centre of the client's zone, sized by the synced simulation
+    /// distance (the 3x3 block of 64 m zones on a stock server, as 0.221.12 had it). Vanilla's intro
+    /// survives its 500 m approach only because the passenger rides the bird and drags the reference
+    /// position along. Ours has no passenger, so every waypoint has to be inside the pilot's own area
+    /// from the first frame. That is why the numbers are 90/120/50 and not the prefab's 500/500/200.
     ///
     /// The approach is STRAIGHT, and that is a finding, not a preference. The first version swung the
     /// turn-in point sideways the way vanilla's does. Vanilla gets away with it because its legs are
@@ -33,7 +35,7 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>`ZoneSystem.m_zoneSize`. Asserted against the live value by `cargo status`.</summary>
         public const float ZoneSize = 64f;
 
-        /// <summary>Design 3.2: shrink the start distance by this much until the block holds.</summary>
+        /// <summary>Design 3.2: shrink the start distance by this much until the area holds.</summary>
         public const float ShrinkStep = 12f;
 
         /// <summary>
@@ -46,7 +48,7 @@ namespace RavenIron.ValkyriesCargo.Core
         public const float DropDistanceMin = 12f;
         public const float DropDistanceSpan = 3f;
 
-        /// <summary>Kept clear of the block edge, so a pilot drifting one step does not strand the bird.</summary>
+        /// <summary>Kept clear of the area's edge, so a pilot drifting one step does not strand the bird.</summary>
         public const float EdgeMargin = 8f;
 
         /// <summary>
@@ -84,37 +86,19 @@ namespace RavenIron.ValkyriesCargo.Core
         // ---- zones ---------------------------------------------------------------------------------
 
         /// <summary>`ZoneSystem.GetZone`: floor((v + zoneSize/2) / zoneSize), on one axis.</summary>
-        public static int ZoneOf(float v) => (int)Math.Floor((v + ZoneSize / 2f) / ZoneSize);
+        public static int ZoneOf(float v) => ActiveArea.ZoneOf(v);
+
+        /// <summary>True when the world point (x, z) is inside the pilot's active area (`ActiveArea.Contains`).</summary>
+        public static bool PointInBlock(float x, float z, float pilotX, float pilotZ, SimDistance sim)
+            => ActiveArea.ContainsPoint(x, z, pilotX, pilotZ, sim);
 
         /// <summary>
-        /// `ZNetScene.InActiveArea`: |zone - centre| &lt;= activeArea - 1 on both axes. With the decompiled
-        /// default of 1 that is the pilot's single 64 m zone; the runtime value is what counts and
-        /// `cargo status` prints it.
+        /// The same test with a margin: the point must be at least `EdgeMargin` inside the area. A
+        /// point that only just qualifies falls out of the area as soon as the pilot walks a step the
+        /// other way, and the bird vanishes mid-flight.
         /// </summary>
-        public static bool InActiveArea(int zx, int zz, int cx, int cz, int activeArea)
-        {
-            int reach = activeArea - 1;
-            return Math.Abs(zx - cx) <= reach && Math.Abs(zz - cz) <= reach;
-        }
-
-        /// <summary>True when the world point (x, z) is inside the block centred on the pilot's zone.</summary>
-        public static bool PointInBlock(float x, float z, float pilotX, float pilotZ, int activeArea)
-            => InActiveArea(ZoneOf(x), ZoneOf(z), ZoneOf(pilotX), ZoneOf(pilotZ), activeArea);
-
-        /// <summary>
-        /// The same test with a margin: the point must be at least `EdgeMargin` inside the block on
-        /// both axes. A point that only just qualifies falls out of the block as soon as the pilot
-        /// walks a step the other way, and the bird vanishes mid-flight.
-        /// </summary>
-        public static bool PointInBlockWithMargin(float x, float z, float pilotX, float pilotZ, int activeArea)
-        {
-            if (!PointInBlock(x, z, pilotX, pilotZ, activeArea)) return false;
-            int reach = activeArea - 1;
-            // The block's outer edges, in world units, around the pilot's zone centre line.
-            float cx = ZoneOf(pilotX) * ZoneSize, cz = ZoneOf(pilotZ) * ZoneSize;
-            float half = (reach + 0.5f) * ZoneSize;
-            return Math.Abs(x - cx) <= half - EdgeMargin && Math.Abs(z - cz) <= half - EdgeMargin;
-        }
+        public static bool PointInBlockWithMargin(float x, float z, float pilotX, float pilotZ, SimDistance sim)
+            => ActiveArea.ContainsWithMargin(x, z, ZoneOf(pilotX), ZoneOf(pilotZ), sim, EdgeMargin);
 
         // ---- the seed ------------------------------------------------------------------------------
 
@@ -259,15 +243,16 @@ namespace RavenIron.ValkyriesCargo.Core
 
         /// <summary>
         /// Plan a flight for a pilot standing at (pilotX, pilotZ). Returns a plan that is always inside
-        /// the block; `Turned` says the seeded bearing had no room and the plan rotated to find some,
+        /// the area; `Turned` says the seeded bearing had no room and the plan rotated to find some,
         /// `StartDistance` says how much of the configured distance survived the shrink.
         /// </summary>
-        public static Plan Make(float pilotX, float pilotY, float pilotZ, int seed, int activeArea,
+        public static Plan Make(float pilotX, float pilotY, float pilotZ, int seed, SimDistance sim,
                                 float startDistance, float startAltitude, float descentDistance,
                                 float dropAltitude = DropAltitude)
         {
-            // A block of one zone still has ~64 m of room, but only if the pilot is near its middle;
-            // standing at a zone edge leaves almost nothing outward. So each bearing is tried at the
+            // The area's smallest half-width (near 1) is 64 m about the zone centre, 56 m with the
+            // margin off, and the pilot may stand 32 m from that centre: a bearing pointed at the near
+            // wall can have under the 30 m minimum. So each bearing is tried at the
             // configured distance and shrunk, and only a bearing with no usable room at all is turned
             // away from. Quarter turns, in a fixed order, so the result stays deterministic.
             double baseBearing = Bearing(seed);
@@ -280,7 +265,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 for (float d = Math.Max(startDistance, MinimumStartDistance); d >= MinimumStartDistance; d -= ShrinkStep)
                 {
                     float sx = pilotX + dx * d, sz = pilotZ + dz * d;
-                    if (!PointInBlockWithMargin(sx, sz, pilotX, pilotZ, activeArea)) continue;
+                    if (!PointInBlockWithMargin(sx, sz, pilotX, pilotZ, sim)) continue;
 
                     // The descent waypoint sits ON the approach line - no lateral swing; see the class
                     // comment for why one cannot be flown at these distances. Its only job is the
@@ -290,35 +275,15 @@ namespace RavenIron.ValkyriesCargo.Core
                     float run = d - drop;                                     // horizontal, start -> drop
                     float descent = run > 0f ? Math.Min(descentDistance, run * MaxDescentFraction) : 0f;
                     if (descent < 0f) descent = 0f;
-                    // The block-with-margin is an axis-aligned rectangle, so it is convex: a point on
-                    // the line can only fall outside it if the DROP does, which happens when the pilot
-                    // stands within a margin of their own block's edge. Slide the waypoint back toward
-                    // the start, which the loop above has already proved is inside.
-                    //
-                    // N1 (the 2026-09-07 audit), confirmed: at the runtime activeArea this mod actually
-                    // ships against -- 2, read live off the shipped scene, CLAUDE.md's engine facts --
-                    // this loop never runs. The pilot's own position is within `ZoneSize / 2` = 32 m of
-                    // their own zone centre by construction (that is what "their own zone" means), and
-                    // the margin box's half-width at activeArea >= 2 is `(activeArea - 1 + 0.5) * ZoneSize
-                    // - EdgeMargin` >= `1.5 * 64 - 8` = 88 m, comfortably past 32. The DROP waypoint sits
-                    // only `drop` (12-15 m) from the pilot, so it trivially clears the same box; the START
-                    // clears it too, because the outer `for` loop above only ever returns a `d` for which
-                    // it does. Two points inside a convex set put the whole segment between them inside
-                    // it, so every `descent` from 0 to `run` -- the whole line this waypoint slides along
-                    // -- is already inside before the `while` ever runs its condition once. It is NOT
-                    // dead code in general, only at this shape's block size: at activeArea == 1 the same
-                    // box is `0.5 * 64 - 8` = 24 m, which 32 m can exceed (N2), the convexity shortcut
-                    // above no longer applies, and the sweep below (activeArea 1) is the harness proving
-                    // the loop earns its keep there instead of by geometry alone (empirically confirmed:
-                    // 90 of 14,784 plans across 15 seeds and a 32-square grid actually slid). Left in
-                    // rather than special-cased on `activeArea`, because a scene is free to configure
-                    // either value and `Make` has no way to know which one shipped without being told
-                    // (see the ZoneSystem engine-fact block in CLAUDE.md) -- this is defence for a case
-                    // that is not reachable TODAY, not dead code with no reason to exist.
-                    while (descent < run &&
-                           !PointInBlockWithMargin(pilotX + dx * (drop + descent), pilotZ + dz * (drop + descent),
-                                                   pilotX, pilotZ, activeArea))
-                        descent = Math.Min(run, descent + ShrinkStep);
+                    // The waypoint sits between the drop and the start, and both are inside the
+                    // margin box: the start by the loop above, the drop because it is at most 15 m
+                    // from a pilot who is at most 32 m from their own zone centre (47 m), while the
+                    // box's half-width is never under `ZoneSize - EdgeMargin` (56 m at near 1; 88 m
+                    // on a stock server). Every 1.0 shape of the area is convex - a square, or a
+                    // square cut by a circle - so the whole segment is inside and nothing here can
+                    // leave it. The slide that walked the waypoint back toward the start on 0.221.12's
+                    // one-zone setting (N1/N2, the 2026-09-07 audit) has no setting left to fire on
+                    // and is gone; the harness proves the bound in its place.
 
                     float frac = run > 0.001f ? descent / run : 0f;
                     float ddx = pilotX + dx * (drop + descent);
@@ -337,14 +302,14 @@ namespace RavenIron.ValkyriesCargo.Core
                         DropX = pilotX + dx * drop, DropY = pilotY, DropZ = pilotZ + dz * drop,
                         // Away along the entry line, still at altitude: a lateral exit, never a
                         // vertical one. It only has to survive long enough to leave the screen; the
-                        // bird destroys itself, so this point may sit outside the block.
+                        // bird destroys itself, so this point may sit outside the area.
                         AwayX = pilotX - dx * (d * 2f), AwayY = pilotY + startAltitude, AwayZ = pilotZ - dz * (d * 2f),
                     };
                 }
             }
 
-            // Nowhere in the block has room on any bearing: the pilot is jammed into a corner of a
-            // one-zone block. Fly the shortest honest flight there is, straight down the seeded
+            // Nowhere in the area has room on any bearing: the pilot is jammed against its wall on
+            // every quarter turn (near 1, a zone corner). Fly the shortest honest flight there is, straight down the seeded
             // bearing from the drop, and let the caller decide whether that is worth doing.
             return new Plan { Ok = false, Bearing = baseBearing, StartDistance = 0f, DescentDistance = 0f,
                               StartX = pilotX, StartY = pilotY + startAltitude, StartZ = pilotZ,
@@ -360,7 +325,7 @@ namespace RavenIron.ValkyriesCargo.Core
             public bool Turned;
             public double Bearing;
             public float StartDistance;
-            /// <summary>How far short of the drop the descent waypoint sits, after the block slide.</summary>
+            /// <summary>How far short of the drop the descent waypoint sits.</summary>
             public float DescentDistance;
             public float StartX, StartY, StartZ;
             public float DescentX, DescentY, DescentZ;

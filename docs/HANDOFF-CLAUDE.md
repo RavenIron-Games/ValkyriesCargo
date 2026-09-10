@@ -14,6 +14,28 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 **The tracker is still `docs/TODO.md`**, three tracks, each editing only its own section; when this file and
 that one disagree, that one wins. The subsections below this one are the day's earlier states, kept as history.
 
+**2026-09-10 — VALHEIM 1.0.7 IS OUT, AND `a/valheim-1.0` IS BUILT ON IT (read this before the rest of §0).** Steam
+moved Don's client (build 25185596) and the Steam dedicated-server folder (25185644) to 1.0.7 on 2026-09-09 (network
+39, `Version.Player.DeepNorth` 46, `Version.World.DeepNorth` 41, Unity 6000.0.75, still Mono). Swept from here the
+same day on BOTH axes with the P10a tools unmodified (`docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md`):
+**the two playtest stop-ships did not ship** (`GetStableHashCode` one-argument again, `GetAllCharacterZDOS` with no
+early return). What the release broke, and the branch's answer at the owner's word (the 1.0.7 publicized set handed
+over 2026-09-10): `Hoverable.GetHoverOffset()` — CargoMerchant could not load at all, the `interfaces` probe's quiet
+failure, one method in his file; `ZoneSystem.m_activeArea` / `m_activeDistantArea` GONE — the active area is the
+synced `SimulationDistance` (near 1..5, classic) and a metre test behind `InActiveArea`: `Core/ActiveArea.cs` (pure)
+and `ActiveAreaLive.cs` (the one read), `ZoneOwnership` and `FlightPlan` rebuilt on them (a stock server's area is
+0.221.12's 3x3 block exactly; the descent-slide loop is gone and its bound is a harness check); `ZRoutedRpc.Everybody`
+a `const`; `MessageHud.ShowMessage` / the `ConsoleCommand` constructor / `EffectList.Create` each +1 optional
+parameter (recompiled, rows re-pinned); `Version.c_*` (EngineCheck, EngineBaseline 1.0.7 / 39 / 46 / 41 / build ids).
+`libs/` is the 1.0.7 set; **0.221.12 is no longer a build target**. 0 warnings, 1956 checks; the offline probe tool on
+both 1.0.7 assemblies reads `same build 1.0.7 (net 39, player 46, world 41); probes 19/19 ok, 8 not probeable`.
+Bodies read and holding: the 2 s event broadcast, `ZDO.IsValid` (`m_prefab != -1`), `ZNetView.Awake`, `CreateNewZDO`,
+`RPC_Damage` (gate reordered; our prefix still first), `OwnerSync`'s velocity path, `Valkyrie.UpdateValkyrie`'s maths,
+`DropPlayer` (+`WaitForRespawn`, a watch); 25 unread. **UNSEEN on a machine.** Next: a fresh 1.0.7 server (a copy of
+the Steam dedicated-server install, a new world, port 2477, no YR), the boot line, a forced visit. StormTest stays
+0.221.12 and Don's client can no longer join it. BepInExPack 5.4.2350 shipped 2026-09-09; Backpacks and the Jere mods
+have no 1.0 builds yet; ServerSync upstream has no 1.0 commit.
+
 **Where main is.** `1dcf3ac` (docs) on `55508d6` (code, PR #64): 0 warnings, **1885/1885 off-game checks**. Merged
 today at the owner's word, in build order: #57 the rotating shelf (762df89), #58 the item value table (824f874),
 #60 the terminal (05da13e), #61 the busy hold and the hover localise (da72e00), #62 the backpack shelf half

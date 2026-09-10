@@ -104,6 +104,10 @@ ZDOMan.GetZDO | assembly_valheim | call | Spawner.Tick and Reclaim
 ZDOMan.DestroyZDO | assembly_valheim | call | Spawner.Reclaim; a NO-OP for a non-owner, hence SetOwner first
 ZDOMan.GetSessionID | assembly_valheim | call | Spawner.Reclaim; == ZNet.GetUID()
 ZDOMan.RemoveOrphanNonPersistentZDOS | assembly_valheim | fact | the bird's other lifetime rule: a disconnected owner is swept
+ZDOMan.ReleaseZDOS | assembly_valheim | fact | every 2 s on the server: one ReleaseNearbyZDOS per peer
+ZDOMan.ReleaseNearbyZDOS | assembly_valheim | fact | D5: a persistent claim outside the owner's area is stripped, an unowned one inside it is taken; Core/ZoneOwnership.cs
+ZDOMan.IsInPeerActiveArea | assembly_valheim | fact | the grant branch's "is its owner still near it"
+ZDOMan.FindSectorObjects | assembly_valheim | fact | the sweep's candidate set: the near zones, all of them on classic
 ZDOVars.s_playerName | assembly_valheim | call | VisitDirector.Gather
 ZDOVars.s_baseValue | assembly_valheim | call | VisitDirector.Gather; the eligibility gate
 ZDOVars.s_dead | assembly_valheim | call | VisitDirector.Gather
@@ -117,6 +121,8 @@ ZNet.GetWorldUID | assembly_valheim | call | MarketStore.Resolve and the deliver
 ZNet.GetTimeSeconds | assembly_valheim | call | the world clock the visit and the market drift count
 ZNet.GetPeers | assembly_valheim | call | DealWire.Tick and PeerFor
 ZNet.GetPeer | assembly_valheim | call | AdminRpc.OnRequest (long overload); ServerSync reflects the ZRpc one
+ZNet.GetSyncedSimulationDistance | assembly_valheim | call | ActiveAreaLive.Read (1.0): the server's own setting, or the value it validated for this client
+ZNet.m_simulationDistance | assembly_valheim | fact | set by RPC_ValidatedSimulationDistance; what a client's area is sized by
 ZNet.GetServerPeer | assembly_valheim | call | AdminRpc.Send
 ZNet.GetServerRPC | assembly_valheim | call | CargoTransport.EnsureRegistered; one per connection
 ZNet.GetAllCharacterZDOS | assembly_valheim | call | VisitDirector.Gather: the whole eligibility view
@@ -171,15 +177,26 @@ ZNetScene.instance | assembly_valheim | call | Spawner, Patch_Terminal
 ZNetScene.HasPrefab | assembly_valheim | call | Spawner.Author refuses to author what clients cannot resolve
 ZNetScene.GetPrefab | assembly_valheim | call | cargo prefab
 ZNetScene.CreateObject | assembly_valheim | fact | parks the ZDO in ZNetView.m_initZDO before Awake
-ZNetScene.InActiveArea | assembly_valheim | fact | |zone - centre| <= activeArea - 1; reimplemented in Core/FlightPlan.cs
+ZNetScene.InActiveArea | assembly_valheim | fact | 1.0: a point against a Vector2s zone or a Vector3 centre, in metres; Core/ActiveArea.cs
+ZNetScene.PointInsideActiveArea | assembly_valheim | fact | 1.0, private: within 1.5 zones of the zone centre on both axes (1 at near 1; a strict 1.75-zone circle at near 2 off classic); Core/ActiveArea.cs
+ZNetScene.OutsideActiveArea | assembly_valheim | fact | the destroy test of CreateDestroyObjects, the same rule negated
 ZNetScene.RemoveObjects | assembly_valheim | fact | destroys the instance and a non-persistent owned ZDO with it
+Hoverable.GetHoverText | assembly_valheim | call | CargoMerchant implements it; the interfaces probe counts the members
+Hoverable.GetHoverName | assembly_valheim | call | CargoMerchant implements it
+Hoverable.GetHoverOffset | assembly_valheim | call | 1.0's third member; CargoMerchant answers his character's (Character.GetHoverOffset)
+Character.GetHoverOffset | assembly_valheim | call | CargoMerchant.GetHoverOffset: m_hoverOffset, the way vanilla reads every Character's
+Interactable.Interact | assembly_valheim | call | CargoMerchant implements it
+Interactable.UseItem | assembly_valheim | call | CargoMerchant implements it
 ZNetScene.CreateObjectsSorted | assembly_valheim | fact | the destroy-unresolvable-prefab branch that the server's pinned position keeps away from us
 ZoneSystem.instance | assembly_valheim | call | Spawner, CargoFlight, Patch_Terminal
-ZoneSystem.m_activeArea | assembly_valheim | call | read LIVE, never the compiled default; the flight's block clamp
-ZoneSystem.m_activeDistantArea | assembly_valheim | call | cargo status
 ZoneSystem.m_waterLevel | assembly_valheim | call | CargoFlight.Floor: never carried below the sea
-ZoneSystem.m_zoneSize | assembly_valheim | fact | 64; Core/FlightPlan.cs carries it as a constant
-ZoneSystem.GetZone | assembly_valheim | fact | floor((v + zoneSize/2) / zoneSize); reimplemented in Core/FlightPlan.cs
+ZoneSystem.m_zoneSize | assembly_valheim | fact | 64; Core/ActiveArea.cs carries it as a constant
+ZoneSystem.GetZone | assembly_valheim | fact | floor((v + zoneSize/2) / zoneSize), a Vector2s since 1.0; reimplemented in Core/ActiveArea.cs
+ZoneSystem.GetZonePos | assembly_valheim | fact | zone * 64: the centre the 1.0 area is measured from; Core/ActiveArea.ZoneCentre
+SimulationDistance.NearSimulationDistance | assembly_valheim | call | ActiveAreaLive.Read (1.0): the size of the active area
+SimulationDistance.IsClassic | assembly_valheim | call | ActiveAreaLive.Read (1.0): the shape of it
+SimulationDistance.OriginalDistance | assembly_valheim | fact | near 2 classic: a stock server's area is 0.221.12's 3x3 block
+SimulationDistance.GetSimulationDistance | assembly_valheim | fact | the level table, near 1 to 5
 ZoneSystem.GetGroundHeight | assembly_valheim | call | CargoFlight.Floor and cargo body preview
 ZSyncTransform.OwnerSync | assembly_valheim | fact | writes s_velHash only when the velocity changes from its cache, so our write survives
 ZSyncTransform.m_velocityCached | assembly_valheim | fact | starts at Vector3.negativeInfinity, which is why the first write always lands
@@ -203,7 +220,7 @@ RandEventSystem.SetRandomEvent | assembly_valheim | fact | private; the only thi
 RandEventSystem.GetEvent | assembly_valheim | fact | private; the name lookup SetRandomEventByName and HaveEvent share
 RandEventSystem.GetPossibleRandomEvents | assembly_valheim | fact | m_random = false keeps ours out of the random pool
 RandEventSystem.PrepareSave | assembly_valheim | fact | vanilla SAVES the running event with the world
-RandEventSystem.SaveAsync | assembly_valheim | fact | name, time and position
+RandEventSystem.Save | assembly_valheim | fact | name, time and position (SaveAsync until 1.0)
 RandEventSystem.Load | assembly_valheim | fact | restores through SetRandomEventByName; the director adopts it within 15 s
 RandomEvent.m_name | assembly_valheim | call | CargoEvent
 RandomEvent.m_enabled | assembly_valheim | call | CargoEvent.Register
@@ -320,14 +337,14 @@ EffectList.m_effectPrefabs | assembly_valheim | call | Patch_Terminal.DumpEffect
 EffectList.EffectData | assembly_valheim | type | Patch_Terminal.DumpEffects
 EffectList.EffectData.m_prefab | assembly_valheim | call | decides the effect rule branch: networked means the owner creates it
 EffectList.EffectData.m_enabled | assembly_valheim | call | Patch_Terminal.DumpEffects
-World.GetWorldSavePath | assembly_valheim | call | MarketStore.Resolve; explicitly Local, because Auto/Cloud return "" under Steam Cloud
+SaveSystem.GetWorldsSaveRootPath | assembly_valheim | call | WorldSavePath.FindCandidate (1.0; World.GetWorldSavePath on 0.221.12); explicitly Local, because Auto/Cloud return "" under Steam Cloud
 FejdStartup.ShowConnectError | assembly_valheim | patch-vendored | ServerSync's version-mismatch message
 ZPlayFabSocket.m_remotePlayerId | assembly_valheim | reflect-vendored | ServerSync copies it onto the buffering socket
-Version.CurrentVersion | assembly_valheim | fact | 0.221.12; the identity of the build, and P10b's boot check
-Version.m_networkVersion | assembly_valheim | fact | 36
-Version.m_playerVersion | assembly_valheim | fact | 43
-Version.m_worldVersion | assembly_valheim | fact | 37
-FileHelpers.FileSource | assembly_utils | type | World.GetWorldSavePath(FileHelpers.FileSource.Local)
+Version.CurrentVersion | assembly_valheim | fact | 1.0.7; the identity of the build, and P10b's boot check
+Version.c_networkVersion | assembly_valheim | fact | 39 (m_networkVersion until 1.0)
+Version.c_PlayerVersion | assembly_valheim | fact | Version.Player.DeepNorth = 46 (m_playerVersion until 1.0)
+Version.c_WorldVersion | assembly_valheim | fact | Version.World.DeepNorth = 41 (m_worldVersion until 1.0)
+FileHelpers.FileSource | assembly_utils | type | the Local member, by name: its value moved on 1.0 (bit flags)
 StringExtensionMethods.GetStableHashCode | assembly_utils | call | every ZDO key and every prefab hash in this mod
 ZInput.GetKeyDown | assembly_utils | call | the terminal's Escape; NOT UnityEngine.Input, which this build ignores
 ZInput.GetButtonDown | assembly_utils | call | Use, Inventory, Map

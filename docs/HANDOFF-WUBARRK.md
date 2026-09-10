@@ -8,6 +8,23 @@ what it is, what of yours is already in it, what we need from you, and exactly w
 **Your list is `docs/TODO.md` section 2** and **issue #59**; when this file and those disagree, they win. The
 day's earlier states are kept below as history.
 
+**2026-09-10 — Valheim 1.0.7, read this first.** Steam moved both installs here to 1.0.7 on 2026-09-09 (network 39,
+player 46, world 41, Unity 6000.0.75). The P10a sweep is DONE from this side on both axes with your tools unmodified —
+`docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md` — and the two playtest stop-ships in your #55
+report did not ship: `GetStableHashCode` is one-argument again and `GetAllCharacterZDOS` has no early return. The
+release broke six other things and `a/valheim-1.0` fixes them (its PR body is the list). Two of them touched your
+files at Don's word, the smallest edits that build: `CargoMerchant.GetHoverOffset()` (1.0's third `Hoverable` member;
+returns his character's value) and the D5 strip-band read in `EnterState`, which now takes the live simulation
+distance through `ActiveAreaLive.Read()` instead of `ZoneSystem.m_activeArea` (the field is gone). **Your D5 survives
+in mechanism**: `ReleaseNearbyZDOS` was rewritten on 1.0 but a stock server's keep-window is the same 3x3 block, now
+measured in metres from the zone centre (`Core/ActiveArea.cs` is the rule; `ActiveAreaLive` reads
+`ZNet.GetSyncedSimulationDistance`). What is yours from here: the 25 body changes on the surface nobody has read yet
+(the report lists them; `ZNet.RPC_PeerInfo` / `OnNewConnection` / `Awake` are ServerSync's handshake, `Chat` / `Minimap`
+/ `InventoryGui` / `Player.TakeInput` are UIFocus, `ZNetScene.CreateObject` / `CreateObjectsSorted`, `Heightmap.Biome`,
+`NpcTalk.Start`, `Character.Awake`, `ZSyncAnimation.Awake`, `Terminal.*`), and the flight on 1.0.7 once a server is up.
+Your box: `libs/` wants the 1.0.7 publicized assemblies (0.221.12 is no longer a build target); the manifest names
+BepInExPack 5.4.2350. No Yggdrasil's Reckoning on the 1.0 test server, Don's word.
+
 `main` is at 1dcf3ac (docs) on 55508d6 (code, PR #64): 0 warnings, **1885 checks**. Merged today at Don's word, in
 order: #57 the rotating shelf, #58 the item value table, #60 the terminal (count boxes, no pay mode, the 40 % black
 backdrop), #61 the busy hold and the hover localise (your items 2 and 3 from #59, in your files with his word),

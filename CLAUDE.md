@@ -244,13 +244,13 @@ at 1500, four Wants from base 2 to 3, `PriceChangePolicy` deleted, and house rul
 runtime material copy. 1301 off-game checks, 0 warnings. Its one live run is the section below.
 
 **P10b the boot-time engine probes, 2026-09-07 (branch `a/p10b-probes`).** `Core/EngineBaseline.cs` (PURE) is
-the build this DLL was compiled against as constants — 0.221.12, network 36, player 43, world 37, the two Steam
+the build this DLL was compiled against as constants — 1.0.7, network 39, player 46, world 41 since 2026-09-10 (0.221.12 / 36 / 43 / 37 before), the two Steam
 build ids — and the comparison against the four numbers actually running; the numbers are copied rather than
 referenced because vanilla's `Version` type is `internal` and its three numbers are `const`, so a direct
 reference would be inlined at OUR compile time and answer "same build" on every Valheim ever released.
-`Core/EngineProbes.cs` (PURE) is the registry: 25 named engine facts (the P11d audit's 53 rows folded in on
+`Core/EngineProbes.cs` (PURE) is the registry: 27 named engine facts (the P11d audit's 53 rows folded in on
 2026-09-07, PR #46), ranked worst-first by how much SILENCE a
-break would come with, each with what it looks at and what turns itself off; seven are method BODIES and are
+break would come with, each with what it looks at and what turns itself off; eight are method BODIES and are
 registered as **not probeable**, which `cargo engine` says out loud rather than implying a pass. A probe is a
 veto and never a permit — a fact that has not run, could not be probed, or was never registered answers YES, so
 a bug in the registry can never be the thing that turns the mod off. `EngineCheck.cs` is the one file that
@@ -339,6 +339,8 @@ ValkyriesCargo/
   Server/MarketStore.cs      the sidecar on disk: valkyriescargo_{worldUid}.dat, .tmp/.bak/.corrupt
   Server/BackpackMod.cs      the backpack add-on's lookup (2026-09-08): is Server.BackpackModGuid loaded here; the shelf scales by Shelf.Scaled
   Server/VisitAnchor.cs      where the visit IS (2026-09-08): his live ZDO position when bound, else the drop point; the event's area and the dismiss rule measure against it
+  Core/ActiveArea.cs         PURE (1.0, 2026-09-10): SimDistance and the metre test behind ZNetScene.InActiveArea; D5's keep-window and the flight's clamp both rest on it
+  ActiveAreaLive.cs          the one read of ZNet.GetSyncedSimulationDistance (1.0 replaced ZoneSystem.m_activeArea); vanilla's default before a world is up
   Net/DealWire.cs            server end: VCargo_open/close/deal/ack/claim/dismiss on each peer's ZRpc; VCargo_dealt back
   Server/BarrkBotExport.cs   writes barrkbot_cargo_market/traders/visits.json under BepInEx/config/ValkyriesCargo/, from VisitDirector.Tick
   Net/CargoTransport.cs      client end (the real ICargoTransport), LocalTransport (listen host), Deliveries
@@ -513,19 +515,22 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
 
 ## Engine facts the code relies on today (bodies read 2026-09-06; the full list is `docs/DESIGN.md` section 0 and 3)
 
-- The installed Valheim runs on **Unity 6000.0.61f1** (`UnityPlayer.dll`); bundles must be built with that Editor.
+- The installed Valheim runs on **Unity 6000.0.75** (1.0.7, 2026-09-09; 6000.0.61f1 on 0.221.12) (`UnityPlayer.dll`); bundles must be built with that Editor.
 - **ServerSync broadcasts on change only.** No heartbeat. Client writes are rejected while locked unless
   the client is on `adminlist.txt`. Payloads under 10 000 bytes go uncompressed.
 - **Comfort never leaves the client** (`SE_Rested.CalculateComfortLevel` is local); the client will
   write `VCargo_rested` / `VCargo_comfort` on its own character ZDO, which replicates because the client owns it.
-- **Objects are instantiated on a client only inside its active zone block**
-  (`ZNetScene.InActiveArea`: `|zone − centre| ≤ m_activeArea − 1`, 64 m zones); outside it
-  `RemoveObjects` destroys the instance and a non-persistent owned ZDO with it. The Valkyrie starts
-  ~90 m out, never 800.
-- **`ZoneSystem.m_activeArea` is 2, not the compiled default of 1** (read live, 2026-09-07). The block
-  is 3x3 zones - 192 m - so `FlightPlan`'s configured 90 m start survives whole and neither the shrink
-  nor the bearing turn fires in practice. Both still ship, because the value is an inspector field and
-  a scene may say otherwise; `Spawner` reads it at runtime and never assumes.
+- **Objects are instantiated on a client only inside its ACTIVE AREA** (`ZNetScene.InActiveArea(position,
+  zone)`; on 1.0 the private `PointInsideActiveArea`: within 1.5 zones (96 m) of the client's zone centre on
+  both axes, 1 zone at near simulation distance 1, and strictly inside a 1.75-zone circle at near 2 off
+  classic — `Core/ActiveArea.cs` is that rule, read 2026-09-09); outside it `RemoveObjects` destroys the
+  instance and a non-persistent owned ZDO with it. The Valkyrie starts ~90 m out, never 800.
+- **The area's size is the synced simulation distance, not `ZoneSystem.m_activeArea`** (1.0: the field is
+  GONE, the sweep of 2026-09-09; on 0.221.12 it read 2 live against a compiled 1). `ZNet.GetSyncedSimulationDistance()`
+  is near 2 classic on a stock server (`SimulationDistance.OriginalDistance`), which is exactly the 3x3 block
+  of 64 m zones `m_activeArea = 2` gave, so `FlightPlan`'s configured 90 m start still survives whole and
+  neither the shrink nor the bearing turn fires in practice. `ActiveAreaLive.Read()` is the one place it is
+  read; `Spawner`, D5's `ZoneOwnership` and `cargo status` all go through it and never assume.
 - **The `Valkyrie` prefab overrides almost every field initialiser** (read live, 2026-09-07):
   `m_speed` 20 (not 10), `m_turnRate` 20 (not 5), `m_startDistance` **800** (not 500), `m_startAltitude`
   190 (not 500), `m_descentAltitude` 180, `m_startDescentDistance` 300, `m_attachOffset` (0, 0.30, 0.40)
@@ -840,6 +845,31 @@ waits: …`), the `not_on_shelf` refusal with a line of Ingvar's, one line in `c
 has been seen on a machine**. The owner's second ask in the same message — Ingvar buys ANY item a player offers
 and an uncatalogued sale forces a persistent common-or-rare entry — is DESIGNED in that PR's body and NOT built
 (six decisions listed there). Thorium and Wu'barrk are the same person.
+
+**2026-09-09/10 — VALHEIM 1.0.7 IS OUT, AND `a/valheim-1.0` IS BUILT ON IT.** Steam moved Don's client (build 25185596)
+and the Steam dedicated-server folder (25185644) to 1.0.7 on 2026-09-09 at 05:58 / 05:57 (network 39,
+`Version.Player.DeepNorth` 46, `Version.World.DeepNorth` 41, Unity 6000.0.75, still Mono). Swept the same day from
+here, both axes, the P10a tools unmodified against the installed builds (junctions `~/valheim-shadows/{server,client}-1.0.7`):
+`docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md`, 257 rows, 208 / 206 unchanged, 33 / 35 body,
+9 signature, 7 gone. **The two playtest stop-ships EVAPORATED on the release** — `GetStableHashCode` is one-argument
+again and `GetAllCharacterZDOS` has no early return — so the held fix designs were never needed. What the release broke
+instead, six things, fixed on the branch at the owner's word (the publicized 1.0.7 assemblies handed over 2026-09-10):
+`Hoverable` gained `GetHoverOffset()` (CargoMerchant could not load at all — the `interfaces` probe's quiet failure,
+exactly as written; one method, his character's value, in his file); `ZoneSystem.m_activeArea` / `m_activeDistantArea`
+are GONE and the active area is the synced simulation distance with a metre test behind `InActiveArea`
+(`Core/ActiveArea.cs` + `ActiveAreaLive.cs`; `ZoneOwnership` and `FlightPlan` rebuilt on it; the descent-slide loop
+removed, its bound proven in the harness instead); `ZRoutedRpc.Everybody` became a `const` (inlined by the recompile,
+ServerSync's three sites with it); `MessageHud.ShowMessage`, the `ConsoleCommand` constructor and `EffectList.Create`
+each gained an optional parameter (recompiled; the probe rows re-pinned); `Version.m_*` are `c_networkVersion` /
+`c_PlayerVersion` / `c_WorldVersion` (EngineCheck reads the new names, EngineBaseline carries 1.0.7). `libs/` is the
+1.0.7 publicized set; **0.221.12 is no longer a build target** (Steam's `default_pre1_0` branch and rc3 serve a
+holdout). Off-game: 0 warnings, 1956 checks; the offline probe tool on both 1.0.7 assemblies: `same build 1.0.7 (net 39,
+player 46, world 41); probes 19/19 ok, 8 not probeable`. Bodies read (the eight a visit rides on: the 2 s event
+broadcast, `ZDO.IsValid` = `m_prefab != -1`, `ZNetView.Awake`, `CreateNewZDO`, `RPC_Damage` (gate reordered, our
+prefix still first), `OwnerSync`'s velocity path, `Valkyrie.UpdateValkyrie`'s maths, `DropPlayer` +`WaitForRespawn`)
+hold; 25 bodies unread. **UNSEEN on a machine: no 1.0 server has booted with it yet.** StormTest stays 0.221.12, and
+Don's client can no longer join it; the next testbed is a fresh 1.0.7 server directory (a copy of the Steam install, a
+new world, port 2477, no Yggdrasil's Reckoning by the owner's word).
 
 **THE SAME MORNING, LATER — the shelf seen, the first two-client playtest, and the terminal reshaped.** The shelf
 PR's build ran on StormTest: `director up: … shelf 20 of 72, period 13/14`, `shelf roll waits: visit #17 is running`,

@@ -119,12 +119,12 @@ namespace RavenIron.ValkyriesCargo.Server
                 if (!scene.HasPrefab(birdHash)) { LastProblem = "'" + BirdPrefab + "' is not registered with this server's ZNetScene"; return null; }
                 if (!scene.HasPrefab(bodyHash)) { LastProblem = "body prefab '" + bodyName + "' is not registered with this server's ZNetScene"; return null; }
 
-                // The runtime value, never the compiled default: ZoneSystem.m_activeArea is a public
-                // inspector field (compiled 1) and the scene may say otherwise, exactly as it does for
-                // EnvMan.m_dayLengthSec. `cargo status` prints what was read.
-                int activeArea = ZoneSystem.instance != null ? ZoneSystem.instance.m_activeArea : 1;
+                // The LIVE simulation distance, never a compiled default: on 1.0 the active area is a
+                // synced setting (`ZNet.GetSyncedSimulationDistance`), read the way EnvMan's day length
+                // is. `cargo status` prints what was read.
+                SimDistance sim = ActiveAreaLive.Read();
 
-                FlightPlan.Plan plan = FlightPlan.Make(px, py, pz, seed, activeArea,
+                FlightPlan.Plan plan = FlightPlan.Make(px, py, pz, seed, sim,
                     Clamp(ModConfig.FlightStartDistance, 90f, 24f, 400f),
                     Clamp(ModConfig.FlightStartAltitude, 120f, 20f, 400f),
                     Clamp(ModConfig.FlightDescentDistance, 50f, 0f, 200f),
@@ -145,7 +145,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     // Nowhere in the pilot's block has room for a flight. Rather than fly a bird that
                     // pops out of existence, say so and let the visit run without one: the merchant is
                     // still authored, on the ground, already dropped.
-                    LastProblem = "no room in the pilot's active block for a flight (activeArea " + activeArea + ")";
+                    LastProblem = "no room in the pilot's active area for a flight (" + sim + ")";
                 }
                 else
                 {

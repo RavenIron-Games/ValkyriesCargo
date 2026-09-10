@@ -327,10 +327,9 @@ namespace RavenIron.ValkyriesCargo.Patches
             ZoneSystem zs = ZoneSystem.instance;
             if (zs != null)
             {
-                int reach = Math.Max(0, zs.m_activeArea - 1);
-                Say(args, "  ZoneSystem.m_activeArea=" + zs.m_activeArea + " -> objects exist within " + reach +
-                          " zone(s) (" + (reach * 64) + " m) of a player's zone; distant area=" + zs.m_activeDistantArea +
-                          "; water level=" + F(zs.m_waterLevel, "0.#"));
+                SimDistance sim = ActiveAreaLive.Read();
+                Say(args, "  simulation distance " + ActiveArea.Describe(sim) +
+                          " (ZNet.GetSyncedSimulationDistance; 1.0 replaced ZoneSystem.m_activeArea); water level=" + F(zs.m_waterLevel, "0.#"));
             }
 
             RandEventSystem res = RandEventSystem.instance;

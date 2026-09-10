@@ -30,6 +30,7 @@
     <Compile Include="..\..\ValkyriesCargo\Core\PatchLedger.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Ghost.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\ZoneOwnership.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\ActiveArea.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Json.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\DemoMarket.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Market.cs" />

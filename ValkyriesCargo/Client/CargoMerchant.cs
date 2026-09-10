@@ -519,12 +519,11 @@ namespace RavenIron.ValkyriesCargo.Client
 
             // D5: is he standing where the server's 2 s sweep would take a claim away? Measured against
             // the nearest player rather than the pilot's `m_refPos`, which no client can read - close
-            // enough to diagnose, since it is the pilot the bird is flying toward. `m_activeArea` is read
-            // live because the scene overrides the compiled default (it reads 2, the default is 1).
-            int activeArea = ZoneSystem.instance != null ? ZoneSystem.instance.m_activeArea : ZoneOwnership.LiveActiveArea;
+            // enough to diagnose, since it is the pilot the bird is flying toward. The area's size is
+            // the simulation distance the server validated for this client, read live (1.0).
             _inStripBand = near != null && ZoneOwnership.WouldStripClaim(
                 transform.position.x, transform.position.z,
-                near.transform.position.x, near.transform.position.z, activeArea);
+                near.transform.position.x, near.transform.position.z, ActiveAreaLive.Read());
 
             _timeInState = 0f;
             _farSeconds = 0f;
@@ -844,6 +843,13 @@ namespace RavenIron.ValkyriesCargo.Client
         // ---- hover and interaction (design 3.3) --------------------------------------------------
 
         public string GetHoverName() => Lines.Title;
+
+        /// <summary>
+        /// 1.0's third `Hoverable` member: how far past `m_maxInteractDistance` a look at him still
+        /// counts (`Player.Update`'s interact ray adds it). His own character's value, read the way
+        /// vanilla reads every other Character's, so nothing about the reach is ours.
+        /// </summary>
+        public float GetHoverOffset() => _character != null ? _character.GetHoverOffset() : 0f;
 
         public string GetHoverText()
         {

@@ -11,7 +11,7 @@ Three files, and one console verb:
 | file | what it is |
 |---|---|
 | `ValkyriesCargo/Core/EngineBaseline.cs` | PURE. The build this DLL was compiled against, as constants, and the comparison against the four numbers actually running. |
-| `ValkyriesCargo/Core/EngineProbes.cs` | PURE. The registry: 25 named engine facts (18 probed at boot, 7 method bodies registered as not probeable), their risk rank, what each looks at, what turns itself off when it fails, and what became of it. |
+| `ValkyriesCargo/Core/EngineProbes.cs` | PURE. The registry: 27 named engine facts (19 probed at boot, 8 method bodies registered as not probeable), their risk rank, what each looks at, what turns itself off when it fails, and what became of it. |
 | `ValkyriesCargo/EngineCheck.cs` | The only file that touches a game type. Reads the live version numbers and resolves every fact, once, from plugin `Awake`. |
 | `cargo engine` | Prints all of it. `cargo status` carries the one-line version of it, second from the top. |
 
@@ -19,7 +19,8 @@ Three files, and one console verb:
 
 ## 1. Say what you were built for, and what you found
 
-`Version.CurrentVersion`, `m_networkVersion`, `m_playerVersion`, `m_worldVersion` — read at boot,
+`Version.CurrentVersion`, `c_networkVersion`, `c_PlayerVersion`, `c_WorldVersion` (the `m_*` names
+until 1.0; the last two are enum constants now, read as their underlying int) — read at boot,
 compared against the compiled-in baseline, one line in the log either way. **A mismatch is
 information, not an error.** Nothing here refuses to load.
 
@@ -400,8 +401,8 @@ verify list, item 24, is that run: on a stock 0.221.12 the boot line must read
 `probes 18/18 ok, 7 not probeable` with no `FAILED` and no `registry:` line, and any failure there is a
 bug in `EngineCheck.cs`, not in Valheim.
 
-Also unproven, and by design: the not-probeable seven (`event_clock`, `znetview_awake`,
-`server_refpin`, `zdo_bodies`, `awake_order`, `damage_path`, `ai_bodies`) are method bodies. Nothing
+Also unproven, and by design: the not-probeable eight (`event_clock`, `znetview_awake`,
+`server_refpin`, `zdo_bodies`, `active_area_rule` (1.0), `awake_order`, `damage_path`, `ai_bodies`) are method bodies. Nothing
 at runtime will ever check them. They are P10a's job, and they are in the registry so that
 `cargo engine` says so out loud.
 
@@ -434,8 +435,8 @@ row the registry already covered before this pass.
 | `ZDO.Set(int, Vector3 / int / bool)`, "no ownership check" | `zdo_authoring`, by the overload each call site compiled to — `Set(int, int, bool)`, since the two-parameter form does not exist (mutation M2) — plus the `Get` overloads, `m_uid`, `GetPosition`, `GetOwner`, `ZDOID.None` / `IsNone`; the ignored `okForNotOwner` → `zdo_bodies` |
 | `ZDOVars.s_velHash` | `velocity_cache` (was), with the hash of `"vel"` |
 | `ZoneSystem.GetGroundHeight(Vector3, out float)` | `zone_maths`, the `out` overload on purpose (F7) |
-| `ZoneSystem.m_activeArea` / `m_waterLevel` | `zone_maths` (was) |
-| `ZNetScene.InActiveArea(Vector2i, Vector2i, int)` | `zone_maths` (was) |
+| `ZoneSystem.m_activeArea` / `m_waterLevel` | `zone_maths` (was). `m_activeArea` is GONE on 1.0: `ZNet.GetSyncedSimulationDistance` + `SimulationDistance.NearSimulationDistance` / `IsClassic` in its place, and the metre rule behind them is `active_area_rule` |
+| `ZNetScene.InActiveArea(Vector2i, Vector2i, int)` | `zone_maths` (was). On 1.0 the two overloads take a `Vector3` point against a `Vector2s` zone or a `Vector3` centre |
 | `ZNetScene.HasPrefab(int)` / `GetPrefab(int)` / `GetPrefab(string)` / `FindInstance(ZDOID)` | `zdo_authoring` (`HasPrefab`, `GetPrefab(int)`) and `merchant` (was, the other two) |
 | `ZSyncTransform` on the Valkyrie prefab | a prefab fact: `cargo prefab Valkyrie`. The type itself is touched by `velocity_cache` |
 
@@ -470,7 +471,7 @@ row the registry already covered before this pass.
 | `Chat.SetNpcText(...)` | `merchant` (was) |
 | `Odin.m_despawn` + `EffectList.Create(...)` | `merchant` (was) |
 | `Player.GetClosestPlayer(Vector3, float)` | `merchant` (was) |
-| `Interactable` / `Hoverable`, the four members | `interfaces` — member for member AND by count (mutation M3) |
+| `Interactable` / `Hoverable`, the four members (five since 1.0: `GetHoverOffset`) | `interfaces` — member for member AND by count (mutation M3); the count is what caught 1.0 |
 | the `Dverger` and `Valkyrie` prefab probes | not in the registry, on §5's reasoning: runtime facts about a loaded world. `cargo prefab Dverger` / `cargo prefab Valkyrie` are their instrument, and the animator parameters can only be read on a client (CLAUDE.md, the headless prefab reads) |
 
 ### Beyond the audit
@@ -483,3 +484,27 @@ member we call": `Terminal.InitTerminal`, the `ConsoleCommand` constructor as co
 `Player.m_localPlayer` (`comfort`); `Heightmap.Biome.All` (`randevent`); `ZNetView.Everybody` by
 VALUE (`znetview`, mutation M4), because the "handle it locally first" branch is keyed on the literal
 `0L` and a renumbered constant would route the callout to nobody without a compile error anywhere.
+
+---
+
+## 10. Valheim 1.0.7 (2026-09-09): what the probes said, and what moved
+
+Run offline against both installed 1.0.7 assemblies the morning they arrived, with the 0.221.12 build
+of the mod: `game version unreadable (Version.m_networkVersion is gone or is not a number); probes 14/19
+ok, 7 not probeable, FAILED: zone_maths, merchant, interfaces, localization, console` — identical on
+the client and the server. Every line was a true failure, and `interfaces` was the one this file was
+written for: `Hoverable has 3 member(s), not 2: CargoMerchant no longer implements it whole`, the
+`TypeLoadException` that would have taken the merchant out of the world with three log lines and then
+silence. The two playtest stop-ships (§ the 0.221.13 sweep) did not ship.
+
+What moved, and what the branch `a/valheim-1.0` did about each: `Hoverable.GetHoverOffset()`
+(implemented; the row and the count are 3); `ZoneSystem.m_activeArea` / `m_activeDistantArea` gone
+(`zone_maths` now pins `ZNet.GetSyncedSimulationDistance`, `SimulationDistance.NearSimulationDistance` /
+`IsClassic`, `ZoneSystem.GetZonePos` and the two `InActiveArea(Vector3, …)` overloads; the metre rule
+behind them is the new body fact `active_area_rule`, mirrored in `Core/ActiveArea.cs`);
+`EffectList.Create` +`ZDOID`, `MessageHud.ShowMessage` +`bool log`, the `ConsoleCommand` constructor
++`hideBehindDevCommands` mid-list (all three rows re-pinned to the shape our calls compile to now);
+`ZRoutedRpc.Everybody` a `const` (the probe reads a literal the same way; the recompile inlines it);
+`Version.c_*` (§1). After the branch, the same tool on the same two assemblies: `same build 1.0.7 (net 39,
+player 46, world 41); probes 19/19 ok, 8 not probeable`. Item 24's boot half on a 1.0.7 server is still
+owed: the first boot on it must read exactly that, with no `FAILED` and no `registry:` line.

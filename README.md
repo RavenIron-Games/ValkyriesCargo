@@ -160,9 +160,10 @@ Requires [BepInExPack Valheim](https://thunderstore.io/c/valheim/p/denikson/BepI
 and nothing else: no Jotunn, no JSON library (the BarrkBOT export writes its files through the mod's
 own `Core/Json.cs`). `manifest.json`'s dependency list is that one entry.
 
-Built against the assemblies of the Valheim install of 2026-09-06 (0.221.x); that install's
-`UnityPlayer.dll` reports **Unity 6000.0.61f1**, which is the Editor version any asset bundle for
-this mod must be built with.
+Built against the assemblies of Valheim **1.0.7** (the install of 2026-09-09); that install's
+`UnityPlayer.dll` reports **Unity 6000.0.75**, which is the Editor version any asset bundle for
+this mod must be built with. 0.221.12 is no longer a build target (Steam's `default_pre1_0` branch
+keeps it; `v0.1.0-rc3` was the last build for it).
 
 ---
 

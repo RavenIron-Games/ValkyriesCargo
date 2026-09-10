@@ -418,8 +418,9 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       `save_path` probe; his 1.0 sweep report. Verified from this machine (the hidden `public-test` branch fetched,
       build 23105022 / 0.221.13; ProbeCheck 15/19 on it; both stop-ships confirmed in the decompile). Deployed both
       sides; StormTest booted 19/19 on 0.221.12 and RESUMED visit 15 (item 15's server half + F4's rebind SEEN).
-- [ ] **1.0: HELD** (owner, "dont change anything for 1.0"). The two stop-ships stay findings; the fix designs are in
-      the handoffs. Do not start without the word.
+- [x] **1.0: HELD** (owner, "dont change anything for 1.0"), then **BUILT on `a/valheim-1.0` 2026-09-10** at the word
+      (the 1.0.7 publicized assemblies handed over). The two playtest stop-ships never shipped; what the release broke
+      is the item at the end of this section.
 - [x] **The rotating shelf** (owner, 2026-09-08): 20 of the 72, re-rolled every couple of game days, the fixed Ware
       list goes away; issue #56 carries the design and the four economy questions. Wu'barrk's read came back the
       same morning (two-day default; a backpack add-on). **BUILT on `a/rotating-shelf` 2026-09-08** (the owner: "build
@@ -505,3 +506,17 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       patrol point; and no `leaving -> trading via the ZDO` line on the watcher at the vanish. Open question for
       Wu'barrk on the issue: was Ingvar armed, was anything hostile near the base on visit 16 (a combat target
       beats the follow and the idle walk alike, state unchanged).
+- [ ] **`a/valheim-1.0` — Valheim 1.0.7 (2026-09-10, 1956 checks).** Steam moved both installs to 1.0.7 on 2026-09-09;
+      swept from here the same day (`docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md`; the
+      playtest's two stop-ships did not ship). Six breaks fixed: `Hoverable.GetHoverOffset()` (CargoMerchant could
+      not load); `m_activeArea` gone → the synced simulation distance and `Core/ActiveArea.cs` (D5 and the flight
+      clamp rebuilt on it; the descent slide removed, its bound proven); `ZRoutedRpc.Everybody` a const; three
+      signatures grown by an optional parameter; `Version.c_*`. The offline probe tool reads `same build 1.0.7 …
+      probes 19/19 ok, 8 not probeable` on both assemblies. Two edits in CargoMerchant.cs (his file) at the word.
+      PR open, UNSEEN. **Proof:** a fresh 1.0.7 dedicated server (a copy of the Steam install, a new world, port
+      2477, no Yggdrasil's Reckoning; Backpacks only once it has a 1.0 build) booting `built against Valheim 1.0.7
+      … running same build 1.0.7 … probes 19/19 ok, 8 not probeable` and `patches N/N applied`, then a forced
+      visit: the flight, the drop, a deal, a dismiss, the vanish. Then the 25 unread body changes, one by one.
+      Open beside it: BepInExPack 5.4.2350 (the manifest now names it), Backpacks / ServerDevcommands / Infinity
+      Hammer / World Edit Commands have no 1.0 builds yet; ServerSync upstream has no 1.0 commit (the vendored
+      copy compiled clean and its three `Everybody` sites inline).

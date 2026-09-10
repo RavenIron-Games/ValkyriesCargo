@@ -123,7 +123,8 @@ namespace RavenIron.ValkyriesCargo
         ///
         /// - `Version` is `internal` in the real assembly. Naming it would be exactly the thing house
         ///   rule 5 forbids: it compiles against the publicized copy and is a runtime coin toss.
-        /// - `m_networkVersion`, `m_playerVersion` and `m_worldVersion` are `const`. A direct reference
+        /// - `c_networkVersion`, `c_PlayerVersion` and `c_WorldVersion` are `const` (1.0 renamed them
+        ///   from `m_*`; the last two are enum constants now, read as their underlying int). A direct reference
         ///   is inlined AT OUR COMPILE TIME, so the comparison would read our own baseline back to
         ///   itself and answer "same build" on every Valheim ever released. Reflection reads the LOADED
         ///   assembly's metadata, which is the only place the live numbers exist.
@@ -147,9 +148,9 @@ namespace RavenIron.ValkyriesCargo
             if (gv == null) return "Version.CurrentVersion is null";
             game = gv.ToString();
 
-            if (!ConstInt(t, "m_networkVersion", out net)) return "Version.m_networkVersion is gone or is not a number";
-            if (!ConstInt(t, "m_playerVersion", out player)) return "Version.m_playerVersion is gone or is not a number";
-            if (!ConstInt(t, "m_worldVersion", out world)) return "Version.m_worldVersion is gone or is not a number";
+            if (!ConstInt(t, "c_networkVersion", out net)) return "Version.c_networkVersion is gone or is not a number";
+            if (!ConstInt(t, "c_PlayerVersion", out player)) return "Version.c_PlayerVersion is gone or is not a number";
+            if (!ConstInt(t, "c_WorldVersion", out world)) return "Version.c_WorldVersion is gone or is not a number";
             return null;
         }
 
@@ -366,23 +367,27 @@ namespace RavenIron.ValkyriesCargo
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static int CheckZoneMaths(List<string> bad)
         {
-            // The three overloads FlightPlan's clamp is reasoned against. The design's arithmetic
-            // (|zone - centre| <= m_activeArea - 1 on 64 m zones) lives in the two-zone one.
-            NeedMethod(typeof(ZNetScene), "InActiveArea", new[] { typeof(Vector2i), typeof(Vector3) }, bad);
-            NeedMethod(typeof(ZNetScene), "InActiveArea", new[] { typeof(Vector2i), typeof(Vector2i) }, bad);
-            NeedMethod(typeof(ZNetScene), "InActiveArea", new[] { typeof(Vector2i), typeof(Vector2i), typeof(int) }, bad);
+            // The two overloads left on 1.0, both static; the metre test behind them
+            // (`PointInsideActiveArea`) is private and a body fact, `active_area_rule`, mirrored in
+            // `Core/ActiveArea.cs`.
+            NeedMethod(typeof(ZNetScene), "InActiveArea", new[] { typeof(Vector3), typeof(Vector2s) }, bad);
+            NeedMethod(typeof(ZNetScene), "InActiveArea", new[] { typeof(Vector3), typeof(Vector3) }, bad);
             Type zs = typeof(ZoneSystem);
             NeedProperty(zs, "instance", zs, bad);
             NeedMethod(zs, "GetZone", new[] { typeof(Vector3) }, bad);
+            NeedMethod(zs, "GetZonePos", new[] { typeof(Vector2s) }, bad);
             // The `out bool` overload, on purpose: the float one silently returns its input Y when no
             // heightmap is loaded (knowledge base), which is the audit's F7. Both the flight floor and
             // the drop's ground refinement use this one and treat false as "no terrain".
             NeedMethod(zs, "GetGroundHeight", new[] { typeof(Vector3), typeof(float).MakeByRefType() }, bad);
             NeedField(zs, "m_zoneSize", typeof(float), true, bad);
-            NeedField(zs, "m_activeArea", typeof(int), true, bad);
-            NeedField(zs, "m_activeDistantArea", typeof(int), true, bad);
             NeedField(zs, "m_waterLevel", typeof(float), true, bad);
-            return 10;
+            // 1.0: the area's size is the synced simulation distance; `m_activeArea` is gone.
+            // `ActiveAreaLive.Read()` is these three members and nothing else.
+            NeedMethod(typeof(ZNet), "GetSyncedSimulationDistance", Type.EmptyTypes, bad);
+            NeedProperty(typeof(SimulationDistance), "NearSimulationDistance", typeof(int), bad);
+            NeedProperty(typeof(SimulationDistance), "IsClassic", typeof(bool), bad);
+            return 12;
         }
 
         private static void ProbeVelocityCache()
@@ -580,12 +585,13 @@ namespace RavenIron.ValkyriesCargo
             NeedMethod(typeof(ZDO), "GetZDOID", new[] { typeof(KeyValuePair<int, int>) }, bad);
 
             // The words and the leaving. `Chat.SetNpcText` is unguarded client UI; `EffectList.Create`'s
-            // three optional parameters are part of the signature OUR call site compiled against.
+            // four optional parameters (1.0 added the ZDOID) are part of the signature OUR call site
+            // compiled against.
             NeedMethod(typeof(Chat), "SetNpcText",
                        new[] { typeof(GameObject), typeof(Vector3), typeof(float), typeof(float), typeof(string), typeof(string), typeof(bool) }, bad);
             NeedField(typeof(Odin), "m_despawn", typeof(EffectList), true, bad);
             NeedMethod(typeof(EffectList), "Create",
-                       new[] { typeof(Vector3), typeof(Quaternion), typeof(Transform), typeof(float), typeof(int) }, bad);
+                       new[] { typeof(Vector3), typeof(Quaternion), typeof(Transform), typeof(float), typeof(int), typeof(ZDOID) }, bad);
             return 22;
         }
 
@@ -619,8 +625,9 @@ namespace RavenIron.ValkyriesCargo
             Type hover = typeof(Hoverable);
             NeedMethod(hover, "GetHoverText", Type.EmptyTypes, bad);
             NeedMethod(hover, "GetHoverName", Type.EmptyTypes, bad);
-            NeedInterfaceShape(hover, 2, bad);
-            return 6;
+            NeedMethod(hover, "GetHoverOffset", Type.EmptyTypes, bad);      // 1.0's third; CargoMerchant answers his character's
+            NeedInterfaceShape(hover, 3, bad);
+            return 7;
         }
 
         private static void ProbeInventory()
@@ -775,10 +782,10 @@ namespace RavenIron.ValkyriesCargo
             NeedProperty(loc, "instance", loc, bad);
             NeedMethod(loc, "Localize", new[] { typeof(string) }, bad);
             // The two banners: the pilot's dispatch (CargoTick) and a delivery's receipt (CargoTransport).
-            // `ShowMessage`'s three optional parameters are part of the signature our call compiled to.
+            // `ShowMessage`'s four optional parameters (1.0 added `log`) are part of the signature our call compiled to.
             Type hud = typeof(MessageHud);
             NeedProperty(hud, "instance", hud, bad);
-            NeedMethod(hud, "ShowMessage", new[] { typeof(MessageHud.MessageType), typeof(string), typeof(int), typeof(Sprite), typeof(bool) }, bad);
+            NeedMethod(hud, "ShowMessage", new[] { typeof(MessageHud.MessageType), typeof(string), typeof(int), typeof(Sprite), typeof(bool), typeof(bool) }, bad);
             NeedEnumValue(typeof(MessageHud.MessageType), "Center", bad);
             NeedEnumValue(typeof(MessageHud.MessageType), "TopLeft", bad);
             return 6;
@@ -846,8 +853,9 @@ namespace RavenIron.ValkyriesCargo
         /// class of silence as `RPC_Damage` - though this one is the least silent probe on the list,
         /// because the registration is inside its own try/catch and says "registration failed" by
         /// name. The `ConsoleCommand` constructor is asked for as OUR call compiled it: three arguments
-        /// typed, nine optional ones filled in at our compile time, so an added or removed optional is
-        /// a `MissingMethodException` at the call and not a recompile.
+        /// typed, ten optional ones filled in at our compile time (1.0 slid `hideBehindDevCommands` in
+        /// before the fetcher), so an added or removed optional is a `MissingMethodException` at the
+        /// call and not a recompile.
         /// </summary>
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static int CheckConsole(List<string> bad)
@@ -855,7 +863,7 @@ namespace RavenIron.ValkyriesCargo
             Type term = typeof(Terminal);
             NeedMethod(term, "InitTerminal", Type.EmptyTypes, bad);
             NeedConstructor(typeof(Terminal.ConsoleCommand),
-                            new[] { typeof(string), typeof(string), typeof(Terminal.ConsoleEvent), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(bool),
+                            new[] { typeof(string), typeof(string), typeof(Terminal.ConsoleEvent), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(bool), typeof(bool),
                                     typeof(Terminal.ConsoleOptionsFetcher), typeof(bool), typeof(bool), typeof(bool) }, bad);
             Type args = typeof(Terminal.ConsoleEventArgs);
             NeedField(args, "Args", typeof(string[]), true, bad);
