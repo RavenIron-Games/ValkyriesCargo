@@ -116,6 +116,7 @@ ZNet.instance | assembly_valheim | call | everywhere
 ZNet.IsServer | assembly_valheim | call | CargoTick.Role, DealWire, AdminRpc
 ZNet.IsDedicated | assembly_valheim | fact | NOT used: HasRenderer is graphicsDeviceType, because the client reference assembly hardcodes this false
 ZNet.IsAdmin | assembly_valheim | call | AdminGate.Check - the ONE method naming the game's admin API; fail closed
+ZNet.ListContainsId | assembly_valheim | fact | private; 1.0: the PlatformUserID.FilterPlatformUserID match (V_/X_/S_/N_/A_, Splatform.dll) OVERRIDES the bare and Steam_ forms; the lists want V_<steamid>
 ZNet.GetUID | assembly_valheim | call | Patch_Terminal.Admin, CargoTick.PilotLine
 ZNet.GetWorldUID | assembly_valheim | call | MarketStore.Resolve and the delivery-id salt
 ZNet.GetTimeSeconds | assembly_valheim | call | the world clock the visit and the market drift count

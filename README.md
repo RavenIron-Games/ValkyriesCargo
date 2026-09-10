@@ -180,7 +180,7 @@ itself is what arms the lock.
 
 | Key | Default | Range | Meaning |
 |---|---|---|---|
-| `LockConfiguration` | `true` | | Server enforces every `Server.*` value on every client. Admins on `adminlist.txt` may still change them. |
+| `LockConfiguration` | `true` | | Server enforces every `Server.*` value on every client. Admins on `adminlist.txt` may still change them. On Valheim 1.0 the list wants the display id, `V_<steamid>` for Steam (`X_`, `S_`, `N_`, `A_` for the other platforms); the bare number and `Steam_<id>` no longer match. |
 | `Enabled` | `true` | | Roll visits at all. |
 | `RequireRested` | `true` | | A player must carry the Rested effect to be eligible. |
 | `MinComfortLevel` | `4` | 0-20 | Minimum comfort level (the number in the Rested tooltip) for eligibility. A bed, a fire and a roof give 3; 4 needs a chair or a banner. |

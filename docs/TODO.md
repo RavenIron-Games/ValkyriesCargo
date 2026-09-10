@@ -513,10 +513,16 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       clamp rebuilt on it; the descent slide removed, its bound proven); `ZRoutedRpc.Everybody` a const; three
       signatures grown by an optional parameter; `Version.c_*`. The offline probe tool reads `same build 1.0.7 …
       probes 19/19 ok, 8 not probeable` on both assemblies. Two edits in CargoMerchant.cs (his file) at the word.
-      PR open, UNSEEN. **Proof:** a fresh 1.0.7 dedicated server (a copy of the Steam install, a new world, port
-      2477, no Yggdrasil's Reckoning; Backpacks only once it has a 1.0 build) booting `built against Valheim 1.0.7
-      … running same build 1.0.7 … probes 19/19 ok, 8 not probeable` and `patches N/N applied`, then a forced
-      visit: the flight, the drop, a deal, a dismiss, the vanish. Then the 25 unread body changes, one by one.
+      PR #70 open. **SEEN 2026-09-10 07:11 to 07:48** on Storm10 (a fresh 1.0.7 dedicated server, port 2477, a new world,
+      our DLL + ServerDevcommands 1.110 only) with the 1.0.7 client: both boot lines `running same build 1.0.7 (net 39,
+      player 46, world 41); probes 19/19 ok, 8 not probeable`, `patches 18/18 applied`; a forced visit, the flight
+      dropped after 14.8 s, `2 reclaim(s) during the carry`, the walk-up, the terminal and the leash, two deals settled
+      line for line, the admin dismiss answered (`0 clock republish(es)`), the vanish, the reclaim; nothing thrown.
+      Merge on the word. Then the 25 unread body changes, one by one, and `Splatform.dll` into the decompile set
+      (`tools/decompile-builds.*` name three assemblies; `PlatformUserID` lives in the fourth now).
+      **1.0 finding:** `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want `V_<steamid>` (Steam V, Xbox X,
+      PlayStation S, Nintendo N, Game Center A; `ZNet.ListContainsId`'s filtered match overrides the old forms). Don's
+      other 1.0 servers need their lists rewritten; in CLAUDE.md's engine facts and the README.
       Open beside it: BepInExPack 5.4.2350 (the manifest now names it), Backpacks / ServerDevcommands / Infinity
       Hammer / World Edit Commands have no 1.0 builds yet; ServerSync upstream has no 1.0 commit (the vendored
       copy compiled clean and its three `Everybody` sites inline).

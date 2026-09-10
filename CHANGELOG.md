@@ -45,7 +45,12 @@ after the rest of this log was written.
   (EngineCheck reads the new names; EngineBaseline carries 1.0.7). One new body fact,
   `active_area_rule`; `libs/` is the 1.0.7 set and 0.221.12 is no longer a build target. The offline
   probe tool on both 1.0.7 assemblies: `same build 1.0.7 (net 39, player 46, world 41); probes 19/19 ok,
-  8 not probeable`. **Unseen on a machine: no 1.0 server has booted with it yet.**
+  8 not probeable`. **Seen on a machine 2026-09-10** on Storm10, a fresh 1.0.7 dedicated server, with the 1.0.7
+  client: both boot lines as above with `patches 18/18 applied`, a forced visit, the flight dropped after 14.8 s,
+  `2 reclaim(s) during the carry`, the walk-up, the terminal, two deals settled line for line, the admin dismiss
+  answered with `0 clock republish(es)`, the vanish with the smoke — nothing thrown on either side. Found on the way:
+  1.0's admin, permitted and banned lists want the display id `V_<steamid>` (a filter in the new Splatform.dll
+  overrides the old bare and `Steam_` match); the docs carry the table.
 
 ### 0.1.0-rc3 — cut 2026-09-08 evening, after the two-client session (PRs #54 to #68); a pre-release, uploaded to no store
 

@@ -23,7 +23,12 @@ measured in metres from the zone centre (`Core/ActiveArea.cs` is the rule; `Acti
 / `InventoryGui` / `Player.TakeInput` are UIFocus, `ZNetScene.CreateObject` / `CreateObjectsSorted`, `Heightmap.Biome`,
 `NpcTalk.Start`, `Character.Awake`, `ZSyncAnimation.Awake`, `Terminal.*`), and the flight on 1.0.7 once a server is up.
 Your box: `libs/` wants the 1.0.7 publicized assemblies (0.221.12 is no longer a build target); the manifest names
-BepInExPack 5.4.2350. No Yggdrasil's Reckoning on the 1.0 test server, Don's word.
+BepInExPack 5.4.2350. No Yggdrasil's Reckoning on the 1.0 test server, Don's word. **The branch was SEEN on 1.0.7 the
+same morning** (Storm10, a fresh 1.0.7 dedicated server; Don's client): the boot lines, a forced visit, the flight and the
+drop, `2 reclaim(s) during the carry`, the walk-up, two deals, the dismiss, the vanish — nothing thrown. **For your own
+servers: 1.0's `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want `V_<steamid>`** (a display-prefix filter
+in the new `Splatform.dll`; the old bare and `Steam_` forms refuse everyone on 1.0.7). Your P10a tooling should add
+`Splatform.dll` to the decompiled set; it is where `PlatformUserID` lives now.
 
 `main` is at 1dcf3ac (docs) on 55508d6 (code, PR #64): 0 warnings, **1885 checks**. Merged today at Don's word, in
 order: #57 the rotating shelf, #58 the item value table, #60 the terminal (count boxes, no pay mode, the 40 % black
