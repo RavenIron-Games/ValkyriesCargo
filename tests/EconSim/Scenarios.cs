@@ -164,7 +164,7 @@ namespace ValkyriesCargo.EconSim
 
             md.Line("Two hundred units offered in stacks of fifty (the vanilla stack for these rows, CATALOGUE section 3);");
             md.Line("when he refuses a stack the harness bisects for the largest count he will still take, so the table shows");
-            md.Line("exactly where each Want stops and why. He starts with the default purse of 800 coins and the shelf at target.");
+            md.Line("exactly where each Want stops and why. He starts with the SHIPPED purse of 1500 coins (`Server.PurseCoins`) and the shelf at target.");
             md.Blank();
 
             var rows = new List<string[]>();

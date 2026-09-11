@@ -37,8 +37,9 @@ Price at any moment: `base × clamp((target / max(1, stock))^0.35, 0.4, 3.0)`; h
 so the multiplier on this side never exceeds 1.0 (the Fair Market Act, §5): he can buy back below par when flooded,
 never above it when short. Between visits a Want's stock drifts back to target with a three-game-day half-life; a Ware's
 does not drift at all (`WareHalfLifeGameDays` 0, the owner's 2026-09-07 call: what he sells is what players sold him and
-what an admin's target says; `docs/ECONOMY-SIM.md` §10). Purse 800 coins
-plus half of last visit's takings.
+what an admin's target says; `docs/ECONOMY-SIM.md` §10). Purse 1500 coins (`Server.PurseCoins`,
+raised from 800 by the Fair Market Act decision, `docs/DECISIONS-WUBARRK.md` §2) plus half of last visit's
+takings, measured on the gross.
 
 ---
 

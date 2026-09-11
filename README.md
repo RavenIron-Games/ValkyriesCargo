@@ -5,15 +5,16 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.0-rc2`, first playable, still a pre-release.** Cut 2026-09-07 evening from `main`
-> after PR #53; the store zip and the bundle are attached to the release, and the upload is still held
-> back (see Status). That day the owner's Windows client ran nine visits against a dedicated server:
-> the flight and the drop within a second of the simulation every time, Ingvar in his own body, the
-> walk-up finishing (never on the first approach), the Cargo Terminal open on him, twenty deals settled
-> at the price curve, dismissals, and a relog mid-visit. Proven off-game across 1701 checks and a
-> ten-scenario economy simulation. Not yet seen: the vanish and the release over the drop point, the
-> callout bubble, the hover prompt, the two-client items, and every fix merged since the audit. One
-> defect is open: the pilot's client loses ownership of the merchant during the carry.
+> **Status: `v0.1.0-rc5`, a first playable, still a pre-release, uploaded to no store.** Cut 2026-09-11
+> from `main`, and **for Valheim 1.0.12 only**: 1.0.12 moved the network version to 40, so `v0.1.0-rc4`
+> (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The store zip and the body bundle are
+> attached to the release; the upload is the owner's step and has not happened.
+> Twenty-seven visits across five sessions on dedicated servers now stand behind it: the flight, the drop,
+> Ingvar in his own baked body, the walk-up, the Cargo Terminal open on him, deals at the price curve, the
+> vanish, dismissals, a relog mid-visit, a visit resumed across a restart, and the carry offset tuned live
+> while the bird was in the air. Proven off-game across 1987 checks and an eleven-scenario economy
+> simulation. **Never seen in a game: redelivery** — a player paying and the goods arriving after a lost
+> connection — which is proven off-game only; nor the two-client items.
 > `docs/PROOF-CLIENT.md` is the runbook and CLAUDE.md lists what remains. This file is the developer's
 > README; the store page is `HexiumDist/README.md`. **`v0.1.0-rc1` carries a blocker; do not install it.**
 
@@ -200,7 +201,7 @@ Requires [BepInExPack Valheim](https://thunderstore.io/c/valheim/p/denikson/BepI
 and nothing else: no Jotunn, no JSON library (the BarrkBOT export writes its files through the mod's
 own `Core/Json.cs`). `manifest.json`'s dependency list is that one entry.
 
-Built against the assemblies of Valheim **1.0.7** (the install of 2026-09-09); that install's
+Built against the assemblies of Valheim **1.0.12** (the install of 2026-09-11); that install's
 `UnityPlayer.dll` reports **Unity 6000.0.75**, which is the Editor version any asset bundle for
 this mod must be built with. 0.221.12 is no longer a build target (Steam's `default_pre1_0` branch
 keeps it; `v0.1.0-rc3` was the last build for it).
@@ -220,7 +221,7 @@ itself is what arms the lock.
 
 | Key | Default | Range | Meaning |
 |---|---|---|---|
-| `LockConfiguration` | `true` | | Server enforces every `Server.*` value on every client. Admins on `adminlist.txt` may still change them. On Valheim 1.0 the list wants the display id, `V_<steamid>` for Steam (`X_`, `S_`, `N_`, `A_` for the other platforms); the bare number and `Steam_<id>` no longer match. |
+| `LockConfiguration` | `true` | | Server enforces every `Server.*` value on every client. Admins on `adminlist.txt` may still change them. On Valheim **1.0.12** the bare number, `Steam_<id>` and the display id `V_<steamid>` all admit, so a list from any era works. On **1.0.7 only**, the display id was the one that matched and a list holding the older forms admitted nobody: 1.0.7 ended `ZNet.ListContainsId` with `flag =`, which overwrote the earlier match, and 1.0.12 made it `flag \|=`. The list reloads on file change either way, with no restart. |
 | `Enabled` | `true` | | Roll visits at all. |
 | `RequireRested` | `true` | | A player must carry the Rested effect to be eligible. |
 | `MinComfortLevel` | `4` | 0-20 | Minimum comfort level (the number in the Rested tooltip) for eligibility. A bed, a fire and a roof give 3; 4 needs a chair or a banner. |

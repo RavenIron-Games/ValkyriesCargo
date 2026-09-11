@@ -78,7 +78,7 @@ Section 10 has the same run at every half-life from half a day to never, which i
 
 Two hundred units offered in stacks of fifty (the vanilla stack for these rows, CATALOGUE section 3);
 when he refuses a stack the harness bisects for the largest count he will still take, so the table shows
-exactly where each Want stops and why. He starts with the default purse of 800 coins and the shelf at target.
+exactly where each Want stops and why. He starts with the SHIPPED purse of 1500 coins (`Server.PurseCoins`) and the shelf at target.
 
 | Want | base | target / max | units he took | he paid, a unit | coins to the player | purse left | shelf | first refusal | stopped by |
 |---|---|---|---|---|---|---|---|---|---|
@@ -307,7 +307,7 @@ price changed); coins short; purse empty. Each row below is one deal against a f
 | a refused deal moves no stock and no purse | unchanged | unchanged | PASS |
 | a refused deal does not spend its nonce | reusable | reusable | PASS |
 | an accepted deal always carries a delivery id | always | always | PASS |
-| every answer above is one of the 16 DealReason tokens | always | always | PASS |
+| every answer above is one of the 18 DealReason tokens | always | always | PASS |
 
 All 29 checks **pass**, and no input threw. Two answers are worth a second look:
 
