@@ -2981,6 +2981,16 @@ namespace ValkyriesCargo.Tests
             Equal(0.3f, CarryOffset.PrefabY, "0.3 below the talon");
             Equal(0.4f, CarryOffset.PrefabZ, "and 0.4 behind it");
 
+            // What ships, and that it is a real answer rather than "follow the prefab" spelled differently.
+            float dx, dy, dz;
+            Check(CarryOffset.TryParse(CarryOffset.TunedDefault, out dx, out dy, out dz) && dx == 0f && dy == 0f && dz == 0f,
+                  "the shipped default parses, and it is his feet on the talon");
+            Check(CarryOffset.TunedDefault != CarryOffset.FollowThePrefab,
+                  "and it is NOT the empty string: the two mean different things");
+            CarryOffset.Resolved shipped = CarryOffset.Resolve(CarryOffset.TunedDefault, 0f, 0.3f, 0.4f);
+            Check(shipped.FromConfig && shipped.Y == 0f && shipped.Problem == null,
+                  "the shipped default wins over the prefab, rather than falling through to it");
+
             // The text form, both ways, invariant culture (a comma decimal point would eat the separator).
             Equal("0, 0.3, 0.4", CarryOffset.Format(0f, 0.3f, 0.4f), "the text form is the three numbers, comma-separated");
             float x, y, z;

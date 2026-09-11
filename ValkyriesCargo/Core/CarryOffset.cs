@@ -30,6 +30,16 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string FollowThePrefab = "";
 
         /// <summary>
+        /// What ships: his feet ON the talon. TUNED ON A MACHINE 2026-09-11 (Storm10, 1.0.12, visits 2 to 4),
+        /// the owner walking it down live from Configuration Manager while the bird was in the air -
+        /// (0, 0.3, 0.4) the prefab's, then (0, 0.2, 0.25), then this, each "needs to be closer". The prefab's
+        /// own numbers are not wrong, they are for the intro's full-height PLAYER; Ingvar is about 1.37 m and
+        /// the same offset reads as a merchant dangling under the talons rather than held in them.
+        /// `FollowThePrefab` is still honoured and is one edit away, for anyone who wants vanilla's framing.
+        /// </summary>
+        public const string TunedDefault = "0, 0, 0";
+
+        /// <summary>
         /// The bound on one component, metres. A guard on an edited config, not a number anyone will
         /// reach: the talon is on a bird, and past a few metres he is not being carried by it any more,
         /// he is being towed beside it. Out of range is REFUSED whole rather than clamped, because a
