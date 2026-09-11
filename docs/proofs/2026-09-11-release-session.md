@@ -139,7 +139,7 @@ ran to, and `docs/RELEASE.md` §4 should be rewritten to say so rather than bein
 
 ### 11b — the non-admin refusal: **PROVEN 09:44**
 
-His two ids were taken out of `Storm10\savesdminlist.txt` while he stayed connected, Wu'barrk's two left
+His two ids were taken out of `Storm10\saves\adminlist.txt` while he stayed connected, Wu'barrk's two left
 in place so the list was live and valid and he was simply not on it. `cargo visit`, twice:
 
 ```
