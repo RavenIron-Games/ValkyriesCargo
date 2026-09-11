@@ -137,6 +137,20 @@ twenty-six visits, and **three** of the never-run items earn their place because
 player would feel — the version wall, redelivery, and the non-admin refusal. That is the bar this session
 ran to, and `docs/RELEASE.md` §4 should be rewritten to say so rather than being quietly skipped.
 
+### Where the evidence lives, and one thing this session got wrong about that
+
+**BepInEx overwrites `LogOutput.log` on every boot and keeps no rotation.** The server was restarted at
+09:57 to clear a PlayFab transport failure, which destroyed the log that held the 09:44 non-admin proof
+a quarter of an hour after it was made. An adversarial check before the rc5 cut found the citation
+below pointing at a file that no longer contains it, and was right to.
+
+The lines are preserved in **`2026-09-11-release-session.log.txt`** beside this document, copied from the
+session transcript where they appear in the output of the commands that read the live log at the time.
+The version-wall lines in that same file are still on disk and can be read there directly.
+
+**The rule this earns:** a proof that lives only in a log the next restart overwrites is not preserved.
+Copy the lines into a file beside the proof document on the day, before anything restarts.
+
 ### 11b — the non-admin refusal: **PROVEN 09:44**
 
 His two ids were taken out of `Storm10\saves\adminlist.txt` while he stayed connected, Wu'barrk's two left

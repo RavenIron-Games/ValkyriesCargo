@@ -1,0 +1,67 @@
+Storm10 log excerpt - the release session of 2026-09-11 (Valheim 1.0.12)
+=======================================================================
+
+WHERE THESE LINES COME FROM, AND WHY THIS FILE EXISTS.
+
+BepInEx overwrites BepInEx\LogOutput.log on every boot and keeps no rotation. The server was
+restarted at 09:57 that morning to clear a PlayFab transport failure, so the boot that carried
+the 09:44 non-admin proof was overwritten a quarter of an hour after it was made. The proof's
+own evidence was destroyed by the fix for an unrelated problem.
+
+The 09:44 lines below are therefore copied from the session transcript, where they appear in the
+output of the commands that read the live log at the time. The 09:58 and 10:01 lines below are
+still in LogOutput.log on disk and can be read there directly.
+
+THE LESSON, worth more than the excerpt: a proof that lives only in a log the next restart
+overwrites is not preserved. Copy the lines into a file beside the proof document on the day,
+before anything restarts.
+
+
+ITEM 11b - A NON-ADMIN'S `cargo visit` IS REFUSED  (09:44, from the transcript)
+------------------------------------------------------------------------------
+
+The owner's two ids were taken out of Storm10\saves\adminlist.txt while he stayed connected.
+Wu'barrk's two were left in, so the list was live and valid and the owner was simply not on it.
+`cargo visit`, twice:
+
+  [Info   : Unity Log] 09/11/2026 09:44:02: Steam_76561198392625778/Nomadtest (-29, 10, 79): cargo visit
+  [Info   :Valkyrie's Cargo] roll: no eligible player: 1 on cooldown
+  [Warning:Valkyrie's Cargo] refused VCargo_admin visit from Nomadtest (-294193401): not an admin
+  [Info   : Unity Log] 09/11/2026 09:44:23: Steam_76561198392625778/Nomadtest (-29, 10, 79): cargo visit
+  [Warning:Valkyrie's Cargo] refused VCargo_admin visit from Nomadtest (-294193401): not an admin
+
+Vanilla's own routing line above each refusal shows the command arriving from
+Steam_76561198392625778/Nomadtest - the same account the gate had admitted a minute earlier. The
+client saw `cargo: not an admin (the server's adminlist.txt decides)`. The list was restored at
+once and SyncedList reloaded both ways with no restart, which is the fact that made this provable
+without a second account.
+
+(-294193401 is a per-world-join session uid, not an identity. A refusal from the same account on
+2026-09-10 carries 541477362 for the same reason.)
+
+
+ITEM 3 - THE VERSION WALL  (10:01, still on disk in LogOutput.log)
+------------------------------------------------------------------
+
+A 0.1.1 client DLL was installed on the CLIENT only, the server left on 0.1.0.
+
+First, the SAME-VERSION join three minutes earlier, which is the control:
+
+  307:[Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 to the client.
+  308:[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 from the client.
+  311:[Info   : Unity Log] 09/11/2026 09:58:36: Network version check, their:40, mine:40
+
+Then the wall:
+
+  376:[Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 to the client.
+  377:[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1 from the client.
+  380:[Warning: Unity Log] Disconnect: The client (Steam_76561198392625778) doesn't have the correct Valkyrie's Cargo version 0.1.0
+  381:[Info   : Unity Log] 09/11/2026 10:01:37: RPC_Disconnect
+
+The owner confirmed Valheim's own connection dialog carried ServerSync's text naming the mod and
+both versions. The matching 0.1.0 build was put back afterwards and both sides verified
+byte-identical.
+
+Line 377 against line 308 is the discriminator the README's troubleshooting section rests on: a
+REAL version wall shows a different number on the `Received ... version` line. A PlayFab transport
+failure shows the SAME number there, accepts the peer, and then loses the socket.

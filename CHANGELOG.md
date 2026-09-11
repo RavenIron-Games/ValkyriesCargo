@@ -41,9 +41,11 @@ after the rest of this log was written.
   `flag |=`.** The earlier match survives, all three forms admit, and a list that 1.0.7 broke works again
   with no edit. Corrected in `AdminGate`, the surface and CLAUDE.md, because a wrong recorded engine fact
   is worse than none.
-  The other three changed bodies are benign: `Terminal.InitTerminal` gained a vanilla command and dropped
-  a `HideBehindDevCommands` gate, and `TerrainComp.PaintCleared` and `Destructible.Destroy` each gained a
-  null guard.
+  The four changed bodies, from the sweep itself: `ZNet.RPC_PeerInfo` and `ZNet.ListContainsId` are the two
+  above; `Terminal.InitTerminal` gained a vanilla command, and `Terminal.ConsoleCommand` moved its
+  `HideBehindDevCommands` test out of `IsValid` and into `ShowCommand`, which changes what a non-admin sees
+  listed and not what the gate admits. Our console registers with neither `isCheat` nor `HideBehindDevCommands`,
+  so none of it reaches us.
 
 - **`Server.CarryOffset`: how close he hangs to the talons (branch `a/carry-offset`, 2026-09-11, 1984 checks).**
   Asked for on the screen: Ingvar hangs further under the Valkyrie than he should. The number was never ours to
