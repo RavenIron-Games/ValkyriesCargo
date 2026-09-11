@@ -1,6 +1,7 @@
 # Valkyrie's Cargo
 
 A Valheim mod by [Raven Iron](https://github.com/RavenIron).
+**Raven Iron is NomadicWar & Wu'barrk** - both founders, both designers of this mod.
 
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
@@ -318,9 +319,14 @@ the answer comes back on `VCargo_reply` and prints in the caller's console.
 
 ## Credits
 
-Designed with **Thorium Wu'barrk**, who also built Ingvar's model (`models/ingvar.fbx`) and wrote the
-terminal's look: `Libs/SharedUI/GiltFrameTheme.cs` and `Libs/SharedUI/UIFocus.cs` are his VikingOS
-0.9.8 shared source, MIT, vendored here and never edited.
+**Raven Iron is NomadicWar & Wu'barrk.** Both founders, both designers of this mod.
+
+- **NomadicWar** - co-founder, Raven Iron. Design; the market and the economy, the visit director,
+  persistence and the server side.
+- **Wu'barrk** (Thorium Wu'barrk) - co-founder, Raven Iron. Design; Ingvar himself
+  (`models/ingvar.fbx`: model, rig, texture and animation), the Cargo Terminal, and the interface
+  work beneath it: `Libs/SharedUI/GiltFrameTheme.cs` and `Libs/SharedUI/UIFocus.cs` are his VikingOS
+  0.9.8 shared source, MIT, vendored here and never edited.
 
 **ServerSync** is blaxxun's `ConfigSync.cs`, MIT-0, compiled in as shared source.
 
