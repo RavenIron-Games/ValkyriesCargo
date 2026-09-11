@@ -921,6 +921,28 @@ The backpack on his body is Wu'barrk's bake.
 
 ## What to verify in-game
 
+**THE BAR MOVED, 2026-09-11 (the owner).** This list was written when the mod had never had a visit; it has
+now had twenty-seven. He cut the release bar to **three** items - the version wall (3), redelivery (14) and
+the non-admin refusal (11b) - because each of those three has a consequence a player would feel, and the
+rest are data gathering, cosmetic edges, or somebody else's integration. That decision is written into
+`docs/RELEASE.md` §4 rather than left as a rule nobody follows. **Of the three: 3 and 11b are PROVEN
+(2026-09-11, Storm10, Valheim 1.0.12); 14 is SKIPPED and stays proven off-game only** - the window between
+a deal's answer and its ack was measured and cannot be hit from outside the client process (a watcher fired
+50 ms after the deal line and the sidecar still came out with no `owed` row). The session record, with every
+line, is `docs/proofs/2026-09-11-release-session.md`. The rest of this list stands as the eventual
+completeness goal, not as the ship gate.
+
+**Two findings from that session, both about reading a log rather than about the mod:**
+- **A crossplay server prints two join codes and only the second is real.** `Session "<name>" registered
+  with join code <n>` is the same number on every boot and nothing can join with it; `Session "<name>" with
+  join code <n> ... is active with N player(s)` is the live one. This cost the session two failed joins.
+- **A PlayFab transport failure is shown to the player as a version mismatch.** Twice the server accepted
+  the handshake (`Network version check, their:40, mine:40`, `Server: New peer connected,sending global
+  keys`, ServerSync `Received Valkyrie's Cargo version 0.1.0 and minimum version 0.1.0 from the client`)
+  and then lost the socket in the same second (`Failed to send, suspend TX on playfab/... while trying to
+  reconnect`), and the client said "incompatible version". The discriminator is the `Received ... version`
+  line: a REAL wall shows a different number there. In the README's troubleshooting section since.
+
 **An item is proven by its own pasted log line and a date, and by nothing else.** Done so far: **item 1**
 (2026-09-06, headless, in Status); **items 2 and 6** (the first client run, 2026-09-07, below); **item 19**
 (the same day, once the bundle existed); **item 20 in part** — he stands textured, upright, feet on the ground,
@@ -941,8 +963,15 @@ section (c) lists what only a screen can settle.
    `BepInEx\plugins\`; a headless boot shows the loaded line with `patches N/N applied, catalogue=72 entries` (N is the number of patch CLASSES since issue #31; the old `patches=10` counted methods),
    ServerSync's RPC registration, and `role: dedicated server`.
 2. **Boot line, client:** same line with `renderer=True`; `cargo status` answers in the console.
-3. **Version wall:** a client on another version (bump the csproj, rebuild, install on one side only) is
-   refused with ServerSync's message naming the mod and both versions.
+3. ~~**Version wall**~~ **DONE 2026-09-11 10:01 (Storm10, Valheim 1.0.12).** A 0.1.1 client DLL was built
+   and installed on the CLIENT only, the server left on 0.1.0. The join was refused and the server log
+   carries the pair that settles it:
+   `Received Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1 from the client.` then
+   `Disconnect: The client (Steam_76561198392625778) doesn't have the correct Valkyrie's Cargo version 0.1.0`
+   and `RPC_Disconnect`. The owner confirmed Valheim's own connection dialog carried ServerSync's text
+   naming the mod and both versions. The matching 0.1.0 build was put back and both sides verified
+   byte-identical. As written: a client on another version is refused with ServerSync's message naming the
+   mod and both versions.
 4. **Locked config:** a client edits `MinComfortLevel` locally while connected; `cargo status` still shows
    the server's value and `following the server`.
 5. **`cargo prefab Valkyrie`, `cargo prefab Dverger`, `cargo prefab odin`, `cargo prefab Haldor`:** paste
@@ -986,7 +1015,14 @@ P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormT
     screen: "vanish looked great."** The departure is watched and right. As
     written: after 300 s the server log shows `visit #1 ended: timer; takings 0 coins`, the banner
     "Ingvar has gone back to the mist" shows, `cargo status` shows `visit: none; last #1 ended: timer`.
-11. **`cargo dismiss`** — admin half **DONE 2026-09-07**: `visit #2 ended: admin Nomadtest; takings 0 coins, …`,
+11. **`cargo dismiss`** — **BOTH HALVES DONE**; the non-admin half **2026-09-11 09:44 (Storm10)**: the
+    owner's two ids were taken out of `saves\adminlist.txt` while he stayed connected, Wu'barrk's two left
+    in so the list was live and valid and he simply was not on it. `cargo visit` twice gave
+    `refused VCargo_admin visit from Nomadtest (-294193401): not an admin` on the server and
+    `cargo: not an admin (the server's adminlist.txt decides)` on his client, with vanilla's routing line
+    showing the command arriving from the same `Steam_76561198392625778/Nomadtest` the gate had admitted a
+    minute earlier. **`SyncedList` reloaded both ways with no restart**, which is what made this provable
+    without a second account. The admin half **DONE 2026-09-07**: `visit #2 ended: admin Nomadtest; takings 0 coins, …`,
     `visit #4 ended: admin Nomadtest`, client `server answered: cargo: visit #4 dismissed (admin Nomadtest)`; the
     non-admin half needs a second account. As written: ends it early with `ended: admin <name>`; a non-admin's `cargo visit` is answered
     `not an admin` and the server log says `refused VCargo_admin visit from <name>`.
@@ -1004,7 +1040,13 @@ P6, the wire, with a visit running (`cargo visit` first):
     `DONE w...-1-1: +2 Iron, -N coins`; the inventory changed by exactly that; the server log shows
     `deal w...-1-1 with <name>: sold 2 Iron at N, coins -2N to the player; purse ...`; `cargo stock Iron`
     shows stock 18 and a higher price on EVERY machine. `cargo deal sell Wood 10` the other way.
-14. **The ledger:** `cargo status` on the server shows `owed ledger 0 row(s)` after the ack arrives; log out
+14. **The ledger** — **NOT PROVEN IN A GAME, and skipped at the owner's word 2026-09-11.** The window
+    between a deal's answer and its ack was measured on Storm10: a watcher on the server log fired 50 ms
+    after `deal wffffffffa3c7dd22-7-1 with Nomadtest: sold 30 Amber at 7` and killed the client, and the
+    sidecar still came out with **no `owed` row and the post-deal purse** - the client had applied and
+    acked first. It cannot be hit from outside the client process. Redelivery is therefore proven
+    **off-game only** (`Core/OwedLedger.cs`), and any release note must say so. As written:
+    `cargo status` on the server shows `owed ledger 0 row(s)` after the ack arrives; log out
     the instant after a deal's answer (before the ack), log back in: the server log shows
     `VCargo_claim from <name>: redelivered 1 owed deal(s)` and the client shows `delivery ... applied` or, if the
     inbox already had it, nothing twice.

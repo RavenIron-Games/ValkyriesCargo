@@ -26,7 +26,24 @@ a settled one; **the owner's word on 2026-09-08 after the day's five merges: no 
 Entries are in build order, except the five sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
 
-### Since 0.1.0-rc4 — unreleased
+### 0.1.0-rc5 — cut 2026-09-11, the Valheim 1.0.12 build; a pre-release, uploaded to no store
+
+- **Valheim 1.0.12, two days after 1.0.7 (2026-09-11).** Swept both axes with our own diff-engine over
+  freshly decompiled trees: 273 of 278 surface rows unchanged, 4 bodies changed, 1 signature changed,
+  none gone, client and server agreeing exactly. **No mod code needed changing.** The one signature
+  change is the NETWORK VERSION, 39 to 40, and it is the game's own wall: `ZNet.RPC_PeerInfo` refuses
+  any peer whose number differs, so **`v0.1.0-rc4` cannot connect to a 1.0.12 server or client at all**
+  and this cut replaces it. Player 46 and World 41 did not move, so no save migrates. `EngineBaseline`
+  and its tests moved together, as they must.
+  **And a fact we had recorded that is now false:** on 1.0.7 `ZNet.ListContainsId` ended with
+  `flag = list.Contains(FilterPlatformUserID(id))`, so the filtered `V_` match OVERWROTE an earlier bare
+  or `Steam_` hit and an admin list holding the older forms stopped admitting anyone. **1.0.12 made it
+  `flag |=`.** The earlier match survives, all three forms admit, and a list that 1.0.7 broke works again
+  with no edit. Corrected in `AdminGate`, the surface and CLAUDE.md, because a wrong recorded engine fact
+  is worse than none.
+  The other three changed bodies are benign: `Terminal.InitTerminal` gained a vanilla command and dropped
+  a `HideBehindDevCommands` gate, and `TerrainComp.PaintCleared` and `Destructible.Destroy` each gained a
+  null guard.
 
 - **`Server.CarryOffset`: how close he hangs to the talons (branch `a/carry-offset`, 2026-09-11, 1984 checks).**
   Asked for on the screen: Ingvar hangs further under the Valkyrie than he should. The number was never ours to

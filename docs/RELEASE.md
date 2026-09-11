@@ -57,19 +57,41 @@ plugins/ValkyriesCargo.dll
 
 ## 4. What "release-ready" means
 
-Packaging cleanly is not the bar. A release is ready when:
+Packaging cleanly is not the bar.
 
-- **Every item in `CLAUDE.md` "What to verify in-game" has been done** — on a screen, with a client,
-  against a dedicated server, not just headless. A clean build proves nothing about a game member.
+**The bar was every item in CLAUDE.md's "What to verify in-game". The owner cut it to three on
+2026-09-11, and this section records that decision rather than leaving a rule nobody follows.** The
+reasoning, in his words: the list was written when the mod had never had a visit, and it has now had
+twenty-seven across five sessions with deals, the terminal, the flight, the vanish, a resume across a
+restart and a live config tune. Re-running the rest is ceremony. **Three of the never-run items earn
+their place, because each has a consequence a player would feel:**
+
+1. **The version wall.** A store release means strangers on mismatched versions; a wrong gate hands
+   them a confusing failure instead of a clear one.
+2. **Redelivery.** It is the one path where a player can pay and not receive.
+3. **The non-admin refusal.** It is a trust boundary on a public server.
+
+What was dropped, and why it is safe to drop: the prefab dumps are data gathering for later work, not
+a correctness test; the flight edges and ghost mode fail cosmetically at worst, because the merchant is
+immortal either way; the two unseen refusal codes are the same shape as one already proven; and
+BarrkBOT reading the export is a consumer integration, not this mod's correctness.
+
+So a release is ready when:
+
+- **Those three have been done** — on a screen, with a client, against a dedicated server — **or the
+  release says plainly which was not and why.**
 - **Whoever saw each one pasted the exact log lines into `CLAUDE.md` "Status"**, with the date and
   the server. Not a summary: the line.
 - **`README.md`'s Status section has been rewritten to match**, and says plainly what is built, what
-  is proven, and what has never been seen. As long as anything on that list is unproven, the "Status:
-  not yet playable" block stays where it is.
+  is proven, and what has never been seen.
 - **`CHANGELOG.md` has an entry for everything merged since the last release**, in build order, with
   its check count.
 
-Until then this is a source-available work in progress, not a store release.
+**Where the three stand (2026-09-11, Storm10, Valheim 1.0.12, `docs/proofs/2026-09-11-release-session.md`):**
+the version wall and the non-admin refusal are PROVEN with their lines; redelivery is SKIPPED at the
+owner's word, because the window between a deal's answer and its ack was measured and cannot be hit from
+outside the client process, and it stays proven off-game only. A release note that implies otherwise is
+wrong.
 
 ## 5. The Hexium upload — the owner's step
 

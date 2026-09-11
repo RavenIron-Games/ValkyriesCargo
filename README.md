@@ -51,8 +51,28 @@ from our own interact handler. Nothing happens on command except an admin's `car
 
 ## Status
 
-Truth pass against `main` at the `v0.1.0-rc2` cut (after PR #53), 2026-09-07 evening. The
-log lines below are the ones recorded in `CLAUDE.md` "Status" by whoever saw them.
+**Truth pass against `main` at the `v0.1.0-rc5` cut, 2026-09-11.** This mod runs on **Valheim 1.0.12**
+and on nothing else: 1.0.12 moved the network version to 40, so a build for 1.0.7 or 0.221.12 cannot
+connect at all. `v0.1.0-rc4` is a 1.0.7 build and is superseded; `v0.1.0-rc3` remains the last 0.221.12
+build.
+
+**What has been seen on a machine.** Twenty-seven visits across five sessions on dedicated servers with a
+real client: the flight and the drop, Ingvar in his own baked body, the walk-up, the terminal opened on
+the merchant, deals with the price curve and the Fair Market Act correct to the coin, the arrival banner,
+the vanish, dismissals, a relog mid-visit, a visit resumed across a restart, the rotating shelf, the
+backpack multiplier, and on 2026-09-11 the carry offset tuned live from Configuration Manager while the
+bird was in the air. Off-game: 1987 checks, 0 warnings.
+
+**What is proven and what is not, at this cut** (`docs/proofs/2026-09-11-release-session.md`). The
+release bar is the three items `docs/RELEASE.md` §4 names. The **version wall** and the **non-admin
+refusal** are proven with their lines. **Redelivery — a player paying and the goods arriving after a lost
+connection — is proven off-game only and has never been seen in a game**, because the window between a
+deal's answer and its acknowledgement cannot be hit from outside the client process. Also never watched
+with two clients: the merchant walking off while two players trade, and the "on every machine" halves of
+the deal items.
+
+**Still a first playable, not a settled one.** The log lines below are the ones recorded in `CLAUDE.md`
+"Status" by whoever saw them.
 
 ### Built and proven headless, on a dedicated server
 
@@ -145,6 +165,26 @@ succeed, a vanish, or two screens at once, and one carry in nine lost him. That 
 `v0.1.0-rc2` and not yet a store upload: `docs/RELEASE.md` step 5 holds the upload back until the
 whole loop, glide to vanish, is seen.
 ---
+
+## If a client is refused with a version message
+
+**Read the server log before believing it.** ServerSync fails closed when the version exchange does not
+complete, and a transport failure looks exactly like a version mismatch from the client's side. Both were
+seen on 2026-09-11 within an hour of each other, and the server log tells them apart in one line:
+
+- **A real mismatch** — the server received a version different from its own, and says so:
+  `Received Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1 from the client.` followed by
+  `Disconnect: The client (...) doesn't have the correct Valkyrie's Cargo version 0.1.0`. Install the same
+  build on both sides.
+- **A transport failure wearing the same message** — the server received the SAME version, accepted the
+  peer (`Network version check, their:40, mine:40`, `Server: New peer connected,sending global keys`) and
+  then lost the socket in the same second: `Failed to send, suspend TX on playfab/... while trying to
+  reconnect`. Nothing is wrong with the mod. On crossplay this clears when the server is restarted, which
+  releases the PlayFab party network.
+
+**And on a crossplay server, read the join code off the right line.** The log prints two:
+`Session "<name>" registered with join code <n>` is not a code anyone can join with and is the same number
+on every boot; `Session "<name>" with join code <n> ... is active with N player(s)` is the live one.
 
 ## Installing
 
