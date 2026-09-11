@@ -34,13 +34,15 @@ next login, never twice.
 on a Dverger clone whose renderers are switched off (`Server.CustomBody` puts the stand-in back). **Later:** the horn,
 a barter basket, rare rotating stock, localisation.
 
-**Where it is, 2026-09-07.** Every package is merged; `main` builds clean at 1301 off-game checks and **`v0.1.0-rc1`
-is tagged and uploaded to no store.** Exactly **one live visit has ever been run**, on Wu'barrk's client: Ingvar
-landed in his own body, then gave up walking after 20 s and called out from where he stood. The glide, the drop, the
-walk-up completing, the terminal on a real visit, a trade and the vanish have never been watched, and no two-client
-item has run. Seeing the loop once, end to end, is what gates the store. Tracker: `TODO.md`.
+**Where it is, 2026-09-11.** Every package is merged; `main` builds clean at 1987 off-game checks and **`v0.1.0-rc5`
+is tagged and published to Hexium** — the first cut to reach a store. It is the **Valheim 1.0.12** build and runs on
+nothing else. **Twenty-seven live visits** have been run across five sessions on dedicated servers: the flight, the
+drop, Ingvar in his own baked body, the walk-up, the terminal on a real visit, deals at the price curve, the vanish,
+a relog mid-visit, a visit resumed across a restart, and the carry offset tuned live while the bird was in the air.
+Never seen in a game: **redelivery after a lost connection**, proven off-game only, and every two-client item.
+Tracker: `TODO.md`; the bar that was shipped against is `RELEASE.md` §4.
 
-**Settled facts.** Valheim runs on Unity 6000.0.61f1, so bundles are built with that Editor. ServerSync broadcasts on
+**Settled facts.** Valheim 1.0 runs on Unity 6000.0.75, so bundles are built with that Editor (it was 6000.0.61f1 on 0.221.12). ServerSync broadcasts on
 change only. Comfort never leaves the client, so the client reports it on its own ZDO. The model is rigged, baked and
 walking: six clips, 24 bones, played by name through a `PlayableGraph` with no AnimatorController in the bundle.
 

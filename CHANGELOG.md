@@ -26,7 +26,7 @@ a settled one; **the owner's word on 2026-09-08 after the day's five merges: no 
 Entries are in build order, except the five sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
 
-### 0.1.0-rc5 — cut 2026-09-11, the Valheim 1.0.12 build; a pre-release, uploaded to no store
+### 0.1.0-rc5 — cut 2026-09-11, the Valheim 1.0.12 build; **the first cut to reach a store**
 
 - **Valheim 1.0.12, two days after 1.0.7 (2026-09-11).** Swept both axes with our own diff-engine over
   freshly decompiled trees: 273 of 278 surface rows unchanged, 4 bodies changed, 1 signature changed,

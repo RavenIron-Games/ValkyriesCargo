@@ -24,6 +24,18 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ## Status
 
+**SHIPPED 2026-09-11. `v0.1.0-rc5` is published to Hexium — the first Valkyrie's Cargo cut to reach a store.**
+The owner uploaded it himself; the credentials are his and that does not change (`docs/RELEASE.md` §5). It is the
+**Valheim 1.0.12** build and runs on nothing else: 1.0.12 moved the network version to 40, so rc4 (1.0.7) and rc3
+(0.221.12) cannot connect at all. Main `2731b8c`, 1987 off-game checks, 0 warnings. The GitHub release keeps its
+pre-release flag, because 0.1.0 is a first playable and the page says which of its paths are unproven.
+**The release bar was three items, not twenty-six** (the owner, the same day): the version wall and the non-admin
+refusal are PROVEN with their lines; **redelivery is proven off-game only and has never been seen in a game**, and
+every document that mentions it says so. The record is `docs/proofs/2026-09-11-release-session.md` with its log
+excerpt beside it, and the reasoning is `docs/RELEASE.md` §4.
+
+The paragraphs below are the history of how it got there.
+
 **Main after the 0.1.0 integration (PR #22) and the API-reference snapshot (PR #17), 2026-09-07. Builds clean
 (0 warnings), 1301/1301 off-game checks, packages (`dist\RavenIronStudios-ValkyriesCargo-0.1.0.zip`, right
 layout); `v0.1.0-rc1` is tagged with the store zip attached to the release and uploaded to NO store — superseded the same evening by `v0.1.0-rc2` (main `e4ee83c`, 1701 checks, the zip and the bundle attached, still a pre-release, still no store; the RC2 paragraph after VISIT 9).** Every
