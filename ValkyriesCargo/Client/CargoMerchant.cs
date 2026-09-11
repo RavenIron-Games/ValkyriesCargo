@@ -466,7 +466,7 @@ namespace RavenIron.ValkyriesCargo.Client
             {
                 CargoFlight flight = bird.GetComponent<CargoFlight>();
                 _pin = flight != null ? flight.AttachPoint : bird.transform;
-                _pinOffset = flight != null ? flight.AttachOffset : new Vector3(0f, 0.3f, 0.4f);
+                _pinOffset = flight != null ? flight.AttachOffset : CarryPinLive.Read(CarryPinLive.PrefabFallback);
                 Pinned = MerchantPlan.ShouldPin(_state, true);
                 _flyingCarrier = flight != null && flight.Flying;   // D5: only the pilot's client claims
             }

@@ -33,6 +33,15 @@ were read from this side, all holding — `docs/engine-sweeps/2026-09-10-1.0.7-b
 `GameCamera.UpdateMouseCapture` now goes through `ZCursor`, which UIFocus's cursor handling should be re-read against
 (it worked on Storm10). `v0.1.0-rc4` is the 1.0.7 cut; rc3 stays the last 0.221.12 build.
 
+**Two lines in your files, 2026-09-11, at Don's word and flagged rather than assumed.** He asked on the screen to
+bring Ingvar closer to the talons; the number was the `Valkyrie` prefab's own `m_attachOffset` and nothing of ours
+could reach it. `Server.CarryOffset` is the knob (synced and locked - the pin runs on every machine that has him
+instanced), the rule is pure in `Core/CarryOffset.cs` and the read is `CarryPinLive.Read`, both mine. Yours changed
+only where the number comes from: `CargoFlight.AttachOffset` and the no-flight fallback in
+`CargoMerchant.ResolveCarrier` call `CarryPinLive.Read(...)` instead of naming `(0, 0.3, 0.4)`. Empty config = the
+prefab's own = exactly what your code did before, so nothing moves until Don sets a value. Say the word if you want
+it shaped differently in your files - it is one line each to move.
+
 `main` is at 1dcf3ac (docs) on 55508d6 (code, PR #64): 0 warnings, **1885 checks**. Merged today at Don's word, in
 order: #57 the rotating shelf, #58 the item value table, #60 the terminal (count boxes, no pay mode, the 40 % black
 backdrop), #61 the busy hold and the hover localise (your items 2 and 3 from #59, in your files with his word),

@@ -59,6 +59,7 @@ namespace ValkyriesCargo.Tests
             GhostTests();
             ZoneOwnershipTests();
             ActiveAreaTests();
+            CarryOffsetTests();
             JsonTests();
             SessionRowTests();
             BodyMotionTests();
@@ -2969,6 +2970,68 @@ namespace ValkyriesCargo.Tests
 
             // And the drop, which is where a healthy visit ends up: metres from the pilot, never stripped.
             Equal(false, ZoneOwnership.WouldStripClaim(13f, 0f, 0f, 0f, stock), "the drop point, 13 m from the pilot: safe");
+        }
+
+        private static void CarryOffsetTests()
+        {
+            Section("CarryOffset: where he hangs from the talon, and what the config may say about it");
+
+            // The prefab's own numbers, which are what shipped through rc4 and what an empty config means.
+            Equal(0f, CarryOffset.PrefabX, "the shipped Valkyrie hangs him at x 0");
+            Equal(0.3f, CarryOffset.PrefabY, "0.3 below the talon");
+            Equal(0.4f, CarryOffset.PrefabZ, "and 0.4 behind it");
+
+            // The text form, both ways, invariant culture (a comma decimal point would eat the separator).
+            Equal("0, 0.3, 0.4", CarryOffset.Format(0f, 0.3f, 0.4f), "the text form is the three numbers, comma-separated");
+            float x, y, z;
+            Check(CarryOffset.TryParse("0, 0.3, 0.4", out x, out y, out z) && x == 0f && y == 0.3f && z == 0.4f, "and it reads back");
+            Check(CarryOffset.TryParse("0,0.15,0.2", out x, out y, out z) && y == 0.15f, "spaces are optional");
+            Check(CarryOffset.TryParse("  -1.5 ,0,  2 ", out x, out y, out z) && x == -1.5f && z == 2f, "and negatives and stray spaces read");
+
+            // Refusals: the count is exact, and NaN and infinity never reach a transform.
+            Check(!CarryOffset.TryParse("0, 0.3", out x, out y, out z), "two numbers is a typo, not a pair");
+            Check(!CarryOffset.TryParse("0, 0.3, 0.4, 0.5", out x, out y, out z), "four is a different idea");
+            Check(!CarryOffset.TryParse("", out x, out y, out z), "empty is not three numbers");
+            Check(!CarryOffset.TryParse(null, out x, out y, out z), "and neither is null");
+            Check(!CarryOffset.TryParse("0, closer, 0.4", out x, out y, out z), "words are refused");
+            Check(!CarryOffset.TryParse("0, NaN, 0.4", out x, out y, out z), "NaN is refused: a transform never recovers from it");
+            Check(!CarryOffset.TryParse("0, Infinity, 0.4", out x, out y, out z), "and so is infinity");
+
+            // Resolve: the whole decision, against a prefab value that is NOT the shipped one, so a test
+            // that passes by accident on the constants fails here.
+            CarryOffset.Resolved r = CarryOffset.Resolve("", 0f, 0.25f, 0.5f);
+            Check(!r.FromConfig && r.Y == 0.25f && r.Z == 0.5f && r.Problem == null,
+                  "an empty config follows THIS bird's prefab offset, not the shipped constant");
+            Check(!CarryOffset.Resolve("   ", 0f, 0.25f, 0.5f).FromConfig, "and whitespace is empty");
+
+            r = CarryOffset.Resolve("0, 0.1, 0.15", 0f, 0.3f, 0.4f);
+            Check(r.FromConfig && r.X == 0f && r.Y == 0.1f && r.Z == 0.15f && r.Problem == null,
+                  "a set config wins over the prefab");
+
+            r = CarryOffset.Resolve("0, 0, 0", 0f, 0.3f, 0.4f);
+            Check(r.FromConfig && r.X == 0f && r.Y == 0f && r.Z == 0f,
+                  "'0, 0, 0' is a real answer - his feet on the talon - and not read as empty");
+
+            // The bound, on each axis and both signs, and the fallback it leaves behind.
+            r = CarryOffset.Resolve("0, 50, 0", 0f, 0.3f, 0.4f);
+            Check(!r.FromConfig && r.Y == 0.3f && r.Problem != null, "past the bound is refused, and the prefab's stands");
+            Check(CarryOffset.Resolve("0, -50, 0", 0f, 0.3f, 0.4f).Problem != null, "the bound is on the size, not the sign");
+            Check(CarryOffset.Resolve("50, 0, 0", 0f, 0.3f, 0.4f).Problem != null, "x is bounded too");
+            Check(CarryOffset.Resolve("0, 0, 50", 0f, 0.3f, 0.4f).Problem != null, "and z");
+            Check(CarryOffset.Resolve("0, 5, 0", 0f, 0.3f, 0.4f).FromConfig, "exactly the bound is still allowed");
+            Check(CarryOffset.Resolve("0, 5.001, 0", 0f, 0.3f, 0.4f).Problem != null, "a hair past it is not");
+
+            r = CarryOffset.Resolve("closer please", 0f, 0.3f, 0.4f);
+            Check(!r.FromConfig && r.Y == 0.3f && r.Problem != null && r.Problem.Contains("three numbers"),
+                  "unreadable text is refused with a reason and the prefab's offset stands");
+
+            // The words, because they are what a player reads in `cargo status`.
+            Check(CarryOffset.Describe(CarryOffset.Resolve("", 0f, 0.3f, 0.4f)).Contains("prefab's own"),
+                  "status says when it is following the prefab");
+            Check(CarryOffset.Describe(CarryOffset.Resolve("0, 0.1, 0.1", 0f, 0.3f, 0.4f)).Contains("Server.CarryOffset"),
+                  "and names the setting when it is set");
+            Check(CarryOffset.Describe(CarryOffset.Resolve("nonsense", 0f, 0.3f, 0.4f)).Contains("REFUSED"),
+                  "and says REFUSED out loud rather than quietly using the prefab's");
         }
 
         private static void ActiveAreaTests()

@@ -332,6 +332,8 @@ namespace RavenIron.ValkyriesCargo.Patches
                           " (ZNet.GetSyncedSimulationDistance; 1.0 replaced ZoneSystem.m_activeArea); water level=" + F(zs.m_waterLevel, "0.#"));
             }
 
+            Say(args, "  " + CarryPinLive.StatusLine());
+
             RandEventSystem res = RandEventSystem.instance;
             if (res != null)
             {
@@ -547,6 +549,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             var valk = p.GetComponent<Valkyrie>();
             if (valk != null)
                 Say(args, "  Valkyrie: attachPoint=" + (valk.m_attachPoint != null ? valk.m_attachPoint.name : "NULL") +
+                          ", attachOffset=(" + CarryOffset.Format(valk.m_attachOffset.x, valk.m_attachOffset.y, valk.m_attachOffset.z) + ")" +
                           ", speed=" + F(valk.m_speed, "0.#") + ", dropHeight=" + F(valk.m_dropHeight, "0.#") +
                           ", startDistance=" + F(valk.m_startDistance, "0") + ", startAltitude=" + F(valk.m_startAltitude, "0"));
 
