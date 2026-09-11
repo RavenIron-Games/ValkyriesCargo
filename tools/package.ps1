@@ -62,6 +62,38 @@ if ($manifest.version_number -ne $version) {
     [System.IO.File]::WriteAllText($manifestPath, $json, (New-Object System.Text.UTF8Encoding($false)))
 }
 
+# --- write the store page's version badge, for the same reason ----------------------
+# HexiumDist\README.md is the store page, and its badge was the LAST hand-typed copy of
+# the version left in this repo. The family runbook
+# (docs\knowledge-base\IMPLEMENTATIONS\HexiumPublishing.md, step 2) bumps it by hand and
+# warns in the same breath that this "is the step that gets missed". Same answer as the
+# manifest above, and for the reason given at the top of this file: write it, do not
+# compare it. A number that is written cannot drift from itself.
+#
+# A MISSING badge is refused rather than ignored: writing cannot fix a page whose shape
+# changed, and a silent no-op here would put a stale version on the store page forever.
+$storePage = "$root\HexiumDist\README.md"
+if (Test-Path $storePage) {
+    $page = [System.IO.File]::ReadAllText($storePage)
+    # shields.io reads a literal dash as a field separator, so dashes are doubled:
+    # 0.1.0-rc5 has to reach the URL as 0.1.0--rc5 or the badge renders as "0.1.0" grey "rc5".
+    $badgeVersion = $version -replace '-', '--'
+    $pattern = '(badge/Version-)(.*?)(-lightgrey\.svg)'
+    $found = [regex]::Match($page, $pattern)
+    if (-not $found.Success) {
+        Write-Host "No version badge in HexiumDist\README.md - refusing to package." -ForegroundColor Red
+        Write-Host "Expected a shields.io badge matching: badge/Version-<version>-lightgrey.svg" -ForegroundColor Yellow
+        Write-Host "Either put the badge back, or delete this block if the page dropped badges." -ForegroundColor Yellow
+        exit 1
+    }
+    if ($found.Groups[2].Value -ne $badgeVersion) {
+        Write-Host "store page badge: $($found.Groups[2].Value) -> $badgeVersion" -ForegroundColor Yellow
+        $page = [regex]::Replace($page, $pattern, "`${1}$badgeVersion`${3}")
+        # UTF8 without BOM, same as the manifest: this file carries emoji and ships as-is.
+        [System.IO.File]::WriteAllText($storePage, $page, (New-Object System.Text.UTF8Encoding($false)))
+    }
+}
+
 # --- clean Release build ------------------------------------------------------------
 dotnet build $csproj -c Release -v q --nologo
 if ($LASTEXITCODE -ne 0) { Write-Host "Build failed." -ForegroundColor Red; exit 1 }
