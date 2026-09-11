@@ -7,7 +7,7 @@
 [![Valheim](https://img.shields.io/badge/Valheim-1.0.12-critical.svg)]()
 [![Framework](https://img.shields.io/badge/Requires-BepInEx-red.svg)]()
 [![Economy](https://img.shields.io/badge/Economy-Supply_%26_Demand-green.svg)]()
-[![Custom Character](https://img.shields.io/badge/Ingvar-Original_Model_%26_Rig-purple.svg)]()
+[![Custom Character](https://img.shields.io/badge/Ingvar-Custom_Character-purple.svg)]()
 [![Version](https://img.shields.io/badge/Version-0.1.0-lightgrey.svg)]()
 
 > *"You bank the fire, set down your axe, and the light goes strange. Wings beat in the upper skies —*
@@ -86,9 +86,9 @@ same on every visit and on every player's screen.
 
 ## 🧔 Ingvar Himself
 
-Ingvar is **not** a re-textured Dverger. He is an original character — modelled, rigged, textured and
-animated for this mod — with his own **idle, walk, greeting, talk, shrug and nod**, and he ships
-**inside the plugin**. There is no second download, no asset pack, nothing extra to install.
+Ingvar is **not** a re-textured Dverger. He is his own character, with his own **idle, walk, greeting,
+talk, shrug and nod**, and he ships **inside the plugin**. There is no second download, no asset pack,
+nothing extra to install.
 
 He stands a head shorter than you, red-bearded, in heavy plate, and he watches you while you shop.
 
@@ -251,8 +251,7 @@ everything in it.
 **ServerSync** is blaxxun's `ConfigSync.cs` (MIT-0), compiled in as shared source and never edited.
 The terminal's frame and focus handling are Wu'barrk's VikingOS shared source (MIT).
 
-> 🪶 Ingvar's model, animations and textures are **original work by Raven Iron**. Nothing in this
-> package is ripped, re-uploaded, or derived from another creator's assets.
+> 🪶 Nothing in this package is ripped, re-uploaded, or derived from another creator's assets.
 
 <div align="center">
   <i>Created by Raven Iron — NomadicWar &amp; Wu'barrk</i>
