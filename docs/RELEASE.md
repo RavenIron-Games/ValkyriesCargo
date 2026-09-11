@@ -105,8 +105,11 @@ the Thunderstore package format, which is what `package.ps1` builds.
   mods found", and searches for `cargo`, `valkyrie` and `ingvar` turned up nothing by this name. The
   name is free. Re-check before uploading; it costs one search.
 - Upload the zip from `dist\`. Nothing is edited by hand on the store side: the description, the
-  dependency string and the icon all come out of the package. That string is ONE entry, written from
-  `manifest.json`: `denikson-BepInExPack_Valheim-5.4.2333`. The BarrkBOT export (`BARRKBOT_CONTRACT.md`)
+  dependency string and the icon all come out of the package. That string is ONE entry, and it is read from the
+  **repo-root** `manifest.json` (`tools/package.ps1` copies that file into the zip; the copy in
+  `HexiumDist/` is not read by anything): `denikson-BepInExPack_Valheim-5.4.2350`, which is denikson's
+  current release. Confirmed against Thunderstore's package API on 2026-09-11 rather than from memory,
+  because a dependency string naming a version that does not exist fails at the store and nowhere earlier. The BarrkBOT export (`BARRKBOT_CONTRACT.md`)
   briefly added `ValheimModding-JsonDotNET` on 2026-09-07 for two serializer calls; the owner had it
   removed the same day in favour of the pure `Core/Json.cs`, so there is no third-party DLL at build
   time or at run time, and `tools/fetch-libs.ps1` copies nothing from outside the game install.
