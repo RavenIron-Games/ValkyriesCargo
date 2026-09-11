@@ -26,6 +26,24 @@ a settled one; **the owner's word on 2026-09-08 after the day's five merges: no 
 Entries are in build order, except the five sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
 
+### Since 0.1.0-rc4 — unreleased
+
+- **`Server.CarryOffset`: how close he hangs to the talons (branch `a/carry-offset`, 2026-09-11, 1984 checks).**
+  Asked for on the screen: Ingvar hangs further under the Valkyrie than he should. The number was never ours to
+  set - the pin takes it from the `Valkyrie` prefab's own `m_attachOffset`, `(0, 0.3, 0.4)` on the shipped bird,
+  and vanilla tuned that to carry a full-height player through the intro rather than a merchant a head shorter.
+  `Core/CarryOffset.cs` (PURE) is the parse and the sanity bound; `CarryPinLive.cs` is the one read, the twin of
+  `ActiveAreaLive`. Empty follows the prefab, which is what every build through rc4 did, so nothing moves until
+  the value is set. It is synced and LOCKED because the pin runs on every machine that has him instanced and
+  every screen must agree, and `CargoMerchant.ResolveCarrier` re-reads it every physics step, so a change pushed
+  from Configuration Manager lands while he is still in the air. Text that is not three numbers, or a component
+  past 5 m, is refused with one log line and the prefab's offset used - never a fail-closed `(0, 0, 0)`, which
+  would stand him inside the bird's foot on every screen. `cargo status` names the offset and where it came from,
+  and `cargo prefab Valkyrie` now prints `attachOffset` beside the attach point, which it never did.
+  **Two lines in Track B's files, at Don's word and flagged here**: `CargoFlight.AttachOffset` and the no-flight
+  fallback in `CargoMerchant.ResolveCarrier` both call `CarryPinLive.Read` instead of naming the constant. No
+  behaviour changes until the setting is set.
+
 ### 0.1.0-rc4 — cut 2026-09-10, the Valheim 1.0.7 build (PRs #70 and #71, plus #66 from the night before, which rc3 did not carry); a pre-release, uploaded to no store
 
 - **The 1.0.7 sweep's second half, and Splatform.dll in the tools (branch `a/rc4-prep`, PR #71).** The 25 body

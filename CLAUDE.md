@@ -341,6 +341,8 @@ ValkyriesCargo/
   Server/VisitAnchor.cs      where the visit IS (2026-09-08): his live ZDO position when bound, else the drop point; the event's area and the dismiss rule measure against it
   Core/ActiveArea.cs         PURE (1.0, 2026-09-10): SimDistance and the metre test behind ZNetScene.InActiveArea; D5's keep-window and the flight's clamp both rest on it
   ActiveAreaLive.cs          the one read of ZNet.GetSyncedSimulationDistance (1.0 replaced ZoneSystem.m_activeArea); vanilla's default before a world is up
+  Core/CarryOffset.cs        PURE (2026-09-11): where he hangs from the talon - the parse, the 5 m bound, the words; empty follows the Valkyrie prefab
+  CarryPinLive.cs            the one read of Server.CarryOffset, the twin of ActiveAreaLive; both callers are one line in Track B's files
   Net/DealWire.cs            server end: VCargo_open/close/deal/ack/claim/dismiss on each peer's ZRpc; VCargo_dealt back
   Server/BarrkBotExport.cs   writes barrkbot_cargo_market/traders/visits.json under BepInEx/config/ValkyriesCargo/, from VisitDirector.Tick
   Net/CargoTransport.cs      client end (the real ICargoTransport), LocalTransport (listen host), Deliveries
@@ -545,7 +547,11 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
   `m_speed` 20 (not 10), `m_turnRate` 20 (not 5), `m_startDistance` **800** (not 500), `m_startAltitude`
   190 (not 500), `m_descentAltitude` 180, `m_startDescentDistance` 300, `m_attachOffset` (0, 0.30, 0.40)
   (not (0,0,1)). `m_attachPoint` EXISTS: `'Attach'`, under `valkyrie2/Armature/.../r_foot` - the
-  merchant hangs from her right talon. Our flight uses none of vanilla's numbers except `m_dropHeight`;
+  merchant hangs from her right talon. **That offset is SUBTRACTED in the talon's own space**
+  (`talon.position - talon.TransformVector(offset)`), so bigger is further off the talon and zero is his
+  feet on it; vanilla tuned it to carry a full-height player in the intro. Since 2026-09-11
+  `Server.CarryOffset` may answer instead - empty follows the prefab, `Core/CarryOffset.cs` is the rule
+  and `CarryPinLive.Read` the one read. Our flight uses none of vanilla's numbers except `m_dropHeight`;
   speed and turn rate are `Server.FlightSpeed` / `FlightTurnRate`.
 - **`Odin.m_ttl` on the shipped prefab is 60, not the 300 the field initialiser says** (read live,
   2026-09-07). Nothing reads it - the departure borrows only the `m_despawn` EffectList - but design 3.6

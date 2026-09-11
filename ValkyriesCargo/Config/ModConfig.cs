@@ -44,6 +44,7 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<float>  FlightDescentDistance;
         public static ConfigEntry<float>  FlightSpeed;
         public static ConfigEntry<float>  FlightTurnRate;
+        public static ConfigEntry<string> CarryOffset;
         public static ConfigEntry<string> CatalogueLine;
         public static ConfigEntry<float>  PriceElasticity;
         public static ConfigEntry<float>  MinPriceMultiplier;
@@ -166,6 +167,12 @@ namespace RavenIron.ValkyriesCargo.Config
             FlightTurnRate = S(cfg, "Server", "FlightTurnRate", 45f,
                 "Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the CLIENT that owns the bird, synced from the server; the server never reads it.",
                 new AcceptableValueRange<float>(5f, 360f));
+            // Where he hangs under the bird. Vanilla's own offset carries a PLAYER in the intro and
+            // Ingvar is a head shorter, so the prefab's numbers leave a gap a player does not see.
+            // Empty follows the prefab, which is what shipped through rc4. Read on EVERY machine that
+            // has him instanced: the pin runs there, and every screen must agree.
+            CarryOffset = S(cfg, "Server", "CarryOffset", Core.CarryOffset.FollowThePrefab,
+                "Where the merchant hangs while the Valkyrie carries him: three numbers 'x, y, z' in the TALON's own space, SUBTRACTED from the talon - bigger is further off it, '0, 0, 0' puts his feet on the talon itself. Empty means the Valkyrie prefab's own offset, which is (0, 0.3, 0.4) on the shipped bird. Each axis is bounded at 5 m and a value past that, or any text that is not three numbers, is refused with one log line and the prefab's used instead. Read on EVERY machine that has him instanced, synced from the server; it can be changed while he is in the air and lands on the next physics step.");
             CatalogueLine = S(cfg, "Server", "Catalogue", Catalogue.DefaultLine,
                 "What Ingvar sells and buys: Prefab:BasePrice:TargetStock:MaxStock:Kind entries separated by commas; Kind is Ware (sells and buys back) or Want (buys only). Every number's reason is in docs/CATALOGUE.md. A prefab this game has no item for is dropped with one log line when the shelf is built (at boot, and on every live edit). Editable on a running server: `cargo catalogue add|remove|reset` (admin), or Configuration Manager as an admin; a change applies as soon as no visit is running. Read on the SERVER.");
             PriceElasticity = S(cfg, "Server", "PriceElasticity", 0.35f,

@@ -78,8 +78,10 @@ namespace RavenIron.ValkyriesCargo.Client
         public Transform AttachPoint => _valkyrie != null && _valkyrie.m_attachPoint != null ? _valkyrie.m_attachPoint : transform;
 
         /// <summary>The offset the merchant hangs at, in the attach point's space. The fallback is the SHIPPED
-        /// prefab's value, read 2026-09-07 -- the field initialiser says (0,0,1) and the prefab overrides it.</summary>
-        public Vector3 AttachOffset => _valkyrie != null ? _valkyrie.m_attachOffset : new Vector3(0f, 0.3f, 0.4f);
+        /// prefab's value, read 2026-09-07 -- the field initialiser says (0,0,1) and the prefab overrides it.
+        /// Since `Server.CarryOffset` (Don's side, 2026-09-11) the config may answer instead of the prefab;
+        /// `CarryPinLive.Read` is that one decision and returns this prefab value whenever it is empty.</summary>
+        public Vector3 AttachOffset => CarryPinLive.Read(_valkyrie != null ? _valkyrie.m_attachOffset : CarryPinLive.PrefabFallback);
 
         public bool HasDropped => _dropped;
         public int VisitId => _visitId;

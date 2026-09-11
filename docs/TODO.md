@@ -522,6 +522,13 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       morning, all holding (`docs/engine-sweeps/2026-09-10-1.0.7-bodies-read.md`); `Splatform.dll` is the fourth
       assembly in the decompile set with four surface rows (PR #71). **rc4 cut** the same morning: `v0.1.0-rc4`,
       the 1.0.7 build, a pre-release, no store.
+      **`Server.CarryOffset` (2026-09-11, branch `a/carry-offset`, 1984 checks).** Don, on the screen: bring Ingvar
+      closer to the Valkyrie's talons. The offset was never ours - the pin takes the prefab's `m_attachOffset`
+      (0, 0.3, 0.4), vanilla's own, tuned to carry a full-height player. Now a synced+locked string, empty = the
+      prefab's, refused values fall back with one log line, re-read every physics step so it tunes live from
+      Configuration Manager. `Core/CarryOffset.cs` pure + `CarryPinLive.cs`; ONE line each in `CargoFlight.cs`
+      and `CargoMerchant.cs` (Track B's, at the word, flagged in his handoff). `cargo prefab Valkyrie` prints
+      `attachOffset` now. **Not yet seen on a machine**: a carry with a non-empty value.
       **1.0 finding:** `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want `V_<steamid>` (Steam V, Xbox X,
       PlayStation S, Nintendo N, Game Center A; `ZNet.ListContainsId`'s filtered match overrides the old forms). Don's
       other 1.0 servers need their lists rewritten; in CLAUDE.md's engine facts and the README.
