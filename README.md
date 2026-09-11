@@ -6,10 +6,11 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.0-rc5`, a first playable, still a pre-release, uploaded to no store.** Cut 2026-09-11
-> from `main`, and **for Valheim 1.0.12 only**: 1.0.12 moved the network version to 40, so `v0.1.0-rc4`
-> (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The store zip and the body bundle are
-> attached to the release; the upload is the owner's step and has not happened.
+> **Status: `v0.1.0-rc5`, a first playable, and the first cut to reach a store.** Cut 2026-09-11 from
+> `main` and published to Hexium the same day. **For Valheim 1.0.12 only**: 1.0.12 moved the network
+> version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The
+> store zip and the body bundle are also attached to the GitHub release, which stays flagged a
+> pre-release because 0.1.0 is a first playable and says so.
 > Twenty-seven visits across five sessions on dedicated servers now stand behind it: the flight, the drop,
 > Ingvar in his own baked body, the walk-up, the Cargo Terminal open on him, deals at the price curve, the
 > vanish, dismissals, a relog mid-visit, a visit resumed across a restart, and the carry offset tuned live
@@ -161,11 +162,12 @@ merged since the audit (its six, then D1 to D4 and the half-turn; `docs/AUDIT-ST
 The full numbered list is `CLAUDE.md`, "What to verify in-game"; `docs/PROOF-CLIENT.md` is the
 runbook, and each proof gets pasted back into `CLAUDE.md` as it happens.
 
-So today a visit puts Ingvar in the yard, walks him up on the second attempt and trades through the
-terminal, proven on one screen against a dedicated server. Nobody has yet watched a first approach
-succeed, a vanish, or two screens at once, and one carry in nine lost him. That is why the tag is
-`v0.1.0-rc2` and not yet a store upload: `docs/RELEASE.md` step 5 holds the upload back until the
-whole loop, glide to vanish, is seen.
+So today a visit puts Ingvar in the yard, walks him up and trades through the terminal, proven on a
+screen against a dedicated server across twenty-seven visits. The first approach reaching the player,
+the vanish and the carry holding its owner were all open questions at the rc2 cut and have since been
+watched and fixed. What has still never been seen is **redelivery after a lost connection**, and no
+two-client item has run. The tag is `v0.1.0-rc5` and it is on the store; `docs/RELEASE.md` §4 records
+the three-item bar that was met and the one item skipped, with the reason.
 ---
 
 ## If a client is refused with a version message

@@ -95,6 +95,11 @@ wrong.
 
 ## 5. The Hexium upload — the owner's step
 
+> **DONE 2026-09-11.** The owner published `v0.1.0-rc5` to Hexium himself. It is the first Valkyrie's
+> Cargo cut to reach a store. **The rule below is unchanged and is not a formality:** the credentials
+> are his, and no agent logs into the store, creates an account, uploads, or accepts terms. The next
+> upload is his too.
+
 The store is [Hexium](https://hexium.gg); the Valheim community is `valheim.hexium.gg`. It consumes
 the Thunderstore package format, which is what `package.ps1` builds.
 
