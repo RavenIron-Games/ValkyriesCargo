@@ -70,25 +70,30 @@ namespace RavenIron.ValkyriesCargo.Core
     public static class EngineBaseline
     {
         /// <summary>`Version.CurrentVersion.ToString()` on the build this was written against.</summary>
-        public const string GameVersion = "1.0.7";
+        public const string GameVersion = "1.0.12";
         public const int GameMajor = 1;
         public const int GameMinor = 0;
-        public const int GamePatch = 7;
+        public const int GamePatch = 12;
 
-        /// <summary>`Version.c_networkVersion` (a `uint` const in the real assembly; `m_networkVersion` before 1.0). The handshake and the wire.</summary>
-        public const int NetworkVersion = 39;
-        /// <summary>`Version.c_PlayerVersion`, the `Version.Player` enum (`DeepNorth` = 46 on 1.0.7). The character save format.</summary>
+        /// <summary>
+        /// `Version.c_networkVersion` (a `uint` const in the real assembly; `m_networkVersion` before 1.0).
+        /// The handshake and the wire. 39 -> 40 in 1.0.12, and that is a HARD multiplayer break in the
+        /// GAME, not in any mod: `ZNet.RPC_PeerInfo` refuses outright any peer whose number differs, so a
+        /// 1.0.12 client cannot join a 1.0.7 server or the reverse, and nothing a mod does can bridge it.
+        /// </summary>
+        public const int NetworkVersion = 40;
+        /// <summary>`Version.c_PlayerVersion`, the `Version.Player` enum (`DeepNorth` = 46; unchanged 1.0.7 -> 1.0.12). The character save format.</summary>
         public const int PlayerVersion = 46;
-        /// <summary>`Version.c_WorldVersion`, the `Version.World` enum (`DeepNorth` = 41 on 1.0.7). The world save format the sidecar sits beside.</summary>
+        /// <summary>`Version.c_WorldVersion`, the `Version.World` enum (`DeepNorth` = 41; unchanged 1.0.7 -> 1.0.12). The world save format the sidecar sits beside.</summary>
         public const int WorldVersion = 41;
 
         /// <summary>Steam build id of app 892970 (the client) as installed when the bodies were read.</summary>
-        public const int ClientBuildId = 25185596;
+        public const int ClientBuildId = 25253764;
         /// <summary>Steam build id of app 896660 (the dedicated server).</summary>
-        public const int ServerBuildId = 25185644;
+        public const int ServerBuildId = 25253791;
 
         /// <summary>When the method bodies this mod depends on were read. A branch re-push keeps the version and changes the bodies, so this date matters as much as the numbers.</summary>
-        public const string ReadOn = "2026-09-09";
+        public const string ReadOn = "2026-09-11";
 
         /// <summary>The baseline in one line, for the boot log.</summary>
         public static string Describe() =>

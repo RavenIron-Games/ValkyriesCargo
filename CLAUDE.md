@@ -518,12 +518,16 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
 - The installed Valheim runs on **Unity 6000.0.75** (1.0.7, 2026-09-09; 6000.0.61f1 on 0.221.12) (`UnityPlayer.dll`); bundles must be built with that Editor.
 - **ServerSync broadcasts on change only.** No heartbeat. Client writes are rejected while locked unless
   the client is on `adminlist.txt`. Payloads under 10 000 bytes go uncompressed.
-- **On 1.0 the three lists want the DISPLAY id: `V_<steamid>`** (read 2026-09-10 on Storm10). `ZNet.ListContainsId`
-  still tries the bare number and `Steam_<id>`, then `PlatformUserID.FilterPlatformUserID` (Splatform.dll, the fourth
+- **On 1.0.7 the three lists wanted the DISPLAY id `V_<steamid>`, and 1.0.12 UNDID that** (1.0.7 read
+  2026-09-10 on Storm10; the fix read 2026-09-11). `ZNet.ListContainsId` tries the bare number and
+  `Steam_<id>`, then `PlatformUserID.FilterPlatformUserID` (Splatform.dll, the fourth
   assembly in the decompile tools since #71; it was on 0.221.12 too, and 1.0 added the filter) rewrites the platform to a one-letter display prefix — Steam `V`,
-  Xbox `X`, PlayStation `S`, Nintendo `N`, Game Center `A` — and the result of `list.Contains("V_…")` OVERRIDES the
-  earlier match. A list that worked on 0.221.12 refuses everyone on 1.0.7; vanilla's devcommands and `AdminGate`
-  fail together. `SyncedList` reloads on file change, so the fix needs no restart.
+  Xbox `X`, PlayStation `S`, Nintendo `N`, Game Center `A`. On 1.0.7 the result of `list.Contains("V_…")`
+  **overwrote** the earlier match (`flag = `), so a list that worked on 0.221.12 refused everyone and
+  vanilla's devcommands and `AdminGate` failed together. **1.0.12 changed that one assignment to `flag |= `**,
+  so an earlier bare or `Steam_` match now survives: any of the three forms admits, and a list 1.0.7 broke
+  works again with no edit. `SyncedList` reloads on file change, so neither the break nor its undoing ever
+  needed a restart.
 - **Comfort never leaves the client** (`SE_Rested.CalculateComfortLevel` is local); the client will
   write `VCargo_rested` / `VCargo_comfort` on its own character ZDO, which replicates because the client owns it.
 - **Objects are instantiated on a client only inside its ACTIVE AREA** (`ZNetScene.InActiveArea(position,

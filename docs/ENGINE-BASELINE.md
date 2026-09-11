@@ -4,6 +4,27 @@
 tell whether the build under your hands is still that one.** P10a; the brief is
 `docs/P10-P11-FOR-DON.md`.
 
+**THE BASELINE MOVED AGAIN ON 2026-09-11: Valheim 1.0.12**, two days after 1.0.7. Steam updated the
+installed client (build **25253764**, 06:16 local) and the dedicated server (build **25253791**, 06:13),
+and both were read the same day. **Exactly one of the four numbers moved: `c_networkVersion` 39 -> 40.**
+`CurrentVersion` is **1.0.12**; `c_PlayerVersion` (46) and `c_WorldVersion` (41) did NOT move, which is
+why no world and no character needed migrating.
+
+That one number is a hard multiplayer break in the game itself, not in any mod: `ZNet.RPC_PeerInfo`
+refuses outright any peer whose number differs, so a 1.0.12 client cannot join a 1.0.7 server or the
+reverse. Everyone updates together or nobody plays together.
+
+Both axes were swept with the P10a tools against the preserved 1.0.7 trees —
+`docs/engine-sweeps/2026-09-11-{client,server}-1.0.7-vs-1.0.12.md` — and agree exactly: **278 surface
+members, 273 unchanged, 4 body changed, 1 signature changed, 0 gone.** The signature change is
+`c_networkVersion`. The four body changes are `Terminal.ConsoleCommand`, `Terminal.InitTerminal`,
+`ZNet.RPC_PeerInfo` and `ZNet.ListContainsId` — and only the last one falsifies a recorded fact: the
+`FilterPlatformUserID` match no longer OVERWRITES the earlier bare / `Steam_` match (`flag = ` became
+`flag |= `), so an admin list that 1.0.7 broke works again untouched. That note is corrected in
+`CLAUDE.md`, `docs/ENGINE-SURFACE.md` and `Server/AdminGate.cs`.
+
+The 1.0.7 record it replaces follows, unchanged.
+
 **THE BASELINE MOVED ON 2026-09-09: Valheim 1.0.7.** Steam updated the installed client (build 25185596,
 05:58 local) and the installed dedicated server (build 25185644, 05:57) to the release, and both were
 read the same day: `Version.CurrentVersion` **1.0.7**, `c_networkVersion` **39**, `c_PlayerVersion`

@@ -116,8 +116,8 @@ ZNet.instance | assembly_valheim | call | everywhere
 ZNet.IsServer | assembly_valheim | call | CargoTick.Role, DealWire, AdminRpc
 ZNet.IsDedicated | assembly_valheim | fact | NOT used: HasRenderer is graphicsDeviceType, because the client reference assembly hardcodes this false
 ZNet.IsAdmin | assembly_valheim | call | AdminGate.Check - the ONE method naming the game's admin API; fail closed
-ZNet.ListContainsId | assembly_valheim | fact | private; 1.0: the PlatformUserID.FilterPlatformUserID match (V_/X_/S_/N_/A_, Splatform.dll) OVERRIDES the bare and Steam_ forms; the lists want V_<steamid>
-PlatformUserID.FilterPlatformUserID | Splatform | fact | 1.0: Steam->V, Xbox->X, PlayStation->S, Nintendo->N, GameCenter->A; the four console platforms' numbers are scrambled; the match ListContainsId lets override
+ZNet.ListContainsId | assembly_valheim | fact | private; 1.0.7: the PlatformUserID.FilterPlatformUserID match (V_/X_/S_/N_/A_, Splatform.dll) OVERRODE the bare and Steam_ forms, so the lists wanted V_<steamid>. FIXED IN 1.0.12: that assignment became `flag |= `, so the bare and Steam_ matches SURVIVE again and any of the three forms admits
+PlatformUserID.FilterPlatformUserID | Splatform | fact | 1.0: Steam->V, Xbox->X, PlayStation->S, Nintendo->N, GameCenter->A; the four console platforms' numbers are scrambled. Its match no longer overrides the earlier ones as of 1.0.12 - see ListContainsId
 PlatformUserID.ToString | Splatform | fact | GetPlatformPrefix(platform) + userID: "V_7656..." once filtered, "Steam_7656..." raw
 PlatformUserID.TryParse | Splatform | fact | what ListContainsId parses a host name with; 1.0: also the display-prefix form (s_displayPrefixesToPlatform)
 PlatformUserID.s_platformToDisplayPrefixes | Splatform | fact | the five-entry table behind the display prefixes
