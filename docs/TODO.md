@@ -528,7 +528,10 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       prefab's, refused values fall back with one log line, re-read every physics step so it tunes live from
       Configuration Manager. `Core/CarryOffset.cs` pure + `CarryPinLive.cs`; ONE line each in `CargoFlight.cs`
       and `CargoMerchant.cs` (Track B's, at the word, flagged in his handoff). `cargo prefab Valkyrie` prints
-      `attachOffset` now. **Not yet seen on a machine**: a carry with a non-empty value.
+      `attachOffset` now. **SEEN 2026-09-11 on Storm10 (1.0.12), visits 2 to 4**: tuned live from
+      Configuration Manager mid-flight, 16 config pushes, none refused, the prefab's (0, 0.3, 0.4) ->
+      (0, 0.2, 0.25) -> **(0, 0, 0), which is now the shipped default** (empty still follows the prefab).
+      The admin-write-through-a-locked-synced-config path is proven on a machine with it.
       **1.0 finding:** `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want `V_<steamid>` (Steam V, Xbox X,
       PlayStation S, Nintendo N, Game Center A; `ZNet.ListContainsId`'s filtered match overrides the old forms). Don's
       other 1.0 servers need their lists rewritten; in CLAUDE.md's engine facts and the README.

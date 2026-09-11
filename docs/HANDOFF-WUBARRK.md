@@ -40,7 +40,10 @@ instanced), the rule is pure in `Core/CarryOffset.cs` and the read is `CarryPinL
 only where the number comes from: `CargoFlight.AttachOffset` and the no-flight fallback in
 `CargoMerchant.ResolveCarrier` call `CarryPinLive.Read(...)` instead of naming `(0, 0.3, 0.4)`. Empty config = the
 prefab's own = exactly what your code did before, so nothing moves until Don sets a value. Say the word if you want
-it shaped differently in your files - it is one line each to move.
+it shaped differently in your files - it is one line each to move. **Seen the same day** on Storm10 (1.0.12,
+visits 2 to 4): Don tuned it live from Configuration Manager while the bird was in the air and settled on
+`0, 0, 0` - his feet on the talon - which is now the shipped default. Your carry looks different on a fresh
+install because of that one number, and empty still gives you the prefab's framing back.
 
 `main` is at 1dcf3ac (docs) on 55508d6 (code, PR #64): 0 warnings, **1885 checks**. Merged today at Don's word, in
 order: #57 the rotating shelf, #58 the item value table, #60 the terminal (count boxes, no pay mode, the 40 % black

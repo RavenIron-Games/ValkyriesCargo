@@ -41,8 +41,15 @@ after the rest of this log was written.
   would stand him inside the bird's foot on every screen. `cargo status` names the offset and where it came from,
   and `cargo prefab Valkyrie` now prints `attachOffset` beside the attach point, which it never did.
   **Two lines in Track B's files, at Don's word and flagged here**: `CargoFlight.AttachOffset` and the no-flight
-  fallback in `CargoMerchant.ResolveCarrier` both call `CarryPinLive.Read` instead of naming the constant. No
-  behaviour changes until the setting is set.
+  fallback in `CargoMerchant.ResolveCarrier` both call `CarryPinLive.Read` instead of naming the constant.
+- **And the number it ships with: `0, 0, 0`, his feet on the talon. SEEN ON A MACHINE 2026-09-11** (Storm10,
+  Valheim 1.0.12, visits 2 to 4). The owner joined, forced a visit and walked the offset down from
+  Configuration Manager **while the bird was in the air** - sixteen config pushes across three visits, each one
+  landing on the merchant within a physics step, none refused: the prefab's `(0, 0.3, 0.4)`, then
+  `(0, 0.2, 0.25)`, then this. So the whole designed path is proven on a machine as well as off it: an admin
+  client writing through a LOCKED synced config, the server taking it, and `ResolveCarrier` re-reading it every
+  physics step. The default is the tuned number rather than empty, so a fresh install gets the framing that was
+  actually looked at; empty still follows the prefab for anyone who wants vanilla's.
 
 ### 0.1.0-rc4 — cut 2026-09-10, the Valheim 1.0.7 build (PRs #70 and #71, plus #66 from the night before, which rc3 did not carry); a pre-release, uploaded to no store
 
