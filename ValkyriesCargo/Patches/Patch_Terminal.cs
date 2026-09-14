@@ -334,6 +334,26 @@ namespace RavenIron.ValkyriesCargo.Patches
 
             Say(args, "  " + CarryPinLive.StatusLine());
 
+            // Issue #79's two gates, said out loud on the machine that can see the answer. A gate that
+            // refuses silently is the hardest kind to report a bug about.
+            {
+                bool requireBuilt = ModConfig.RequireBuiltBase != null && ModConfig.RequireBuiltBase.Value;
+                bool avoidLoc = ModConfig.AvoidVanillaLocations != null && ModConfig.AvoidVanillaLocations.Value;
+                float radius = ModConfig.BuiltBaseRadius != null ? ModConfig.BuiltBaseRadius.Value : HomeGround.DefaultBuiltRadius;
+                float clearance = ModConfig.LocationClearance != null ? ModConfig.LocationClearance.Value : HomeGround.DefaultClearance;
+
+                ComfortReporter groundRep = CargoTick.Reporter;
+                string built = groundRep == null || !groundRep.Reported
+                    ? "not reported here (no local player)"
+                    : (groundRep.LastBuilt ? "yes" : "NO") + " (" + Wire.Int(groundRep.LastPiecesSeen) + " piece(s) within " + Wire.Float(radius) + " m)";
+                Say(args, "  own ground: player-built " + built + "; the gate is " + (requireBuilt ? "ON" : "off") + " (Server.RequireBuiltBase)");
+
+                Player lp = Player.m_localPlayer;
+                if (!avoidLoc) Say(args, "  locations: the gate is off (Server.AvoidVanillaLocations)");
+                else if (lp != null) Say(args, "  " + LocationsLive.StatusLine(lp.transform.position, clearance));
+                else Say(args, "  locations: no local player to measure from");
+            }
+
             RandEventSystem res = RandEventSystem.instance;
             if (res != null)
             {

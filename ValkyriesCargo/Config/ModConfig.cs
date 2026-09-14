@@ -35,6 +35,10 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<float>  EventChancePercent;
         public static ConfigEntry<float>  PlayerCooldownMinutes;
         public static ConfigEntry<float>  CooldownRadius;
+        public static ConfigEntry<bool>   RequireBuiltBase;
+        public static ConfigEntry<float>  BuiltBaseRadius;
+        public static ConfigEntry<bool>   AvoidVanillaLocations;
+        public static ConfigEntry<float>  LocationClearance;
         public static ConfigEntry<float>  MerchantLifespanSeconds;
         public static ConfigEntry<float>  ApproachDistance;
         public static ConfigEntry<string> BodyPrefab;
@@ -138,6 +142,16 @@ namespace RavenIron.ValkyriesCargo.Config
             CooldownRadius = S(cfg, "Server", "CooldownRadius", 60f,
                 "Metres: a base on cooldown blocks its neighbours within this radius. Read on the SERVER.",
                 new AcceptableValueRange<float>(0f, 500f));
+            RequireBuiltBase = S(cfg, "Server", "RequireBuiltBase", true,
+                "A visit needs a PLAYER-BUILT piece near the player. Vanilla's own baseValue cannot tell your hall from the game's NPC camps - it counts effect areas and never asks who built them - so without this Ingvar turns up at the Bog Witch (issue #79). Read on the SERVER; the client reports what it can see.");
+            BuiltBaseRadius = S(cfg, "Server", "BuiltBaseRadius", Core.HomeGround.DefaultBuiltRadius,
+                "Metres the client looks for something player-built. The default is vanilla's own: it measures baseValue over exactly 20 m, and matching it keeps the two gates agreeing about how far 'here' reaches. Read on the SERVER, applied on the CLIENT.",
+                new AcceptableValueRange<float>(Core.HomeGround.MinBuiltRadius, Core.HomeGround.MaxBuiltRadius));
+            AvoidVanillaLocations = S(cfg, "Server", "AvoidVanillaLocations", true,
+                "Refuse a visit to a player standing inside one of the game's own locations. Each location carries its own exterior radius, so a runestone costs a couple of metres and a camp costs tens - no list to keep. Read on the SERVER.");
+            LocationClearance = S(cfg, "Server", "LocationClearance", Core.HomeGround.DefaultClearance,
+                "Metres ADDED to a location's own exterior radius. Small on purpose: the location's number does the work and this is the margin that stops a drop on its boundary. Read on the SERVER.",
+                new AcceptableValueRange<float>(Core.HomeGround.MinClearance, Core.HomeGround.MaxClearance));
             MerchantLifespanSeconds = S(cfg, "Server", "MerchantLifespanSeconds", 300f,
                 "How long Ingvar stays, as the vanilla random event's duration. Ours alone: Odin's prefab says 60, not the 300 his field initialiser says, so this number was never inherited from him. Read on the SERVER.",
                 new AcceptableValueRange<float>(30f, 1800f));
@@ -316,6 +330,10 @@ namespace RavenIron.ValkyriesCargo.Config
             r.PlayerCooldownSeconds = PlayerCooldownMinutes.Value * 60f;
             r.CooldownRadius = CooldownRadius.Value;
             r.TownRadius = 40f;   // design 3.1: candidates within 40 m are one ticket; not a knob
+            r.RequireBuiltBase = RequireBuiltBase.Value;
+            r.BuiltBaseRadius = BuiltBaseRadius.Value;
+            r.AvoidVanillaLocations = AvoidVanillaLocations.Value;
+            r.LocationClearance = LocationClearance.Value;
             r.Sanitize(problems);
         }
 

@@ -31,6 +31,24 @@ namespace RavenIron.ValkyriesCargo.Core
         public bool Ready = true;
 
         /// <summary>
+        /// `VCargo_built` off the same ZDO: is there a PLAYER-BUILT piece near this player. Vanilla's
+        /// `baseValue` cannot answer it - `EffectArea.GetBaseValue(pos, 20f)` counts effect areas and
+        /// tests ownership nowhere - which is why the game's own NPC camps read as a base (issue #79).
+        ///
+        /// Defaults TRUE for the same reason `Alive` and `Ready` do: a bare stub in the harness is not
+        /// about this gate. The director always sets it explicitly, and defaults it to FALSE there,
+        /// because on a real server "no report" means "no evidence of a base", not "trust it".
+        /// </summary>
+        public bool BuiltBase = true;
+
+        /// <summary>
+        /// The game's own location this player is standing inside, measured on the SERVER by
+        /// `LocationsLive.Read` against the location's own `m_exteriorRadius`. Empty when the ground is
+        /// clear, which is the default and is what a stub gets.
+        /// </summary>
+        public string InsideLocationName = "";
+
+        /// <summary>
         /// What a per-player cooldown is stamped under and looked up by: the stable identity when the
         /// ZDO carries one, the session uid when it does not. Keying on `Uid` alone is D2 of the
         /// 2026-09-07 StormTest session (docs/AUDIT-STORMTEST-2026-09-07.md §3): three `cool` rows for one
@@ -54,6 +72,12 @@ namespace RavenIron.ValkyriesCargo.Core
         public float PlayerCooldownSeconds = 60f * 60f;
         public float CooldownRadius = 60f;
         public float TownRadius = 40f;
+        /// <summary>Issue #79: a visit needs ground somebody actually built on.</summary>
+        public bool RequireBuiltBase = true;
+        public float BuiltBaseRadius = HomeGround.DefaultBuiltRadius;
+        /// <summary>Issue #79: and it must not be the inside of one of the game's own locations.</summary>
+        public bool AvoidVanillaLocations = true;
+        public float LocationClearance = HomeGround.DefaultClearance;
         /// <summary>Dungeons and the like sit at y ≈ 5000; a player at or above this is not on the surface.</summary>
         public const float DungeonY = 3000f;
 
@@ -69,6 +93,8 @@ namespace RavenIron.ValkyriesCargo.Core
             PlayerCooldownSeconds = Clamp(PlayerCooldownSeconds, 0f, 604800f, "PlayerCooldownSeconds", problems);
             CooldownRadius = Clamp(CooldownRadius, 0f, 2000f, "CooldownRadius", problems);
             TownRadius = Clamp(TownRadius, 0f, 2000f, "TownRadius", problems);
+            BuiltBaseRadius = HomeGround.ClampBuiltRadius(BuiltBaseRadius, problems);
+            LocationClearance = HomeGround.ClampClearance(LocationClearance, problems);
         }
 
         private static float Clamp(float v, float lo, float hi, string name, List<string> problems)
@@ -107,7 +133,8 @@ namespace RavenIron.ValkyriesCargo.Core
         private sealed class BaseCooldown { public float X, Z; public double Until; }
 
         // The buckets a candidate can fall into, in the order `cargo status` lists them.
-        private const int NotRested = 0, LowComfort = 1, LowBase = 2, Dungeon = 3, OnCooldown = 4, NearCooldown = 5, Dead = 6, NotReady = 7, Buckets = 8;
+        private const int NotRested = 0, LowComfort = 1, LowBase = 2, NoBuiltBase = 3, InLocation = 4,
+                          Dungeon = 5, OnCooldown = 6, NearCooldown = 7, Dead = 8, NotReady = 9, Buckets = 10;
 
         /// <summary>The rules are sanitized IN PLACE (the game side calls Sanitize(problems) first if it wants the report).</summary>
         public Scheduler(SchedulerRules rules)
@@ -181,7 +208,7 @@ namespace RavenIron.ValkyriesCargo.Core
             d.Eligible = eligible.Count;
 
             if (forced != null && forcedBucket >= 0)
-                return Finish(d, "forced: " + forced + " not eligible: " + BucketName(forcedBucket) + "; online: " + Summary(counts, anyone));
+                return Finish(d, "forced: " + forced + " not eligible: " + BucketName(forcedBucket, forced) + "; online: " + Summary(counts, anyone));
             if (eligible.Count == 0)
                 return Finish(d, "no eligible player: " + Summary(counts, anyone));
 
@@ -214,10 +241,25 @@ namespace RavenIron.ValkyriesCargo.Core
             if (_rules.RequireRested && !c.Rested) return NotRested;
             if (c.Comfort < _rules.MinComfort) return LowComfort;
             if (c.BaseValue < _rules.MinBaseValue) return LowBase;
+            // Issue #79, in the order they were reasoned about: somebody built here, and this is not
+            // the inside of one of the game's own places. Both sit beside `LowBase` on purpose - they
+            // are the two questions vanilla's `baseValue` does not ask.
+            if (_rules.RequireBuiltBase && !c.BuiltBase) return NoBuiltBase;
+            if (_rules.AvoidVanillaLocations && c.InsideLocationName.Length > 0) return InLocation;
             if (c.Y >= SchedulerRules.DungeonY) return Dungeon;
             if (!skipCooldowns && OnPlayerCooldown(c.CooldownKey, now)) return OnCooldown;
             if (!skipCooldowns && NearBaseCooldown(c.X, c.Z, now)) return NearCooldown;
             return -1;
+        }
+
+        /// <summary>
+        /// The refusal for ONE named candidate, which can say which location it was. The aggregate
+        /// summary cannot - it counts people, not places - so the plain overload stays generic.
+        /// </summary>
+        private string BucketName(int bucket, Candidate c)
+        {
+            if (bucket == InLocation && c != null) return HomeGround.InsideLocationReason(c.InsideLocationName);
+            return BucketName(bucket);
         }
 
         private string BucketName(int bucket)
@@ -227,6 +269,8 @@ namespace RavenIron.ValkyriesCargo.Core
                 case NotRested: return "not rested";
                 case LowComfort: return "comfort < " + Wire.Int(_rules.MinComfort);
                 case LowBase: return "baseValue < " + Wire.Int(_rules.MinBaseValue);
+                case NoBuiltBase: return HomeGround.NoBuiltBaseReason(_rules.BuiltBaseRadius);
+                case InLocation: return "inside one of the game's own locations";
                 case Dungeon: return "in a dungeon";
                 case OnCooldown: return "on cooldown";
                 case NearCooldown: return "near a base on cooldown";

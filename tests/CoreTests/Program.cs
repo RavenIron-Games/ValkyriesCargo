@@ -60,6 +60,7 @@ namespace ValkyriesCargo.Tests
             ZoneOwnershipTests();
             ActiveAreaTests();
             CarryOffsetTests();
+            HomeGroundTests();
             JsonTests();
             SessionRowTests();
             BodyMotionTests();
@@ -2970,6 +2971,108 @@ namespace ValkyriesCargo.Tests
 
             // And the drop, which is where a healthy visit ends up: metres from the pilot, never stripped.
             Equal(false, ZoneOwnership.WouldStripClaim(13f, 0f, 0f, 0f, stock), "the drop point, 13 m from the pilot: safe");
+        }
+
+        private static void HomeGroundTests()
+        {
+            Section("HomeGround: whose ground is this? (issue #79 - Ingvar turning up at the Bog Witch)");
+
+            // The radius is not a taste call. Vanilla measures baseValue over exactly 20 m
+            // (Player.UpdateBaseValue -> EffectArea.GetBaseValue(position, 20f)); matching it is the
+            // whole point, so a player can never sit in a band where the game says "at a base" and we
+            // say "not". If this constant drifts, the two gates disagree and nobody can tell why.
+            Equal(20f, HomeGround.DefaultBuiltRadius, "the built-base radius is vanilla's own 20 m");
+            Check(HomeGround.MinBuiltRadius < HomeGround.DefaultBuiltRadius, "the default sits inside its own range, low end");
+            Check(HomeGround.MaxBuiltRadius > HomeGround.DefaultBuiltRadius, "and the high end");
+            Check(HomeGround.MaxClearance <= 64f,
+                  "the clearance stops at one zone: LocationsLive only looks at the 3x3 block, so a larger margin would be right only sometimes");
+
+            var problems = new List<string>();
+            Equal(HomeGround.MinBuiltRadius, HomeGround.ClampBuiltRadius(0.5f, problems), "a radius under the floor is clamped up");
+            Check(problems.Count == 1, "and says so");
+            Equal(HomeGround.MaxBuiltRadius, HomeGround.ClampBuiltRadius(9999f, problems), "and over the ceiling is clamped down");
+            Equal(20f, HomeGround.ClampBuiltRadius(20f, problems), "a value in range is left alone");
+            Check(problems.Count == 2, "and reports nothing");
+
+            problems.Clear();
+            Equal(HomeGround.MinClearance, HomeGround.ClampClearance(-5f, problems), "a negative clearance is clamped to the floor");
+            Equal(HomeGround.MaxClearance, HomeGround.ClampClearance(1000f, problems), "and a huge one to the ceiling");
+
+            // The arithmetic the whole second gate rests on.
+            Check(HomeGround.InsideLocation(10f, 30f, 8f), "well inside a camp is inside");
+            Check(!HomeGround.InsideLocation(50f, 30f, 8f), "well outside is outside");
+            Check(HomeGround.InsideLocation(38f, 30f, 8f),
+                  "exactly on the boundary counts as INSIDE: a drop landing precisely on the fence is the case this rule exists to stop");
+            Check(!HomeGround.InsideLocation(38.01f, 30f, 8f), "and a hair beyond it is clear");
+            Check(HomeGround.InsideLocation(0f, 0f, 0f),
+                  "a zero-radius location with zero clearance still owns the point standing exactly on it, rather than letting it through on a float comparison");
+            Check(HomeGround.InsideLocation(3f, -100f, 8f),
+                  "a negative radius is read as 0, not as a licence: an unreadable location keeps its clearance");
+            Check(!HomeGround.InsideLocation(9f, -100f, 8f), "and beyond that clearance it is clear");
+
+            // A small radius must not swallow the map. This is the regression that would quietly stop
+            // visits for everyone who built near a runestone.
+            Check(!HomeGround.InsideLocation(25f, 2f, 8f),
+                  "a runestone's couple of metres does not reach a base 25 m away - the location's own radius is what scales the rule");
+
+            Equal(0f, HomeGround.MetresClear(10f, 30f, 8f), "inside reads as 0 m clear");
+            Equal(12f, HomeGround.MetresClear(50f, 30f, 8f), "and outside reads as the real gap");
+
+            // The words. A refusal nobody can act on generates the same bug report twice.
+            Check(HomeGround.NoBuiltBaseReason(20f).Contains("20"), "the built-base refusal names the radius in force");
+            Check(HomeGround.InsideLocationReason("Bog Witch camp").Contains("Bog Witch camp"),
+                  "the location refusal NAMES the location - 'inside a location' with no name costs somebody an evening");
+            Check(HomeGround.InsideLocationReason("").Contains("unnamed"), "an empty name degrades to something honest");
+            Check(HomeGround.InsideLocationReason(null).Contains("unnamed"), "and so does a null one, rather than throwing in a log line");
+
+            Section("HomeGround: the two gates, in the scheduler");
+
+            // Gate 1. This is the reported bug: comfort, rested and baseValue all pass at the Bog Witch,
+            // because vanilla's baseValue never asks who built the place.
+            var atTheBogWitch = new List<Candidate> { Player(1, "Andie", 0f, 0f) };
+            atTheBogWitch[0].BuiltBase = false;
+            Scheduler g1 = new Scheduler(SchedulerRules.Default);
+            g1.Arm(0);
+            Decision d1 = g1.Tick(1500, atTheBogWitch, false, true, Rolls(0.0));
+            Check(!d1.Visit, "rested, comfortable and baseValue 5, but nobody built here: no visit");
+            Check(d1.Reason.Contains("nothing player-built"), "and the reason says which gate stopped it");
+
+            // Off, the old behaviour is exactly back. A server that wants Ingvar anywhere can have him.
+            Scheduler g1off = new Scheduler(new SchedulerRules { RequireBuiltBase = false });
+            g1off.Arm(0);
+            Check(g1off.Tick(1500, atTheBogWitch, false, true, Rolls(0.0)).Visit,
+                  "Server.RequireBuiltBase=false puts the pre-79 behaviour back, unchanged");
+
+            // Gate 2. Somebody built a shack beside her, so gate 1 passes and gate 2 has to catch it.
+            var shackByTheCamp = new List<Candidate> { Player(2, "Andie", 0f, 0f) };
+            shackByTheCamp[0].BuiltBase = true;
+            shackByTheCamp[0].InsideLocationName = "Bog Witch camp";
+            Scheduler g2 = new Scheduler(SchedulerRules.Default);
+            g2.Arm(0);
+            Decision d2 = g2.Tick(1500, shackByTheCamp, false, true, Rolls(0.0));
+            Check(!d2.Visit, "player-built, but inside one of the game's own locations: still no visit");
+            Check(d2.Reason.Contains("locations"), "and the aggregate reason says so");
+
+            Scheduler g2off = new Scheduler(new SchedulerRules { AvoidVanillaLocations = false });
+            g2off.Arm(0);
+            Check(g2off.Tick(1500, shackByTheCamp, false, true, Rolls(0.0)).Visit,
+                  "Server.AvoidVanillaLocations=false lets a base beside a camp have its visit");
+
+            // The forced path explains ONE player, so it can name the place. The aggregate counts people
+            // and cannot, which is why there are two overloads.
+            Scheduler forced = new Scheduler(SchedulerRules.Default);
+            forced.Arm(0);
+            Decision df = forced.Force(1500, shackByTheCamp, false, true, 2);
+            Check(!df.Visit, "an admin's cargo visit is refused on the same ground");
+            Check(df.Reason.Contains("Bog Witch camp"),
+                  "and names the location, because an admin asking why deserves the answer and not a category");
+
+            // Clear ground still works. If this ever fails, the fix for 79 has eaten the feature.
+            var home = new List<Candidate> { Player(3, "Nomadtest", 0f, 0f) };
+            Scheduler ok = new Scheduler(SchedulerRules.Default);
+            ok.Arm(0);
+            Check(ok.Tick(1500, home, false, true, Rolls(0.0)).Visit,
+                  "a player-built base clear of any location gets its visit exactly as before");
         }
 
         private static void CarryOffsetTests()

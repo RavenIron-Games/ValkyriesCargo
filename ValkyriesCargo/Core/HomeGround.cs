@@ -1,0 +1,158 @@
+using System.Collections.Generic;
+
+namespace RavenIron.ValkyriesCargo.Core
+{
+    /// <summary>
+    /// Whether the ground a candidate is standing on is somewhere Ingvar should be dropped: a place a
+    /// PLAYER built, and not the inside of one of the game's own locations.
+    ///
+    /// **Why this file exists (issue #79, 2026-09-14, from a player: "Little man shows up at the
+    /// Bogwitch if you happen to be there when he appears").** The visit gate asked seven things and
+    /// none of them asked whose base it was. `baseValue` is vanilla's own number and vanilla computes
+    /// it as `EffectArea.GetBaseValue(position, 20f)` - a count of PlayerBase-flagged effect areas
+    /// within 20 m with NO ownership test of any kind. So any sheltered, comfortable spot passed every
+    /// gate, including the game's own NPC camps. The Bog Witch was the one that got reported; Haldor's
+    /// camp and any ruin with a fire in it are the same shape. The store page promises "beside your
+    /// hearth" and "at your own fire" four times over, so the reporter's expectation was the one we
+    /// wrote.
+    ///
+    /// TWO TESTS, because neither alone is enough.
+    ///
+    /// 1. **Somebody built here.** A piece the game placed as part of a location carries `creator == 0`;
+    ///    a piece a player placed carries their id (`Piece.IsPlacedByPlayer`). So "is there a
+    ///    player-built piece within the same 20 m vanilla measures baseValue over" excludes the Bog
+    ///    Witch's camp outright. Deliberately NOT "did YOU build it" (`Piece.IsCreator`): on a shared
+    ///    server one player builds the hall and the rest live in it, and keying on the builder would
+    ///    mean only the builder ever got a visit. The client reports this the way it already reports
+    ///    comfort, on its own ZDO.
+    /// 2. **Not inside one of the game's locations.** Test 1 still passes if somebody plants a workbench
+    ///    beside the Bog Witch, and a Valkyrie dropping a rival merchant into her camp is the complaint.
+    ///    Every `ZoneLocation` carries its own `m_exteriorRadius`, so the rule scales itself: a
+    ///    runestone's radius is a couple of metres and a camp's is tens. That matters - a flat exclusion
+    ///    distance would quietly stop visits for everyone who built near a ruin, a runestone or a
+    ///    dungeon entrance, which is a great many players.
+    ///
+    /// Everything here is pure arithmetic and words. The engine reads are `LocationsLive.Read` on the
+    /// server and `Piece.GetAllPiecesInRadius` on the client.
+    /// </summary>
+    public static class HomeGround
+    {
+        // --- the built-base radius -------------------------------------------------------------
+
+        /// <summary>
+        /// 20 m, which is not a taste call: it is the radius vanilla itself measures `baseValue` over
+        /// (`Player.UpdateBaseValue` -> `EffectArea.GetBaseValue(position, 20f)`). Matching it means the
+        /// two gates agree about how far "here" reaches, so a player can never sit in the strange band
+        /// where the game says they are at a base and we say they are not.
+        /// </summary>
+        public const float DefaultBuiltRadius = 20f;
+
+        /// <summary>Below this a doorway would fail its own house.</summary>
+        public const float MinBuiltRadius = 4f;
+
+        /// <summary>
+        /// One zone. The client scans every instanced piece to answer this, so the radius is bounded
+        /// for the same reason the scan is on its own slow timer.
+        /// </summary>
+        public const float MaxBuiltRadius = 64f;
+
+        // --- the clearance added to a location's own radius -------------------------------------
+
+        /// <summary>
+        /// Added to whatever the location says its exterior radius is. Small on purpose: the location's
+        /// own number is doing the work, and this is only the margin that keeps Ingvar from landing on
+        /// the boundary fence.
+        /// </summary>
+        public const float DefaultClearance = 8f;
+
+        public const float MinClearance = 0f;
+
+        /// <summary>
+        /// A location instance is registered against one zone, and `LocationsLive` looks at the 3x3
+        /// block of zones around the candidate. Past about this margin the answer would depend on which
+        /// zone a location happened to be filed under, so the knob stops before it can lie.
+        /// </summary>
+        public const float MaxClearance = 64f;
+
+        public static float ClampBuiltRadius(float r, List<string> problems)
+        {
+            if (r < MinBuiltRadius)
+            {
+                Wire.Report(problems, "BuiltBaseRadius clamped to " + Wire.Float(MinBuiltRadius));
+                return MinBuiltRadius;
+            }
+            if (r > MaxBuiltRadius)
+            {
+                Wire.Report(problems, "BuiltBaseRadius clamped to " + Wire.Float(MaxBuiltRadius));
+                return MaxBuiltRadius;
+            }
+            return r;
+        }
+
+        public static float ClampClearance(float c, List<string> problems)
+        {
+            if (c < MinClearance)
+            {
+                Wire.Report(problems, "LocationClearance clamped to " + Wire.Float(MinClearance));
+                return MinClearance;
+            }
+            if (c > MaxClearance)
+            {
+                Wire.Report(problems, "LocationClearance clamped to " + Wire.Float(MaxClearance));
+                return MaxClearance;
+            }
+            return c;
+        }
+
+        // --- the decisions ----------------------------------------------------------------------
+
+        /// <summary>
+        /// Is a point at `distance` from a location's centre inside it, for our purposes? Inclusive at
+        /// the boundary, so a clearance of 0 against a radius of 0 still refuses a point sitting exactly
+        /// on a location's origin rather than letting it through on a float comparison.
+        ///
+        /// A negative or unreadable `exteriorRadius` is treated as 0 rather than as a licence: a
+        /// location whose radius we cannot read still keeps its clearance.
+        /// </summary>
+        public static bool InsideLocation(float distance, float exteriorRadius, float clearance)
+        {
+            if (exteriorRadius < 0f) exteriorRadius = 0f;
+            if (clearance < 0f) clearance = 0f;
+            return distance <= exteriorRadius + clearance;
+        }
+
+        /// <summary>
+        /// How far outside a location a point sits, or 0 when it is inside. Only for the words; nothing
+        /// gates on it.
+        /// </summary>
+        public static float MetresClear(float distance, float exteriorRadius, float clearance)
+        {
+            if (exteriorRadius < 0f) exteriorRadius = 0f;
+            if (clearance < 0f) clearance = 0f;
+            float clear = distance - (exteriorRadius + clearance);
+            return clear > 0f ? clear : 0f;
+        }
+
+        /// <summary>
+        /// The refusal a candidate standing on ground nobody built gets, in the shape the roll line
+        /// already speaks. `radius` is the one actually in force after clamping, not the configured one,
+        /// so a clamped value never reads back as the number somebody typed.
+        /// </summary>
+        public static string NoBuiltBaseReason(float radius)
+        {
+            return "nothing player-built within " + Wire.Float(radius) + " m";
+        }
+
+        /// <summary>
+        /// The refusal for standing inside one of the game's own locations. The location is NAMED,
+        /// because "inside a location" with no name is the kind of line that costs somebody an evening.
+        /// An empty or missing name degrades to the honest "an unnamed location" rather than to a blank.
+        /// </summary>
+        public static string InsideLocationReason(string locationName)
+        {
+            string n = locationName == null ? "" : locationName.Trim();
+            if (n.Length == 0) n = "an unnamed location";
+            return "inside " + n + ", one of the game's own locations";
+        }
+    }
+}
