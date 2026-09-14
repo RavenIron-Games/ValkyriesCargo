@@ -37,6 +37,13 @@ namespace RavenIron.ValkyriesCargo.Core
         // so it replicates - the same trust class as vanilla's own `baseValue`.
         public const string Rested = "VCargo_rested";
         public const string Comfort = "VCargo_comfort";
+        /// <summary>
+        /// bool: is there a PLAYER-BUILT piece near me. Vanilla's `baseValue` cannot answer this - it is
+        /// `EffectArea.GetBaseValue(pos, 20f)` and counts effect areas with no ownership test at all, so
+        /// the game's own NPC camps read as a base (issue #79). The client is the machine with the pieces
+        /// instanced, so it reports this beside comfort. `Core/HomeGround.cs` is the rule.
+        /// </summary>
+        public const string Built = "VCargo_built";
 
         // Routed RPCs (Net/AdminRpc.cs): `cargo visit` / `cargo dismiss` from a client's console to the
         // server and the answer back. Forgeable (the packet names its own sender), so the server decides

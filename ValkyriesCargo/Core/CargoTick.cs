@@ -130,6 +130,11 @@ namespace RavenIron.ValkyriesCargo.Core
 
             if (ValkyriesCargo.HasRenderer)
             {
+                // The radius is the SERVER's, pushed in every tick rather than read once: it is a synced
+                // value and an admin can move it mid-session, exactly as they can move the carry offset.
+                _reporter.BuiltRadius = ModConfig.BuiltBaseRadius != null
+                    ? ModConfig.BuiltBaseRadius.Value
+                    : Core.HomeGround.DefaultBuiltRadius;
                 _reporter.Tick(dt);
                 PilotLine();
                 ClientWire(znet);

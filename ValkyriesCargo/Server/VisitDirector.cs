@@ -281,7 +281,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     // than `cargo visit` needs; refusing here would be the old bug wearing a new coat.
                     // The roll's gates exist to decide when a visit is a nice surprise, not to argue
                     // with an admin who asked for one.
-                    Candidate host = Scheduler.NearestTo(Gather(), current.m_pos.x, current.m_pos.z);
+                    Candidate host = Scheduler.NearestTo(Gather(_scheduler.Rules), current.m_pos.x, current.m_pos.z);
                     if (host != null)
                     {
                         ValkyriesCargo.Log.LogInfo("event '" + CargoEvent.Name + "' started outside the director (the vanilla `event` console command, or another mod); adopting it onto " + host + " and authoring the visit");
@@ -298,7 +298,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 }
                 else if (_pendingSessionRow == null)
                 {
-                    _candidates = Gather();
+                    _candidates = Gather(_scheduler.Rules);
                     Decision d = _scheduler.Tick(now, _candidates, current != null, EnvMan.IsDay(), () => _rng.NextDouble());
                     if (d != null)
                     {
@@ -390,7 +390,7 @@ namespace RavenIron.ValkyriesCargo.Server
             RandEventSystem res = RandEventSystem.instance;
             if (res == null) return "no RandEventSystem yet";
             if (_session.Active) return "a visit is already running (#" + _session.VisitId + ", " + _session.Clock.FormatRemaining(worldTime) + " left)";
-            _candidates = Gather();
+            _candidates = Gather(_scheduler.Rules);
             RandomEvent current = res.GetCurrentRandomEvent();
             Decision d = _scheduler.Force(now, _candidates, current != null, EnvMan.IsDay(), uid);
             LogDecision(d.Reason);
@@ -481,7 +481,7 @@ namespace RavenIron.ValkyriesCargo.Server
             if (string.IsNullOrEmpty(name)) return null;
             foreach (Candidate c in _candidates)
                 if (string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)) return c;
-            foreach (Candidate c in Gather())
+            foreach (Candidate c in Gather(_scheduler.Rules))
                 if (string.Equals(c.Name, name, StringComparison.OrdinalIgnoreCase)) return c;
             return null;
         }
@@ -742,7 +742,7 @@ namespace RavenIron.ValkyriesCargo.Server
         }
 
         /// <summary>Every online character as the scheduler sees it, from the character ZDOs the engine keeps for ready peers.</summary>
-        public static List<Candidate> Gather()
+        public static List<Candidate> Gather(SchedulerRules rules = null)
         {
             var list = new List<Candidate>();
             ZNet znet = ZNet.instance;
@@ -765,15 +765,43 @@ namespace RavenIron.ValkyriesCargo.Server
                     Comfort = zdo.GetInt(ComfortReporter.ComfortHash, 0),
                     Alive = !zdo.GetBool(ZDOVars.s_dead, false),
                     Ready = true,
+                    // Issue #79. Default FALSE, unlike the pure type's own default: on a real server a
+                    // client that has not reported yet is a client we know nothing about, and "no
+                    // evidence of a base" is the honest reading of that. It self-corrects within one
+                    // report, and the gate is off entirely when Server.RequireBuiltBase is false.
+                    BuiltBase = zdo.GetBool(ComfortReporter.BuiltHash, false),
+                    // Measured HERE, on the server, not reported by the client: the client could be
+                    // standing anywhere and the game's locations are the server's own knowledge.
+                    InsideLocationName = LocationOf(p, rules),
                 });
             }
             return list;
         }
 
+        /// <summary>
+        /// The game's own location a point sits inside, or "" when the ground is clear. Skipped entirely
+        /// when the gate is off, so a server that does not want this rule does not pay for it on every
+        /// gather.
+        /// </summary>
+        private static string LocationOf(Vector3 p, SchedulerRules rules)
+        {
+            if (rules == null || !rules.AvoidVanillaLocations) return "";
+            try { return LocationsLive.Read(p, rules.LocationClearance).Name; }
+            catch (Exception ex)
+            {
+                if (_locationThrows++ < 3) ValkyriesCargo.Log.LogWarning("location check threw " + ex.Message + "; the ground is treated as clear");
+                return "";
+            }
+        }
+
+        private static int _locationThrows;
+
         /// <summary>One candidate in words for `cargo status`.</summary>
         public string Describe(Candidate c, double now)
         {
             return c + " (uid " + Wire.Long(c.Uid) + "): rested=" + (c.Rested ? "yes" : "no") + " comfort=" + c.Comfort + " base=" + c.BaseValue +
+                   " built=" + (c.BuiltBase ? "yes" : "no") +
+                   (c.InsideLocationName.Length > 0 ? " INSIDE " + c.InsideLocationName : "") +
                    " y=" + Wire.Float((float)Math.Round(c.Y)) + (c.Alive ? "" : " DEAD") +
                    (_scheduler.OnPlayerCooldown(c.CooldownKey, now) ? " on cooldown" : "") + (_scheduler.NearBaseCooldown(c.X, c.Z, now) ? " near a base on cooldown" : "");
         }
