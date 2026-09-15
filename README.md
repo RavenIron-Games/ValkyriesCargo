@@ -75,9 +75,9 @@ bird was in the air. On 2026-09-15 (Storm10): issue #79's gates — refused besi
 door and at the Sacrificial Stones, flown in to a base on a ruin and set down (a second ruin base's flight
 was authored and dismissed before the drop) — and seven deals on the 101-row catalogue, including 40 hides
 bought in two deals and all 40 sold back in three through the new prefab-keyed removal. That work ran on
-`main` at `ad6c334`, before the version bump; no `.cs` file changed between it and the cut, and the shipped
-0.1.1 build booted on Storm10 at the cut (`v0.1.1 loaded … catalogue=101 entries … probes 19/19 ok`).
-Off-game: 2093 checks, 0 warnings.
+`main` at `ad6c334`, before the version bump; no `.cs` file changed between it and the cut, and a 0.1.1
+build (from `4ff22fc`, the zip's code but for the commit id a build embeds) booted on Storm10 at the cut
+(`v0.1.1 loaded … catalogue=101 entries … probes 19/19 ok`). Off-game: 2093 checks, 0 warnings.
 
 **What is proven and what is not, at this cut** (`docs/proofs/2026-09-11-release-session.md`,
 `docs/proofs/2026-09-15-storm10-session.md`). The
