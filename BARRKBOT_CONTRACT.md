@@ -190,3 +190,19 @@ recent slice).
 4. Anything new that's pure belongs in `Core/` (`Core/BarrkExport.cs`, `Core/BarrkRollover.cs`,
    `Core/TraderLedger.cs`, `Core/VisitHistory.cs`) so `tests/CoreTests` can prove it before it ships,
    and prove it fails without its fix.
+
+## Achievements (contract v4)
+
+`barrkbot_cargo_market.json` (every part) carries
+
+```json
+"market_not_achievements": ["stock", "target_stock", "max_stock", "buy_price", "sell_price", "trend"]
+```
+
+The market is a map keyed by a thing (the prefab), which BarrkBOT ranks since 6.0.92 with the row's one
+string, `kind` (`Ware` / `Want`), as the credit. Without this declaration a leader change is posted as a
+congratulation - "Ware now leads stock on the Sap with 40, taking it from Want" - and the shelf rotating
+every couple of game days produces one an hour (seen in the Wonderland channel, 2026-09-14). None of
+these numbers is anything anyone achieved. The traders and visits collections carry no declaration:
+`coins_spent`, `coins_earned`, `deals_settled`, `items_bought`, `items_sold` and a visit's
+`takings_coins` are real records credited to a real person, and the name test gets them right.
