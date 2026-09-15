@@ -167,6 +167,11 @@ namespace RavenIron.ValkyriesCargo.Server
             }
             int rows = 0;
             if (sc.MarketRows.Length > 0) { _market.ApplyState(sc.MarketRows, problems); rows += sc.MarketRows.Split('\n').Length; }
+            // The purse carry across a restart (found live 2026-09-15, visit #14): the sidecar's `coined` row
+            // is the gross the last visit took in, and StartVisit is handed _lastCoined, which only End() set -
+            // so the first visit after every boot opened at PurseCoins with no carry. Seed it from what
+            // ApplyState just restored; a resumed visit's End() overwrites it when that visit ends.
+            _lastCoined = _market.Coined;
             if (sc.CooldownRows.Length > 0) { _scheduler.ApplyCooldowns(sc.CooldownRows, now, problems); rows += sc.CooldownRows.Split('\n').Length; }
             rows += _ledger.ApplyRows(sc.OwedRows, problems);
             if (sc.SessionRow.Length > 0) { _pendingSessionRow = sc.SessionRow; rows++; }
