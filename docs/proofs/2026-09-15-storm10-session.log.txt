@@ -224,3 +224,36 @@ session: visit #13, the seven deals, the catalogue add refusal.
   814: [Info   :Valkyrie's Cargo] VCargo_dismissed: ok
   815: [Info   :Valkyrie's Cargo] terminal closed: sent him off
   816: [Info   :Valkyrie's Cargo] cargo merchant #14: into the mist: 1 renderer(s) off with the smoke; the Clear follows in 2 s
+
+=== SERVER, the carry-fix DLL (0.1.1+5c58e81, main after PR #91), boots 13:01 and 13:08, visits #15 and #16 ===
+
+10393: [Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.1]
+10395: [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.1 loaded - renderer=False, patches 18/18 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+10696: [Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 101 entries, purse 99795, next visit #15, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (106 rows loaded); shelf 100 of 101, period 3, rolls every 2 game day(s), next in 1.66 game day(s)
+10722: [Info   : Unity Log] 09/15/2026 13:01:44: Session "Storm10" with join code 608444 and IP 172.59.201.230:2477 is active with 0 player(s)
+10745: [Info   : Unity Log] Received Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1 from the client.
+10781: [Info   :Valkyrie's Cargo] admin Nomadtest (765883431): cargo visit 
+10783: [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-63.5368538, -18.146841); 1 eligible, 1 ticket(s)
+10786: [Info   :Valkyrie's Cargo] visit #15 begins: pilot Nomadtest (uid 765883431) at (-63.5368538, -18.146841), 300 s, purse 100000, seed 156273418
+10787: [Info   :Valkyrie's Cargo] visit #15: flight authored: start (12.8148041, -34.0975342) at 184.515686, descent (-3.03624, -30.7860775) at 157.015686 (48.57975 m short), drop (-50.5893745, -20.8517113) at 64.51569, straight in 78 m out; bird -408868155:67585, Dverger -408868155:67586, both owned by the pilot
+10791: [Info   :Valkyrie's Cargo] visit #15: dropped at (-50.5893745, 66.38455, -20.8517113)
+10807: [Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-15-1 with Nomadtest: sold 2 BlackCore at 300, sold 20 AmberPearl at 14, sold 9 Ruby at 35, sold 40 FishRaw at 2, sold 33 Carapace at 11, coins -1638 to the player; purse 101638
+10812: [Info   :Valkyrie's Cargo] visit #15 ended: dismissed by Nomadtest; takings 1638 coins, purse 101638, 0 clock republish(es), 0 owed deliveries
+10814: [Info   :Valkyrie's Cargo] visit #15: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+10840: [Info   : Unity Log] 09/15/2026 13:08:17: Game - OnApplicationQuit
+10892: [Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.1]
+10894: [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.1 loaded - renderer=False, patches 18/18 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+11195: [Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 101 entries, purse 101638, next visit #16, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (108 rows loaded); shelf 100 of 101, period 3, rolls every 2 game day(s), next in 1.49 game day(s)
+11221: [Info   : Unity Log] 09/15/2026 13:08:38: Session "Storm10" with join code 608444 and IP 172.59.201.230:2477 is active with 0 player(s)
+11240: [Info   : Unity Log] Received Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1 from the client.
+11270: [Info   :Valkyrie's Cargo] admin Nomadtest (-921552325): cargo visit 
+11272: [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-63.2397652, -18.1916885); 1 eligible, 1 ticket(s)
+11275: [Info   :Valkyrie's Cargo] visit #16 begins: pilot Nomadtest (uid -921552325) at (-63.2397652, -18.1916885), 300 s, purse 100819, seed 112049586
+11276: [Info   :Valkyrie's Cargo] visit #16: flight authored: start (-122.757835, 49.318306) at 184.439957, descent (-104.487106, 28.5942364) at 145.29068 (50 m short), drop (-71.42152, -8.911315) at 64.43996, straight in 90 m out; bird -1138741614:67588, Dverger -1138741614:67589, both owned by the pilot
+11281: [Info   :Valkyrie's Cargo] visit #16: dropped at (-71.42152, 61.76879, -8.911315)
+
+sidecar valkyriescargo_-1547182814.dat, read between the 13:08:17 quit and the 13:08 relaunch:
+purse	101638
+purseStart	100000
+coined	1638
+visit	15
