@@ -49,27 +49,32 @@ namespace RavenIron.ValkyriesCargo
             public float Radius;
         }
 
-        /// <summary>The two facts the rule turns on, for one location type.</summary>
-        private struct Facts { public bool Trader; public bool Interior; }
+        /// <summary>
+        /// The three facts the rule turns on, for one location type. Trader and Interior come off the prefab
+        /// asset; Landmark is the registry entry's own map-icon flag (`m_iconAlways` / `m_iconPlaced`), which
+        /// a location INSTANCE does not carry - so on a client, where only instances exist, it is unknown
+        /// and reads false. The gate runs on the server, which has the registry.
+        /// </summary>
+        private struct Facts { public bool Trader; public bool Interior; public bool Landmark; }
 
         /// <summary>
         /// Answers "clear" when nothing counts, and deliberately also when there is no world yet: a
         /// check that has not run is never allowed to be the thing that stops a visit.
         /// </summary>
-        public static Verdict Read(Vector3 p, float clearance, bool merchants, bool dungeons)
+        public static Verdict Read(Vector3 p, float clearance, bool merchants, bool dungeons, bool landmarks)
         {
             Verdict v = new Verdict { Inside = false, Name = "", Kind = "", Distance = 0f, Radius = 0f };
-            if (!merchants && !dungeons) return v;
+            if (!merchants && !dungeons && !landmarks) return v;
             ZoneSystem zs = ZoneSystem.instance;
             if (zs == null) return v;
             if (zs.m_locationInstances != null && zs.m_locationInstances.Count > 0)
-                return ReadRegistry(zs, p, clearance, merchants, dungeons, v);
+                return ReadRegistry(zs, p, clearance, merchants, dungeons, landmarks, v);
             return ReadInstances(p, clearance, merchants, dungeons, v);
         }
 
         // ---- the server: the zone registry, and the prefab asset for what is inside ----------------
 
-        private static Verdict ReadRegistry(ZoneSystem zs, Vector3 p, float clearance, bool merchants, bool dungeons, Verdict v)
+        private static Verdict ReadRegistry(ZoneSystem zs, Vector3 p, float clearance, bool merchants, bool dungeons, bool landmarks, Verdict v)
         {
             Vector2s centre = ZoneSystem.GetZone(p);
             float bestOverlap = float.NegativeInfinity;
@@ -85,7 +90,7 @@ namespace RavenIron.ValkyriesCargo
                     float distance = Mathf.Sqrt(ddx * ddx + ddz * ddz);
                     float radius = li.m_location.m_exteriorRadius;
                     if (!HomeGround.InsideLocation(distance, radius, clearance)) continue;
-                    string kind = KindOf(FactsOf(li.m_location), merchants, dungeons);
+                    string kind = KindOf(FactsOf(li.m_location), merchants, dungeons, landmarks);
                     if (kind.Length == 0) continue;
                     // Overlapping locations are possible; the one the point is deepest inside is the one
                     // a player would say they were standing in.
@@ -106,7 +111,8 @@ namespace RavenIron.ValkyriesCargo
             string key = loc.m_prefabName ?? "";
             Facts f;
             if (_factsByPrefab.TryGetValue(key, out f)) return f;
-            f = new Facts { Trader = false, Interior = false };
+            // The map-icon flag is on the registry entry itself; no asset needed for it.
+            f = new Facts { Trader = false, Interior = false, Landmark = loc.m_iconAlways || loc.m_iconPlaced };
             try
             {
                 loc.m_prefab.Load();
@@ -156,7 +162,7 @@ namespace RavenIron.ValkyriesCargo
         {
             kind = "";
             if (loc == null) return null;
-            kind = KindOf(new Facts { Trader = HoldsTrader(loc), Interior = loc.m_hasInterior }, merchants, dungeons);
+            kind = KindOf(new Facts { Trader = HoldsTrader(loc), Interior = loc.m_hasInterior, Landmark = false }, merchants, dungeons, false);
             return kind.Length == 0 ? null : loc;
         }
 
@@ -175,11 +181,12 @@ namespace RavenIron.ValkyriesCargo
 
         // ---- shared ---------------------------------------------------------------------------------
 
-        /// <summary>The kind a location counts as under the two switches, or "" when it does not count.</summary>
-        private static string KindOf(Facts f, bool merchants, bool dungeons)
+        /// <summary>The kind a location counts as under the three switches, or "" when it does not count.</summary>
+        private static string KindOf(Facts f, bool merchants, bool dungeons, bool landmarks)
         {
             if (merchants && f.Trader) return HomeGround.MerchantCamp;
             if (dungeons && f.Interior) return HomeGround.DungeonEntrance;
+            if (landmarks && f.Landmark) return HomeGround.Landmark;
             return "";
         }
 
@@ -225,7 +232,8 @@ namespace RavenIron.ValkyriesCargo
                         float ddx = p.x - li.m_position.x, ddz = p.z - li.m_position.z;
                         sb.Append(' ').Append(Name(li.m_location)).Append("[r=").Append(Wire.Float(li.m_location.m_exteriorRadius))
                           .Append(" d=").Append(Wire.Float(Mathf.Sqrt(ddx * ddx + ddz * ddz)))
-                          .Append(" trader=").Append(f.Trader ? "y" : "n").Append(" interior=").Append(f.Interior ? "y" : "n").Append(']');
+                          .Append(" trader=").Append(f.Trader ? "y" : "n").Append(" interior=").Append(f.Interior ? "y" : "n")
+                          .Append(" landmark=").Append(f.Landmark ? "y" : "n").Append(']');
                     }
             if (n == 0) sb.Append(" none in the 3x3");
             sb.Append("; instances: GetLocation=").Append(One(Location.GetLocation(p), p));
@@ -242,14 +250,20 @@ namespace RavenIron.ValkyriesCargo
         }
 
         /// <summary>One line for `cargo status`.</summary>
-        public static string StatusLine(Vector3 p, float clearance, bool merchants, bool dungeons)
+        public static string StatusLine(Vector3 p, float clearance, bool merchants, bool dungeons, bool landmarks)
         {
             if (ZoneSystem.instance == null) return "locations: no world yet (nothing is refused for this)";
-            if (!merchants && !dungeons) return "locations: both gates are off (Server.AvoidMerchantCamps, Server.AvoidDungeonEntrances)";
-            Verdict v = Read(p, clearance, merchants, dungeons);
-            string gates = (merchants ? "merchant camps" : "") + (merchants && dungeons ? " + " : "") + (dungeons ? "dungeon entrances" : "");
+            if (!merchants && !dungeons && !landmarks) return "locations: all three gates are off (Server.AvoidMerchantCamps, AvoidDungeonEntrances, AvoidLandmarks)";
+            Verdict v = Read(p, clearance, merchants, dungeons, landmarks);
+            var g = new List<string>();
+            if (merchants) g.Add("merchant camps");
+            if (dungeons) g.Add("dungeon entrances");
+            if (landmarks) g.Add("landmarks");
+            string gates = string.Join(" + ", g.ToArray());
+            bool registry = ZoneSystem.instance.m_locationInstances != null && ZoneSystem.instance.m_locationInstances.Count > 0;
             if (!v.Inside)
-                return "locations: clear here (refusing " + gates + "; clearance " + Wire.Float(clearance) + " m)";
+                return "locations: clear here (refusing " + gates + "; clearance " + Wire.Float(clearance) + " m" +
+                       (landmarks && !registry ? "; landmarks are the server's read, not visible from a client" : "") + ")";
             return "locations: AT " + HomeGround.LocationLabel(v.Name, v.Kind) + " (" + Wire.Float(v.Distance) +
                    " m from its centre, exterior radius " + Wire.Float(v.Radius) + " m, clearance " + Wire.Float(clearance) + " m)";
         }

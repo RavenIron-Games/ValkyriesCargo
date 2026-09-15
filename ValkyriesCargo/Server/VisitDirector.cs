@@ -783,6 +783,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     // standing anywhere and the game's locations are the server's own knowledge.
                     InsideMerchantCamp = MerchantCampAt(p, rules),
                     InsideDungeonEntrance = DungeonEntranceAt(p, rules),
+                    InsideLandmark = LandmarkAt(p, rules),
                 });
             }
             return list;
@@ -795,7 +796,7 @@ namespace RavenIron.ValkyriesCargo.Server
         private static string MerchantCampAt(Vector3 p, SchedulerRules rules)
         {
             if (rules == null || !rules.AvoidMerchantCamps) return "";
-            try { return LocationsLive.Read(p, rules.LocationClearance, true, false).Name; }
+            try { return LocationsLive.Read(p, rules.LocationClearance, true, false, false).Name; }
             catch (Exception ex)
             {
                 if (_locationThrows++ < 3) ValkyriesCargo.Log.LogWarning("merchant-camp check threw " + ex.Message + "; the ground is treated as clear");
@@ -807,10 +808,22 @@ namespace RavenIron.ValkyriesCargo.Server
         private static string DungeonEntranceAt(Vector3 p, SchedulerRules rules)
         {
             if (rules == null || !rules.AvoidDungeonEntrances) return "";
-            try { return LocationsLive.Read(p, rules.LocationClearance, false, true).Name; }
+            try { return LocationsLive.Read(p, rules.LocationClearance, false, true, false).Name; }
             catch (Exception ex)
             {
                 if (_locationThrows++ < 3) ValkyriesCargo.Log.LogWarning("dungeon-entrance check threw " + ex.Message + "; the ground is treated as clear");
+                return "";
+            }
+        }
+
+        /// <summary>The landmark a point sits at - the spawn stones, a boss altar - or "" when clear. Its own switch.</summary>
+        private static string LandmarkAt(Vector3 p, SchedulerRules rules)
+        {
+            if (rules == null || !rules.AvoidLandmarks) return "";
+            try { return LocationsLive.Read(p, rules.LocationClearance, false, false, true).Name; }
+            catch (Exception ex)
+            {
+                if (_locationThrows++ < 3) ValkyriesCargo.Log.LogWarning("landmark check threw " + ex.Message + "; the ground is treated as clear");
                 return "";
             }
         }
@@ -824,6 +837,7 @@ namespace RavenIron.ValkyriesCargo.Server
                    " built=" + (c.BuiltBase ? "yes" : "no") +
                    (c.InsideMerchantCamp.Length > 0 ? " AT " + c.InsideMerchantCamp + " (merchant)" : "") +
                    (c.InsideDungeonEntrance.Length > 0 ? " AT " + c.InsideDungeonEntrance + " (dungeon)" : "") +
+                   (c.InsideLandmark.Length > 0 ? " AT " + c.InsideLandmark + " (landmark)" : "") +
                    " y=" + Wire.Float((float)Math.Round(c.Y)) + (c.Alive ? "" : " DEAD") +
                    (_scheduler.OnPlayerCooldown(c.CooldownKey, now) ? " on cooldown" : "") + (_scheduler.NearBaseCooldown(c.X, c.Z, now) ? " near a base on cooldown" : "");
         }

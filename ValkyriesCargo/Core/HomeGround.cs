@@ -157,6 +157,14 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string DungeonEntrance = "a dungeon entrance";
 
         /// <summary>
+        /// A location the game itself pins on the map - the registry's `m_iconAlways` (the Sacrificial
+        /// Stones) or `m_iconPlaced` (every boss altar, the merchant camps): the places the game treats as
+        /// landmarks rather than as ground. The owner's third switch, 2026-09-15, after the live test showed
+        /// the spawn stones granted under the first two: "add the third switch". No name list.
+        /// </summary>
+        public const string Landmark = "one of the game's landmarks";
+
+        /// <summary>
         /// The refusal a candidate standing on ground nobody built gets, in the shape the roll line
         /// already speaks. `radius` is the one actually in force after clamping, not the configured one,
         /// so a clamped value never reads back as the number somebody typed.

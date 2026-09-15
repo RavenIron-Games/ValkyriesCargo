@@ -340,6 +340,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                 bool requireBuilt = ModConfig.RequireBuiltBase != null && ModConfig.RequireBuiltBase.Value;
                 bool avoidMerchants = ModConfig.AvoidMerchantCamps != null && ModConfig.AvoidMerchantCamps.Value;
                 bool avoidDungeons = ModConfig.AvoidDungeonEntrances != null && ModConfig.AvoidDungeonEntrances.Value;
+                bool avoidLandmarks = ModConfig.AvoidLandmarks != null && ModConfig.AvoidLandmarks.Value;
                 float radius = ModConfig.BuiltBaseRadius != null ? ModConfig.BuiltBaseRadius.Value : HomeGround.DefaultBuiltRadius;
                 float clearance = ModConfig.LocationClearance != null ? ModConfig.LocationClearance.Value : HomeGround.DefaultClearance;
 
@@ -352,7 +353,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                 Player lp = Player.m_localPlayer;
                 if (lp != null)
                 {
-                    Say(args, "  " + LocationsLive.StatusLine(lp.transform.position, clearance, avoidMerchants, avoidDungeons));
+                    Say(args, "  " + LocationsLive.StatusLine(lp.transform.position, clearance, avoidMerchants, avoidDungeons, avoidLandmarks));
                     Say(args, "  " + LocationsLive.Probe(lp.transform.position));
                 }
                 else Say(args, "  locations: no local player to measure from");

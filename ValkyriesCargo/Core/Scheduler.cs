@@ -51,6 +51,9 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>The dungeon whose door this player is standing at ("Crypt2"), the same way. Empty when clear.</summary>
         public string InsideDungeonEntrance = "";
 
+        /// <summary>The landmark this player is standing at ("StartTemple"), the same way. Empty when clear.</summary>
+        public string InsideLandmark = "";
+
         /// <summary>
         /// What a per-player cooldown is stamped under and looked up by: the stable identity when the
         /// ZDO carries one, the session uid when it does not. Keying on `Uid` alone is D2 of the
@@ -81,6 +84,8 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>Issue #79: and it must not be another merchant's camp, nor a dungeon's door.</summary>
         public bool AvoidMerchantCamps = true;
         public bool AvoidDungeonEntrances = true;
+        /// <summary>The third switch (2026-09-15): the places the game pins on the map - the spawn stones, the boss altars.</summary>
+        public bool AvoidLandmarks = true;
         public float LocationClearance = HomeGround.DefaultClearance;
         /// <summary>Dungeons and the like sit at y ≈ 5000; a player at or above this is not on the surface.</summary>
         public const float DungeonY = 3000f;
@@ -251,6 +256,7 @@ namespace RavenIron.ValkyriesCargo.Core
             if (_rules.RequireBuiltBase && !c.BuiltBase) return NoBuiltBase;
             if (_rules.AvoidMerchantCamps && c.InsideMerchantCamp.Length > 0) return InLocation;
             if (_rules.AvoidDungeonEntrances && c.InsideDungeonEntrance.Length > 0) return InLocation;
+            if (_rules.AvoidLandmarks && c.InsideLandmark.Length > 0) return InLocation;
             if (c.Y >= SchedulerRules.DungeonY) return Dungeon;
             if (!skipCooldowns && OnPlayerCooldown(c.CooldownKey, now)) return OnCooldown;
             if (!skipCooldowns && NearBaseCooldown(c.X, c.Z, now)) return NearCooldown;
@@ -267,7 +273,9 @@ namespace RavenIron.ValkyriesCargo.Core
             {
                 string label = _rules.AvoidMerchantCamps && c.InsideMerchantCamp.Length > 0
                     ? HomeGround.LocationLabel(c.InsideMerchantCamp, HomeGround.MerchantCamp)
-                    : HomeGround.LocationLabel(c.InsideDungeonEntrance, HomeGround.DungeonEntrance);
+                    : _rules.AvoidDungeonEntrances && c.InsideDungeonEntrance.Length > 0
+                        ? HomeGround.LocationLabel(c.InsideDungeonEntrance, HomeGround.DungeonEntrance)
+                        : HomeGround.LocationLabel(c.InsideLandmark, HomeGround.Landmark);
                 return HomeGround.InsideLocationReason(label);
             }
             return BucketName(bucket);
@@ -281,7 +289,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 case LowComfort: return "comfort < " + Wire.Int(_rules.MinComfort);
                 case LowBase: return "baseValue < " + Wire.Int(_rules.MinBaseValue);
                 case NoBuiltBase: return HomeGround.NoBuiltBaseReason(_rules.BuiltBaseRadius);
-                case InLocation: return "at a merchant's camp or a dungeon entrance";
+                case InLocation: return "at a merchant's camp, a dungeon entrance or a landmark";
                 case Dungeon: return "in a dungeon";
                 case OnCooldown: return "on cooldown";
                 case NearCooldown: return "near a base on cooldown";

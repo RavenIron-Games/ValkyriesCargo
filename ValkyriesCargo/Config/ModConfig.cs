@@ -39,6 +39,7 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<float>  BuiltBaseRadius;
         public static ConfigEntry<bool>   AvoidMerchantCamps;
         public static ConfigEntry<bool>   AvoidDungeonEntrances;
+        public static ConfigEntry<bool>   AvoidLandmarks;
         public static ConfigEntry<float>  LocationClearance;
         public static ConfigEntry<float>  MerchantLifespanSeconds;
         public static ConfigEntry<float>  ApproachDistance;
@@ -152,6 +153,8 @@ namespace RavenIron.ValkyriesCargo.Config
                 "Refuse a visit to a player standing at another merchant's camp - Haldor, Hildir, the Bog Witch, any modded trader (issue #79). A location counts when it holds a Trader; its own exterior radius is what 'at' means. A ruin, a runestone or a stone circle is yours to build on and never counts. Read on the SERVER.");
             AvoidDungeonEntrances = S(cfg, "Server", "AvoidDungeonEntrances", true,
                 "Refuse a visit to a player standing at the door of a crypt, cave, mine or fortress - any location with an interior. Being INSIDE one is refused regardless. Read on the SERVER.");
+            AvoidLandmarks = S(cfg, "Server", "AvoidLandmarks", true,
+                "Refuse a visit to a player standing at a place the game itself pins on the map - the Sacrificial Stones, every boss altar, the merchant camps: any location with a map icon. No list to keep. Read on the SERVER.");
             LocationClearance = S(cfg, "Server", "LocationClearance", Core.HomeGround.DefaultClearance,
                 "Metres around the player also asked 'is this a merchant's camp or a dungeon door'. Small on purpose: the location's own radius does the work and this is the margin that stops a drop on its boundary fence. Read on the SERVER.",
                 new AcceptableValueRange<float>(Core.HomeGround.MinClearance, Core.HomeGround.MaxClearance));
@@ -337,6 +340,7 @@ namespace RavenIron.ValkyriesCargo.Config
             r.BuiltBaseRadius = BuiltBaseRadius.Value;
             r.AvoidMerchantCamps = AvoidMerchantCamps.Value;
             r.AvoidDungeonEntrances = AvoidDungeonEntrances.Value;
+            r.AvoidLandmarks = AvoidLandmarks.Value;
             r.LocationClearance = LocationClearance.Value;
             r.Sanitize(problems);
         }

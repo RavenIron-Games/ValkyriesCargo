@@ -3086,6 +3086,27 @@ namespace ValkyriesCargo.Tests
             Check(!g3wrong.Tick(1500, atTheCrypt, false, true, Rolls(0.0)).Visit,
                   "turning off the MERCHANT switch does not open the crypt door - the two are independent");
 
+            // Gate 2c. The spawn stones and the boss altars: the game pins them on the map, and the owner's
+            // third switch (2026-09-15, after the live test granted a visit at the Sacrificial Stones).
+            var atTheStones = new List<Candidate> { Player(6, "Andie", 0f, 0f) };
+            atTheStones[0].InsideLandmark = "StartTemple";
+            Scheduler g4 = new Scheduler(SchedulerRules.Default);
+            g4.Arm(0);
+            Decision d4 = g4.Tick(1500, atTheStones, false, true, Rolls(0.0));
+            Check(!d4.Visit, "player-built, but at a landmark: no visit");
+            Scheduler g4off = new Scheduler(new SchedulerRules { AvoidLandmarks = false });
+            g4off.Arm(0);
+            Check(g4off.Tick(1500, atTheStones, false, true, Rolls(0.0)).Visit, "Server.AvoidLandmarks=false lets it through");
+            Scheduler g4wrong = new Scheduler(new SchedulerRules { AvoidMerchantCamps = false, AvoidDungeonEntrances = false });
+            g4wrong.Arm(0);
+            Check(!g4wrong.Tick(1500, atTheStones, false, true, Rolls(0.0)).Visit,
+                  "the other two switches do not open a landmark - three switches, three independent gates");
+            Scheduler forcedStones = new Scheduler(SchedulerRules.Default);
+            forcedStones.Arm(0);
+            Decision dfs = forcedStones.Force(1500, atTheStones, false, true, 6);
+            Check(dfs.Reason.Contains("StartTemple") && dfs.Reason.Contains("landmark"),
+                  "an admin's refusal at the stones names them and says why they count");
+
             // A ruin is nobody's: neither field set, both gates on, the visit comes. The first cut of
             // this rule refused every location the game owns, and the owner's own base on a WoodHouse3
             // ruin was refused with it (live, 2026-09-15). This is the check that keeps that from coming back.
