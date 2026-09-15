@@ -92,8 +92,10 @@ runs through, and the seven live deals proved that step, not redelivery itself.
 **Which build ran.** The live work ran on `main` at `ad6c334`, before the version bump — every Storm10 boot
 that day logs `v0.1.0 loaded`. No `.cs` file changed between `ad6c334` and the cut (the version number, the
 manifest and documents did), so the shipped build differs from the tested one by its version string and
-nothing else; it booted on Storm10 at the cut (`Loading [Valkyrie's Cargo 0.1.1]`, `v0.1.1 loaded …
-catalogue=101 entries … probes 19/19 ok`) and was stopped without a client joining. The day's lines are in
+nothing else. A build of it from `4ff22fc` booted on Storm10 at the cut (`Loading [Valkyrie's Cargo 0.1.1]`,
+`v0.1.1 loaded … catalogue=101 entries … probes 19/19 ok`) and was stopped without a client joining; the
+zip's DLL is the same code rebuilt from the tagged commit, and the two differ only in the commit id a build
+embeds (`0.1.1+<sha>`) and the header ids derived from it. The day's lines are in
 `docs/proofs/2026-09-15-storm10-session.md`.
 
 ## 0.1.0

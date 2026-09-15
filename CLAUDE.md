@@ -34,8 +34,10 @@ checks, 0 warnings. **An rc5 client is refused by a 0.1.1 server** by the Server
 the number (a code reading: rc5's wall proof ran the mirror pair, a 0.1.1 client refused by a 0.1.0 server).
 The version wall and the non-admin refusal were not re-run (nothing on those paths changed); redelivery
 stays proven off-game only. The live work ran on `ad6c334` (boot line `v0.1.0`); no `.cs` file changed from
-there to the cut, and the shipped 0.1.1 DLL booted on Storm10 at the cut (`v0.1.1 loaded … catalogue=101
-entries … probes 19/19 ok`). The day's lines: `docs/proofs/2026-09-15-storm10-session.md`.
+there to the cut, and a 0.1.1 DLL built from `4ff22fc` booted on Storm10 at the cut (`v0.1.1 loaded …
+catalogue=101 entries … probes 19/19 ok`). The zip's DLL is the same code rebuilt from the tagged commit: a
+build embeds its commit id (`0.1.1+<sha>`, plus the PE checksum, MVID and PDB id that follow from it), so the
+hash moves with every commit and nothing else does. The day's lines: `docs/proofs/2026-09-15-storm10-session.md`.
 
 **SHIPPED 2026-09-11. `v0.1.0-rc5` is published to Hexium — the first Valkyrie's Cargo cut to reach a store.**
 The owner uploaded it himself; the credentials are his and that does not change (`docs/RELEASE.md` §5). It is the

@@ -15,12 +15,15 @@ is inside 24 + 8, the stones at 32.2 m inside 25 + 8).
 **The builds.** Three builds ran during the day and every one logs `Valkyrie's Cargo v0.1.0 loaded`, because
 the version bump came after: PR #82's (08:07–08:22), PR #84's (08:41–08:47) and merged `main` at `ad6c334`
 (#84, #85, #86 in; 09:35–09:50; md5 `BA6B2F5C98AC083797A7FDA5A5ABD268`). No `.cs` file changed between
-`ad6c334` and the `v0.1.1` cut — the version number, `manifest.json` and documents did. The shipped 0.1.1 DLL
+`ad6c334` and the `v0.1.1` cut — the version number, `manifest.json` and documents did. A 0.1.1 DLL built from `4ff22fc`
 (md5 `31545E9778C6BEAE6AB5A8BCFE675745`) booted on Storm10 at 10:33 with no client: `Loading [Valkyrie's
 Cargo 0.1.1]`, `v0.1.1 loaded - renderer=False, patches 18/18 applied, catalogue=101 entries, engine: same
 build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed`,
 `director up: … catalogue 101 entries, purse 100725, next visit #14 … sidecar … (108 rows loaded)`, no
-`FAILED`, no `registry:`; stopped gracefully at 10:35.
+`FAILED`, no `registry:`; stopped gracefully at 10:35. The store zip's DLL is the same code rebuilt from the
+commit tagged `v0.1.1`. A build embeds its commit id (`0.1.1+<sha>` in the informational version) and the PE
+checksum, MVID and PDB id follow from it, so the two DLLs differ in 145 bytes across 7 runs — that string and
+the header ids — and nowhere else (a byte compare at the cut). The shipped hash is on the release page.
 
 ## Issue #79's gates (PR #82, PR #84)
 
