@@ -350,7 +350,11 @@ namespace RavenIron.ValkyriesCargo.Patches
                 Say(args, "  own ground: player-built " + built + "; the gate is " + (requireBuilt ? "ON" : "off") + " (Server.RequireBuiltBase)");
 
                 Player lp = Player.m_localPlayer;
-                if (lp != null) Say(args, "  " + LocationsLive.StatusLine(lp.transform.position, clearance, avoidMerchants, avoidDungeons));
+                if (lp != null)
+                {
+                    Say(args, "  " + LocationsLive.StatusLine(lp.transform.position, clearance, avoidMerchants, avoidDungeons));
+                    Say(args, "  " + LocationsLive.Probe(lp.transform.position));
+                }
                 else Say(args, "  locations: no local player to measure from");
             }
 

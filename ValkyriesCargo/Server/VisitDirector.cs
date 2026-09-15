@@ -391,6 +391,15 @@ namespace RavenIron.ValkyriesCargo.Server
             if (res == null) return "no RandEventSystem yet";
             if (_session.Active) return "a visit is already running (#" + _session.VisitId + ", " + _session.Clock.FormatRemaining(worldTime) + " left)";
             _candidates = Gather(_scheduler.Rules);
+            // Diagnosis line, 2026-09-15: the raw engine read under the forced player, so a wrong
+            // "clear" or a wrong refusal can be read off the log instead of guessed at.
+            for (int i = 0; i < _candidates.Count; i++)
+                if (_candidates[i].Uid == uid)
+                {
+                    try { ValkyriesCargo.Log.LogInfo("forced " + _candidates[i] + ": " + LocationsLive.Probe(new Vector3(_candidates[i].X, _candidates[i].Y, _candidates[i].Z))); }
+                    catch (Exception ex) { ValkyriesCargo.Log.LogInfo("forced probe threw " + ex.Message); }
+                    break;
+                }
             RandomEvent current = res.GetCurrentRandomEvent();
             Decision d = _scheduler.Force(now, _candidates, current != null, EnvMan.IsDay(), uid);
             LogDecision(d.Reason);

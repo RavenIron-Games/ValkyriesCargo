@@ -109,6 +109,44 @@ namespace RavenIron.ValkyriesCargo
             return clone > 0 ? n.Substring(0, clone).Trim() : n.Trim();
         }
 
+        /// <summary>
+        /// The RAW engine answer, for a diagnosis and nothing else: what `Location.GetLocation` returns at
+        /// the point, and what `Location.GetZoneLocation` returns for each of the nine zones around it,
+        /// each with its radius, its distance, and the two facts the rule turns on. Printed by
+        /// `cargo status` and logged on the server on a FORCED visit (an admin's own action, so no spam).
+        /// Added 2026-09-15 when the live test beside Hildir came back "clear" and nothing said why.
+        /// </summary>
+        public static string Probe(Vector3 p)
+        {
+            if (ZNet.instance == null) return "engine: no world";
+            var sb = new System.Text.StringBuilder("engine: GetLocation=");
+            sb.Append(One(Location.GetLocation(p), p));
+            sb.Append("; IsInsideLocation(8m)=").Append(Location.IsInsideLocation(p, 8f) ? "yes" : "no");
+            sb.Append("; zones:");
+            Vector2s centre = ZoneSystem.GetZone(p);
+            int n = 0;
+            for (int dx = -1; dx <= 1; dx++)
+                for (int dz = -1; dz <= 1; dz++)
+                {
+                    Location z = Location.GetZoneLocation(new Vector2s(centre.x + dx, centre.y + dz));
+                    if (z == null) continue;
+                    n++;
+                    sb.Append(' ').Append(One(z, p));
+                }
+            if (n == 0) sb.Append(" none");
+            return sb.ToString();
+        }
+
+        private static string One(Location loc, Vector3 p)
+        {
+            if (loc == null) return "none";
+            Vector3 c = loc.transform.position;
+            float dx = p.x - c.x, dz = p.z - c.z;
+            return Name(loc) + "[r=" + Wire.Float(loc.m_exteriorRadius) + " d=" + Wire.Float(Mathf.Sqrt(dx * dx + dz * dz)) +
+                   " interior=" + (loc.m_hasInterior ? "y" : "n") + " trader=" + (HoldsTrader(loc) ? "y" : "n") +
+                   " noBuild=" + (loc.m_noBuild ? "y" : "n") + "]";
+        }
+
         /// <summary>One line for `cargo status`.</summary>
         public static string StatusLine(Vector3 p, float clearance, bool merchants, bool dungeons)
         {
