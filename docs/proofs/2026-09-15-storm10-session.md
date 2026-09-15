@@ -131,4 +131,21 @@ director's `_lastCoined`, which is set only when a visit ends (`VisitDirector.En
 `purse 100000` — `PurseCoins` with a carry of 0 — where an unbroken server would have opened it at 100390 (50 %
 of 780, cap 3×). On a shipped server (`PurseCoins` 1500) every visit that follows a restart starts without the
 carry the 2026-09-07 decision gave it. One line at the end of `LoadSidecar` (`_lastCoined = _market.Coined`)
-would seed it from the sidecar; not changed here.
+would seed it from the sidecar; not changed here. **Fixed as PR #91 (main `5c58e81`) and proven at 13:09, below.**
+
+## Visits #15 and #16 — the purse carry across a restart, proven, 13:03–13:09
+
+The server on the carry-fix build (`0.1.1+5c58e81`, PR #91 merged; md5 `8A273C6108F9BFD7B42DDFBA7CA08085`, on the
+`testing` client too), booted 13:01. `cargo visit` at (-63.5, -18.1): `visit #15 begins … purse 100000` — right,
+visit #14 had taken in nothing. One deal, 15-1: `sold 2 BlackCore at 300, sold 20 AmberPearl at 14, sold 9 Ruby at 35, sold 40 FishRaw at 2, sold 33 Carapace at 11, coins -1638 to the player` — 1638 coins gross into the purse. `visit #15 ended:
+dismissed by Nomadtest; takings 1638 coins, purse 101638`.
+
+Graceful stop at 13:08:17 (`Game - OnApplicationQuit`). The sidecar on disk between the two processes:
+`purse 101638`, `purseStart 100000`, `coined 1638`, `visit 15`. Relaunched 13:08; `director up: … purse 101638,
+next visit #16`.
+
+`cargo visit` at the same spot: **`visit #16 begins … purse 100819`** — `PurseCoins` 100000 plus half of the 1638
+the previous visit took in, through a full stop and relaunch. Before PR #91 this line read `purse 100000`
+(visit #14 above, after visit #13's 780). The one assignment no off-game check reaches is now the one line a
+machine has shown.
+
