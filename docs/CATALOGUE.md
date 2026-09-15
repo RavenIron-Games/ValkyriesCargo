@@ -270,7 +270,15 @@ The charge side and every Want are untouched.
 `Core/Catalogue` parses the config line; a test loads `docs/data/items-valheim-2026-07-31.tsv` and asserts every
 default prefab exists there with a positive stack size, that no Ware's base is below its vanilla value / 0.7, that
 every Want with a vanilla value of 0 has a base ≥ 1, and that `Max ≥ Target > 0` throughout. A catalogue edit that
-misspells a prefab fails the test on the desk, not in someone's world.
+misspells a prefab fails the test on the desk, not in someone's world. Since 2026-09-15 the same test also asserts
+**one row per item token**: the game's inventory counts and removes goods by the item's shared token
+(`m_shared.m_name`, `$item_...`), and two prefabs can carry one (`FishRaw` and `FishAnglerRaw` are both
+`$item_fish_raw`; the troll and draugr trophies pair up the same way), so two catalogued prefabs on one token would
+let a player sell forty of the cheap one at the dear one's price. The rule is `Catalogue.TokenClashes` (the first
+row in catalogue order keeps the token); the server drops a later row when it applies the line (`catalogue
+applied: …; dropped, one row per item token: …`) and `cargo catalogue add` refuses one; and the client's deal
+applier matches a stack by the prefab it knows it came from (`m_dropPrefab`), not by the token, so even a modded
+pair cannot be crossed.
 
 ## 7. The rotating shelf (2026-09-08; issue #56)
 

@@ -29,6 +29,7 @@ namespace ValkyriesCargo.Tests
             Console.WriteLine("ValkyriesCargo — core tests\n");
 
             CatalogueDefaultTests();
+            CatalogueTokenTests();
             CatalogueValidationTests();
             CatalogueEdgeCaseTests();
             CatalogueEditTests();
@@ -166,6 +167,20 @@ namespace ValkyriesCargo.Tests
                 $"Cannot find items-valheim-2026-07-31.tsv by walking up from {start}");
         }
 
+        /// <summary>Prefab -> item token ("$item_..."), the game's own list, for the one-row-per-token check.</summary>
+        private static Dictionary<string, string> LoadItemTokens()
+        {
+            var result = new Dictionary<string, string>(StringComparer.Ordinal);
+            var lines = File.ReadAllLines(FindItemsFile());
+            for (int i = 1; i < lines.Length; i++)
+            {
+                string[] fields = lines[i].Split('\t');
+                if (fields.Length < 8 || string.IsNullOrWhiteSpace(fields[0])) continue;
+                result[fields[0]] = fields[7];
+            }
+            return result;
+        }
+
         private static Dictionary<string, (int stack, int value)> LoadItemsTable()
         {
             var result = new Dictionary<string, (int, int)>();
@@ -197,6 +212,57 @@ namespace ValkyriesCargo.Tests
         }
 
         // ---- tests -------------------------------------------------------------------
+
+        private static void CatalogueTokenTests()
+        {
+            Section("Catalogue: one row per item token (the FishRaw / FishAnglerRaw exploit, PR #85's review)");
+
+            // A stub of what the server's scene answers for a prefab's token.
+            var tokens = new Dictionary<string, string>(StringComparer.Ordinal)
+            {
+                { "FishRaw", "$item_fish_raw" }, { "FishAnglerRaw", "$item_fish_raw" },
+                { "Iron", "$item_iron" }, { "TrophyDraugr", "$item_trophy_draugr" }, { "TrophyDraugrFem", "$item_trophy_draugr" },
+            };
+            Func<string, string> tokenOf = p => { string t; return tokens.TryGetValue(p, out t) ? t : null; };
+
+            var cat = Catalogue.Parse("Iron:25:20:60:Ware, FishRaw:2:40:120:Want, FishAnglerRaw:16:40:120:Want, TrophyDraugr:12:10:30:Want", null);
+            List<Catalogue.TokenClash> clashes = Catalogue.TokenClashes(cat.Entries, tokenOf);
+            Equal(1, clashes.Count, "two catalogued prefabs on one token are one clash");
+            Check(clashes.Count == 1 && clashes[0].Kept == "FishRaw" && clashes[0].Dropped == "FishAnglerRaw" && clashes[0].Token == "$item_fish_raw",
+                  "the first in catalogue order keeps the token; the later one is the Dropped");
+            string words = clashes.Count == 1 ? Catalogue.DescribeClash(clashes[0]) : "";
+            Check(words.Contains("FishAnglerRaw dropped") && words.Contains("$item_fish_raw") && words.Contains("FishRaw's"),
+                  "and the words name the dropped one, the token and the keeper: " + words);
+            if (clashes.Count == 1)
+                Equal(3, cat.Without(new List<string> { clashes[0].Dropped }).Count, "the catalogue minus the Dropped has one row per token");
+
+            Equal(0, Catalogue.TokenClashes(Catalogue.Parse("FishRaw:2:40:120:Want, Iron:25:20:60:Ware", null).Entries, tokenOf).Count,
+                  "different tokens never clash");
+            Equal(0, Catalogue.TokenClashes(cat.Entries, p => null).Count, "unknown tokens (no scene to ask) never clash");
+            Equal(0, Catalogue.TokenClashes(cat.Entries, p => { throw new InvalidOperationException("no scene"); }).Count,
+                  "a token lookup that throws reads as unknown, never as a clash and never as a crash");
+            Equal(0, Catalogue.TokenClashes(Catalogue.Parse("TrophyDraugr:12:10:30:Want", null).Entries, tokenOf).Count,
+                  "a token shared with a prefab that is NOT catalogued is nobody's problem (the female draugr trophy is not on the cart)");
+            Equal(0, Catalogue.TokenClashes(null, tokenOf).Count + Catalogue.TokenClashes(cat.Entries, null).Count, "nothing to check is no clash");
+
+            // cargo catalogue add: who holds the token, unless it is the same prefab (an edit).
+            var shipped = Catalogue.Parse("FishRaw:2:40:120:Want, Iron:25:20:60:Ware", null);
+            Equal("FishRaw", Catalogue.TokenHolder(shipped.Entries, "FishAnglerRaw", tokenOf), "adding the anglerfish beside the raw fish names the holder");
+            Check(Catalogue.TokenHolder(shipped.Entries, "FishRaw", tokenOf) == null, "editing the row that holds the token is not a clash");
+            Check(Catalogue.TokenHolder(shipped.Entries, "fishraw", tokenOf) == null, "nor is the same prefab in another case (Upsert matches ignoring case)");
+            Check(Catalogue.TokenHolder(shipped.Entries, "Bronze", tokenOf) == null, "a prefab the map does not know is not refused HERE (IsItemPrefab is that check)");
+            Check(Catalogue.TokenHolder(shipped.Entries, "TrophyDraugrFem", tokenOf) == null, "a free token is free");
+            Check(Catalogue.TokenHolder(shipped.Entries, "FishAnglerRaw", p => { throw new InvalidOperationException(); }) == null, "and a throwing lookup refuses nothing");
+
+            // The shipped catalogue against the game's own item list, on the desk: one row per token.
+            Dictionary<string, string> table = LoadItemTokens();
+            Check(table.ContainsKey("FishRaw") && table.ContainsKey("FishAnglerRaw") && table["FishRaw"] == table["FishAnglerRaw"],
+                  "the game's list really does put FishRaw and FishAnglerRaw on one token: " + table["FishRaw"]);
+            List<Catalogue.TokenClash> shippedClashes = Catalogue.TokenClashes(Catalogue.Parse(Catalogue.DefaultLine, null).Entries,
+                p => { string t; return table.TryGetValue(p, out t) ? t : null; });
+            Equal(0, shippedClashes.Count, "the shipped catalogue carries one row per item token" +
+                  (shippedClashes.Count > 0 ? " - " + Catalogue.DescribeClash(shippedClashes[0]) : ""));
+        }
 
         private static void CatalogueDefaultTests()
         {
