@@ -160,7 +160,7 @@ server-synced and admin-controlled**; only cosmetics are local.
 | `MerchantLifespanSeconds` | `300` | How long the visit lasts |
 | `PurseCoins` | `1500` | What Ingvar arrives with |
 | `PurseCarryPercent` | `50` | How much of his takings carries to the next visit |
-| `ShelfSize` | `20` | How many of the 72 he carries |
+| `ShelfSize` | `20` | How many of the 101 he carries |
 | `ShelfRotationGameDays` | `2` | How often the shelf re-rolls (`0` = never) |
 | `BackpackShelfMultiplier` | `2` | Shelf multiplier when Backpacks is loaded |
 | `FlightSpeed` / `FlightTurnRate` | `8 m/s` / `45 °/s` | How the Valkyrie flies |

@@ -100,7 +100,7 @@ wrong.
 > are his, and no agent logs into the store, creates an account, uploads, or accepts terms. The next
 > upload is his too.
 >
-> **`v0.1.1-rc6` cut 2026-09-15** (version 0.1.1 — the first cut whose number moved, so the gate refuses an
+> **`v0.1.1` cut 2026-09-15** (the first cut whose number moved, so the gate refuses an
 > rc5 client). Tagged, with the zip and the kit attached on GitHub; **not uploaded at the time of the cut** —
 > that step is the owner's, as above.
 

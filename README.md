@@ -6,21 +6,22 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.1-rc6`, a first playable with its own version number; a pre-release on GitHub, not yet
+> **Status: `v0.1.1`, a first playable with its own version number; a pre-release on GitHub, not yet
 > on the store.** Cut 2026-09-15 from `main`. **For Valheim 1.0.12 only**: 1.0.12 moved the network
 > version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The
 > store copy is still `v0.1.0-rc5` (published 2026-09-11) until the owner uploads this one, and **an rc5
-> client is refused by an rc6 server** by the version gate — on purpose, which is why the number moved.
+> client is refused by a 0.1.1 server** by the version gate — on purpose, which is why the number moved.
 > The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
 > because 0.1.x is a first playable and says so.
-> What rc6 adds: Ingvar insists on ground somebody built and refuses a drop at another merchant's camp, a
+> What 0.1.1 adds: Ingvar insists on ground somebody built and refuses a drop at another merchant's camp, a
 > dungeon door or one of the game's landmarks (issue #79; three switches, proven live); food and drink in
 > the catalogue, 72 → 101 rows (an existing server takes them with `cargo catalogue reset`); one row per
 > item token and deals keyed by prefab; every console line in the client's log; the BarrkBOT export per
 > contract v4.
 > Twenty-seven visits across five sessions stood behind rc5; the 2026-09-15 session on Storm10 added
-> visits #10 to #13 — three refusals named by place, two flights to a base on a ruin, and six deals on the
-> new catalogue settled line for line. Proven off-game across 2093 checks and an eleven-scenario economy
+> visits #10 to #13 — three refusals named by place, a flight to a base on a ruin set down beside the
+> house (a second was authored and dismissed before the drop), and seven deals on the new catalogue settled
+> line for line. Proven off-game across 2093 checks and an eleven-scenario economy
 > simulation. **Never seen in a game: redelivery** — a player paying and the goods arriving after a lost
 > connection — which is proven off-game only; nor the two-client items.
 > `docs/PROOF-CLIENT.md` is the runbook and CLAUDE.md lists what remains. This file is the developer's
@@ -60,7 +61,7 @@ from our own interact handler. Nothing happens on command except an admin's `car
 
 ## Status
 
-**Truth pass against `main` at the `v0.1.1-rc6` cut, 2026-09-15.** This mod runs on **Valheim 1.0.12**
+**Truth pass against `main` at the `v0.1.1` cut, 2026-09-15.** This mod runs on **Valheim 1.0.12**
 and on nothing else: 1.0.12 moved the network version to 40, so a build for 1.0.7 or 0.221.12 cannot
 connect at all. `v0.1.0-rc4` is a 1.0.7 build and is superseded; `v0.1.0-rc3` remains the last 0.221.12
 build.
@@ -71,20 +72,25 @@ the merchant, deals with the price curve and the Fair Market Act correct to the 
 the vanish, dismissals, a relog mid-visit, a visit resumed across a restart, the rotating shelf, the
 backpack multiplier, and on 2026-09-11 the carry offset tuned live from Configuration Manager while the
 bird was in the air. On 2026-09-15 (Storm10): issue #79's gates — refused beside Hildir's camp, at a crypt
-door and at the Sacrificial Stones, flown in twice to a base on a ruin — and six deals on the 101-row
-catalogue, including two stacks of hides leaving the pack by the new prefab-keyed removal. Off-game: 2093
-checks, 0 warnings.
+door and at the Sacrificial Stones, flown in to a base on a ruin and set down (a second ruin base's flight
+was authored and dismissed before the drop) — and seven deals on the 101-row catalogue, including 40 hides
+bought in two deals and all 40 sold back in three through the new prefab-keyed removal. That work ran on
+`main` at `ad6c334`, before the version bump; no `.cs` file changed between it and the cut, and the shipped
+0.1.1 build booted on Storm10 at the cut (`v0.1.1 loaded … catalogue=101 entries … probes 19/19 ok`).
+Off-game: 2093 checks, 0 warnings.
 
-**What is proven and what is not, at this cut** (`docs/proofs/2026-09-11-release-session.md`). The
+**What is proven and what is not, at this cut** (`docs/proofs/2026-09-11-release-session.md`,
+`docs/proofs/2026-09-15-storm10-session.md`). The
 release bar is the three items `docs/RELEASE.md` §4 names. The **version wall** and the **non-admin
 refusal** are proven with their lines. **Redelivery — a player paying and the goods arriving after a lost
 connection — is proven off-game only and has never been seen in a game**, because the window between a
 deal's answer and its acknowledgement cannot be hit from outside the client process. Also never watched
 with two clients: the merchant walking off while two players trade, and the "on every machine" halves of
-the deal items. **Not re-run for rc6:** the version wall and the non-admin refusal — the gate and the admin
-path are untouched since rc5, and the wall proof was a 0.1.1 client against a 0.1.0 server, the exact pair
-this cut creates. #86 rewrote the apply step redelivery runs through; the six live deals proved that step,
-not redelivery itself.
+the deal items. **Not re-run for 0.1.1:** the version wall and the non-admin refusal — the gate and the admin
+path are untouched since rc5. The wall proof was a 0.1.1 client refused by a 0.1.0 server: the same two
+numbers as this cut with the builds swapped, the other branch of the same gate, so the direction this cut
+creates (an rc5 client at a 0.1.1 server) is a code reading, not an observation. #86 rewrote the apply step
+redelivery runs through; the seven live deals proved that step, not redelivery itself.
 
 **Still a first playable, not a settled one.** The log lines below are the ones recorded in `CLAUDE.md`
 "Status" by whoever saw them.
@@ -178,7 +184,7 @@ So today a visit puts Ingvar in the yard, walks him up and trades through the te
 screen against a dedicated server across twenty-seven visits. The first approach reaching the player,
 the vanish and the carry holding its owner were all open questions at the rc2 cut and have since been
 watched and fixed. What has still never been seen is **redelivery after a lost connection**, and no
-two-client item has run. The tag is `v0.1.1-rc6`; the store copy is `v0.1.0-rc5` until the owner uploads;
+two-client item has run. The tag is `v0.1.1`; the store copy is `v0.1.0-rc5` until the owner uploads;
 `docs/RELEASE.md` §4 records the three-item bar that was met and the one item skipped, with the reason.
 ---
 
@@ -312,7 +318,7 @@ Prefix `cargo`. Console commands are not config: `LockConfiguration` does not to
 | `cargo catalogue list` | What he sells and buys, as this machine last heard it: `Prefab base target/max`, wares then wants. |
 | `cargo catalogue add <Prefab:Base:Target:Max:Kind>` | **Admin.** Add an item, or change one already there (same prefab, in place). The server checks the prefab exists and is an item before anything changes. The edit lands in the cfg file, reaches every client, and applies as soon as no visit is running. |
 | `cargo catalogue remove <Prefab>` | **Admin.** Take an item off the shelf. Same path. |
-| `cargo catalogue reset` | **Admin.** Back to the shipped 72 entries. Same path. |
+| `cargo catalogue reset` | **Admin.** Back to the shipped 101 entries. Same path. |
 | `cargo body` | The body loader's state: where the bundle came from (embedded, a file beside the DLL, or none), the prefab, the six clips and their lengths, the mesh and the ground offset. Answers on a dedicated server too. |
 | `cargo body preview` | Stand Ingvar 2.5 m in front of you, facing you, on the ground, with no merchant and no server: the way to see the body. `cargo body walk` toggles his walk on the spot, `cargo body clip <Hello\|Talk\|Shrug\|Nod>` plays a gesture, `cargo body clear` takes him away. Needs a baked bundle. |
 
@@ -327,7 +333,7 @@ the answer comes back on `VCargo_reply` and prints in the caller's console.
 - `docs/DESIGN.md` — the design of record: authority, systems, the wire, the economy, decisions,
   milestones, risks.
 - `docs/TLDR.md` — one screen.
-- `docs/CATALOGUE.md` — the 72 default entries with the reason for every number, checked against
+- `docs/CATALOGUE.md` — the 101 default entries with the reason for every number, checked against
   `docs/data/items-valheim-2026-07-31.tsv`.
 - `docs/WORKSPLIT.md` — who owns what, and the frozen contract between the two tracks.
 - `docs/RELEASE.md` — how a release is cut.
