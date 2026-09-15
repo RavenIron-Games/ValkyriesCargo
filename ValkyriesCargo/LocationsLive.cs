@@ -283,12 +283,23 @@ namespace RavenIron.ValkyriesCargo
             var landmarks = new SortedDictionary<string, int>(System.StringComparer.Ordinal);
             var camps = new SortedDictionary<string, int>(System.StringComparer.Ordinal);
             var doors = new SortedDictionary<string, int>(System.StringComparer.Ordinal);
+            var unplaced = new SortedDictionary<string, int>(System.StringComparer.Ordinal);
             foreach (ZoneSystem.LocationInstance li in zs.m_locationInstances.Values)
             {
                 ZoneSystem.ZoneLocation loc = li.m_location;
                 if (loc == null) continue;
                 // The flags first, off the entry: only a pinned type pays for its asset read.
-                if (!(loc.m_iconAlways || (loc.m_iconPlaced && li.m_placed))) continue;
+                if (!(loc.m_iconAlways || loc.m_iconPlaced)) continue;
+                if (!(loc.m_iconAlways || li.m_placed))
+                {
+                    // Pinned once its zone generates (a boss altar nobody has walked to yet): nobody can be
+                    // standing there, so it refuses nothing today - but it will, so it is named.
+                    string u = Name(loc);
+                    int c;
+                    unplaced.TryGetValue(u, out c);
+                    unplaced[u] = c + 1;
+                    continue;
+                }
                 Facts f = FactsOf(loc);
                 SortedDictionary<string, int> bucket = f.Trader ? camps : f.Interior ? doors : landmarks;
                 string name = Name(loc);
@@ -298,7 +309,8 @@ namespace RavenIron.ValkyriesCargo
             }
             return "landmarks in this world (Server.AvoidLandmarks refuses these): " + Join(landmarks) +
                    "; pinned on the map but a merchant's camp (Server.AvoidMerchantCamps): " + Join(camps) +
-                   "; pinned but a dungeon's door (Server.AvoidDungeonEntrances): " + Join(doors);
+                   "; pinned but a dungeon's door (Server.AvoidDungeonEntrances): " + Join(doors) +
+                   "; pinned once their zone generates, not yet placed in this world: " + Join(unplaced);
         }
 
         private static string Join(SortedDictionary<string, int> d)
