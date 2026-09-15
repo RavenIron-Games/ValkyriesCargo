@@ -1,7 +1,7 @@
 Storm10 (Valheim 1.0.12 dedicated server), 2026-09-15 -- lines copied out of BepInEx\LogOutput.log
 on the day. The server's log is appended across boots (AppendLog=true); the numbers are its line
 numbers from line 4400 (the first boot of the day with a PR #82 build) to the shipped 0.1.1 DLL's
-boot at 10:33 and its stop. Filtered to the mod's own lines, the admin console echoes, the ServerSync
+boot at 10:33 and its stop, then the 11:00 boot of the zip's own DLL and visit #14 on it. Filtered to the mod's own lines, the admin console echoes, the ServerSync
 handshake and the join-code line; the 'no eligible player' roll noise is left out. The client's log
 (Gale profile testing, in-game Nomadtest) is overwritten per launch, so it holds only the 09:4x
 session: visit #13, the seven deals, the catalogue add refusal.
@@ -160,3 +160,67 @@ session: visit #13, the seven deals, the catalogue add refusal.
  1121: [Info   :Valkyrie's Cargo] cargo merchant #13: into the mist: 1 renderer(s) off with the smoke; the Clear follows in 2 s
  1123: [Info   :Valkyrie's Cargo] terminal closed: visit over
  1196: [Info   :Valkyrie's Cargo] session ended: no director on this machine (a client keeps no sidecar); wire, reporter, routed RPCs and the terminal surface dropped
+
+=== SERVER, the zip's DLL (0.1.1+a5e4e4f), boot 11:00 and visit #14 ===
+
+ 7685: [Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.1]
+ 7686: [Info   :Valkyrie's Cargo] built against Valheim 1.0.12 (network 40, player 46, world 41; Steam build 25253764 client / 25253791 server; bodies read 2026-09-11); running same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable.
+ 7687: [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.1 loaded - renderer=False, patches 18/18 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+ 7981: [Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 101 entries, purse 100725, next visit #14, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (108 rows loaded); shelf 100 of 101, period 2, rolls every 2 game day(s), next in 1.33 game day(s)
+ 7999: [Info   :Valkyrie's Cargo] landmarks in this world (Server.AvoidLandmarks refuses these): StartTemple x1; pinned on the map but a merchant's camp (Server.AvoidMerchantCamps): Hildir_camp x1; pinned but a dungeon's door (Server.AvoidDungeonEntrances): none; pinned once their zone generates, not yet placed in this world: AncientUpgradeStation x10, BogWitch_Camp x10, Hildir_cave x3, Hildir_crypt x3, Vendor_BlackForest x10, bosslocation x3
+ 8011: [Info   : Unity Log] 09/15/2026 11:00:40: Session "Storm10" with join code 608444 and IP 172.59.201.230:2477 is active with 0 player(s)
+ 8024: [Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1 to the client.
+ 8026: [Info   : Unity Log] Received Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1 from the client.
+ 8029: [Info   : Unity Log] 09/15/2026 11:05:55: Network version check, their:40, mine:40
+ 8033: [Info   : Unity Log] 09/15/2026 11:05:55: Server: New peer connected,sending global keys
+ 8035: [Info   :Valkyrie's Cargo] admin wire registered for Nomadtest (-6288687)
+ 8036: [Info   :Valkyrie's Cargo] deal wire registered for Nomadtest (-6288687)
+ 8051: [Info   :Valkyrie's Cargo] admin Nomadtest (-6288687): cargo visit 
+ 8053: [Info   :Valkyrie's Cargo] roll: forced: Nomadtest not eligible: comfort < 4; online: 1 comfort < 4
+ 8054: [Info   : Unity Log] 09/15/2026 11:08:22: Steam_76561198392625778/Nomadtest (-171, 52, 30): cargo visit
+ 8056: [Info   :Valkyrie's Cargo] admin Nomadtest (-6288687): cargo visit 
+ 8058: [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-170.366409, 53.1856422); 1 eligible, 1 ticket(s)
+ 8061: [Info   :Valkyrie's Cargo] visit #14 begins: pilot Nomadtest (uid -6288687) at (-170.366409, 53.1856422), 300 s, purse 100000, seed 1549609621
+ 8062: [Info   :Valkyrie's Cargo] visit #14: flight authored: start (-110.028015, 119.96347) at 150.2178, descent (-127.900917, 100.183136) at 111.964119 (50 m short), drop (-161.422241, 63.084343) at 30.2178116, straight in 90 m out; bird -684312010:49300, Dverger -684312010:49301, both owned by the pilot
+ 8063: [Info   : Unity Log] 09/15/2026 11:08:29: Steam_76561198392625778/Nomadtest (-170, 53, 30): cargo visit
+ 8065: [Info   :Valkyrie's Cargo] visit #14: dropped at (-161.422241, 30.9817581, 63.084343)
+ 8066: [Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-14-1 with Nomadtest: bought 60 Blackwood at 3, coins +180 to the player; purse 99820
+ 8067: [Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-14-2 with Nomadtest: bought 25 Resin at 1, coins +25 to the player; purse 99795
+ 8073: [Info   :Valkyrie's Cargo] visit #14 ended: dismissed by Nomadtest; takings 0 coins, purse 99795, 0 clock republish(es), 0 owed deliveries
+ 8075: [Info   :Valkyrie's Cargo] visit #14: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+
+=== CLIENT, profiles\testing on the same DLL, launched 11:04 (visit #14) ===
+
+   18: [Info   :Valkyrie's Cargo] built against Valheim 1.0.12 (network 40, player 46, world 41; Steam build 25253764 client / 25253791 server; bodies read 2026-09-11); running same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable.
+   19: [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.1 loaded - renderer=True, patches 18/18 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+  582: [Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+  647: [Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1 to the server.
+  648: [Info   :Valkyrie's Cargo] role: client
+  681: [Info   : Unity Log] Received Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1 from the server.
+  685: [Info   : Unity Log] 09/15/2026 11:05:55: Network version check, their:40, mine:40
+  693: [Info   :Valkyrie's Cargo] admin wire: registered VCargo_reply on the server socket
+  694: [Info   :Valkyrie's Cargo] deal wire: registered VCargo_dealt on the server socket
+  777: [Info   :Valkyrie's Cargo] console: cargo: asked the server to visit; its answer prints here
+  778: [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced: Nomadtest not eligible: comfort < 4; online: 1 comfort < 4
+  779: [Info   :Valkyrie's Cargo] console: cargo: asked the server to visit; its answer prints here
+  784: [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-170.366409, 53.1856422); 1 eligible, 1 ticket(s)
+  785: [Info   :Valkyrie's Cargo] cargo flight #14: flying from (-110.028015, 150.2178, 119.96347) via (-127.900917, 111.964119, 100.183136) to (-161.422241, 30.2178116, 63.084343), 76.659 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+  786: [Info   :Valkyrie's Cargo] body: source embedded, prefab 'ingvar', 6 clip(s) [Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s], SkinnedMeshRenderer=True, bones=24, tris=31112, mesh bounds y -0.244 to 0.244 (0.94 x 0.49 x 1.37 m), ground offset 0.244 m
+  787: [Info   :Valkyrie's Cargo] body: the BIND-POSE box implies a 0.244 m offset, which on this asset is an artefact of that box and not a real lift -- the source is authored on a different up-axis and FBX axis conversion does not touch bind-pose bounds. Nothing is placed from this number: Attach and the preview both measure the POSED mesh (BakeMesh). Kept because it is still the fastest way to see a bake come out sideways.
+  788: [Info   :Valkyrie's Cargo] body: dressed Ingvar in a copy of the Dverger's own material ('DvergerBody', shader 'Custom/Creature') with our albedo in it. A baked bundle carries Unity's Standard, which Valheim lights only from direct light.
+  789: [Info   :Valkyrie's Cargo] body: Ingvar attached to 'Dverger(Clone)' at local y 0.05, turned 180 deg (Client.BodyYawDegrees); 0 stray renderer(s) in the bundle switched off; 1 stand-in renderer(s) switched off (never destroyed: Character.m_animator, VisEquipment, CharacterAnimEvent, ZSyncAnimation and the CapsuleCollider all keep working)
+  790: [Info   :Valkyrie's Cargo] cargo merchant #14: awake as carried, ours (owner -6288687), body=Ingvar
+  793: [Info   :Valkyrie's Cargo] cargo flight #14: dropped at (-161.422241, 30.9817581, 63.084343) after 16.8201942 s
+  794: [Info   :Valkyrie's Cargo] cargo merchant #14: carried -> approaching via the ZDO, 16.8201942 s after waking; carrier none, 25.6692371 m from the player, ours (owner -6288687), 0 reclaim(s) during the carry, grounded no; walk-up budget 20 s
+  796: [Info   :Valkyrie's Cargo] cargo merchant #14: trading (entered: gave up walking after 20 s) [callout]
+  797: [Warning:Valkyrie's Cargo] cargo merchant #14: the walk-up did not finish. walked 20.000267 s of a 20 s budget (scaled from 25.6692371 m at entry), moved 40.6875229 m; stuck 0 s of the last window, and stopped 17.57369 m away; follow target NONE, tamed yes, alerted no, AI target none, grounded no.
+  798: [Info   :Valkyrie's Cargo] cargo merchant #14: approaching (entered: the player left: 17.5643959 m for 5.01999569 s) [following]
+  799: [Info   :Valkyrie's Cargo] cargo flight #14: ground unknown at (-31.9845943, 150.122421, 206.375061) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+  800: [Info   :Valkyrie's Cargo] cargo merchant #14: trading (entered: reached the player) [callout]
+  803: [Info   :Valkyrie's Cargo] terminal opened: visit #14 on Dverger(Clone)
+  804: [Info   :Valkyrie's Cargo] cargo merchant #14: a terminal is open on him (0 on the wire): the leash holds
+  809: [Info   :Valkyrie's Cargo] terminal deal on visit #14: ok wffffffffa3c7dd22-14-1 -60 Blackwood, +180 coins
+  813: [Info   :Valkyrie's Cargo] terminal deal on visit #14: ok wffffffffa3c7dd22-14-2 -25 Resin, +25 coins
+  814: [Info   :Valkyrie's Cargo] VCargo_dismissed: ok
+  815: [Info   :Valkyrie's Cargo] terminal closed: sent him off
+  816: [Info   :Valkyrie's Cargo] cargo merchant #14: into the mist: 1 renderer(s) off with the smoke; the Clear follows in 2 s
