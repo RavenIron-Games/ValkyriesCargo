@@ -177,6 +177,7 @@ if (-not (Test-Path $bepinex)) {
 $sets = @(
     @{ Path = $managed; Files = @(
         "assembly_guiutils.dll",   # STOCK, not publicized: the publicized copy lacks the Localization types; the terminal uses only public members
+        "SoftReferenceableAssets.dll",   # STOCK: SoftReference<GameObject>, the type of ZoneLocation.m_prefab; LocationsLive loads a location prefab through it
         "UnityEngine.dll",
         "UnityEngine.CoreModule.dll",
         "UnityEngine.PhysicsModule.dll",

@@ -707,6 +707,17 @@ copied here because the code turns on it. The file named after each is where the
   every console line to the log; the client's does not. That is a fact about how every headless proof in this
   file is read: a console answer that appears in `LogOutput.log` on a server will not appear there on a client,
   and the same command's output has to be read off the screen instead.
+- **A dedicated server never instantiates a location root** (found live on Storm10, 2026-09-15, by the probe
+  under a forced visit): at a point the zone registry called `inside Hildir_camp`, `Location.GetLocation`
+  answered none, `Location.IsInsideLocation(p, 8)` answered no, and `Location.GetZoneLocation` answered none
+  for all nine zones around it — the server's `Location.s_allLocations` is empty. A client has the instances
+  and an empty registry (`m_locationInstances` reads 0 there). So anything that asks "which of the game's
+  locations is this point in" reads **the registry on the server** (`ZoneSystem.m_locationInstances`, keyed by
+  zone, each with its `ZoneLocation.m_exteriorRadius`) and **the instances on a client**, and learns what is
+  INSIDE a location — a `Trader`, an interior — off the prefab asset through `ZoneLocation.m_prefab`'s
+  `Load()` / `.Asset` / `.Release()`, which is what `ZoneSystem` itself does and is why the project now
+  references `SoftReferenceableAssets.dll`. `LocationsLive.cs` is the one read; `LocationsLive.Probe` prints
+  both answers side by side and is logged on every forced visit.
 - The flight bullet above — "a dedicated server pins its reference position to (1000000, 0, 1000000) every fixed
   frame and instantiates nothing of ours" — was checked word for word against both builds and is correct as
   written. It is the difference **that matters**, not the only one: five more surface members differ between the

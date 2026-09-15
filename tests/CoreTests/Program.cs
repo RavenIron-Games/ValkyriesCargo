@@ -2998,25 +2998,33 @@ namespace ValkyriesCargo.Tests
             Equal(HomeGround.MinClearance, HomeGround.ClampClearance(-5f, problems), "a negative clearance is clamped to the floor");
             Equal(HomeGround.MaxClearance, HomeGround.ClampClearance(1000f, problems), "and a huge one to the ceiling");
 
-            // The arithmetic the whole second gate rests on.
+            // The server's arithmetic, over the registry's own radius. Found necessary live on 2026-09-15:
+            // a dedicated server has no location instances, so this is the test that refuses Hildir's camp.
             Check(HomeGround.InsideLocation(10f, 30f, 8f), "well inside a camp is inside");
             Check(!HomeGround.InsideLocation(50f, 30f, 8f), "well outside is outside");
             Check(HomeGround.InsideLocation(38f, 30f, 8f),
                   "exactly on the boundary counts as INSIDE: a drop landing precisely on the fence is the case this rule exists to stop");
             Check(!HomeGround.InsideLocation(38.01f, 30f, 8f), "and a hair beyond it is clear");
             Check(HomeGround.InsideLocation(0f, 0f, 0f),
-                  "a zero-radius location with zero clearance still owns the point standing exactly on it, rather than letting it through on a float comparison");
-            Check(HomeGround.InsideLocation(3f, -100f, 8f),
-                  "a negative radius is read as 0, not as a licence: an unreadable location keeps its clearance");
+                  "a zero-radius location with zero clearance still owns the point standing exactly on it");
+            Check(HomeGround.InsideLocation(3f, -100f, 8f), "a negative radius is read as 0, not as a licence");
             Check(!HomeGround.InsideLocation(9f, -100f, 8f), "and beyond that clearance it is clear");
-
-            // A small radius must not swallow the map. This is the regression that would quietly stop
-            // visits for everyone who built near a runestone.
             Check(!HomeGround.InsideLocation(25f, 2f, 8f),
-                  "a runestone's couple of metres does not reach a base 25 m away - the location's own radius is what scales the rule");
+                  "a runestone's couple of metres does not reach a base 25 m away - the location's own radius scales the rule");
 
-            Equal(0f, HomeGround.MetresClear(10f, 30f, 8f), "inside reads as 0 m clear");
-            Equal(12f, HomeGround.MetresClear(50f, 30f, 8f), "and outside reads as the real gap");
+            // The client's ring, where only instances exist. Eight points, each exactly `clearance` out,
+            // so a camp whose edge is within the margin is found from at least one of them.
+            float[] ring = HomeGround.RingOffsets(8f);
+            Check(ring.Length == 16, "eight (x, z) pairs on the ring");
+            bool allOnRing = true;
+            for (int i = 0; i + 1 < ring.Length; i += 2)
+            {
+                float dist = (float)System.Math.Sqrt(ring[i] * ring[i] + ring[i + 1] * ring[i + 1]);
+                if (System.Math.Abs(dist - 8f) > 0.001f) allOnRing = false;
+            }
+            Check(allOnRing, "every sample sits exactly `clearance` metres out - a sample short of the ring would miss a camp the margin should catch");
+            Check(HomeGround.RingOffsets(0f).Length == 0, "a clearance of 0 asks only at the player's own point");
+            Check(HomeGround.RingOffsets(-3f).Length == 0, "and a negative one is not a licence to sample backwards");
 
             // The words. A refusal nobody can act on generates the same bug report twice.
             Check(HomeGround.NoBuiltBaseReason(20f).Contains("20"), "the built-base refusal names the radius in force");
@@ -3024,6 +3032,10 @@ namespace ValkyriesCargo.Tests
                   "the location refusal NAMES the location - 'inside a location' with no name costs somebody an evening");
             Check(HomeGround.InsideLocationReason("").Contains("unnamed"), "an empty name degrades to something honest");
             Check(HomeGround.InsideLocationReason(null).Contains("unnamed"), "and so does a null one, rather than throwing in a log line");
+            Check(HomeGround.LocationLabel("Hildir_camp", HomeGround.MerchantCamp) == "Hildir_camp, a merchant's camp",
+                  "the label says which location and WHY it counts - the 2026-09-15 live test showed a bare name is not enough to act on");
+            Check(HomeGround.LocationLabel("", HomeGround.DungeonEntrance).Contains("unnamed"), "a label with no name degrades honestly too");
+            Check(HomeGround.LocationLabel(null, null).Contains("unnamed"), "and survives a null pair");
 
             Section("HomeGround: the two gates, in the scheduler");
 
@@ -3046,17 +3058,42 @@ namespace ValkyriesCargo.Tests
             // Gate 2. Somebody built a shack beside her, so gate 1 passes and gate 2 has to catch it.
             var shackByTheCamp = new List<Candidate> { Player(2, "Andie", 0f, 0f) };
             shackByTheCamp[0].BuiltBase = true;
-            shackByTheCamp[0].InsideLocationName = "Bog Witch camp";
+            shackByTheCamp[0].InsideMerchantCamp = "Bog Witch camp";
             Scheduler g2 = new Scheduler(SchedulerRules.Default);
             g2.Arm(0);
             Decision d2 = g2.Tick(1500, shackByTheCamp, false, true, Rolls(0.0));
             Check(!d2.Visit, "player-built, but inside one of the game's own locations: still no visit");
-            Check(d2.Reason.Contains("locations"), "and the aggregate reason says so");
+            Check(d2.Reason.Contains("merchant"), "and the aggregate reason says so");
 
-            Scheduler g2off = new Scheduler(new SchedulerRules { AvoidVanillaLocations = false });
+            Scheduler g2off = new Scheduler(new SchedulerRules { AvoidMerchantCamps = false });
             g2off.Arm(0);
             Check(g2off.Tick(1500, shackByTheCamp, false, true, Rolls(0.0)).Visit,
-                  "Server.AvoidVanillaLocations=false lets a base beside a camp have its visit");
+                  "Server.AvoidMerchantCamps=false lets a base beside a camp have its visit");
+
+            // Gate 2b. The door of a crypt is not a base either, and it has its own switch.
+            var atTheCrypt = new List<Candidate> { Player(4, "Andie", 0f, 0f) };
+            atTheCrypt[0].InsideDungeonEntrance = "Crypt2";
+            Scheduler g3 = new Scheduler(SchedulerRules.Default);
+            g3.Arm(0);
+            Decision d3 = g3.Tick(1500, atTheCrypt, false, true, Rolls(0.0));
+            Check(!d3.Visit, "player-built, but at a dungeon's door: no visit");
+            Scheduler g3off = new Scheduler(new SchedulerRules { AvoidDungeonEntrances = false });
+            g3off.Arm(0);
+            Check(g3off.Tick(1500, atTheCrypt, false, true, Rolls(0.0)).Visit,
+                  "Server.AvoidDungeonEntrances=false lets it through");
+            Scheduler g3wrong = new Scheduler(new SchedulerRules { AvoidMerchantCamps = false });
+            g3wrong.Arm(0);
+            Check(!g3wrong.Tick(1500, atTheCrypt, false, true, Rolls(0.0)).Visit,
+                  "turning off the MERCHANT switch does not open the crypt door - the two are independent");
+
+            // A ruin is nobody's: neither field set, both gates on, the visit comes. The first cut of
+            // this rule refused every location the game owns, and the owner's own base on a WoodHouse3
+            // ruin was refused with it (live, 2026-09-15). This is the check that keeps that from coming back.
+            var onTheRuin = new List<Candidate> { Player(5, "Nomadtest", 0f, 0f) };
+            Scheduler ruin = new Scheduler(SchedulerRules.Default);
+            ruin.Arm(0);
+            Check(ruin.Tick(1500, onTheRuin, false, true, Rolls(0.0)).Visit,
+                  "a base on a WoodHouse ruin gets its visit - a ruin holds no merchant and has no interior, so it is nobody's");
 
             // The forced path explains ONE player, so it can name the place. The aggregate counts people
             // and cannot, which is why there are two overloads.
@@ -3066,6 +3103,7 @@ namespace ValkyriesCargo.Tests
             Check(!df.Visit, "an admin's cargo visit is refused on the same ground");
             Check(df.Reason.Contains("Bog Witch camp"),
                   "and names the location, because an admin asking why deserves the answer and not a category");
+            Check(df.Reason.Contains("merchant"), "and says why that location counts");
 
             // Clear ground still works. If this ever fails, the fix for 79 has eaten the feature.
             var home = new List<Candidate> { Player(3, "Nomadtest", 0f, 0f) };

@@ -4,7 +4,7 @@ namespace RavenIron.ValkyriesCargo.Core
 {
     /// <summary>
     /// Whether the ground a candidate is standing on is somewhere Ingvar should be dropped: a place a
-    /// PLAYER built, and not the inside of one of the game's own locations.
+    /// PLAYER built, and not another merchant's camp or the mouth of a dungeon.
     ///
     /// **Why this file exists (issue #79, 2026-09-14, from a player: "Little man shows up at the
     /// Bogwitch if you happen to be there when he appears").** The visit gate asked seven things and
@@ -25,15 +25,20 @@ namespace RavenIron.ValkyriesCargo.Core
     ///    server one player builds the hall and the rest live in it, and keying on the builder would
     ///    mean only the builder ever got a visit. The client reports this the way it already reports
     ///    comfort, on its own ZDO.
-    /// 2. **Not inside one of the game's locations.** Test 1 still passes if somebody plants a workbench
-    ///    beside the Bog Witch, and a Valkyrie dropping a rival merchant into her camp is the complaint.
-    ///    Every `ZoneLocation` carries its own `m_exteriorRadius`, so the rule scales itself: a
-    ///    runestone's radius is a couple of metres and a camp's is tens. That matters - a flat exclusion
-    ///    distance would quietly stop visits for everyone who built near a ruin, a runestone or a
-    ///    dungeon entrance, which is a great many players.
+    /// 2. **Not at a merchant's camp, and not at a dungeon's door.** Test 1 still passes if somebody
+    ///    plants a workbench beside the Bog Witch, and a Valkyrie dropping a rival merchant into her
+    ///    camp is the complaint. The first cut of this rule refused EVERY location the game owns, and
+    ///    the live test on 2026-09-15 showed why that was wrong: the owner's own base, built on a
+    ///    Meadows `WoodHouse3` ruin - one of the most common first bases in the game - was refused
+    ///    too. So the rule names its reasons. A location counts when it holds a `Trader` (Haldor,
+    ///    Hildir, the Bog Witch, any modded merchant - no name list) or when it has an interior
+    ///    (every crypt, cave, mine and fortress). A ruin, a runestone, a stone circle: yours to build
+    ///    on, yours to be visited at. The location's own exterior radius is what "at" means, plus a
+    ///    small clearance so he is not dropped on the boundary fence; that is what `RingOffsets` is.
     ///
-    /// Everything here is pure arithmetic and words. The engine reads are `LocationsLive.Read` on the
-    /// server and `Piece.GetAllPiecesInRadius` on the client.
+    /// Everything here is pure arithmetic and words. The engine reads are `LocationsLive.Read` (on
+    /// the server for the gate, on the client for `cargo status`) and `Piece.GetAllPiecesInRadius`
+    /// on the client.
     /// </summary>
     public static class HomeGround
     {
@@ -59,18 +64,18 @@ namespace RavenIron.ValkyriesCargo.Core
         // --- the clearance added to a location's own radius -------------------------------------
 
         /// <summary>
-        /// Added to whatever the location says its exterior radius is. Small on purpose: the location's
-        /// own number is doing the work, and this is only the margin that keeps Ingvar from landing on
-        /// the boundary fence.
+        /// The margin around the player that is also asked "is this a merchant's camp": the location's
+        /// own radius does the work, and this only keeps Ingvar from being dropped on the boundary
+        /// fence. Small on purpose.
         /// </summary>
         public const float DefaultClearance = 8f;
 
         public const float MinClearance = 0f;
 
         /// <summary>
-        /// A location instance is registered against one zone, and `LocationsLive` looks at the 3x3
-        /// block of zones around the candidate. Past about this margin the answer would depend on which
-        /// zone a location happened to be filed under, so the knob stops before it can lie.
+        /// Past this the clearance would stop being a margin and start being a search, and the eight
+        /// sample points of the ring would have gaps a whole camp could hide in. The knob stops before
+        /// it can lie.
         /// </summary>
         public const float MaxClearance = 64f;
 
@@ -104,15 +109,16 @@ namespace RavenIron.ValkyriesCargo.Core
             return c;
         }
 
-        // --- the decisions ----------------------------------------------------------------------
+        // --- the decision on the server: a point against a location's own radius ----------------
 
         /// <summary>
-        /// Is a point at `distance` from a location's centre inside it, for our purposes? Inclusive at
-        /// the boundary, so a clearance of 0 against a radius of 0 still refuses a point sitting exactly
-        /// on a location's origin rather than letting it through on a float comparison.
-        ///
-        /// A negative or unreadable `exteriorRadius` is treated as 0 rather than as a licence: a
-        /// location whose radius we cannot read still keeps its clearance.
+        /// Is a point at `distance` from a location's centre inside it, for our purposes? This is the
+        /// SERVER's test, over the zone registry's `m_exteriorRadius` (a dedicated server has no
+        /// location instances to ask; found live 2026-09-15). Inclusive at the boundary, so a
+        /// clearance of 0 against a radius of 0 still refuses a point sitting exactly on a location's
+        /// origin rather than letting it through on a float comparison. A negative or unreadable
+        /// radius is treated as 0 rather than as a licence: a location whose radius we cannot read
+        /// still keeps its clearance.
         /// </summary>
         public static bool InsideLocation(float distance, float exteriorRadius, float clearance)
         {
@@ -121,17 +127,34 @@ namespace RavenIron.ValkyriesCargo.Core
             return distance <= exteriorRadius + clearance;
         }
 
+        // --- the ring: the decision on a client, where only instances exist -----------------------
+
         /// <summary>
-        /// How far outside a location a point sits, or 0 when it is inside. Only for the words; nothing
-        /// gates on it.
+        /// Eight points on a ring `clearance` metres out from the player - the compass points and the
+        /// diagonals - as (x, z) pairs, flattened. On a CLIENT the registry is empty and the engine's own
+        /// `Location.GetLocation(point)` says which location instance a POINT is inside; asking it at the
+        /// player and at these eight is how "inside, or within the clearance of" is answered there without
+        /// naming the engine's private location list. Empty when the clearance is 0: then the player's own
+        /// point is the whole question.
         /// </summary>
-        public static float MetresClear(float distance, float exteriorRadius, float clearance)
+        public static float[] RingOffsets(float clearance)
         {
-            if (exteriorRadius < 0f) exteriorRadius = 0f;
-            if (clearance < 0f) clearance = 0f;
-            float clear = distance - (exteriorRadius + clearance);
-            return clear > 0f ? clear : 0f;
+            if (clearance <= 0f) return new float[0];
+            float d = clearance * 0.70710678f;
+            return new float[]
+            {
+                clearance, 0f,   -clearance, 0f,   0f, clearance,   0f, -clearance,
+                d, d,   d, -d,   -d, d,   -d, -d,
+            };
         }
+
+        // --- the kinds, and the words ------------------------------------------------------------
+
+        /// <summary>A location holding a `Trader`. Haldor, Hildir, the Bog Witch, any modded merchant.</summary>
+        public const string MerchantCamp = "a merchant's camp";
+
+        /// <summary>A location with an interior: every crypt, cave, mine and fortress.</summary>
+        public const string DungeonEntrance = "a dungeon entrance";
 
         /// <summary>
         /// The refusal a candidate standing on ground nobody built gets, in the shape the roll line
@@ -144,15 +167,25 @@ namespace RavenIron.ValkyriesCargo.Core
         }
 
         /// <summary>
-        /// The refusal for standing inside one of the game's own locations. The location is NAMED,
-        /// because "inside a location" with no name is the kind of line that costs somebody an evening.
-        /// An empty or missing name degrades to the honest "an unnamed location" rather than to a blank.
+        /// "Hildir_camp, a merchant's camp". The location is NAMED, because "at a location" with no
+        /// name is the kind of line that costs somebody an evening; an empty or missing name degrades
+        /// to the honest "an unnamed location" rather than to a blank. The kind is one of the two
+        /// constants above, or empty, and says WHY this location counts.
         /// </summary>
-        public static string InsideLocationReason(string locationName)
+        public static string LocationLabel(string locationName, string kind)
         {
             string n = locationName == null ? "" : locationName.Trim();
             if (n.Length == 0) n = "an unnamed location";
-            return "inside " + n + ", one of the game's own locations";
+            string k = kind == null ? "" : kind.Trim();
+            return k.Length == 0 ? n : n + ", " + k;
+        }
+
+        /// <summary>The refusal for standing at one: "inside Hildir_camp, a merchant's camp".</summary>
+        public static string InsideLocationReason(string label)
+        {
+            string l = label == null ? "" : label.Trim();
+            if (l.Length == 0) l = "an unnamed location";
+            return "inside " + l;
         }
     }
 }

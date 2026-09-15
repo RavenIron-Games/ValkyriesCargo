@@ -338,7 +338,8 @@ namespace RavenIron.ValkyriesCargo.Patches
             // refuses silently is the hardest kind to report a bug about.
             {
                 bool requireBuilt = ModConfig.RequireBuiltBase != null && ModConfig.RequireBuiltBase.Value;
-                bool avoidLoc = ModConfig.AvoidVanillaLocations != null && ModConfig.AvoidVanillaLocations.Value;
+                bool avoidMerchants = ModConfig.AvoidMerchantCamps != null && ModConfig.AvoidMerchantCamps.Value;
+                bool avoidDungeons = ModConfig.AvoidDungeonEntrances != null && ModConfig.AvoidDungeonEntrances.Value;
                 float radius = ModConfig.BuiltBaseRadius != null ? ModConfig.BuiltBaseRadius.Value : HomeGround.DefaultBuiltRadius;
                 float clearance = ModConfig.LocationClearance != null ? ModConfig.LocationClearance.Value : HomeGround.DefaultClearance;
 
@@ -349,8 +350,11 @@ namespace RavenIron.ValkyriesCargo.Patches
                 Say(args, "  own ground: player-built " + built + "; the gate is " + (requireBuilt ? "ON" : "off") + " (Server.RequireBuiltBase)");
 
                 Player lp = Player.m_localPlayer;
-                if (!avoidLoc) Say(args, "  locations: the gate is off (Server.AvoidVanillaLocations)");
-                else if (lp != null) Say(args, "  " + LocationsLive.StatusLine(lp.transform.position, clearance));
+                if (lp != null)
+                {
+                    Say(args, "  " + LocationsLive.StatusLine(lp.transform.position, clearance, avoidMerchants, avoidDungeons));
+                    Say(args, "  " + LocationsLive.Probe(lp.transform.position));
+                }
                 else Say(args, "  locations: no local player to measure from");
             }
 
