@@ -6,11 +6,16 @@ namespace RavenIron.ValkyriesCargo.Client
 {
     /// <summary>
     /// The only code that touches the player's inventory for a deal (design 3.4, guarantee 5): after the
-    /// server's answer, and only by ItemsToAdd, ItemsToRemove and CoinsDelta. Prefab names cross the wire;
-    /// vanilla's inventory counts and removes by the item's SHARED name (`m_shared.m_name`, a "$item_..."
-    /// token), so each prefab is resolved through ObjectDB first. Adds use `Inventory.AddItem(GameObject,
-    /// amount)`, which caps one call at a stack, so a big count is added stack by stack. The terminal and
-    /// the redelivery path both come through here; nothing else in the mod writes an inventory.
+    /// server's answer, and only by ItemsToAdd, ItemsToRemove and CoinsDelta. Prefab names cross the wire.
+    /// Vanilla's `CountItems` / `RemoveItem(string, ...)` key on the item's SHARED token (`m_shared.m_name`,
+    /// "$item_..."), and two prefabs can carry one token (`FishRaw` and `FishAnglerRaw` are both
+    /// `$item_fish_raw`; the rule-2 review of PR #85, 2026-09-15) - counted that way, forty raw fish would
+    /// sell at the anglerfish price. So a stack is matched by the prefab it knows it came from
+    /// (`ItemData.m_dropPrefab`, which the engine sets on pickup, on load and on every add) and by the
+    /// token only for a stack that does not know; removal goes stack by stack through
+    /// `Inventory.RemoveItem(ItemData, amount)`. Adds use `Inventory.AddItem(GameObject, amount)`, which
+    /// caps one call at a stack, so a big count is added stack by stack. The terminal and the redelivery
+    /// path both come through here; nothing else in the mod writes an inventory.
     /// </summary>
     public static class DealApplier
     {
@@ -68,15 +73,25 @@ namespace RavenIron.ValkyriesCargo.Client
             Inventory inv = p != null ? p.GetInventory() : null;
             if (inv == null) { ValkyriesCargo.Log.LogWarning("deal apply refused: no_player"); return false; }
 
-            // Removals first, remembered, so a failure on the way in can put them back.
+            // Removals first, remembered by what actually came out, so a failure on the way in can put them back.
             var removed = new System.Collections.Generic.List<DealLine>();
             bool ok = true;
             try
             {
-                foreach (DealLine line in r.ItemsToRemove) { inv.RemoveItem(SharedName(line.Prefab), line.Count); removed.Add(line); }
-                if (r.CoinsDelta < 0) { inv.RemoveItem(SharedName(CoinsPrefab), -r.CoinsDelta); removed.Add(new DealLine { Prefab = CoinsPrefab, Count = -r.CoinsDelta }); }
-                foreach (DealLine line in r.ItemsToAdd) ok &= AddStacks(inv, Prefab(line.Prefab), line.Count);
-                if (r.CoinsDelta > 0) ok &= AddStacks(inv, Prefab(CoinsPrefab), r.CoinsDelta);
+                foreach (DealLine line in r.ItemsToRemove)
+                {
+                    int got = Remove(inv, line.Prefab, line.Count);
+                    if (got > 0) removed.Add(new DealLine { Prefab = line.Prefab, Count = got });
+                    if (got < line.Count) { ok = false; break; }
+                }
+                if (ok && r.CoinsDelta < 0)
+                {
+                    int got = Remove(inv, CoinsPrefab, -r.CoinsDelta);
+                    if (got > 0) removed.Add(new DealLine { Prefab = CoinsPrefab, Count = got });
+                    if (got < -r.CoinsDelta) ok = false;
+                }
+                if (ok) foreach (DealLine line in r.ItemsToAdd) ok &= AddStacks(inv, Prefab(line.Prefab), line.Count);
+                if (ok && r.CoinsDelta > 0) ok &= AddStacks(inv, Prefab(CoinsPrefab), r.CoinsDelta);
             }
             catch (Exception ex)
             {
@@ -122,10 +137,58 @@ namespace RavenIron.ValkyriesCargo.Client
             return drop.m_itemData != null && drop.m_itemData.m_shared != null ? drop.m_itemData.m_shared.m_name : null;
         }
 
+        /// <summary>
+        /// How many of that PREFAB the pack holds: every stack that knows it came from this prefab, plus
+        /// (for a stack that knows no prefab) the token match vanilla would have made. The world-level rule
+        /// is vanilla's own `CountItems` rule, kept.
+        /// </summary>
         public static int Count(Inventory inv, string prefabName)
         {
             string shared = SharedName(prefabName);
-            return shared == null ? 0 : inv.CountItems(shared);
+            if (shared == null || inv == null) return 0;
+            int n = 0;
+            foreach (ItemDrop.ItemData item in inv.GetAllItems())
+                if (IsStackOf(item, prefabName, shared)) n += item.m_stack;
+            return n;
+        }
+
+        /// <summary>The stack's own prefab decides; the token only when a stack has none.</summary>
+        private static bool IsStackOf(ItemDrop.ItemData item, string prefabName, string shared)
+        {
+            if (item == null || item.m_shared == null || item.m_stack <= 0) return false;
+            if (item.m_worldLevel < Game.m_worldLevel) return false;
+            if (item.m_dropPrefab != null) return string.Equals(PrefabName(item.m_dropPrefab.name), prefabName, StringComparison.Ordinal);
+            return item.m_shared.m_name == shared;
+        }
+
+        /// <summary>A prefab's name as the catalogue spells it: "FishRaw", never "FishRaw(Clone)".</summary>
+        private static string PrefabName(string name)
+        {
+            if (name == null) return "";
+            int at = name.IndexOf("(Clone)", StringComparison.Ordinal);
+            return (at >= 0 ? name.Substring(0, at) : name).Trim();
+        }
+
+        /// <summary>
+        /// Take up to `count` of that prefab out, stack by stack, and say how many came out. Less than
+        /// `count` means the pack was short (CanApply counted, so only a race gets here) and Apply puts
+        /// back what it took.
+        /// </summary>
+        private static int Remove(Inventory inv, string prefabName, int count)
+        {
+            string shared = SharedName(prefabName);
+            if (shared == null || inv == null || count <= 0) return 0;
+            int left = count;
+            // A copy: RemoveItem edits the list it hands out.
+            foreach (ItemDrop.ItemData item in new System.Collections.Generic.List<ItemDrop.ItemData>(inv.GetAllItems()))
+            {
+                if (left <= 0) break;
+                if (!IsStackOf(item, prefabName, shared)) continue;
+                int take = Math.Min(left, item.m_stack);
+                if (!inv.RemoveItem(item, take)) break;
+                left -= take;
+            }
+            return count - left;
         }
 
         private static bool AddStacks(Inventory inv, GameObject prefab, int count)

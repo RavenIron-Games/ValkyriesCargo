@@ -265,6 +265,11 @@ namespace RavenIron.ValkyriesCargo.Core
                     string prefab = rest.Split(':')[0].Trim();
                     string why;
                     if (!VisitDirector.IsItemPrefab(prefab, out why)) return "catalogue add refused: " + why;
+                    string holder = Catalogue.TokenHolder(ModConfig.CatalogueParsed != null ? ModConfig.CatalogueParsed.Entries : null, prefab, VisitDirector.ItemToken);
+                    if (holder != null)
+                        return "catalogue add refused: '" + prefab + "' carries the same item token as '" + holder + "', already in the catalogue (" +
+                               VisitDirector.ItemToken(prefab) + "); the inventory counts goods by that token, so only one of the two can be traded - remove " +
+                               holder + " first if this is the one you mean";
                     line = Catalogue.Upsert(ModConfig.CatalogueLine.Value, rest, out report);
                     break;
                 }

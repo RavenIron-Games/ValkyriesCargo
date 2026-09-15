@@ -671,12 +671,15 @@ namespace RavenIron.ValkyriesCargo.Server
             }
             string unknown;
             Catalogue catalogue = KnownEntries(ModConfig.CatalogueParsed, out unknown);
+            string clashed;
+            catalogue = OneRowPerToken(catalogue, out clashed);
             string summary;
             _market = _market.WithCatalogue(catalogue, worldTime, out summary);
             _catalogueVersion = ModConfig.CatalogueVersion;
             _catalogueWaiting = null;
             _catalogueWaitingLogged = false;
             if (unknown != null) summary += "; dropped, no item prefab of that name in this game: " + unknown;
+            if (clashed != null) summary += "; dropped, one row per item token: " + clashed;
             int refused = ModConfig.CatalogueProblems.Count;
             if (refused > 0) summary += "; " + refused + " entr" + (refused == 1 ? "y" : "ies") + " did not parse (cargo status names the first)";
             _dirty = true;
@@ -703,6 +706,39 @@ namespace RavenIron.ValkyriesCargo.Server
             if (go == null) { why = "this game has no prefab named '" + prefab + "' (names are exact, and case matters)"; return false; }
             if (go.GetComponent<ItemDrop>() == null) { why = "'" + prefab + "' is a prefab but not an item (no ItemDrop), so it could never be delivered"; return false; }
             return true;
+        }
+
+        /// <summary>
+        /// The item token (`m_shared.m_name`, "$item_...") of a prefab in this game, or null when the scene
+        /// has no such item. The inventory counts and removes goods by it, which is why the catalogue
+        /// carries one row per token (`Catalogue.TokenClashes`). Public `ZNetScene.GetPrefab`, `ItemDrop`.
+        /// </summary>
+        public static string ItemToken(string prefab)
+        {
+            ZNetScene scene = ZNetScene.instance;
+            if (scene == null || !Catalogue.IsPrefabName(prefab)) return null;
+            GameObject go;
+            try { go = scene.GetPrefab(prefab); }
+            catch { return null; }
+            ItemDrop drop = go != null ? go.GetComponent<ItemDrop>() : null;
+            return drop != null && drop.m_itemData != null && drop.m_itemData.m_shared != null ? drop.m_itemData.m_shared.m_name : null;
+        }
+
+        /// <summary>
+        /// The catalogue minus every later row whose item token an earlier row already carries; `clashed`
+        /// says which and why, or is null. With no scene to ask, the catalogue as it is.
+        /// </summary>
+        private static Catalogue OneRowPerToken(Catalogue catalogue, out string clashed)
+        {
+            clashed = null;
+            if (catalogue == null || ZNetScene.instance == null) return catalogue;
+            List<Catalogue.TokenClash> clashes = Catalogue.TokenClashes(catalogue.Entries, ItemToken);
+            if (clashes.Count == 0) return catalogue;
+            var drop = new List<string>();
+            var words = new List<string>();
+            foreach (Catalogue.TokenClash c in clashes) { drop.Add(c.Dropped); words.Add(Catalogue.DescribeClash(c)); }
+            clashed = string.Join("; ", words.ToArray());
+            return catalogue.Without(drop);
         }
 
         /// <summary>The catalogue minus every entry `IsItemPrefab` refuses; `unknown` names them, or is null. With no scene to ask, the catalogue as it is.</summary>

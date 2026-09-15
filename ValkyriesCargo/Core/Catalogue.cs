@@ -254,6 +254,79 @@ namespace RavenIron.ValkyriesCargo.Core
             return cat;
         }
 
+        // --- one row per item token ---------------------------------------------------------------------
+        //
+        // The game's inventory counts and removes goods by the item's shared token (`m_shared.m_name`,
+        // "$item_..."), and two prefabs can carry one token: `FishRaw` and `FishAnglerRaw` are both
+        // `$item_fish_raw`, the troll and draugr trophies come in pairs the same way. Two CATALOGUED
+        // prefabs on one token would let a player sell forty of the cheap one at the dear one's price
+        // (the rule-2 review of PR #85, 2026-09-15). So the catalogue carries one row per token: the
+        // server drops the later one when it applies the line, and `cargo catalogue add` refuses it.
+
+        /// <summary>One pair of catalogued prefabs that carry the same item token. The first in catalogue order keeps it.</summary>
+        public struct TokenClash
+        {
+            public string Kept;
+            public string Dropped;
+            public string Token;
+        }
+
+        /// <summary>
+        /// The pairs among `entries` whose prefabs share an item token under `tokenOf` (a null or empty
+        /// token is "unknown" and never clashes; a throw reads as unknown). The first entry with a token
+        /// keeps it; every later one is the Dropped, so a catalogue minus the Dropped names has one row
+        /// per token. PURE, never throws.
+        /// </summary>
+        public static List<TokenClash> TokenClashes(IEnumerable<CatalogueEntry> entries, Func<string, string> tokenOf)
+        {
+            var clashes = new List<TokenClash>();
+            if (entries == null || tokenOf == null) return clashes;
+            var holder = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (CatalogueEntry e in entries)
+            {
+                if (e == null || string.IsNullOrEmpty(e.Prefab)) continue;
+                string token;
+                try { token = tokenOf(e.Prefab); } catch { token = null; }
+                if (string.IsNullOrEmpty(token)) continue;
+                string first;
+                if (holder.TryGetValue(token, out first))
+                {
+                    if (!string.Equals(first, e.Prefab, StringComparison.Ordinal))
+                        clashes.Add(new TokenClash { Kept = first, Dropped = e.Prefab, Token = token });
+                    continue;
+                }
+                holder[token] = e.Prefab;
+            }
+            return clashes;
+        }
+
+        /// <summary>
+        /// `cargo catalogue add`'s check: the prefab already among `entries` that carries `prefab`'s token,
+        /// or null when the token is free or unknown. An entry of the same prefab (any case, as `Upsert`
+        /// matches) is an edit, not a clash. PURE, never throws.
+        /// </summary>
+        public static string TokenHolder(IEnumerable<CatalogueEntry> entries, string prefab, Func<string, string> tokenOf)
+        {
+            if (entries == null || tokenOf == null || string.IsNullOrEmpty(prefab)) return null;
+            string token;
+            try { token = tokenOf(prefab); } catch { return null; }
+            if (string.IsNullOrEmpty(token)) return null;
+            foreach (CatalogueEntry e in entries)
+            {
+                if (e == null || string.IsNullOrEmpty(e.Prefab)) continue;
+                if (string.Equals(e.Prefab, prefab, StringComparison.OrdinalIgnoreCase)) continue;
+                string other;
+                try { other = tokenOf(e.Prefab); } catch { continue; }
+                if (other == token) return e.Prefab;
+            }
+            return null;
+        }
+
+        /// <summary>The words for the log and the console: "FishAnglerRaw dropped: its item token $item_fish_raw is FishRaw's too, ...".</summary>
+        public static string DescribeClash(TokenClash c) =>
+            (c.Dropped ?? "?") + " dropped: its item token " + (c.Token ?? "?") + " is " + (c.Kept ?? "?") +
+            "'s too, and a deal counts a player's goods by that token";
+
         private static int IndexOf(List<CatalogueEntry> entries, string prefab)
         {
             for (int i = 0; i < entries.Count; i++)
