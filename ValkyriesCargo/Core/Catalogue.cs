@@ -39,13 +39,16 @@ namespace RavenIron.ValkyriesCargo.Core
     /// </summary>
     public sealed class Catalogue
     {
-        /// <summary>The 72 defaults of docs/CATALOGUE.md section 4: 18 wares, 54 wants.</summary>
+        /// <summary>The 101 defaults of docs/CATALOGUE.md section 4: 27 wares, 74 wants (the 29 food rows since 2026-09-15, section 8).</summary>
         public const string DefaultLine =
             "Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Silver:40:12:36:Ware, BlackMetal:60:10:30:Ware, " +
             "FlametalNew:110:6:18:Ware, Eitr:45:10:30:Ware, BlackCore:300:2:6:Ware, Amber:7:30:90:Ware, AmberPearl:14:20:60:Ware, " +
             "Ruby:29:15:45:Ware, SilverNecklace:43:8:24:Ware, ArrowIron:2:100:300:Ware, ArrowFrost:3:100:300:Ware, " +
             "BoltIron:3:100:300:Ware, MeadHealthMinor:12:10:30:Ware, MeadStaminaMinor:12:10:30:Ware, MeadTasty:10:10:30:Ware, " +
             "Honey:2:50:150:Ware, " +
+            "BoarJerky:3:20:60:Ware, Bread:40:10:30:Ware, MinceMeatSauce:9:10:30:Ware, SerpentStew:18:10:30:Ware, " +
+            "CookedLoxMeat:7:20:60:Ware, MeadHealthMedium:10:10:30:Ware, MeadStaminaMedium:12:10:30:Ware, " +
+            "MeadFrostResist:10:10:30:Ware, MeadPoisonResist:10:10:30:Ware, " +
             "Wood:1:200:600:Want, RoundLog:3:100:300:Want, FineWood:3:100:300:Want, ElderBark:3:60:180:Want, " +
             "Blackwood:4:60:180:Want, YggdrasilWood:5:60:180:Want, Resin:1:100:300:Want, Coal:1:100:300:Want, " +
             "Stone:1:200:600:Want, Flint:1:60:180:Want, Feathers:3:60:180:Want, " +
@@ -60,7 +63,13 @@ namespace RavenIron.ValkyriesCargo.Core
             "Needle:6:40:120:Want, SurtlingCore:15:10:30:Want, Sap:6:40:120:Want, Softtissue:8:30:90:Want, " +
             "Carapace:10:40:120:Want, WitheredBone:8:30:90:Want, " +
             "TrophyDeer:8:10:30:Want, TrophyBoar:8:10:30:Want, TrophyNeck:6:10:30:Want, TrophyGreydwarf:8:10:30:Want, " +
-            "TrophySkeleton:8:10:30:Want, TrophyDraugr:12:10:30:Want, TrophyWolf:15:10:30:Want, TrophyGoblin:15:10:30:Want";
+            "TrophySkeleton:8:10:30:Want, TrophyDraugr:12:10:30:Want, TrophyWolf:15:10:30:Want, TrophyGoblin:15:10:30:Want, " +
+            "Raspberry:2:50:150:Want, Blueberries:3:50:150:Want, Cloudberry:6:50:150:Want, Mushroom:2:50:150:Want, " +
+            "MushroomYellow:3:50:150:Want, Carrot:2:50:150:Want, Turnip:6:50:150:Want, Onion:2:50:150:Want, " +
+            "CarrotSeeds:2:50:150:Want, TurnipSeeds:5:50:150:Want, OnionSeeds:5:50:150:Want, " +
+            "RawMeat:2:40:120:Want, DeerMeat:2:40:120:Want, NeckTail:3:50:150:Want, WolfMeat:5:40:120:Want, " +
+            "LoxMeat:6:40:120:Want, SerpentMeat:5:40:120:Want, ChickenMeat:2:40:120:Want, HareMeat:7:40:120:Want, " +
+            "FishRaw:2:40:120:Want";
 
         private readonly List<CatalogueEntry> _entries = new List<CatalogueEntry>();
         private readonly Dictionary<string, CatalogueEntry> _byPrefab =

@@ -65,6 +65,15 @@ takings, measured on the gross.
 | MeadStaminaMinor | Minor stamina mead | Consumable | 10 | 1 | 12 | 10 | 30 | |
 | MeadTasty | Tasty mead | Consumable | 10 | 1 | 10 | 10 | 30 | |
 | Honey | Honey | Consumable | 50 | 0.2 | 2 | 50 | 150 | 19 recipes; every mead starts here |
+| BoarJerky | Boar jerky | Consumable | 20 | 0.5 | 3 | 20 | 60 | the cauldron's road ration; a craft makes two, so base is the table's 5 halved (the review) |
+| Bread | Bread | Consumable | 20 | 0.5 | 40 | 10 | 30 | the barley loaf; at par with ten barley, and target 10 so the row is not the catalogue's biggest |
+| MinceMeatSauce | Minced meat sauce | Consumable | 10 | 1 | 9 | 10 | 30 | the Black Forest's cauldron dish |
+| SerpentStew | Serpent stew | Consumable | 10 | 1 | 18 | 10 | 30 | the Swamp's stew; serpent meat and mushroom are both Wants below |
+| CookedLoxMeat | Cooked lox meat | Consumable | 20 | 2 | 7 | 20 | 60 | lox steak off the cookfire |
+| MeadHealthMedium | Medium healing mead | Consumable | 10 | 1 | 10 | 10 | 30 | the healing line's middle rung |
+| MeadStaminaMedium | Medium stamina mead | Consumable | 10 | 1 | 12 | 10 | 30 | the stamina line's middle rung |
+| MeadFrostResist | Frost resistance mead | Consumable | 10 | 1 | 10 | 10 | 30 | the Mountains' brew |
+| MeadPoisonResist | Poison resistance mead | Consumable | 10 | 1 | 10 | 10 | 30 | the Swamp's brew |
 
 ## 3. Wants — he only buys these
 
@@ -139,6 +148,31 @@ takings, measured on the gross.
 | Carapace | Carapace | 50 | 2 | 10 | 40 | 120 | 9 |
 | WitheredBone | Withered bone | 30 | 1 | 8 | 30 | 90 | |
 
+**Food and drink he buys** (2026-09-15; section 8)
+
+| Prefab | Display | Stack | Weight | Base | Target | Max | Why |
+|---|---|---|---|---|---|---|---|
+| Raspberry | Raspberries | 50 | 0.1 | 2 | 50 | 150 | Meadows forage |
+| Blueberries | Blueberries | 50 | 0.1 | 3 | 50 | 150 | Black Forest forage |
+| Cloudberry | Cloudberries | 50 | 0.1 | 6 | 50 | 150 | Plains forage; the third part of every Plains pie |
+| Mushroom | Mushroom | 50 | 0.1 | 2 | 50 | 150 | forage from the Meadows to the Swamp; into the serpent stew |
+| MushroomYellow | Yellow mushroom | 50 | 0.1 | 3 | 50 | 150 | cave forage; the value table's row is mislabelled (section 8), so this is the raw rule for a tier-2 common |
+| Carrot | Carrot | 50 | 0.3 | 2 | 50 | 150 | the first farmed crop |
+| Turnip | Turnip | 50 | 0.3 | 6 | 50 | 150 | the Swamp's crop |
+| Onion | Onion | 50 | 0.3 | 2 | 50 | 150 | the Mountains' crop |
+| CarrotSeeds | Carrot seeds | 100 | 0.1 | 2 | 50 | 150 | the farm's starts |
+| TurnipSeeds | Turnip seeds | 100 | 0.1 | 5 | 50 | 150 |  |
+| OnionSeeds | Onion seeds | 100 | 0.1 | 5 | 50 | 150 |  |
+| RawMeat | Boar meat | 20 | 1 | 2 | 40 | 120 | the prefab is `RawMeat`; the cookfire's raw side, on the hides' numbers |
+| DeerMeat | Deer meat | 20 | 1 | 2 | 40 | 120 |  |
+| NeckTail | Neck tail | 50 | 0.5 | 3 | 50 | 150 | stacks 50, so it takes the produce numbers |
+| WolfMeat | Wolf meat | 20 | 1 | 5 | 40 | 120 |  |
+| LoxMeat | Lox meat | 20 | 2 | 6 | 40 | 120 |  |
+| SerpentMeat | Serpent meat | 50 | 10 | 5 | 40 | 120 | weight 10 a unit, so the meat numbers rather than the 50-stack ones |
+| ChickenMeat | Chicken meat | 20 | 1 | 2 | 40 | 120 | once a base keeps hens |
+| HareMeat | Hare meat | 20 | 1 | 7 | 40 | 120 | Mistlands |
+| FishRaw | Raw fish | 20 | 0.5 | 2 | 40 | 120 | the rod's common catch; `FishAnglerRaw` shares its item token and is left out (section 8) |
+
 **Trophies** (he collects; a little coin for the wall clutter)
 
 | Prefab | Base | Target | Max |
@@ -158,29 +192,35 @@ takings, measured on the gross.
 
 ```
 Catalogue = Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Silver:40:12:36:Ware, BlackMetal:60:10:30:Ware,
-  FlametalNew:110:6:18:Ware, Eitr:45:10:30:Ware, BlackCore:300:2:6:Ware, Amber:7:30:90:Ware, AmberPearl:14:20:60:Ware,
-  Ruby:29:15:45:Ware, SilverNecklace:43:8:24:Ware, ArrowIron:2:100:300:Ware, ArrowFrost:3:100:300:Ware,
-  BoltIron:3:100:300:Ware, MeadHealthMinor:12:10:30:Ware, MeadStaminaMinor:12:10:30:Ware, MeadTasty:10:10:30:Ware,
-  Honey:2:50:150:Ware,
+  FlametalNew:110:6:18:Ware, Eitr:45:10:30:Ware, BlackCore:300:2:6:Ware, Amber:7:30:90:Ware,
+  AmberPearl:14:20:60:Ware, Ruby:29:15:45:Ware, SilverNecklace:43:8:24:Ware, ArrowIron:2:100:300:Ware,
+  ArrowFrost:3:100:300:Ware, BoltIron:3:100:300:Ware, MeadHealthMinor:12:10:30:Ware, MeadStaminaMinor:12:10:30:Ware,
+  MeadTasty:10:10:30:Ware, Honey:2:50:150:Ware, BoarJerky:3:20:60:Ware, Bread:40:10:30:Ware,
+  MinceMeatSauce:9:10:30:Ware, SerpentStew:18:10:30:Ware, CookedLoxMeat:7:20:60:Ware, MeadHealthMedium:10:10:30:Ware,
+  MeadStaminaMedium:12:10:30:Ware, MeadFrostResist:10:10:30:Ware, MeadPoisonResist:10:10:30:Ware,
   Wood:1:200:600:Want, RoundLog:3:100:300:Want, FineWood:3:100:300:Want, ElderBark:3:60:180:Want,
   Blackwood:4:60:180:Want, YggdrasilWood:5:60:180:Want, Resin:1:100:300:Want, Coal:1:100:300:Want,
-  Stone:1:200:600:Want, Flint:1:60:180:Want, Feathers:3:60:180:Want,
-  LeatherScraps:3:60:180:Want, DeerHide:3:60:180:Want, TrollHide:6:20:60:Want, WolfPelt:6:40:120:Want,
-  LoxPelt:8:40:120:Want, ScaleHide:6:40:120:Want, AskHide:10:40:120:Want, BjornHide:10:40:120:Want,
-  Flax:3:100:300:Want, LinenThread:10:50:150:Want, Barley:3:100:300:Want, JuteRed:6:40:120:Want,
-  JuteBlue:8:40:120:Want, WolfHairBundle:4:40:120:Want,
-  CopperOre:5:40:120:Want, TinOre:5:40:120:Want, IronScrap:22:30:90:Want, SilverOre:36:20:60:Want,
-  BlackMetalScrap:50:20:60:Want, FlametalOreNew:90:10:30:Want,
-  Guck:4:40:120:Want, Bloodbag:3:40:120:Want, Entrails:3:40:120:Want, Ooze:3:40:120:Want, Chain:12:20:60:Want,
-  Chitin:5:40:120:Want, Obsidian:4:40:120:Want, Crystal:8:20:60:Want, FreezeGland:4:40:120:Want,
-  Needle:6:40:120:Want, SurtlingCore:15:10:30:Want, Sap:6:40:120:Want, Softtissue:8:30:90:Want,
-  Carapace:10:40:120:Want, WitheredBone:8:30:90:Want,
-  TrophyDeer:8:10:30:Want, TrophyBoar:8:10:30:Want, TrophyNeck:6:10:30:Want, TrophyGreydwarf:8:10:30:Want,
-  TrophySkeleton:8:10:30:Want, TrophyDraugr:12:10:30:Want, TrophyWolf:15:10:30:Want, TrophyGoblin:15:10:30:Want
+  Stone:1:200:600:Want, Flint:1:60:180:Want, Feathers:3:60:180:Want, LeatherScraps:3:60:180:Want,
+  DeerHide:3:60:180:Want, TrollHide:6:20:60:Want, WolfPelt:6:40:120:Want, LoxPelt:8:40:120:Want,
+  ScaleHide:6:40:120:Want, AskHide:10:40:120:Want, BjornHide:10:40:120:Want, Flax:3:100:300:Want,
+  LinenThread:10:50:150:Want, Barley:3:100:300:Want, JuteRed:6:40:120:Want, JuteBlue:8:40:120:Want,
+  WolfHairBundle:4:40:120:Want, CopperOre:5:40:120:Want, TinOre:5:40:120:Want, IronScrap:22:30:90:Want,
+  SilverOre:36:20:60:Want, BlackMetalScrap:50:20:60:Want, FlametalOreNew:90:10:30:Want, Guck:4:40:120:Want,
+  Bloodbag:3:40:120:Want, Entrails:3:40:120:Want, Ooze:3:40:120:Want, Chain:12:20:60:Want, Chitin:5:40:120:Want,
+  Obsidian:4:40:120:Want, Crystal:8:20:60:Want, FreezeGland:4:40:120:Want, Needle:6:40:120:Want,
+  SurtlingCore:15:10:30:Want, Sap:6:40:120:Want, Softtissue:8:30:90:Want, Carapace:10:40:120:Want,
+  WitheredBone:8:30:90:Want, TrophyDeer:8:10:30:Want, TrophyBoar:8:10:30:Want, TrophyNeck:6:10:30:Want,
+  TrophyGreydwarf:8:10:30:Want, TrophySkeleton:8:10:30:Want, TrophyDraugr:12:10:30:Want, TrophyWolf:15:10:30:Want,
+  TrophyGoblin:15:10:30:Want, Raspberry:2:50:150:Want, Blueberries:3:50:150:Want, Cloudberry:6:50:150:Want,
+  Mushroom:2:50:150:Want, MushroomYellow:3:50:150:Want, Carrot:2:50:150:Want, Turnip:6:50:150:Want,
+  Onion:2:50:150:Want, CarrotSeeds:2:50:150:Want, TurnipSeeds:5:50:150:Want, OnionSeeds:5:50:150:Want,
+  RawMeat:2:40:120:Want, DeerMeat:2:40:120:Want, NeckTail:3:50:150:Want, WolfMeat:5:40:120:Want,
+  LoxMeat:6:40:120:Want, SerpentMeat:5:40:120:Want, ChickenMeat:2:40:120:Want, HareMeat:7:40:120:Want,
+  FishRaw:2:40:120:Want
 ```
 
-Seventy-two entries. `MarketState` at ~40 bytes a row is under 3 KB, below ServerSync's compression floor, so it goes
-uncompressed on every change.
+A hundred and one entries (72 until 2026-09-15; section 8). `MarketState` at ~40 bytes a row is about 4 KB, still
+under ServerSync's compression floor (10 KB), so it goes uncompressed on every change.
 
 **Editing it on a running server (2026-09-07).** The line is the config entry `Server.Catalogue`, synced and locked,
 so it can change three ways: the cfg file on the server (a restart reads it), Configuration Manager on an admin's
@@ -235,7 +275,7 @@ misspells a prefab fails the test on the desk, not in someone's world.
 ## 7. The rotating shelf (2026-09-08; issue #56)
 
 The owner's change of 2026-09-08: **the fixed Ware list goes away.** `Server.ShelfSize` (shipped 20) entries of the
-WHOLE catalogue — the 18 of section 2 and the 54 of section 3 alike — are on sale at a time, and the shelf is
+WHOLE catalogue — the 27 of section 2 and the 74 of section 3 alike — are on sale at a time, and the shelf is
 re-rolled every `Server.ShelfRotationGameDays` (shipped 2, Wu'barrk's read) game days. The `Kind` in the config
 line keeps its meaning only while `ShelfSize` is `0`: then the shelf is fixed and sections 2 and 3 say exactly
 what he sells and what he only buys, as they did before this date.
@@ -294,7 +334,50 @@ its scaled size and does not re-roll a tick later — and once a second after, s
 lands on the next idle tick like any other shelf change. The scaling is pure (`Shelf.Scaled`): `0` stays the
 fixed shelf, the product is capped at `Shelf.MaxSize` (200) and, by the roll, at the catalogue, and the scaled
 shelf for a period is a superset of the unscaled one (the swaps are sequential), so the mod arriving mid-period
-swaps nothing out. On the shipped 72 entries ×4 is the whole catalogue and ×3 is 60 of it. The other half of
+swaps nothing out. On the shipped 101 entries ×4 is 80 of it and ×3 is 60. The other half of
 the add-on — a backpack on Ingvar's body — is a bake, and Wu'barrk's. The log says what it found at director up
 (`backpack mod: org.bepinex.plugins.backpacks 1.3.8 loaded; shelf x2 (Server.BackpackShelfMultiplier)` or
 `none (…); shelf x1`) and `cargo status` repeats it.
+
+---
+
+## 8. Food and drink (2026-09-15)
+
+The owner's ask: *"lets also add other food and such to the list of buy and sell."* Twenty-nine rows: nine he
+sells (five dishes and four meads, section 2) and twenty he buys (forage, crops, seeds, raw meat and fish, section
+3). Every base is the `value` column of `docs/data/item-values-2026-09-08.tsv`; every prefab and stack is checked
+against `docs/data/items-valheim-2026-07-31.tsv` by the harness (section 6); targets follow section 1 (produce
+50/150 like Honey, a dish 20/60 or 10/30 by its stack, a mead 10/30, raw meat 40/120 like the hides); `Max = 3 ×
+Target` throughout. With `ShelfSize` 20 the `Kind` decides nothing (section 7); it is set honestly all the same.
+
+The set was drafted at 39 and cut to 29 by the economy review (Opus, rule 2 of the working agreement). Its findings
+are the reasons for what is NOT here:
+
+- **`FishAnglerRaw`** shares the item token `$item_fish_raw` with `FishRaw`, and the deal applier counts and removes a
+  player's goods by token - with both in the catalogue a stack of raw fish would sell at the anglerfish price. One
+  of the pair ships, the common one. A guard against token collisions is its own task.
+- **`ChickenEgg`** is Haldor's 1,500-coin gate to a hen farm; the value table's 6 is a hand value for pricing
+  omelettes, not a shop price, and forty eggs at 6 on the shelf would delete the gate. Section 1: he matches Haldor,
+  never beats him.
+- **`LoxPie`** is a cook-and-sell-back loop with no assumption in it: four barley and two lox meat bought from him
+  make a pie he pays 52 for - +28 a pie, 840 coins to fill the row, the second-largest row in the catalogue.
+- **Yield.** The value table priced every cauldron craft as one plate, but a jerky craft is two and a sausage craft
+  is four. `BoarJerky` ships at 3 (the table's 5 halved); **`Sausages`** (+46 a craft on entrails and boar meat he
+  sells himself, if the yield is four) stays out until the yield is confirmed on a machine.
+- **`MisthareSupreme`** and **`PiquantPie`** carry bases from an unresolved recipe (the resolver fell back to the raw
+  rule on the words "Misthare meat" / "Piquant pie ingredients"), which priced an Ashlands pie at a fifth of a
+  Plains one.
+- **The cooked twins** (`CookedMeat`, `CookedWolfMeat`, `SerpentMeatCooked`) pay exactly what their raw pays, so
+  cooking for Ingvar would earn nothing; the Mistlands and Ashlands cookfire meats had no raw side in the set.
+- **Four meads** (`MeadHealthMajor`, `MeadHealthLingering`, `MeadStaminaLingering`, `MeadEitrMinor`): a brew is six
+  meads off ten honey and forage, and a mead row is bought back UNCLAMPED whenever it is off the shelf (the Fair
+  Market Act clamps only a shelf row); the eight proposed could absorb the whole 1,500 purse in one visit. Four
+  staples ship, 472 coins to fill.
+- Feasts (rare crafts, 63-536), the Bog Witch's own trader goods, every mead base, Bukeperries and rotten meat:
+  never proposed.
+
+Two facts for the next pass. `MushroomYellow`'s row in the value table is mislabelled (`name` reads "Thistle",
+tier 0) and its base here is the raw rule for a tier-2 common (4 × 0.7 → 3). And food is now a third of the
+catalogue - 34 of 101 with Honey, Barley and the three shipped meads - about seven of a twenty-row shelf, fourteen
+of forty with the backpack mod. The owner's line to move; the next four to go would be `DeerMeat`, `ChickenMeat`,
+`CarrotSeeds` and one of the two Meadows dishes.

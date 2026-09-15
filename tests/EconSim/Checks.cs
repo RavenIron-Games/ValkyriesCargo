@@ -431,7 +431,7 @@ namespace ValkyriesCargo.EconSim
             return rng.Next(1, 60);
         }
 
-        /// <summary>Every bound the market promises, checked over all 72 rows.</summary>
+        /// <summary>Every bound the market promises, checked over every row of the shipped catalogue.</summary>
         private static bool Sound(Market m)
         {
             if (m.Purse < 0) return false;

@@ -288,7 +288,7 @@ namespace ValkyriesCargo.EconSim
             Sim.Note("floor.flatcount", Sim.N(flat.Count));
             Sim.Note("floor.flat", string.Join(", ", flat.ToArray()));
 
-            md.Line("Every one of the 72 default rows has `Max = 3 x Target`, so the lowest multiplier any shelf can reach is");
+            md.Line("Every one of the " + Sim.N(Catalogue.Parse(Catalogue.DefaultLine, null).Count) + " default rows has `Max = 3 x Target`, so the lowest multiplier any shelf can reach is");
             md.Line("`(1/3)^0.35 = " + Sim.F(worst, 4) + "` — the configured `MinPriceMultiplier` of **0.4 can never be reached by trading at all**.");
             md.Line("It is dead config today: only a catalogue with `Max > 13.7 x Target` would ever touch it.");
             md.Blank();
@@ -625,7 +625,7 @@ namespace ValkyriesCargo.EconSim
                 });
             }
             md.Table(new[] { "row", "kind", "stock: dawn / dusk / next dawn", "price at dawn", "at dusk", "after a day of drift" }, movers);
-            md.Line("Of the 72 rows, **" + Sim.N(scored.Count) + " moved a coin** over a full day of four players trading. A day's drift then takes back");
+            md.Line("Of the " + Sim.N(Catalogue.Parse(Catalogue.DefaultLine, null).Count) + " rows, **" + Sim.N(scored.Count) + " moved a coin** over a full day of four players trading. A day's drift then takes back");
             md.Line("a fifth of the gap (`1 - 0.5^(1/3)`) on every Want that moved and nothing on a Ware (`WareHalfLifeGameDays` 0: what the");
             md.Line("players bought stays bought). This is the number that matters for the first real visit: on a small server the");
             md.Line("market is quiet, and the prices a player sees on day two are close to the prices on day one.");
@@ -1022,6 +1022,8 @@ namespace ValkyriesCargo.EconSim
             Market m = Sim.NewMarket(rules, 0);
             var pool = new List<string>();
             foreach (MarketItem it in m.Items) pool.Add(it.Prefab);
+            int wareTotal = 0;
+            foreach (MarketItem it in m.Items) if (it.Entry.Kind == EntryKind.Ware) wareTotal++;
 
             md.H(3, "The first fifteen shelves (thirty game days) for the salt `" + Sim.Salt + "`");
             var rows = new List<string[]>();
@@ -1031,7 +1033,7 @@ namespace ValkyriesCargo.EconSim
                 List<string> names = Shelf.Roll(Sim.Salt, p, pool, 20);
                 int oldWares = 0;
                 foreach (string n in names) { seen.Add(n); if (m.Find(n).Entry.Kind == EntryKind.Ware) oldWares++; }
-                rows.Add(new[] { Sim.N(p), Sim.N(p * 2) + "–" + Sim.N(p * 2 + 2), Sim.N(oldWares) + " of 18", Sim.N(seen.Count) + " of 72", string.Join(", ", names) });
+                rows.Add(new[] { Sim.N(p), Sim.N(p * 2) + "–" + Sim.N(p * 2 + 2), Sim.N(oldWares) + " of " + Sim.N(wareTotal), Sim.N(seen.Count) + " of " + Sim.N(pool.Count), string.Join(", ", names) });
             }
             md.Table(new[] { "period", "game days", "old-list Wares on it", "entries seen so far", "the shelf, in catalogue order" }, rows);
             md.Blank();
@@ -1051,13 +1053,17 @@ namespace ValkyriesCargo.EconSim
                 if (kv.Value < leastN) { leastN = kv.Value; least = kv.Key; }
                 if (kv.Value > mostN) { mostN = kv.Value; most = kv.Key; }
             }
-            bool fair = shown.Count == 72 && leastN >= 30 && mostN <= 85;
+            // A fair roll shows each entry 200 x 20 / N times; the bounds are the 30..85 that held at 72 rows
+            // (0.54 and 1.53 of the expectation), scaled to the catalogue's size.
+            double expect = 200.0 * 20 / pool.Count;
+            int expectN = (int)Math.Round(expect), lo = (int)Math.Floor(expect * 0.54), hi = (int)Math.Ceiling(expect * 1.53);
+            bool fair = shown.Count == pool.Count && leastN >= lo && mostN <= hi;
             if (!sameTwice || !exact || !fair) Checks.AllPassed = false;
             md.Line("Over 200 periods (400 game days, 200 real hours of uptime with somebody online): the same roll twice " +
                     (sameTwice ? "**every time**" : "**NOT every time — FAIL**") + "; every shelf exactly twenty distinct entries: " +
-                    (exact ? "**yes**" : "**NO — FAIL**") + "; every entry shown at least once: " + (shown.Count == 72 ? "**yes**" : "**NO — FAIL**") +
-                    ". A fair roll shows each entry near 56 times in 200; the least-shown is " + least + " (" + Sim.N(leastN) + "), the most-shown " +
-                    most + " (" + Sim.N(mostN) + ")" + (fair ? "." : " — **outside 30..85, FAIL**."));
+                    (exact ? "**yes**" : "**NO — FAIL**") + "; every entry shown at least once: " + (shown.Count == pool.Count ? "**yes**" : "**NO — FAIL**") +
+                    ". A fair roll shows each entry near " + Sim.N(expectN) + " times in 200; the least-shown is " + least + " (" + Sim.N(leastN) + "), the most-shown " +
+                    most + " (" + Sim.N(mostN) + ")" + (fair ? "." : " — **outside " + Sim.N(lo) + ".." + Sim.N(hi) + ", FAIL**."));
             Sim.Note("shelf-roll", "deterministic " + (sameTwice ? "yes" : "NO") + ", exact " + (exact ? "yes" : "NO") + ", least " + Sim.N(leastN) + " / most " + Sim.N(mostN) + " of 200");
             md.Blank();
 

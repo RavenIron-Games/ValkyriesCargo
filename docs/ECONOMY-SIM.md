@@ -17,7 +17,7 @@ the last section proposes, the owners decide.
 
 | the numbers it ran on | value | where from |
 |---|---|---|
-| catalogue | 72 entries (18 Wares, 54 Wants) | `Catalogue.DefaultLine`, parsed by the shipping parser |
+| catalogue | 101 entries (27 Wares, 74 Wants) | `Catalogue.DefaultLine`, parsed by the shipping parser |
 | `PriceElasticity` | 0.35 | `ModConfig` default |
 | `MinPriceMultiplier` / `MaxPriceMultiplier` | 0.4 / 3.0 | `ModConfig` defaults |
 | `SpreadBuy` | 0.7 | `ModConfig` default |
@@ -113,11 +113,11 @@ scrap iron, 40 for a 10-target row like flametal ore. Above it, the purse is the
 
 ### The 0.4 floor is unreachable
 
-Every one of the 72 default rows has `Max = 3 x Target`, so the lowest multiplier any shelf can reach is
+Every one of the 101 default rows has `Max = 3 x Target`, so the lowest multiplier any shelf can reach is
 `(1/3)^0.35 = 0.6808` — the configured `MinPriceMultiplier` of **0.4 can never be reached by trading at all**.
 It is dead config today: only a catalogue with `Max > 13.7 x Target` would ever touch it.
 
-The floor that does bite is `max(1, ...)` in `PaysFor`. 7 rows pay the SAME coin at target and at
+The floor that does bite is `max(1, ...)` in `PaysFor`. 16 rows pay the SAME coin at target and at
 max stock, so flooding them changes nothing a player can see:
 
 | row | kind | base | he pays at target | he pays at max stock |
@@ -129,6 +129,15 @@ max stock, so flooding them changes nothing a player can see:
 | Coal | Want | 1 | 1 | 1 |
 | Stone | Want | 1 | 1 | 1 |
 | Flint | Want | 1 | 1 | 1 |
+| Raspberry | Want | 2 | 1 | 1 |
+| Mushroom | Want | 2 | 1 | 1 |
+| Carrot | Want | 2 | 1 | 1 |
+| Onion | Want | 2 | 1 | 1 |
+| CarrotSeeds | Want | 2 | 1 | 1 |
+| RawMeat | Want | 2 | 1 | 1 |
+| DeerMeat | Want | 2 | 1 | 1 |
+| ChickenMeat | Want | 2 | 1 | 1 |
+| FishRaw | Want | 2 | 1 | 1 |
 
 ## 3. The purse — exhaustion, carry, and twenty visits
 
@@ -161,12 +170,12 @@ market, same twenty game days; the only difference is whether anybody sells him 
 
 | visit | purse (shoppers only) | takings | carry | purse (shoppers and sellers) | he paid out | takings | carry |
 |---|---|---|---|---|---|---|---|
-| 1 | 1500 | 6099 | 3000 | 1500 | 7599 | 0 | 0 |
-| 2 | 4500 | 0 | 0 | 1500 | 1499 | 0 | 0 |
-| 3 | 1500 | 0 | 0 | 1500 | 1499 | 0 | 0 |
-| 4 | 1500 | 0 | 0 | 1500 | 1499 | 0 | 0 |
-| 5 | 1500 | 0 | 0 | 1500 | 1499 | 0 | 0 |
-| 6 | 1500 | 0 | 0 | 1500 | 1499 | 0 | 0 |
+| 1 | 1500 | 7389 | 3000 | 1500 | 8889 | 0 | 0 |
+| 2 | 4500 | 0 | 0 | 1500 | 1500 | 0 | 0 |
+| 3 | 1500 | 0 | 0 | 1500 | 1500 | 0 | 0 |
+| 4 | 1500 | 0 | 0 | 1500 | 1500 | 0 | 0 |
+| 5 | 1500 | 0 | 0 | 1500 | 1500 | 0 | 0 |
+| 6 | 1500 | 0 | 0 | 1500 | 1500 | 0 | 0 |
 | ... |  |  |  |  |  |  |  |
 | 20 | 1500 | 0 | 0 | 1500 | 1500 | 0 | 0 |
 
@@ -207,24 +216,24 @@ him); buys are a fifth to a twentieth of a Ware's target, clamped to the shelf a
 
 | visit | world time | purse at start | deals tried | settled | purse at end | takings |
 |---|---|---|---|---|---|---|
-| 1 | 0 s | 1500 | 12 | 12 | 1700 | 200 |
-| 2 | 600 s | 1600 | 11 | 11 | 1297 | 0 |
-| 3 | 1200 s | 1500 | 9 | 9 | 1798 | 298 |
+| 1 | 0 s | 1500 | 12 | 12 | 1485 | 0 |
+| 2 | 600 s | 1500 | 11 | 11 | 423 | 0 |
+| 3 | 1200 s | 1500 | 9 | 9 | 1433 | 0 |
 
 | visit | player | deals | settled | coins spent | coins earned | coins left |
 |---|---|---|---|---|---|---|
-| 1 | Astrid | 2 | 2 | 107 | 0 | 297 |
-| 1 | Bjorn | 3 | 3 | 29 | 26 | 631 |
-| 1 | Gudrun | 3 | 3 | 93 | 72 | 286 |
-| 1 | Halfdan | 4 | 4 | 118 | 49 | 215 |
-| 2 | Astrid | 3 | 3 | 48 | 28 | 277 |
-| 2 | Bjorn | 3 | 3 | 0 | 163 | 794 |
-| 2 | Gudrun | 3 | 3 | 20 | 90 | 356 |
-| 2 | Halfdan | 2 | 2 | 0 | 90 | 305 |
-| 3 | Astrid | 3 | 3 | 30 | 90 | 337 |
-| 3 | Bjorn | 2 | 2 | 75 | 20 | 739 |
-| 3 | Gudrun | 2 | 2 | 340 | 0 | 16 |
-| 3 | Halfdan | 2 | 2 | 45 | 82 | 342 |
+| 1 | Astrid | 2 | 2 | 106 | 0 | 298 |
+| 1 | Bjorn | 3 | 3 | 6 | 300 | 928 |
+| 1 | Gudrun | 3 | 3 | 65 | 25 | 267 |
+| 1 | Halfdan | 4 | 4 | 147 | 14 | 151 |
+| 2 | Astrid | 3 | 3 | 40 | 85 | 343 |
+| 2 | Bjorn | 3 | 3 | 0 | 947 | 1875 |
+| 2 | Gudrun | 3 | 3 | 80 | 45 | 232 |
+| 2 | Halfdan | 2 | 2 | 0 | 120 | 271 |
+| 3 | Astrid | 3 | 3 | 30 | 30 | 343 |
+| 3 | Bjorn | 2 | 2 | 12 | 28 | 1891 |
+| 3 | Gudrun | 2 | 2 | 21 | 0 | 211 |
+| 3 | Halfdan | 2 | 2 | 10 | 82 | 343 |
 
 Deals tried: 32, settled 32. Refusals: none.
 
@@ -232,15 +241,15 @@ Deals tried: 32, settled 32. Refusals: none.
 
 | row | kind | stock: dawn / dusk / next dawn | price at dawn | at dusk | after a day of drift |
 |---|---|---|---|---|---|
-| BlackCore | Ware | 2 / 1 / 1 | 300 | 382 | 382 |
-| AmberPearl | Ware | 20 / 12 / 12 | 14 | 17 | 17 |
-| BlackMetal | Ware | 10 / 9 / 9 | 60 | 62 | 62 |
-| Eitr | Ware | 10 / 9 / 9 | 45 | 47 | 47 |
-| Carapace | Want | 40 / 58 / 54 | 7 | 6 | 6 |
-| MeadTasty | Ware | 10 / 7 / 7 | 10 | 11 | 11 |
-| Silver | Ware | 12 / 11 / 11 | 40 | 41 | 41 |
+| BlackMetalScrap | Want | 20 / 56 / 49 | 35 | 24 | 26 |
+| AmberPearl | Ware | 20 / 9 / 9 | 14 | 19 | 19 |
+| SilverNecklace | Ware | 8 / 6 / 6 | 43 | 48 | 48 |
+| Bread | Ware | 10 / 9 / 9 | 40 | 42 | 42 |
+| TrophyBoar | Want | 10 / 22 / 20 | 6 | 4 | 4 |
+| MeadFrostResist | Ware | 10 / 8 / 8 | 10 | 11 | 11 |
+| TurnipSeeds | Want | 50 / 82 / 75 | 4 | 3 | 3 |
 
-Of the 72 rows, **7 moved a coin** over a full day of four players trading. A day's drift then takes back
+Of the 101 rows, **7 moved a coin** over a full day of four players trading. A day's drift then takes back
 a fifth of the gap (`1 - 0.5^(1/3)`) on every Want that moved and nothing on a Ware (`WareHalfLifeGameDays` 0: what the
 players bought stays bought). This is the number that matters for the first real visit: on a small server the
 market is quiet, and the prices a player sees on day two are close to the prices on day one.
@@ -327,25 +336,25 @@ and a new visit every 500 deals. What came back:
 
 | answer | deals | share |
 |---|---|---|
-| `bad_count` | 199 | 2.0% |
-| `coins_short` | 6 | 0.1% |
+| `bad_count` | 201 | 2.0% |
+| `coins_short` | 1 | 0.0% |
 | `empty_deal` | 1496 | 15.0% |
-| `ok` | 623 | 6.2% |
-| `over_max` | 1613 | 16.1% |
-| `price_changed` | 313 | 3.1% |
-| `purse_empty` | 267 | 2.7% |
-| `sold_out` | 709 | 7.1% |
+| `ok` | 616 | 6.2% |
+| `over_max` | 1508 | 15.1% |
+| `price_changed` | 328 | 3.3% |
+| `purse_empty` | 327 | 3.3% |
+| `sold_out` | 883 | 8.8% |
 | `stale_visit` | 777 | 7.8% |
-| `unknown_item` | 3997 | 40.0% |
+| `unknown_item` | 3863 | 38.6% |
 
 | invariant | violations |
 |---|---|
 | `Settle` threw | 0 |
 | an answer that is not a `DealReason` token | 0 |
-| a repeated delivery id (623 issued) | 0 |
+| a repeated delivery id (616 issued) | 0 |
 | stock outside 0..Max, purse negative, price below 1, or a multiplier that is not a number | 0 |
 
-**Ten thousand deals, 623 of them settled, and not one violation.** The pure core holds its bounds under nonsense.
+**Ten thousand deals, 616 of them settled, and not one violation.** The pure core holds its bounds under nonsense.
 
 ## 9. The round trip — buying a shelf out and selling it straight back
 
@@ -373,8 +382,17 @@ same goods back at the empty-shelf price. Nothing else happens; the shelf ends w
 | MeadStaminaMinor | 10 | 12 | 8 | 0.67 | 10 | -40 | 1540 | 10 |
 | MeadTasty | 10 | 10 | 7 | 0.70 | 10 | -30 | 1530 | 10 |
 | Honey | 50 | 2 | 1 | 0.50 | 50 | -50 | 1550 | 50 |
+| BoarJerky | 20 | 3 | 2 | 0.67 | 20 | -20 | 1520 | 20 |
+| Bread | 10 | 40 | 28 | 0.70 | 10 | -120 | 1620 | 10 |
+| MinceMeatSauce | 10 | 9 | 6 | 0.67 | 10 | -30 | 1530 | 10 |
+| SerpentStew | 10 | 18 | 13 | 0.72 | 10 | -50 | 1550 | 10 |
+| CookedLoxMeat | 20 | 7 | 5 | 0.71 | 20 | -40 | 1540 | 20 |
+| MeadHealthMedium | 10 | 10 | 7 | 0.70 | 10 | -30 | 1530 | 10 |
+| MeadStaminaMedium | 10 | 12 | 8 | 0.67 | 10 | -40 | 1540 | 10 |
+| MeadFrostResist | 10 | 10 | 7 | 0.70 | 10 | -30 | 1530 | 10 |
+| MeadPoisonResist | 10 | 10 | 7 | 0.70 | 10 | -30 | 1530 | 10 |
 
-**No Ware is profitable to round-trip.** All 18 of them lose the player coins, so the
+**No Ware is profitable to round-trip.** All 27 of them lose the player coins, so the
 pump table that used to stand here has no subject and is not printed.
 
 This is the **Fair Market Act** (`Server.FairMarketAct`, default on) doing its job: a Ware's buy-back
@@ -469,23 +487,23 @@ nothing is sent for it: a restart rolls the same shelf. Wu'barrk asked for the t
 
 | period | game days | old-list Wares on it | entries seen so far | the shelf, in catalogue order |
 |---|---|---|---|---|
-| 0 | 0–2 | 5 of 18 | 20 of 72 | Silver, Eitr, ArrowFrost, MeadHealthMinor, MeadTasty, Wood, ElderBark, Stone, Feathers, JuteRed, JuteBlue, WolfHairBundle, CopperOre, TinOre, Needle, SurtlingCore, Carapace, TrophyBoar, TrophySkeleton, TrophyGoblin |
-| 1 | 2–4 | 6 of 18 | 32 of 72 | Bronze, Silver, ArrowIron, BoltIron, MeadStaminaMinor, Honey, Wood, Feathers, LeatherScraps, ScaleHide, Flax, JuteRed, JuteBlue, TinOre, SilverOre, Entrails, Crystal, Needle, SurtlingCore, Sap |
-| 2 | 4–6 | 3 of 18 | 44 of 72 | FlametalNew, Eitr, MeadStaminaMinor, Blackwood, YggdrasilWood, WolfPelt, ScaleHide, BjornHide, Flax, JuteBlue, CopperOre, TinOre, IronScrap, Bloodbag, Chain, Obsidian, FreezeGland, TrophyNeck, TrophyGreydwarf, TrophySkeleton |
-| 3 | 6–8 | 5 of 18 | 51 of 72 | Bronze, Iron, Eitr, SilverNecklace, MeadTasty, RoundLog, YggdrasilWood, LeatherScraps, DeerHide, WolfPelt, BjornHide, Barley, JuteRed, CopperOre, SilverOre, Guck, Bloodbag, Chain, WitheredBone, TrophyBoar |
-| 4 | 8–10 | 7 of 18 | 58 of 72 | Iron, Silver, BlackMetal, Amber, AmberPearl, ArrowFrost, Honey, FineWood, Resin, DeerHide, Barley, JuteBlue, TinOre, SilverOre, Guck, Entrails, Ooze, Chain, TrophyDeer, TrophyBoar |
-| 5 | 10–12 | 6 of 18 | 61 of 72 | Iron, Amber, Ruby, SilverNecklace, ArrowFrost, BoltIron, Wood, ElderBark, YggdrasilWood, Resin, DeerHide, TrollHide, LoxPelt, ScaleHide, WolfHairBundle, Bloodbag, Crystal, Sap, WitheredBone, TrophyNeck |
-| 6 | 12–14 | 7 of 18 | 63 of 72 | Bronze, FlametalNew, Ruby, SilverNecklace, ArrowFrost, MeadHealthMinor, Honey, Wood, Resin, DeerHide, TrollHide, BjornHide, Barley, JuteBlue, FlametalOreNew, Guck, Obsidian, Crystal, TrophyGreydwarf, TrophyDraugr |
-| 7 | 14–16 | 4 of 18 | 67 of 72 | Silver, ArrowIron, ArrowFrost, MeadStaminaMinor, RoundLog, Coal, WolfPelt, ScaleHide, AskHide, LinenThread, Barley, WolfHairBundle, SilverOre, Guck, Obsidian, Crystal, Needle, TrophyDeer, TrophyWolf, TrophyGoblin |
-| 8 | 16–18 | 2 of 18 | 68 of 72 | BlackMetal, MeadStaminaMinor, YggdrasilWood, LeatherScraps, TrollHide, WolfPelt, BjornHide, Flax, JuteRed, IronScrap, Bloodbag, Entrails, Chain, Chitin, Crystal, Needle, SurtlingCore, Carapace, TrophyBoar, TrophyDraugr |
-| 9 | 18–20 | 5 of 18 | 69 of 72 | FlametalNew, BlackCore, BoltIron, MeadStaminaMinor, Honey, RoundLog, Coal, LeatherScraps, WolfPelt, LoxPelt, ScaleHide, Barley, JuteBlue, TinOre, SilverOre, SurtlingCore, Carapace, TrophyBoar, TrophyNeck, TrophyGoblin |
-| 10 | 20–22 | 4 of 18 | 69 of 72 | BlackCore, BoltIron, MeadHealthMinor, Honey, Wood, YggdrasilWood, Resin, LeatherScraps, TrollHide, WolfPelt, ScaleHide, Flax, TinOre, FlametalOreNew, Entrails, Ooze, Crystal, Needle, Carapace, TrophyWolf |
-| 11 | 22–24 | 4 of 18 | 70 of 72 | Silver, Amber, AmberPearl, Honey, Blackwood, Resin, Coal, Stone, Flint, Feathers, WolfPelt, LoxPelt, ScaleHide, LinenThread, Barley, Guck, Bloodbag, FreezeGland, TrophyBoar, TrophyWolf |
-| 12 | 24–26 | 5 of 18 | 70 of 72 | Bronze, FlametalNew, BlackCore, Ruby, ArrowFrost, Resin, Flint, LeatherScraps, DeerHide, BjornHide, CopperOre, SilverOre, FlametalOreNew, Guck, Chain, FreezeGland, Carapace, WitheredBone, TrophyBoar, TrophyWolf |
-| 13 | 26–28 | 8 of 18 | 70 of 72 | Bronze, FlametalNew, Ruby, ArrowFrost, MeadHealthMinor, MeadStaminaMinor, MeadTasty, Honey, Wood, ElderBark, Resin, Stone, TrollHide, Barley, JuteRed, Guck, Ooze, Chain, Needle, TrophyDeer |
-| 14 | 28–30 | 3 of 18 | 72 of 72 | Ruby, ArrowFrost, BoltIron, Wood, FineWood, Stone, Flint, LeatherScraps, LoxPelt, LinenThread, BlackMetalScrap, FlametalOreNew, Chitin, FreezeGland, SurtlingCore, Sap, Softtissue, TrophyBoar, TrophySkeleton, TrophyDraugr |
+| 0 | 0–2 | 5 of 27 | 20 of 101 | Eitr, SilverNecklace, ArrowFrost, Bread, MeadStaminaMedium, RoundLog, FineWood, Blackwood, Resin, Flint, Feathers, DeerHide, IronScrap, Obsidian, Sap, Raspberry, Carrot, Turnip, TurnipSeeds, ChickenMeat |
+| 1 | 2–4 | 4 of 27 | 37 of 101 | Eitr, BlackCore, BoarJerky, MeadFrostResist, ElderBark, Feathers, WolfPelt, LoxPelt, ScaleHide, LinenThread, BlackMetalScrap, Guck, Bloodbag, WitheredBone, TrophyGreydwarf, TrophyGoblin, Blueberries, RawMeat, WolfMeat, ChickenMeat |
+| 2 | 4–6 | 5 of 27 | 51 of 101 | BlackMetal, AmberPearl, Ruby, BoarJerky, MeadStaminaMedium, Blackwood, YggdrasilWood, Resin, Stone, Flint, LinenThread, JuteBlue, CopperOre, Chain, Crystal, Carapace, TrophyBoar, TrophyDraugr, CarrotSeeds, DeerMeat |
+| 3 | 6–8 | 6 of 27 | 62 of 101 | Silver, BlackCore, AmberPearl, Ruby, BoltIron, CookedLoxMeat, FineWood, WolfHairBundle, IronScrap, Entrails, Needle, Sap, Softtissue, TrophyBoar, TrophyGreydwarf, TrophyWolf, Blueberries, Onion, LoxMeat, FishRaw |
+| 4 | 8–10 | 6 of 27 | 71 of 101 | Bronze, Amber, AmberPearl, SilverNecklace, CookedLoxMeat, MeadStaminaMedium, ElderBark, YggdrasilWood, WolfPelt, Barley, SilverOre, Sap, TrophyDraugr, TrophyWolf, Mushroom, MushroomYellow, Turnip, OnionSeeds, NeckTail, HareMeat |
+| 5 | 10–12 | 3 of 27 | 80 of 101 | Amber, Bread, MinceMeatSauce, Coal, Feathers, LeatherScraps, TrollHide, AskHide, Flax, JuteBlue, FlametalOreNew, Guck, Ooze, Crystal, Needle, TrophyGreydwarf, TrophySkeleton, TrophyDraugr, Mushroom, LoxMeat |
+| 6 | 12–14 | 2 of 27 | 86 of 101 | BoltIron, MeadPoisonResist, Wood, RoundLog, Feathers, DeerHide, ScaleHide, BjornHide, WolfHairBundle, TinOre, FlametalOreNew, Ooze, Chitin, TrophyDeer, TrophySkeleton, TrophyWolf, Onion, CarrotSeeds, NeckTail, ChickenMeat |
+| 7 | 14–16 | 5 of 27 | 88 of 101 | AmberPearl, MeadHealthMinor, BoarJerky, MeadFrostResist, MeadPoisonResist, Blackwood, YggdrasilWood, Coal, BjornHide, Flax, CopperOre, IronScrap, FreezeGland, WitheredBone, TrophyBoar, TrophyGreydwarf, TrophyDraugr, MushroomYellow, Carrot, DeerMeat |
+| 8 | 16–18 | 4 of 27 | 90 of 101 | Iron, FlametalNew, AmberPearl, ArrowFrost, Wood, Resin, LinenThread, JuteBlue, CopperOre, SilverOre, BlackMetalScrap, Bloodbag, Chain, Chitin, Carapace, Raspberry, Mushroom, Carrot, CarrotSeeds, OnionSeeds |
+| 9 | 18–20 | 6 of 27 | 91 of 101 | Bronze, AmberPearl, BoltIron, MeadTasty, Bread, MeadFrostResist, LeatherScraps, DeerHide, Flax, JuteBlue, TinOre, IronScrap, FlametalOreNew, Ooze, Chain, TrophyDraugr, TrophyWolf, CarrotSeeds, ChickenMeat, FishRaw |
+| 10 | 20–22 | 4 of 27 | 96 of 101 | MeadTasty, MinceMeatSauce, SerpentStew, MeadHealthMedium, Stone, TrollHide, LoxPelt, AskHide, BjornHide, Barley, JuteRed, CopperOre, TinOre, FlametalOreNew, Bloodbag, Crystal, SurtlingCore, Sap, Cloudberry, CarrotSeeds |
+| 11 | 22–24 | 4 of 27 | 96 of 101 | Silver, FlametalNew, MeadHealthMinor, BoarJerky, FineWood, Blackwood, YggdrasilWood, DeerHide, LoxPelt, Barley, SilverOre, Chitin, Needle, Carapace, TrophyBoar, Blueberries, Cloudberry, Onion, TurnipSeeds, WolfMeat |
+| 12 | 24–26 | 4 of 27 | 96 of 101 | Eitr, MeadHealthMinor, MinceMeatSauce, SerpentStew, RoundLog, Coal, WolfPelt, LinenThread, Bloodbag, Entrails, Ooze, Obsidian, SurtlingCore, Softtissue, TrophyDeer, TrophyDraugr, Blueberries, Cloudberry, TurnipSeeds, RawMeat |
+| 13 | 26–28 | 5 of 27 | 96 of 101 | FlametalNew, Ruby, ArrowFrost, MinceMeatSauce, CookedLoxMeat, Resin, Stone, Feathers, LoxPelt, AskHide, CopperOre, TinOre, BlackMetalScrap, Chitin, Sap, Carapace, TrophyGoblin, Turnip, LoxMeat, HareMeat |
+| 14 | 28–30 | 5 of 27 | 97 of 101 | Bronze, BlackMetal, SilverNecklace, MeadTasty, MeadHealthMedium, FineWood, Blackwood, Flint, Feathers, AskHide, BjornHide, JuteRed, JuteBlue, CopperOre, BlackMetalScrap, Softtissue, TrophyBoar, TrophyWolf, Onion, SerpentMeat |
 
-Over 200 periods (400 game days, 200 real hours of uptime with somebody online): the same roll twice **every time**; every shelf exactly twenty distinct entries: **yes**; every entry shown at least once: **yes**. A fair roll shows each entry near 56 times in 200; the least-shown is Softtissue (43), the most-shown Carapace (68).
+Over 200 periods (400 game days, 200 real hours of uptime with somebody online): the same roll twice **every time**; every shelf exactly twenty distinct entries: **yes**; every entry shown at least once: **yes**. A fair roll shows each entry near 40 times in 200; the least-shown is NeckTail (27), the most-shown ArrowFrost (54).
 
 ### Thirty game days of trade, one visit a day, on the shipped rules with the shelf rotating
 
@@ -496,38 +514,38 @@ refuse `not_on_shelf` rather than sell. `UpdateShelf` runs before each visit, wh
 
 | visit (day) | period | the shopper bought | the supplier sold | the stale pane | purse after |
 |---|---|---|---|---|---|
-| 1 | 0 | TrophyGoblin x10, SurtlingCore x10 for 300 | YggdrasilWood x20, FineWood x20 for 120 |  | 1680 |
-| 2 | 1 (rolled) | ArrowIron x100, ScaleHide x40 for 440 | ElderBark x20, BlackMetal x20 for 880 | Eitr → `not_on_shelf` | 1210 |
-| 3 | 1 | Needle x40, Wood x200 for 440 | TrophyNeck x20, WolfHairBundle x20 for 140 |  | 2020 |
-| 4 | 2 (rolled) | Flax x100, MeadStaminaMinor x10 for 420 | BlackMetalScrap x20, FineWood x20 for 740 | Bronze → `not_on_shelf` | 1400 |
-| 5 | 2 | FreezeGland x40, JuteBlue x40 for 480 | Ooze x20, DeerHide x20 for 80 |  | 2110 |
-| 6 | 3 (rolled) | JuteRed x40, Chain x20 for 480 | Flint x20, Wood x20 for 40 | FlametalNew → `not_on_shelf` | 2180 |
-| 7 | 3 | Eitr x10, Guck x40 for 610 | Flint x20, Entrails x20 for 60 |  | 2290 |
-| 8 | 4 (rolled) | TrophyDeer x10, FineWood x115 for 425 | ArrowIron x20, Carapace x20 for 180 | Bronze → `not_on_shelf` | 2050 |
-| 9 | 4 | Amber x30, Silver x12 for 690 | YggdrasilWood x20, Chitin x20 for 140 |  | 2263 |
-| 10 | 5 (rolled) | BoltIron x100, TrollHide x20 for 420 | Chain x20, Bronze x20 for 420 | Silver → `not_on_shelf` | 1845 |
-| 11 | 5 | ElderBark x64 for 192 | Entrails x20, CopperOre x20 for 120 |  | 1782 |
-| 12 | 6 (rolled) | FlametalNew x6, TrophyGreydwarf x10 for 740 | Ooze x20, Eitr x20 for 760 | Iron → `not_on_shelf` | 1576 |
-| 13 | 6 | Barley x100 for 300 | ArrowIron x20, SilverOre x20 for 520 |  | 1650 |
-| 14 | 7 (rolled) | ArrowFrost x100, Silver x7 for 636 | Eitr x10, FlametalOreNew x20 for 1510 | Bronze → `not_on_shelf` | 776 |
-| 15 | 7 | TrophyWolf x10, Crystal x20 for 310 | TrophyBoar x20, Feathers x20 for 160 |  | 1968 |
-| 16 | 8 (rolled) | Chitin x45 for 225 | Honey x20, ElderBark x20 for 60 | Silver → `not_on_shelf` | 1820 |
-| 17 | 8 | TrollHide x14, YggdrasilWood x66 for 428 | Flint x20, TrophyWolf x20 for 300 |  | 1741 |
-| 18 | 9 (rolled) | JuteBlue x38 for 304 | WolfHairBundle x20, TrophyDraugr x20 for 220 | BlackMetal → `not_on_shelf` | 1798 |
-| 19 | 9 | Barley x60, Honey x66 for 372 | Resin x20, Blackwood x20 for 80 |  | 1944 |
-| 20 | 10 (rolled) | YggdrasilWood x22, Wood x196 for 350 | Bronze x20, ArrowIron x20 for 220 | FlametalNew → `not_on_shelf` | 1816 |
-| 21 | 10 | Resin x120, FlametalOreNew x16 for 1336 | Iron x20, ArrowFrost x20 for 400 |  | 2611 |
-| 22 | 11 (rolled) | Barley x37, LinenThread x50 for 648 | LeatherScraps x20, Chain x20 for 200 | BlackCore → `not_on_shelf` | 2616 |
-| 23 | 11 | TrophyWolf x19, WolfPelt x40 for 468 | MeadTasty x20, Entrails x20 for 180 |  | 2112 |
-| 24 | 12 (rolled) | FreezeGland x39, SilverOre x22 for 926 | ArrowIron x20, LinenThread x20 for 220 | Silver → `not_on_shelf` | 2440 |
-| 25 | 12 | CopperOre x41 for 205 | MeadTasty x7, TrophyDeer x20 for 155 |  | 2013 |
-| 26 | 13 (rolled) | Wood x137, Stone x200 for 337 | Chitin x20, Flax x20 for 120 | BlackCore → `not_on_shelf` | 1820 |
-| 27 | 13 | Guck x39, TrophyDeer x30 for 306 | Entrails x20, YggdrasilWood x20 for 120 |  | 1855 |
-| 28 | 14 (rolled) | LinenThread x44, TrophyDraugr x12 for 572 | TinOre x20, Chain x20 for 240 | Bronze → `not_on_shelf` | 1985 |
-| 29 | 14 | LeatherScraps x66, FineWood x99 for 495 | Needle x20, Bloodbag x20 for 120 |  | 2161 |
-| 30 | 15 (rolled) | ArrowIron x110 for 220 | TrophyWolf x20, Resin x20 for 240 | Ruby → `not_on_shelf` | 1728 |
+| 1 | 0 | ChickenMeat x40, Raspberry x50 for 180 | Blueberries x20, BlackMetal x20 for 880 |  | 800 |
+| 2 | 1 (rolled) | LinenThread x50 for 500 | MinceMeatSauce x20, Chain x20 for 280 | SilverNecklace → `not_on_shelf` | 1810 |
+| 3 | 1 | RawMeat x40, WolfPelt x40 for 320 | Iron x20, YggdrasilWood x20 for 440 |  | 1630 |
+| 4 | 2 (rolled) | Stone x200, Ruby x15 for 635 | Carrot x20, TurnipSeeds x20 for 100 | Eitr → `not_on_shelf` | 2195 |
+| 5 | 2 | CopperOre x40, TrophyBoar x10 for 280 | BlackCore x4, SilverOre x20 for 1340 |  | 758 |
+| 6 | 3 (rolled) | Blueberries x58, AmberPearl x20 for 454 | RoundLog x20, WolfPelt x20 for 140 | BlackMetal → `not_on_shelf` | 1954 |
+| 7 | 3 | Sap x40, Entrails x40 for 360 | LeatherScraps x20, TrophyNeck x20 for 120 |  | 1967 |
+| 8 | 4 (rolled) | MushroomYellow x50 for 150 | MeadFrostResist x20, Chain x20 for 300 | Silver → `not_on_shelf` | 1530 |
+| 9 | 4 | YggdrasilWood x68, SilverNecklace x8 for 684 | Blueberries x20, FlametalOreNew x20 for 1320 |  | 939 |
+| 10 | 5 (rolled) | Bread x10, Coal x100 for 500 | Resin x20, LoxPelt x20 for 140 | Bronze → `not_on_shelf` | 2202 |
+| 11 | 5 | Guck x40 for 160 | BlackMetalScrap x20, MeadStaminaMinor x20 for 860 |  | 1050 |
+| 12 | 6 (rolled) | DeerHide x60, BjornHide x40 for 580 | Crystal x20, SerpentStew x20 for 380 | Amber → `not_on_shelf` | 1780 |
+| 13 | 6 | MeadPoisonResist x10, NeckTail x50 for 250 | OnionSeeds x20, HareMeat x20 for 180 |  | 1860 |
+| 14 | 7 (rolled) | MeadHealthMinor x10, CopperOre x34 for 290 | LeatherScraps x20, BlackMetal x19 for 819 | BoltIron → `not_on_shelf` | 1096 |
+| 15 | 7 | YggdrasilWood x36, BoarJerky x20 for 276 | LoxMeat x20, FishRaw x20 for 100 |  | 1821 |
+| 16 | 8 (rolled) | Iron x21, CarrotSeeds x50 for 625 | Entrails x20, BoltIron x20 for 80 | MeadHealthMinor → `not_on_shelf` | 2183 |
+| 17 | 8 | Wood x200, Chitin x40 for 400 | NeckTail x20, MeadHealthMedium x20 for 200 |  | 2013 |
+| 18 | 9 (rolled) | JuteBlue x40, Bread x8 for 664 | WolfPelt x20, MeadStaminaMedium x20 for 240 | Iron → `not_on_shelf` | 2124 |
+| 19 | 9 | FlametalOreNew x13 for 1066 | Cloudberry x20, WolfMeat x20 for 160 |  | 2738 |
+| 20 | 10 (rolled) | CopperOre x27, Stone x194 for 356 | MeadPoisonResist x20, FishRaw x20 for 180 | Bronze → `not_on_shelf` | 2209 |
+| 21 | 10 | TrollHide x20 for 120 | Blackwood x20, BlackMetalScrap x20 for 740 |  | 1058 |
+| 22 | 11 (rolled) | Needle x40, Chitin x24 for 384 | FlametalOreNew x20, TrophyGreydwarf x20 for 1720 | MeadTasty → `not_on_shelf` | 224 |
+| 23 | 11 | FlametalNew x6, LoxPelt x42 for 996 | MushroomYellow x20, Bread x20 for 680 |  | 2008 |
+| 24 | 12 (rolled) | Bloodbag x40, Cloudberry x70 for 470 | LeatherScraps x20, TrollHide x20 for 140 | Silver → `not_on_shelf` | 2328 |
+| 25 | 12 | Ooze x40, TurnipSeeds x50 for 370 | ScaleHide x20, ChickenMeat x20 for 100 |  | 2005 |
+| 26 | 13 (rolled) | TinOre x40, Carapace x40 for 600 | Crystal x20, OnionSeeds x20 for 180 | Eitr → `not_on_shelf` | 2105 |
+| 27 | 13 | TrophyGoblin x10 for 150 | TrophyGreydwarf x14, MushroomYellow x20 for 110 |  | 1840 |
+| 28 | 14 (rolled) | JuteRed x40, Onion x50 for 340 | Coal x20, Bloodbag x20 for 80 | FlametalNew → `not_on_shelf` | 1835 |
+| 29 | 14 | Softtissue x30, SerpentMeat x40 for 440 | Chitin x20, Guck x20 for 140 |  | 1970 |
+| 30 | 15 (rolled) | TrophyGoblin x4, Carapace x20 for 344 | Flax x20, FlametalNew x13 for 1106 | Bronze → `not_on_shelf` | 958 |
 
-Rolls seen across the thirty visits: 15 (one every second visit, as the two-day clock says). Stale-pane buys tried 15, refused `not_on_shelf` 15 — **every one**. Other refusals 0. Bought 2932 units for 14075 coins; sold him 1177 units for 8745 coins; purse at the end 1728.
+Rolls seen across the thirty visits: 15 (one every second visit, as the two-day clock says). Stale-pane buys tried 15, refused `not_on_shelf` 15 — **every one**. Other refusals 0. Bought 2378 units for 12944 coins; sold him 1170 units for 13255 coins; purse at the end 958.
 
 **What this says.** The shelf is a pure function of salt, clock and catalogue (the first table is the same on every machine
 and after every restart), the pane the client draws follows the snapshot's kind so no client code moved, and a player
@@ -563,7 +581,7 @@ emptied shelf stays empty until a player sells it back or an admin raises the ta
 its second visit on). A Want is back inside 5% of target within 16 game days (scenario 6), so he keeps
 buying; with both kinds at never he refused 27 of 30 supplying visits (scenario 10). Keep them.
 
-**The pure core's bounds.** 623 settled deals out of ten thousand random ones, and not a single throw, negative
+**The pure core's bounds.** 616 settled deals out of ten thousand random ones, and not a single throw, negative
 stock, over-max shelf, negative purse, sub-1 price or repeated delivery id (scenario 8). The refusal order is the one
 the contract describes (scenario 7). This part is done.
 
@@ -583,7 +601,7 @@ break-even) precisely because that one would have thrown the signal away. Reason
 Scenario 9 above is the standing proof: all 18 Wares now LOSE the player coins. Turn the knob off and the pump
 table comes back — that is the regression test, and it is why the knob was kept rather than the clause hardcoded.
 
-**2. ACCEPTED AS DOCUMENTED 2026-09-07 — `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the 72 rows has `Max = 3 x Target`, so the
+**2. ACCEPTED AS DOCUMENTED 2026-09-07 — `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the 101 rows has `Max = 3 x Target`, so the
 lowest multiplier any shelf can reach by trading is `(1/3)^0.35 = 0.6808`; the floor would need `Max > 13.7 x Target`.
 Nothing is broken — but the knob reads like a promise the catalogue cannot keep. *Change the documentation, not the
 number*: `MinPriceMultiplier` is a guard for an owner's edited catalogue, not a price a player will ever see. If a real
