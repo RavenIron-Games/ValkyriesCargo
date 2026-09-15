@@ -3037,7 +3037,7 @@ namespace ValkyriesCargo.Tests
             Check(HomeGround.LocationLabel("", HomeGround.DungeonEntrance).Contains("unnamed"), "a label with no name degrades honestly too");
             Check(HomeGround.LocationLabel(null, null).Contains("unnamed"), "and survives a null pair");
 
-            Section("HomeGround: the two gates, in the scheduler");
+            Section("HomeGround: the location gates, in the scheduler");
 
             // Gate 1. This is the reported bug: comfort, rested and baseValue all pass at the Bog Witch,
             // because vanilla's baseValue never asks who built the place.
@@ -3086,7 +3086,50 @@ namespace ValkyriesCargo.Tests
             Check(!g3wrong.Tick(1500, atTheCrypt, false, true, Rolls(0.0)).Visit,
                   "turning off the MERCHANT switch does not open the crypt door - the two are independent");
 
-            // A ruin is nobody's: neither field set, both gates on, the visit comes. The first cut of
+            // Gate 2c. The spawn stones and the boss altars: the game pins them on the map, and the owner's
+            // third switch (2026-09-15, after the live test granted a visit at the Sacrificial Stones).
+            var atTheStones = new List<Candidate> { Player(6, "Andie", 0f, 0f) };
+            atTheStones[0].InsideLandmark = "StartTemple";
+            Scheduler g4 = new Scheduler(SchedulerRules.Default);
+            g4.Arm(0);
+            Decision d4 = g4.Tick(1500, atTheStones, false, true, Rolls(0.0));
+            Check(!d4.Visit, "player-built, but at a landmark: no visit");
+            Check(d4.Reason.Contains("at a merchant's camp, a dungeon entrance or a landmark"),
+                  "and the aggregate names the whole bucket, all three kinds: " + d4.Reason);
+            Scheduler g4off = new Scheduler(new SchedulerRules { AvoidLandmarks = false });
+            g4off.Arm(0);
+            Check(g4off.Tick(1500, atTheStones, false, true, Rolls(0.0)).Visit, "Server.AvoidLandmarks=false lets it through");
+            Scheduler g4wrong = new Scheduler(new SchedulerRules { AvoidMerchantCamps = false, AvoidDungeonEntrances = false });
+            g4wrong.Arm(0);
+            Check(!g4wrong.Tick(1500, atTheStones, false, true, Rolls(0.0)).Visit,
+                  "the other two switches do not open a landmark - three switches, three independent gates");
+            Scheduler forcedStones = new Scheduler(SchedulerRules.Default);
+            forcedStones.Arm(0);
+            Decision dfs = forcedStones.Force(1500, atTheStones, false, true, 6);
+            Check(dfs.Reason.Contains("StartTemple") && dfs.Reason.Contains("landmark"),
+                  "an admin's refusal at the stones names them and says why they count");
+
+            // A vanilla trader's camp is pinned on the map too. The SERVER never reports one as both - a
+            // location has one kind, merchant first (LocationsLive.KindOf; the rule-2 review of PR #84 caught the
+            // first cut refusing Haldor's camp as "a landmark" with the merchant switch off) - but the pure
+            // chain must still name it as the camp if both fields ever arrive, and fall to the landmark label
+            // only when the merchant switch is off.
+            var atHaldor = new List<Candidate> { Player(7, "Andie", 0f, 0f) };
+            atHaldor[0].InsideMerchantCamp = "Vendor_BlackForest";
+            atHaldor[0].InsideLandmark = "Vendor_BlackForest";
+            Scheduler both = new Scheduler(SchedulerRules.Default);
+            both.Arm(0);
+            Decision dboth = both.Force(1500, atHaldor, false, true, 7);
+            Check(!dboth.Visit && dboth.Reason.Contains("Vendor_BlackForest, a merchant's camp") &&
+                  !dboth.Reason.Contains("Vendor_BlackForest, one of the game's landmarks"),
+                  "a camp that is also pinned is refused AS the camp - merchant first in the chain: " + dboth.Reason);
+            Scheduler bothOff = new Scheduler(new SchedulerRules { AvoidMerchantCamps = false });
+            bothOff.Arm(0);
+            Decision dbothOff = bothOff.Force(1500, atHaldor, false, true, 7);
+            Check(!dbothOff.Visit && dbothOff.Reason.Contains("Vendor_BlackForest, one of the game's landmarks"),
+                  "with the merchant switch off the pure chain falls to the landmark label (the server never sends both)");
+
+            // A ruin is nobody's: no location field set, all three gates on, the visit comes. The first cut of
             // this rule refused every location the game owns, and the owner's own base on a WoodHouse3
             // ruin was refused with it (live, 2026-09-15). This is the check that keeps that from coming back.
             var onTheRuin = new List<Candidate> { Player(5, "Nomadtest", 0f, 0f) };

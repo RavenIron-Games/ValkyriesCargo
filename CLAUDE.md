@@ -716,7 +716,10 @@ copied here because the code turns on it. The file named after each is where the
   zone, each with its `ZoneLocation.m_exteriorRadius`) and **the instances on a client**, and learns what is
   INSIDE a location — a `Trader`, an interior — off the prefab asset through `ZoneLocation.m_prefab`'s
   `Load()` / `.Asset` / `.Release()`, which is what `ZoneSystem` itself does and is why the project now
-  references `SoftReferenceableAssets.dll`. `LocationsLive.cs` is the one read; `LocationsLive.Probe` prints
+  references `SoftReferenceableAssets.dll`. The third fact, whether the game pins the location on the map,
+  is on the registry ENTRY itself (`ZoneLocation.m_iconAlways` / `m_iconPlaced` with the instance's `m_placed`,
+  exactly `ZoneSystem.GetLocationIcons`'s own test) and so is the server's alone: a client cannot see a landmark.
+  `LocationsLive.cs` is the one read; `LocationsLive.Probe` prints
   both answers side by side and is logged on every forced visit.
 - The flight bullet above — "a dedicated server pins its reference position to (1000000, 0, 1000000) every fixed
   frame and instantiates nothing of ours" — was checked word for word against both builds and is correct as
@@ -1273,6 +1276,11 @@ Ghost mode (F11; the owner's decision 2026-09-07), a visit running, any client:
 ## Working agreement
 
 - **Run `.\tools\run-tests.ps1` before every commit.**
+- **Agent models: Sonnet for working agents, Haiku for sub-agents, Opus for reviews.** Every `agent()` /
+  Agent call names its model: `sonnet` for the first-tier workers (readers, implementers, provers), `haiku`
+  for the sub-agents they fan out to (per-finding verifiers, mechanical sweeps), `opus` for reviewers and the
+  final judge. Never the session model. Tens of agents, not hundreds, and say the count before launching.
+  (Owner, 2026-09-15: "run sonnet agents, haiku sub agents and opus reviews. make that rule 2".)
 - **Prove a new test fails without its fix.**
 - **A clean build proves nothing about member access.** Anything reaching a game member needs one
   in-game run before it is called done.

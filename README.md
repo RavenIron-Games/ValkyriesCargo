@@ -234,6 +234,12 @@ itself is what arms the lock.
 | `EventChancePercent` | `25` | 0-100 | Chance per roll when at least one player is eligible. |
 | `PlayerCooldownMinutes` | `60` | 0-1440 | Real minutes before the same player can be chosen again; stamped at dispatch. |
 | `CooldownRadius` | `60` | 0-500 | Metres: a base on cooldown blocks its neighbours within this radius. |
+| `RequireBuiltBase` | `true` | | **Issue #79 (2026-09-14).** A visit needs ground somebody actually BUILT on: at least one player-placed piece within `BuiltBaseRadius` of the player, reported by the client the way comfort is. Vanilla's base value counts the game's own camps (the Bog Witch's, Haldor's) as a base; this is what stops that. |
+| `BuiltBaseRadius` | `20` | 4-64 | Metres around the player searched for a player-placed piece; 20 is the radius vanilla measures base value over. |
+| `AvoidMerchantCamps` | `true` | | Refuse a visit at another merchant's camp - Haldor, Hildir, the Bog Witch, any modded trader: any location holding a `Trader`, by its own exterior radius plus `LocationClearance`. A location has one kind and one switch, so a camp is never also "a landmark" and `false` really does open the camps. Read on the server. |
+| `AvoidDungeonEntrances` | `true` | | Refuse a visit at the door of a crypt, cave, mine or fortress: any location with an interior. Being inside one is refused regardless. Read on the server. |
+| `AvoidLandmarks` | `true` | | Refuse a visit at a place the game pins on the map that is neither a camp nor a dungeon door: the Sacrificial Stones, every boss altar. The game's own map-icon flag, no name list; the server log names what this world has at the first roll. Read on the server; a client's `cargo status` cannot see it. |
+| `LocationClearance` | `8` | 0-64 | Metres around the player added to a location's own radius for the three checks above; the margin that keeps him off the boundary fence. |
 | `MerchantLifespanSeconds` | `300` | 30-1800 | How long Ingvar stays, as the vanilla random event's duration. |
 | `ApproachDistance` | `3.5` | 1-10 | Metres from the player at which he stops walking up. Read on the **client that owns the merchant**, synced from the server. |
 | `BodyPrefab` | `Dverger` | | The engine creature prefab the merchant is **cloned from, for good** — `Character`, `MonsterAI` and the collider all come from it, whatever body is drawn on top. Must have a `Humanoid`, a `MonsterAI` and an `Animator`. This is not the custom-body switch; that is `CustomBody`. |

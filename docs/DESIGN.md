@@ -102,6 +102,8 @@ same trust class as vanilla's `baseValue`.
 position, `baseValue = zdo.GetInt(ZDOVars.s_baseValue)`, `rested`, `comfort`, `y`.
 
 **Eligible** = ready ∧ alive ∧ `rested` (if `RequireRested`) ∧ `comfort ≥ MinComfortLevel` ∧ `baseValue ≥ MinBaseValue` ∧ `y < 3000`
+∧ somebody built here (`RequireBuiltBase`, issue #79) ∧ not at a merchant's camp / a dungeon's door / a landmark
+(`AvoidMerchantCamps`, `AvoidDungeonEntrances`, `AvoidLandmarks`; one kind per location, in that order - `Core/HomeGround.cs`)
 ∧ (`DaytimeOnly` → `EnvMan.instance.IsDay()`, read only) ∧ not on this player's cooldown ∧ no base within
 `CooldownRadius` on cooldown ∧ the owner peer is ready.
 

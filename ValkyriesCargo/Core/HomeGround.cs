@@ -4,7 +4,8 @@ namespace RavenIron.ValkyriesCargo.Core
 {
     /// <summary>
     /// Whether the ground a candidate is standing on is somewhere Ingvar should be dropped: a place a
-    /// PLAYER built, and not another merchant's camp or the mouth of a dungeon.
+    /// PLAYER built, and not another merchant's camp, the mouth of a dungeon, or one of the game's own
+    /// landmarks.
     ///
     /// **Why this file exists (issue #79, 2026-09-14, from a player: "Little man shows up at the
     /// Bogwitch if you happen to be there when he appears").** The visit gate asked seven things and
@@ -25,16 +26,19 @@ namespace RavenIron.ValkyriesCargo.Core
     ///    server one player builds the hall and the rest live in it, and keying on the builder would
     ///    mean only the builder ever got a visit. The client reports this the way it already reports
     ///    comfort, on its own ZDO.
-    /// 2. **Not at a merchant's camp, and not at a dungeon's door.** Test 1 still passes if somebody
+    /// 2. **Not at a merchant's camp, a dungeon's door, or a landmark.** Test 1 still passes if somebody
     ///    plants a workbench beside the Bog Witch, and a Valkyrie dropping a rival merchant into her
     ///    camp is the complaint. The first cut of this rule refused EVERY location the game owns, and
     ///    the live test on 2026-09-15 showed why that was wrong: the owner's own base, built on a
     ///    Meadows `WoodHouse3` ruin - one of the most common first bases in the game - was refused
-    ///    too. So the rule names its reasons. A location counts when it holds a `Trader` (Haldor,
-    ///    Hildir, the Bog Witch, any modded merchant - no name list) or when it has an interior
-    ///    (every crypt, cave, mine and fortress). A ruin, a runestone, a stone circle: yours to build
-    ///    on, yours to be visited at. The location's own exterior radius is what "at" means, plus a
-    ///    small clearance so he is not dropped on the boundary fence; that is what `RingOffsets` is.
+    ///    too. So the rule names its reasons, and a location has ONE of them, decided in this order,
+    ///    each behind its own switch: a merchant's camp when it holds a `Trader` (Haldor, Hildir, the Bog
+    ///    Witch, any modded merchant - no name list); else a dungeon's door when it has an interior
+    ///    (every crypt, cave, mine and fortress); else a landmark when the game pins it on the map (the
+    ///    Sacrificial Stones, every boss altar - the third switch, 2026-09-15). A ruin, a runestone, a
+    ///    stone circle: yours to build on, yours to be visited at. The location's own exterior radius is
+    ///    what "at" means, plus a small clearance so he is not dropped on the boundary fence; that is
+    ///    what `RingOffsets` is.
     ///
     /// Everything here is pure arithmetic and words. The engine reads are `LocationsLive.Read` (on
     /// the server for the gate, on the client for `cargo status`) and `Piece.GetAllPiecesInRadius`
@@ -64,9 +68,9 @@ namespace RavenIron.ValkyriesCargo.Core
         // --- the clearance added to a location's own radius -------------------------------------
 
         /// <summary>
-        /// The margin around the player that is also asked "is this a merchant's camp": the location's
-        /// own radius does the work, and this only keeps Ingvar from being dropped on the boundary
-        /// fence. Small on purpose.
+        /// The margin around the player that is also asked "is this a merchant's camp, a dungeon door or a
+        /// landmark" (one margin, three switches): the location's own radius does the work, and this only
+        /// keeps Ingvar from being dropped on the boundary fence. Small on purpose.
         /// </summary>
         public const float DefaultClearance = 8f;
 
@@ -157,6 +161,16 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string DungeonEntrance = "a dungeon entrance";
 
         /// <summary>
+        /// A location the game itself pins on the map - the registry's `m_iconAlways` (the Sacrificial
+        /// Stones) or `m_iconPlaced` (every boss altar) - that is not a merchant's camp and not a dungeon's
+        /// door, which have their own switches (every vanilla camp is pinned too, and is a camp first). The
+        /// places the game treats as landmarks rather than as ground. The owner's third switch, 2026-09-15,
+        /// after the live test showed the spawn stones granted under the first two: "add the third switch".
+        /// No name list.
+        /// </summary>
+        public const string Landmark = "one of the game's landmarks";
+
+        /// <summary>
         /// The refusal a candidate standing on ground nobody built gets, in the shape the roll line
         /// already speaks. `radius` is the one actually in force after clamping, not the configured one,
         /// so a clamped value never reads back as the number somebody typed.
@@ -169,7 +183,7 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>
         /// "Hildir_camp, a merchant's camp". The location is NAMED, because "at a location" with no
         /// name is the kind of line that costs somebody an evening; an empty or missing name degrades
-        /// to the honest "an unnamed location" rather than to a blank. The kind is one of the two
+        /// to the honest "an unnamed location" rather than to a blank. The kind is one of the three
         /// constants above, or empty, and says WHY this location counts.
         /// </summary>
         public static string LocationLabel(string locationName, string kind)

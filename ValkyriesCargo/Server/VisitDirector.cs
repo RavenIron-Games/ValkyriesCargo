@@ -756,6 +756,15 @@ namespace RavenIron.ValkyriesCargo.Server
             var list = new List<Candidate>();
             ZNet znet = ZNet.instance;
             if (znet == null) return list;
+            if (!_landmarksLogged && ZoneSystem.instance != null && ZoneSystem.instance.m_locationInstances != null &&
+                ZoneSystem.instance.m_locationInstances.Count > 0)
+            {
+                // Once per boot, the first time the registry is there to read: what the third switch refuses in
+                // THIS world, by name, so the default's reach is in the log and not a guess.
+                _landmarksLogged = true;
+                try { ValkyriesCargo.Log.LogInfo(LocationsLive.LandmarkTypesLine()); }
+                catch (Exception ex) { ValkyriesCargo.Log.LogWarning("landmark list threw " + ex.Message); }
+            }
             foreach (ZDO zdo in znet.GetAllCharacterZDOS())
             {
                 if (zdo == null) continue;
@@ -783,6 +792,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     // standing anywhere and the game's locations are the server's own knowledge.
                     InsideMerchantCamp = MerchantCampAt(p, rules),
                     InsideDungeonEntrance = DungeonEntranceAt(p, rules),
+                    InsideLandmark = LandmarkAt(p, rules),
                 });
             }
             return list;
@@ -795,7 +805,7 @@ namespace RavenIron.ValkyriesCargo.Server
         private static string MerchantCampAt(Vector3 p, SchedulerRules rules)
         {
             if (rules == null || !rules.AvoidMerchantCamps) return "";
-            try { return LocationsLive.Read(p, rules.LocationClearance, true, false).Name; }
+            try { return LocationsLive.Read(p, rules.LocationClearance, true, false, false).Name; }
             catch (Exception ex)
             {
                 if (_locationThrows++ < 3) ValkyriesCargo.Log.LogWarning("merchant-camp check threw " + ex.Message + "; the ground is treated as clear");
@@ -807,7 +817,7 @@ namespace RavenIron.ValkyriesCargo.Server
         private static string DungeonEntranceAt(Vector3 p, SchedulerRules rules)
         {
             if (rules == null || !rules.AvoidDungeonEntrances) return "";
-            try { return LocationsLive.Read(p, rules.LocationClearance, false, true).Name; }
+            try { return LocationsLive.Read(p, rules.LocationClearance, false, true, false).Name; }
             catch (Exception ex)
             {
                 if (_locationThrows++ < 3) ValkyriesCargo.Log.LogWarning("dungeon-entrance check threw " + ex.Message + "; the ground is treated as clear");
@@ -815,7 +825,20 @@ namespace RavenIron.ValkyriesCargo.Server
             }
         }
 
+        /// <summary>The landmark a point sits at - the spawn stones, a boss altar - or "" when clear. Its own switch.</summary>
+        private static string LandmarkAt(Vector3 p, SchedulerRules rules)
+        {
+            if (rules == null || !rules.AvoidLandmarks) return "";
+            try { return LocationsLive.Read(p, rules.LocationClearance, false, false, true).Name; }
+            catch (Exception ex)
+            {
+                if (_locationThrows++ < 3) ValkyriesCargo.Log.LogWarning("landmark check threw " + ex.Message + "; the ground is treated as clear");
+                return "";
+            }
+        }
+
         private static int _locationThrows;
+        private static bool _landmarksLogged;
 
         /// <summary>One candidate in words for `cargo status`.</summary>
         public string Describe(Candidate c, double now)
@@ -824,6 +847,7 @@ namespace RavenIron.ValkyriesCargo.Server
                    " built=" + (c.BuiltBase ? "yes" : "no") +
                    (c.InsideMerchantCamp.Length > 0 ? " AT " + c.InsideMerchantCamp + " (merchant)" : "") +
                    (c.InsideDungeonEntrance.Length > 0 ? " AT " + c.InsideDungeonEntrance + " (dungeon)" : "") +
+                   (c.InsideLandmark.Length > 0 ? " AT " + c.InsideLandmark + " (landmark)" : "") +
                    " y=" + Wire.Float((float)Math.Round(c.Y)) + (c.Alive ? "" : " DEAD") +
                    (_scheduler.OnPlayerCooldown(c.CooldownKey, now) ? " on cooldown" : "") + (_scheduler.NearBaseCooldown(c.X, c.Z, now) ? " near a base on cooldown" : "");
         }
