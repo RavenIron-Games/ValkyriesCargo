@@ -72,7 +72,8 @@ client applied (client 1000–1120):
 the closing line balances only with the seventh deal, which PR #86's comment and the first cut of the release
 documents left out. The hides: 40 bought in two deals (13-3, 13-4) and all 40 sold back in three (13-5, 13-6,
 13-7) through the prefab-keyed removal. Neither log records stack counts (`BjornHide` stacks to 50), so
-nothing here says how the 40 sat in the pack; "32 hides across two stacks" was a guess and is withdrawn.
+nothing here says how the 40 sat in the pack; "32 hides across two stacks" was a guess and is withdrawn. Visit #14 below
+is the proof that run could not give.
 
 Two of the new food rows traded: `CookedLoxMeat` (a Ware, 13-1) and `SerpentMeat` (a Want, 13-5).
 
@@ -90,6 +91,44 @@ server's answer as `server answered: …`, both in the client's log.
 - **The version wall in this cut's direction** (a 0.1.0 client at a 0.1.1 server). No client joined the 0.1.1
   boot. The 2026-09-11 proof (`2026-09-11-release-session.log.txt` lines 376–381) is the mirror pair: a 0.1.1
   client refused by a 0.1.0 server. Same gate, other branch.
-- **The 0.1.1 client boot line.** The Gale `testing` profile holds the 0.1.1 DLL; the game was not launched
-  after the copy.
+- **The 0.1.1 client boot line** — seen at 11:04, see visit #14 below.
 - **Redelivery**, and every two-client item, as at rc5.
+
+## Visit #14 — the stack walk, 11:05–11:12, the zip's own DLL on both sides
+
+The server rebooted at 11:00 on the DLL that ships in `RavenIronStudios-ValkyriesCargo-0.1.1.zip`
+(`0.1.1+a5e4e4f`, md5 `17CB3DCD025921CF33958077B77F91DC`; `Loading [Valkyrie's Cargo 0.1.1]` at line 7685,
+`director up: … catalogue 101 entries, purse 100725, next visit #14`), and the `testing` client launched at
+11:04 on the same bytes: `Valkyrie's Cargo v0.1.1 loaded - renderer=True, patches 18/18 applied,
+catalogue=101 entries … probes 19/19 ok` (client line 19). The handshake both ways: `Sending Valkyrie's Cargo
+version 0.1.1 and minimum version 0.1.1 to the client` / `Received … 0.1.1 … from the client` on the server,
+the mirror on the client, `Network version check, their:40, mine:40`.
+
+`cargo visit` at the same base as #13: the first refused `not eligible: comfort < 4`; the second `forced
+visit: Nomadtest at (-170.37, 53.19); 1 eligible` → `visit #14 begins … purse 100000`, flight authored
+`straight in 90 m out`, `dropped at (-161.42, 30.98, 63.08)`.
+
+| deal | server | client |
+|---|---|---|
+| 14-1 | `bought 60 Blackwood at 3, coins +180 to the player; purse 99820` | `ok wffffffffa3c7dd22-14-1 -60 Blackwood, +180 coins` |
+| 14-2 | `bought 25 Resin at 1, coins +25 to the player; purse 99795` | `ok wffffffffa3c7dd22-14-2 -25 Resin, +25 coins` |
+
+**The stack walk, proven.** `Blackwood` stacks to 50 (`docs/data/items-valheim-2026-07-31.tsv`), so the 60
+bought on visit #13 (deal 13-2) sat in two stacks, and removing 60 in one deal had to cross both — the path
+`Client/DealApplier.Remove` walks and nothing off-game exercises. The player-side dismiss ended it:
+`visit #14 ended: dismissed by Nomadtest; takings 0 coins, purse 99795`.
+
+**The walk-up ran out its budget once.** Client: `the walk-up did not finish. walked 20.000267 s of a 20 s
+budget (scaled from 25.6692371 m at entry), moved 40.6875229 m; stuck 0 s of the last window, and stopped
+17.57369 m away` (a Warning), then `trading (entered: gave up walking after 20 s)`, `approaching (entered: the
+player left: 17.56 m for 5.02 s)`, `trading (entered: reached the player)`, `terminal opened`. On a plain base
+he walked further than the straight line and ended further away than he started; the re-approach when the
+player moved recovered it. Wu'barrk's merchant logic behaving as written, noted for him, not a fault of the cut.
+
+**Found: the purse carry does not survive a restart.** Visit #13 took in 780 coins gross (13-1 to 13-4), and
+the sidecar restored that as `coined` at both later boots, but the number `Market.StartVisit` receives is the
+director's `_lastCoined`, which is set only when a visit ends (`VisitDirector.End`). So visit #14 opened at
+`purse 100000` — `PurseCoins` with a carry of 0 — where an unbroken server would have opened it at 100390 (50 %
+of 780, cap 3×). On a shipped server (`PurseCoins` 1500) every visit that follows a restart starts without the
+carry the 2026-09-07 decision gave it. One line at the end of `LoadSidecar` (`_lastCoined = _market.Coined`)
+would seed it from the sidecar; not changed here.
