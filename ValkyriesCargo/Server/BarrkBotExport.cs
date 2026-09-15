@@ -123,7 +123,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 "stock and purse persist across a restart in the world's own save file, and this file is a " +
                 "live mirror of that, refreshed on the export cadence, never the source of truth.";
 
-            WriteCollection(dir, "barrkbot_cargo_market", "market", rowPairs, totals, notes, leaders, now, null);
+            WriteCollection(dir, "barrkbot_cargo_market", "market", rowPairs, totals, notes, leaders, BarrkExport.MarketNotAchievements, now, null);
         }
 
         // ---- barrkbot_cargo_traders.json -------------------------------------------------------------
@@ -180,7 +180,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 "coins_earned IS meaningful, unlike the pairs above: it is a player's net coins paid to " +
                 "Ingvar this session (negative means they are net ahead). Resets when the server restarts.";
 
-            WriteCollection(dir, "barrkbot_cargo_traders", "traders", rowPairs, totals, notes, leaders, now, d.SessionStartedUtc);
+            WriteCollection(dir, "barrkbot_cargo_traders", "traders", rowPairs, totals, notes, leaders, null, now, d.SessionStartedUtc);
         }
 
         // ---- barrkbot_cargo_visits.json --------------------------------------------------------------
@@ -225,7 +225,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 "own world clock. takings_coins is never negative and 0 is a genuine 'nobody bought or sold " +
                 "enough to move the purse', not missing data. Resets when the server restarts.";
 
-            WriteCollection(dir, "barrkbot_cargo_visits", "visits", rowPairs, totals, notes, leaders, now, d.SessionStartedUtc);
+            WriteCollection(dir, "barrkbot_cargo_visits", "visits", rowPairs, totals, notes, leaders, null, now, d.SessionStartedUtc);
         }
 
         // ---- the shared v4 envelope + rollover ---------------------------------------------------------
@@ -243,6 +243,7 @@ namespace RavenIron.ValkyriesCargo.Server
             Dictionary<string, object> totals,
             string notes,
             Dictionary<string, List<LeaderEntry>> leaders,
+            string[] notAchievements,
             DateTime generatedAtUtc,
             DateTime? sessionStartedUtc)
         {
@@ -271,6 +272,14 @@ namespace RavenIron.ValkyriesCargo.Server
                 };
                 if (sessionStartedUtc.HasValue) doc["session_started_at"] = Iso(sessionStartedUtc.Value);
                 doc[collectionKey + "_notes"] = notes;
+                // Contract v4 "Achievements": the fields BarrkBOT must NOT cheer when their leader moves.
+                // In every part, like the leaders, so a reader holding any one file knows.
+                if (notAchievements != null && notAchievements.Length > 0)
+                {
+                    var na = new List<object>(notAchievements.Length);
+                    foreach (string f in notAchievements) na.Add(f);
+                    doc[collectionKey + "_not_achievements"] = na;
+                }
                 doc["totals"] = totals;
                 if (partOf > 1 && leaders != null && leaders.Count > 0)
                 {

@@ -4932,6 +4932,22 @@ namespace ValkyriesCargo.Tests
         {
             Section("BarrkExport (the payload shaping BarrkBotExport.cs renders to JSON)");
 
+            // Contract v4 "Achievements". A market map is keyed by a thing and ranked since bot 6.0.92;
+            // its credit is the row's one string, `kind`, so a leader change reads "Ware now leads stock
+            // on the Sap with 40, taking it from Want" and is posted as a congratulation - seen hourly in
+            // the Wonderland channel on 2026-09-14. Every numeric field the market row renders is declared
+            // not-an-achievement, and this holds the declaration to exactly the row's numeric fields, so a
+            // new number cannot reach a channel undeclared.
+            string[] renderedMarketNumbers = { "stock", "target_stock", "max_stock", "buy_price", "sell_price", "trend" };
+            foreach (string f in renderedMarketNumbers)
+                Check(System.Array.IndexOf(BarrkExport.MarketNotAchievements, f) >= 0, "market_not_achievements names " + f);
+            int numericMarketFields = 0;
+            foreach (FieldInfo fi in typeof(MarketExportRow).GetFields())
+                if (fi.FieldType == typeof(int) || fi.FieldType == typeof(long) || fi.FieldType == typeof(double) || fi.FieldType == typeof(float))
+                    numericMarketFields++;
+            Check(numericMarketFields == BarrkExport.MarketNotAchievements.Length,
+                  "the declaration covers exactly the row's numeric fields (" + numericMarketFields + " on MarketExportRow): add a number to the row and this fails until it is declared");
+
             Equal(0, BarrkExport.MarketRows(null).Count, "a null market shapes to an empty row list, not a throw");
             Equal(0, BarrkExport.TraderRows(null).Count, "same for a null trader ledger");
             Equal(0, BarrkExport.VisitRows(null).Count, "and a null visit history");

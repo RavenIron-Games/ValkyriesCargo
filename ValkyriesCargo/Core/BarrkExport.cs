@@ -157,5 +157,20 @@ namespace RavenIron.ValkyriesCargo.Core
                     candidates.Add(new LeaderEntry { Credit = r.Pilot, Value = field(r) });
             return BarrkRollover.TopN(candidates);
         }
+
+        // ---- achievements (contract v4, "Achievements - say which of your fields are worth cheering") --
+
+        /// <summary>
+        /// The market's numeric fields, declared to BarrkBOT as `market_not_achievements`. A map keyed by
+        /// a THING is ranked since bot 6.0.92; its credit is "any non-numeric scalar in the row", which
+        /// for a market row is `kind` - "Ware" or "Want" - and a leader change is posted to the server's
+        /// Discord as a congratulation. So on 2026-09-14 the Wonderland channel read "Ware now leads stock
+        /// on the Sap with 40, taking it from Want" once an hour: the shelf rotating and stock drifting,
+        /// celebrated. None of these numbers is anything anyone achieved. The contract's own fix "ships
+        /// with your mod rather than waiting on a BarrkBOT release": name them, in every part. The harness
+        /// holds this list to exactly the row's numeric fields, so a new one cannot reach a channel undeclared.
+        /// </summary>
+        public static readonly string[] MarketNotAchievements =
+            { "stock", "target_stock", "max_stock", "buy_price", "sell_price", "trend" };
     }
 }
