@@ -109,14 +109,33 @@ namespace RavenIron.ValkyriesCargo.Core
             return c;
         }
 
-        // --- the ring ---------------------------------------------------------------------------
+        // --- the decision on the server: a point against a location's own radius ----------------
+
+        /// <summary>
+        /// Is a point at `distance` from a location's centre inside it, for our purposes? This is the
+        /// SERVER's test, over the zone registry's `m_exteriorRadius` (a dedicated server has no
+        /// location instances to ask; found live 2026-09-15). Inclusive at the boundary, so a
+        /// clearance of 0 against a radius of 0 still refuses a point sitting exactly on a location's
+        /// origin rather than letting it through on a float comparison. A negative or unreadable
+        /// radius is treated as 0 rather than as a licence: a location whose radius we cannot read
+        /// still keeps its clearance.
+        /// </summary>
+        public static bool InsideLocation(float distance, float exteriorRadius, float clearance)
+        {
+            if (exteriorRadius < 0f) exteriorRadius = 0f;
+            if (clearance < 0f) clearance = 0f;
+            return distance <= exteriorRadius + clearance;
+        }
+
+        // --- the ring: the decision on a client, where only instances exist -----------------------
 
         /// <summary>
         /// Eight points on a ring `clearance` metres out from the player - the compass points and the
-        /// diagonals - as (x, z) pairs, flattened. The engine's own `Location.GetLocation(point)` says
-        /// which location a POINT is inside; asking it at the player and at these eight is how "inside,
-        /// or within the clearance of" is answered without naming the engine's private location list.
-        /// Empty when the clearance is 0: then the player's own point is the whole question.
+        /// diagonals - as (x, z) pairs, flattened. On a CLIENT the registry is empty and the engine's own
+        /// `Location.GetLocation(point)` says which location instance a POINT is inside; asking it at the
+        /// player and at these eight is how "inside, or within the clearance of" is answered there without
+        /// naming the engine's private location list. Empty when the clearance is 0: then the player's own
+        /// point is the whole question.
         /// </summary>
         public static float[] RingOffsets(float clearance)
         {

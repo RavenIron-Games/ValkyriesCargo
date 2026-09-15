@@ -2998,8 +2998,22 @@ namespace ValkyriesCargo.Tests
             Equal(HomeGround.MinClearance, HomeGround.ClampClearance(-5f, problems), "a negative clearance is clamped to the floor");
             Equal(HomeGround.MaxClearance, HomeGround.ClampClearance(1000f, problems), "and a huge one to the ceiling");
 
-            // The ring the clearance is asked over. Eight points, each exactly `clearance` out, so a
-            // camp whose edge is within the margin is found from at least one of them.
+            // The server's arithmetic, over the registry's own radius. Found necessary live on 2026-09-15:
+            // a dedicated server has no location instances, so this is the test that refuses Hildir's camp.
+            Check(HomeGround.InsideLocation(10f, 30f, 8f), "well inside a camp is inside");
+            Check(!HomeGround.InsideLocation(50f, 30f, 8f), "well outside is outside");
+            Check(HomeGround.InsideLocation(38f, 30f, 8f),
+                  "exactly on the boundary counts as INSIDE: a drop landing precisely on the fence is the case this rule exists to stop");
+            Check(!HomeGround.InsideLocation(38.01f, 30f, 8f), "and a hair beyond it is clear");
+            Check(HomeGround.InsideLocation(0f, 0f, 0f),
+                  "a zero-radius location with zero clearance still owns the point standing exactly on it");
+            Check(HomeGround.InsideLocation(3f, -100f, 8f), "a negative radius is read as 0, not as a licence");
+            Check(!HomeGround.InsideLocation(9f, -100f, 8f), "and beyond that clearance it is clear");
+            Check(!HomeGround.InsideLocation(25f, 2f, 8f),
+                  "a runestone's couple of metres does not reach a base 25 m away - the location's own radius scales the rule");
+
+            // The client's ring, where only instances exist. Eight points, each exactly `clearance` out,
+            // so a camp whose edge is within the margin is found from at least one of them.
             float[] ring = HomeGround.RingOffsets(8f);
             Check(ring.Length == 16, "eight (x, z) pairs on the ring");
             bool allOnRing = true;
