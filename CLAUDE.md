@@ -1273,6 +1273,11 @@ Ghost mode (F11; the owner's decision 2026-09-07), a visit running, any client:
 ## Working agreement
 
 - **Run `.\tools\run-tests.ps1` before every commit.**
+- **Agent models: Sonnet for working agents, Haiku for sub-agents, Opus for reviews.** Every `agent()` /
+  Agent call names its model: `sonnet` for the first-tier workers (readers, implementers, provers), `haiku`
+  for the sub-agents they fan out to (per-finding verifiers, mechanical sweeps), `opus` for reviewers and the
+  final judge. Never the session model. Tens of agents, not hundreds, and say the count before launching.
+  (Owner, 2026-09-15: "run sonnet agents, haiku sub agents and opus reviews. make that rule 2".)
 - **Prove a new test fails without its fix.**
 - **A clean build proves nothing about member access.** Anything reaching a game member needs one
   in-game run before it is called done.

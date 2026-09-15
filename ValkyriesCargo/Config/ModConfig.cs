@@ -156,7 +156,7 @@ namespace RavenIron.ValkyriesCargo.Config
             AvoidLandmarks = S(cfg, "Server", "AvoidLandmarks", true,
                 "Refuse a visit to a player standing at a place the game itself pins on the map - the Sacrificial Stones, every boss altar, the merchant camps: any location with a map icon. No list to keep. Read on the SERVER.");
             LocationClearance = S(cfg, "Server", "LocationClearance", Core.HomeGround.DefaultClearance,
-                "Metres around the player also asked 'is this a merchant's camp or a dungeon door'. Small on purpose: the location's own radius does the work and this is the margin that stops a drop on its boundary fence. Read on the SERVER.",
+                "Metres around the player also asked 'is this a merchant's camp, a dungeon door or a landmark'. Small on purpose: the location's own radius does the work and this is the margin that stops a drop on its boundary fence. Read on the SERVER.",
                 new AcceptableValueRange<float>(Core.HomeGround.MinClearance, Core.HomeGround.MaxClearance));
             MerchantLifespanSeconds = S(cfg, "Server", "MerchantLifespanSeconds", 300f,
                 "How long Ingvar stays, as the vanilla random event's duration. Ours alone: Odin's prefab says 60, not the 300 his field initialiser says, so this number was never inherited from him. Read on the SERVER.",

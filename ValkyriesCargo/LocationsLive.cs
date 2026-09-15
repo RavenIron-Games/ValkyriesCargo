@@ -111,7 +111,9 @@ namespace RavenIron.ValkyriesCargo
             string key = loc.m_prefabName ?? "";
             Facts f;
             if (_factsByPrefab.TryGetValue(key, out f)) return f;
-            // The map-icon flag is on the registry entry itself; no asset needed for it.
+            // The map-icon flag is on the registry entry itself; no asset needed for it. Caching it by prefab
+            // name is exact: the registry holds ONE ZoneLocation per prefab name and every LocationInstance
+            // points at that one object, so the flag cannot differ between two instances of a prefab.
             f = new Facts { Trader = false, Interior = false, Landmark = loc.m_iconAlways || loc.m_iconPlaced };
             try
             {
@@ -253,7 +255,7 @@ namespace RavenIron.ValkyriesCargo
         public static string StatusLine(Vector3 p, float clearance, bool merchants, bool dungeons, bool landmarks)
         {
             if (ZoneSystem.instance == null) return "locations: no world yet (nothing is refused for this)";
-            if (!merchants && !dungeons && !landmarks) return "locations: all three gates are off (Server.AvoidMerchantCamps, AvoidDungeonEntrances, AvoidLandmarks)";
+            if (!merchants && !dungeons && !landmarks) return "locations: all three gates are off (Server.AvoidMerchantCamps, Server.AvoidDungeonEntrances, Server.AvoidLandmarks)";
             Verdict v = Read(p, clearance, merchants, dungeons, landmarks);
             var g = new List<string>();
             if (merchants) g.Add("merchant camps");

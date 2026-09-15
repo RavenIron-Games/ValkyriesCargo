@@ -64,9 +64,9 @@ namespace RavenIron.ValkyriesCargo.Core
         // --- the clearance added to a location's own radius -------------------------------------
 
         /// <summary>
-        /// The margin around the player that is also asked "is this a merchant's camp": the location's
-        /// own radius does the work, and this only keeps Ingvar from being dropped on the boundary
-        /// fence. Small on purpose.
+        /// The margin around the player that is also asked "is this a merchant's camp, a dungeon door or a
+        /// landmark" (one margin, three switches): the location's own radius does the work, and this only
+        /// keeps Ingvar from being dropped on the boundary fence. Small on purpose.
         /// </summary>
         public const float DefaultClearance = 8f;
 
