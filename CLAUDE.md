@@ -24,6 +24,16 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ## Status
 
+**CUT 2026-09-15: `v0.1.1-rc6` — the first cut with its own version number** (the owner: "we need to start
+updating versions as well"); a GitHub pre-release with the store zip and the kit attached, **NOT yet on the store**
+(the upload is the owner's, `docs/RELEASE.md` §5). It carries issue #79's fix (built ground + three location
+switches, one kind per location, proven live on Storm10), the 29 food rows (72 → 101; an existing server needs
+`cargo catalogue reset`, because a stored cfg line wins over the shipped default), one row per item token with
+deals keyed by prefab, the console lines in the client log, and the BarrkBOT export per contract v4. 2093 off-game
+checks, 0 warnings. **An rc5 client is refused by an rc6 server** by the ServerSync gate, which is the point of
+the number. The version wall and the non-admin refusal were not re-run (nothing on those paths changed);
+redelivery stays proven off-game only.
+
 **SHIPPED 2026-09-11. `v0.1.0-rc5` is published to Hexium — the first Valkyrie's Cargo cut to reach a store.**
 The owner uploaded it himself; the credentials are his and that does not change (`docs/RELEASE.md` §5). It is the
 **Valheim 1.0.12** build and runs on nothing else: 1.0.12 moved the network version to 40, so rc4 (1.0.7) and rc3

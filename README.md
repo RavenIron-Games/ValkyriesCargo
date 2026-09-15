@@ -6,15 +6,21 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.0-rc5`, a first playable, and the first cut to reach a store.** Cut 2026-09-11 from
-> `main` and published to Hexium the same day. **For Valheim 1.0.12 only**: 1.0.12 moved the network
+> **Status: `v0.1.1-rc6`, a first playable with its own version number; a pre-release on GitHub, not yet
+> on the store.** Cut 2026-09-15 from `main`. **For Valheim 1.0.12 only**: 1.0.12 moved the network
 > version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The
-> store zip and the body bundle are also attached to the GitHub release, which stays flagged a
-> pre-release because 0.1.0 is a first playable and says so.
-> Twenty-seven visits across five sessions on dedicated servers now stand behind it: the flight, the drop,
-> Ingvar in his own baked body, the walk-up, the Cargo Terminal open on him, deals at the price curve, the
-> vanish, dismissals, a relog mid-visit, a visit resumed across a restart, and the carry offset tuned live
-> while the bird was in the air. Proven off-game across 1987 checks and an eleven-scenario economy
+> store copy is still `v0.1.0-rc5` (published 2026-09-11) until the owner uploads this one, and **an rc5
+> client is refused by an rc6 server** by the version gate — on purpose, which is why the number moved.
+> The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
+> because 0.1.x is a first playable and says so.
+> What rc6 adds: Ingvar insists on ground somebody built and refuses a drop at another merchant's camp, a
+> dungeon door or one of the game's landmarks (issue #79; three switches, proven live); food and drink in
+> the catalogue, 72 → 101 rows (an existing server takes them with `cargo catalogue reset`); one row per
+> item token and deals keyed by prefab; every console line in the client's log; the BarrkBOT export per
+> contract v4.
+> Twenty-seven visits across five sessions stood behind rc5; the 2026-09-15 session on Storm10 added
+> visits #10 to #13 — three refusals named by place, two flights to a base on a ruin, and six deals on the
+> new catalogue settled line for line. Proven off-game across 2093 checks and an eleven-scenario economy
 > simulation. **Never seen in a game: redelivery** — a player paying and the goods arriving after a lost
 > connection — which is proven off-game only; nor the two-client items.
 > `docs/PROOF-CLIENT.md` is the runbook and CLAUDE.md lists what remains. This file is the developer's
@@ -54,7 +60,7 @@ from our own interact handler. Nothing happens on command except an admin's `car
 
 ## Status
 
-**Truth pass against `main` at the `v0.1.0-rc5` cut, 2026-09-11.** This mod runs on **Valheim 1.0.12**
+**Truth pass against `main` at the `v0.1.1-rc6` cut, 2026-09-15.** This mod runs on **Valheim 1.0.12**
 and on nothing else: 1.0.12 moved the network version to 40, so a build for 1.0.7 or 0.221.12 cannot
 connect at all. `v0.1.0-rc4` is a 1.0.7 build and is superseded; `v0.1.0-rc3` remains the last 0.221.12
 build.
@@ -64,7 +70,10 @@ real client: the flight and the drop, Ingvar in his own baked body, the walk-up,
 the merchant, deals with the price curve and the Fair Market Act correct to the coin, the arrival banner,
 the vanish, dismissals, a relog mid-visit, a visit resumed across a restart, the rotating shelf, the
 backpack multiplier, and on 2026-09-11 the carry offset tuned live from Configuration Manager while the
-bird was in the air. Off-game: 1987 checks, 0 warnings.
+bird was in the air. On 2026-09-15 (Storm10): issue #79's gates — refused beside Hildir's camp, at a crypt
+door and at the Sacrificial Stones, flown in twice to a base on a ruin — and six deals on the 101-row
+catalogue, including two stacks of hides leaving the pack by the new prefab-keyed removal. Off-game: 2093
+checks, 0 warnings.
 
 **What is proven and what is not, at this cut** (`docs/proofs/2026-09-11-release-session.md`). The
 release bar is the three items `docs/RELEASE.md` §4 names. The **version wall** and the **non-admin
@@ -72,7 +81,10 @@ refusal** are proven with their lines. **Redelivery — a player paying and the 
 connection — is proven off-game only and has never been seen in a game**, because the window between a
 deal's answer and its acknowledgement cannot be hit from outside the client process. Also never watched
 with two clients: the merchant walking off while two players trade, and the "on every machine" halves of
-the deal items.
+the deal items. **Not re-run for rc6:** the version wall and the non-admin refusal — the gate and the admin
+path are untouched since rc5, and the wall proof was a 0.1.1 client against a 0.1.0 server, the exact pair
+this cut creates. #86 rewrote the apply step redelivery runs through; the six live deals proved that step,
+not redelivery itself.
 
 **Still a first playable, not a settled one.** The log lines below are the ones recorded in `CLAUDE.md`
 "Status" by whoever saw them.
@@ -166,8 +178,8 @@ So today a visit puts Ingvar in the yard, walks him up and trades through the te
 screen against a dedicated server across twenty-seven visits. The first approach reaching the player,
 the vanish and the carry holding its owner were all open questions at the rc2 cut and have since been
 watched and fixed. What has still never been seen is **redelivery after a lost connection**, and no
-two-client item has run. The tag is `v0.1.0-rc5` and it is on the store; `docs/RELEASE.md` §4 records
-the three-item bar that was met and the one item skipped, with the reason.
+two-client item has run. The tag is `v0.1.1-rc6`; the store copy is `v0.1.0-rc5` until the owner uploads;
+`docs/RELEASE.md` §4 records the three-item bar that was met and the one item skipped, with the reason.
 ---
 
 ## If a client is refused with a version message

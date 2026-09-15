@@ -1,5 +1,89 @@
 # Changelog
 
+## 0.1.1
+
+### 0.1.1-rc6 — cut 2026-09-15, the first cut with its own version number; a pre-release on GitHub, the store upload is the owner's
+
+**Why the number moved.** Every cut through rc5 was `0.1.0`, so the ServerSync gate
+(`MinimumRequiredVersion == CurrentVersion`) could not tell one from another and a client on an older
+cut joined a server whose config it did not know. From this cut on the version moves with the cut (the
+owner, 2026-09-15: "we need to start updating versions as well"): an rc5 client is refused by an rc6
+server with the mod's own message naming both numbers — the exact pair rc5's version-wall proof
+exercised, a 0.1.1 client against a 0.1.0 server. Nothing else about the gate changed.
+
+- **The store page and the release documents caught up with rc5 (PRs #76, #77, #78; 2026-09-11; 1987
+  checks).** Wu'barrk's store page became the standard one, every claim on it brought to 1.0.12 (four
+  advertised settings that did not exist are gone); the dependency string that ships is
+  `denikson-BepInExPack_Valheim-5.4.2350` and the two dead manifests under `HexiumDist/` are deleted; the
+  six places that still said "uploaded to no store" say it is published.
+- **Issue #79, "Little man shows up at the Bogwitch" (PRs #80, #82, #84; 2026-09-14 to 15; main at 2047
+  checks after #84).** Vanilla's base value is a count of PlayerBase-flagged effect areas within 20 m with
+  no ownership test, so a comfortable spot in the Bog Witch's camp passed every gate. Three cuts, each
+  proven where the previous one broke: **(1) somebody built here** — at least one player-placed piece
+  (`Piece.IsPlacedByPlayer`, anyone's build, not only yours) within `Server.BuiltBaseRadius` (20), reported
+  by the client on its own ZDO the way comfort is; **(2) not at one of the game's locations** — as first
+  written this refused every location the game owns, and the first live test refused the owner's own base
+  on a Meadows `WoodHouse3` ruin, so it was re-cut to name its reasons; **(3) one kind per location, in
+  order** — a `Trader` anywhere in it makes it a merchant's camp (Haldor, Hildir, the Bog Witch, any modded
+  one; no name list), else an interior makes it a dungeon's door, else the game's own map-icon flag
+  (`m_iconAlways || (m_iconPlaced && m_placed)`, `ZoneSystem.GetLocationIcons`'s test verbatim) makes it a
+  landmark (the Sacrificial Stones, the boss altars). Each kind has its own switch — `Server.AvoidMerchantCamps`,
+  `AvoidDungeonEntrances`, `AvoidLandmarks`, all on — and because a camp is a camp first, turning the merchant
+  switch off really does open the camps (the rule-2 review caught the first landmark cut refusing them as
+  landmarks). The location's own exterior radius plus `Server.LocationClearance` (8 m) is what "at" means; a
+  ruin, a runestone, a stone circle never counts. **The engine fact underneath, found live:** a dedicated
+  server never instantiates a location root — `Location.GetLocation` answers none there — so the server
+  reads the zone registry (`ZoneSystem.m_locationInstances`, 12,204 entries on the test world) and learns
+  what is inside a location off the prefab asset (`SoftReference.Load/Asset/Release`, hence the new
+  `SoftReferenceableAssets.dll` reference), while a client reads the instances and cannot see the map-icon
+  flag at all (`cargo status` says so instead of guessing). A refusal names the place: `inside Hildir_camp,
+  a merchant's camp`; the server logs once per boot what its world pins on the map; every forced visit logs
+  the raw engine answers beside the verdict. **Seen on Storm10, 2026-09-15:** refused beside Hildir's camp
+  (`r=24 d=30.9`), at a crypt door (`Crypt3`, interior) and — once the third switch was in — at the
+  Sacrificial Stones (`StartTemple r=25 d=32.2`); flown in from 90 m and set down twice at a base on a ruin.
+  Every gate is a `[Server]` switch; `RequireBuiltBase=false` alone puts the pre-#79 behaviour back.
+- **Every `cargo` console line reaches the client's log (PR #81).** On a dedicated server
+  `Terminal.AddString` already logs each line; on a client it did not, so `cargo status` and the server's
+  answers to `cargo visit` (`server answered: …`) are now mirrored as `console: …` into
+  `BepInEx/LogOutput.log`, where a bug report can quote them.
+- **BarrkBOT contract v4: `market_not_achievements` (PR #83; main at 2040 checks after #81 to #83).** The bot
+  ranks any keyed-record collection since 6.0.92 and credits "any non-numeric scalar in the row", so a
+  market row's `kind` was being posted as "Ware now leads stock on the Sap". Per the contract's Achievements
+  section, every part of the market export now declares its six numeric fields as not achievements; a pure
+  constant, held to the row's numeric fields by reflection in the harness.
+- **Food and drink in the catalogue: 29 rows, 72 → 101 (PR #85; 2069 checks).** Nine he sells (boar jerky,
+  bread, minced meat sauce, serpent stew, cooked lox meat; the medium healing, medium stamina, frost- and
+  poison-resistance meads) and twenty he buys (berries and mushrooms, carrot, turnip, onion and their seeds,
+  boar, deer, neck, wolf, lox, serpent, chicken and hare meat, raw fish). Bases are the value column of
+  `docs/data/item-values-2026-09-08.tsv`; targets follow the house pattern; `Max = 3 × Target`. Drafted at
+  39 and cut to 29 by an economy review whose findings are `docs/CATALOGUE.md` §8: Haldor's 1,500-coin egg,
+  the lox-pie cook-and-sell loop, the yield-1 pricing of cauldron crafts, two dishes with broken bases, the
+  cooked twins that pay what their raw pays, four meads that could drain a purse — all out. The harness's
+  catalogue-vs-item-list test grew by the rows; the economy sim's counts and shelf-fairness bounds now come
+  from the catalogue. **An existing server keeps its stored `Catalogue` line across an update** (BepInEx's
+  stored value wins over the shipped default): `cargo catalogue reset` as an admin, or edit the cfg while the
+  server is down, to take the rows.
+- **One row per item token, and deals keyed by prefab (PR #86; main at 2093 checks).** The game's inventory
+  counts and removes goods by the item's shared token (`m_shared.m_name`), and two prefabs can carry one:
+  `FishRaw` and `FishAnglerRaw` are both `$item_fish_raw`. Two catalogued prefabs on one token would have let
+  a player sell forty of the cheap one at the dear one's price. Now the catalogue carries one row per token
+  (the first in catalogue order keeps it; the server drops a later row when it applies the line and says so;
+  `cargo catalogue add` refuses one and names the holder), and the client's deal applier matches a stack by
+  the prefab it knows it came from (`ItemData.m_dropPrefab`, set on pickup, on load and on every add),
+  removing stack by stack through `Inventory.RemoveItem(ItemData, amount)` and putting back exactly what came
+  out if a pack is short. **Seen on Storm10, 2026-09-15, visit #13:** six deals settled line for line on the
+  server and applied line for line on the client, including 32 hides leaving the pack across two stacks and
+  two of the new food rows traded; the add refusal answered naming `FishRaw` and the token.
+- **Rule 2 of the working agreement (CLAUDE.md):** working agents on Sonnet, sub-agents on Haiku, reviews on
+  Opus, never the session model. The Opus reviews of #84 and #85 each found a real thing (the camps refused
+  as landmarks; the exploit above).
+
+Off-game at the cut: **2093 checks, 0 failed, 0 warnings**; the eleven-scenario economy simulation passes and
+`docs/ECONOMY-SIM.md` is regenerated from it. Not re-run for this cut: the version wall and the non-admin
+refusal (the gate and the admin path are untouched since rc5, and the wall proof was this exact pair of
+numbers). **Redelivery is still proven off-game only**; #86 rewrote the apply step it runs through, and the
+six live deals proved that step, not redelivery itself.
+
 ## 0.1.0
 
 A Valkyrie drops Ingvar the Far-Travelled beside your base at a random moment when you are rested and
