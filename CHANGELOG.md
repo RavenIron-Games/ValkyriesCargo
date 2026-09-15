@@ -2,14 +2,16 @@
 
 ## 0.1.1
 
-### 0.1.1-rc6 — cut 2026-09-15, the first cut with its own version number; a pre-release on GitHub, the store upload is the owner's
+### 0.1.1 — cut 2026-09-15, the first cut with its own version number; a pre-release on GitHub, the store upload is the owner's
 
 **Why the number moved.** Every cut through rc5 was `0.1.0`, so the ServerSync gate
 (`MinimumRequiredVersion == CurrentVersion`) could not tell one from another and a client on an older
 cut joined a server whose config it did not know. From this cut on the version moves with the cut (the
-owner, 2026-09-15: "we need to start updating versions as well"): an rc5 client is refused by an rc6
-server with the mod's own message naming both numbers — the exact pair rc5's version-wall proof
-exercised, a 0.1.1 client against a 0.1.0 server. Nothing else about the gate changed.
+owner, 2026-09-15: "we need to start updating versions as well"): an rc5 client is refused by a 0.1.1
+server with the mod's own message naming both numbers. That direction has not been watched on a
+machine: rc5's version-wall proof ran the mirror of it, a 0.1.1 client refused by a 0.1.0 server — the
+same two numbers with the builds swapped, the other branch of the same gate. Nothing about the gate
+changed.
 
 - **The store page and the release documents caught up with rc5 (PRs #76, #77, #78; 2026-09-11; 1987
   checks).** Wu'barrk's store page became the standard one, every claim on it brought to 1.0.12 (four
@@ -40,7 +42,8 @@ exercised, a 0.1.1 client against a 0.1.0 server. Nothing else about the gate ch
   a merchant's camp`; the server logs once per boot what its world pins on the map; every forced visit logs
   the raw engine answers beside the verdict. **Seen on Storm10, 2026-09-15:** refused beside Hildir's camp
   (`r=24 d=30.9`), at a crypt door (`Crypt3`, interior) and — once the third switch was in — at the
-  Sacrificial Stones (`StartTemple r=25 d=32.2`); flown in from 90 m and set down twice at a base on a ruin.
+  Sacrificial Stones (`StartTemple r=25 d=32.2`); flown in from 90 m and set down at a base on a ruin (visit #11); a second ruin base's flight was
+  authored and dismissed before the drop (visit #12).
   Every gate is a `[Server]` switch; `RequireBuiltBase=false` alone puts the pre-#79 behaviour back.
 - **Every `cargo` console line reaches the client's log (PR #81).** On a dedicated server
   `Terminal.AddString` already logs each line; on a client it did not, so `cargo status` and the server's
@@ -71,18 +74,27 @@ exercised, a 0.1.1 client against a 0.1.0 server. Nothing else about the gate ch
   `cargo catalogue add` refuses one and names the holder), and the client's deal applier matches a stack by
   the prefab it knows it came from (`ItemData.m_dropPrefab`, set on pickup, on load and on every add),
   removing stack by stack through `Inventory.RemoveItem(ItemData, amount)` and putting back exactly what came
-  out if a pack is short. **Seen on Storm10, 2026-09-15, visit #13:** six deals settled line for line on the
-  server and applied line for line on the client, including 32 hides leaving the pack across two stacks and
-  two of the new food rows traded; the add refusal answered naming `FishRaw` and the token.
+  out if a pack is short. **Seen on Storm10, 2026-09-15, visit #13:** seven deals settled line for line on the
+  server and applied line for line on the client, including 40 hides bought in two deals and all 40 sold
+  back in three through the prefab-keyed removal, and two of the new food rows traded; the add refusal
+  answered naming `FishRaw` and the token.
 - **Rule 2 of the working agreement (CLAUDE.md):** working agents on Sonnet, sub-agents on Haiku, reviews on
   Opus, never the session model. The Opus reviews of #84 and #85 each found a real thing (the camps refused
   as landmarks; the exploit above).
 
 Off-game at the cut: **2093 checks, 0 failed, 0 warnings**; the eleven-scenario economy simulation passes and
 `docs/ECONOMY-SIM.md` is regenerated from it. Not re-run for this cut: the version wall and the non-admin
-refusal (the gate and the admin path are untouched since rc5, and the wall proof was this exact pair of
-numbers). **Redelivery is still proven off-game only**; #86 rewrote the apply step it runs through, and the
-six live deals proved that step, not redelivery itself.
+refusal (the gate and the admin path are untouched since rc5; the wall proof was the same two numbers with
+the builds swapped, a 0.1.1 client refused by a 0.1.0 server, so the direction this cut creates is a code
+reading, not an observation). **Redelivery is still proven off-game only**; #86 rewrote the apply step it
+runs through, and the seven live deals proved that step, not redelivery itself.
+
+**Which build ran.** The live work ran on `main` at `ad6c334`, before the version bump — every Storm10 boot
+that day logs `v0.1.0 loaded`. No `.cs` file changed between `ad6c334` and the cut (the version number, the
+manifest and documents did), so the shipped build differs from the tested one by its version string and
+nothing else; it booted on Storm10 at the cut (`Loading [Valkyrie's Cargo 0.1.1]`, `v0.1.1 loaded …
+catalogue=101 entries … probes 19/19 ok`) and was stopped without a client joining. The day's lines are in
+`docs/proofs/2026-09-15-storm10-session.md`.
 
 ## 0.1.0
 

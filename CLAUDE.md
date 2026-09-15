@@ -24,15 +24,18 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ## Status
 
-**CUT 2026-09-15: `v0.1.1-rc6` — the first cut with its own version number** (the owner: "we need to start
+**CUT 2026-09-15: `v0.1.1` — the first cut with its own version number** (the owner: "we need to start
 updating versions as well"); a GitHub pre-release with the store zip and the kit attached, **NOT yet on the store**
 (the upload is the owner's, `docs/RELEASE.md` §5). It carries issue #79's fix (built ground + three location
 switches, one kind per location, proven live on Storm10), the 29 food rows (72 → 101; an existing server needs
 `cargo catalogue reset`, because a stored cfg line wins over the shipped default), one row per item token with
 deals keyed by prefab, the console lines in the client log, and the BarrkBOT export per contract v4. 2093 off-game
-checks, 0 warnings. **An rc5 client is refused by an rc6 server** by the ServerSync gate, which is the point of
-the number. The version wall and the non-admin refusal were not re-run (nothing on those paths changed);
-redelivery stays proven off-game only.
+checks, 0 warnings. **An rc5 client is refused by a 0.1.1 server** by the ServerSync gate, which is the point of
+the number (a code reading: rc5's wall proof ran the mirror pair, a 0.1.1 client refused by a 0.1.0 server).
+The version wall and the non-admin refusal were not re-run (nothing on those paths changed); redelivery
+stays proven off-game only. The live work ran on `ad6c334` (boot line `v0.1.0`); no `.cs` file changed from
+there to the cut, and the shipped 0.1.1 DLL booted on Storm10 at the cut (`v0.1.1 loaded … catalogue=101
+entries … probes 19/19 ok`). The day's lines: `docs/proofs/2026-09-15-storm10-session.md`.
 
 **SHIPPED 2026-09-11. `v0.1.0-rc5` is published to Hexium — the first Valkyrie's Cargo cut to reach a store.**
 The owner uploaded it himself; the credentials are his and that does not change (`docs/RELEASE.md` §5). It is the
@@ -342,7 +345,7 @@ ValkyriesCargo/
   Config/ModConfig.cs        Server.* synced+locked, Client.* local, VisitState/MarketState channels
   Core/CargoTick.cs          the ONLY Update and the only OnGUI in the mod; role decided at runtime
   Core/Keys.cs               PURE: every ZDO key and RPC name this mod owns, typed once, under the VCargo_ prefix
-  Core/Catalogue.cs          PURE: the catalogue line parser and the 72 defaults
+  Core/Catalogue.cs          PURE: the catalogue line parser and the 101 defaults
   Core/Wire.cs Core/MarketSnapshot.cs Core/VisitSnapshot.cs Core/Deal.cs   PURE: the contract (PR #1)
   Core/Market.cs             PURE: rules, price curve, purse, drift, settlement, sidecar rows
   Core/Shelf.cs              PURE: the rotating shelf (2026-09-08): the period clock and the seeded roll, in catalogue order

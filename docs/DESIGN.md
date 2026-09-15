@@ -481,7 +481,7 @@ FlightStartAltitude          120       30-400 (the code clamps at 400, so the co
 FlightDescentDistance        50        10-200; also capped at MaxDescentFraction (0.75) of the run
 FlightSpeed                  8         2-40; ours, not the prefab's 20; read on the CLIENT that owns the bird (P4)
 FlightTurnRate               45        5-360; ours, not the prefab's 20; read on the CLIENT that owns the bird (P4)
-Catalogue                    (72 entries; the authoritative list with every number's reason is docs/CATALOGUE.md,
+Catalogue                    (101 entries; the authoritative list with every number's reason is docs/CATALOGUE.md,
                              built from docs/data/items-valheim-2026-07-31.tsv: 18 Wares he sells and buys back,
                              54 Wants he only buys. Bases anchored so he pays Haldor's rate for the four vanilla
                              valuables at target stock; every prefab name verified against the dump.
