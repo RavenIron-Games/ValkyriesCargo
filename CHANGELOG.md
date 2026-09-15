@@ -98,6 +98,15 @@ zip's DLL is the same code rebuilt from the tagged commit, and the two differ on
 embeds (`0.1.1+<sha>`) and the header ids derived from it. The day's lines are in
 `docs/proofs/2026-09-15-storm10-session.md`.
 
+**The zip refreshed 2026-09-15 afternoon, same version number.** After the tag, visit #14 on the released build
+showed that the purse carry between visits did not survive a server restart: the sidecar kept the last visit's
+gross, but the director only learned it when a visit ended, so the first visit after any restart opened at
+`PurseCoins` alone. PR #91 seeds it from the sidecar at boot (one line; reviewed on Opus, merge as-is); proven on
+visits #15 and #16 — 1638 coins in, a graceful stop and relaunch, the next visit opening at 100819. The store
+zip was rebuilt from `main` with that fix in; the version gate is unchanged, 0.1.1 on both sides. Also in the
+day's proof document: visit #14 proved the deal applier's removal across two stacks (60 Blackwood in one deal),
+the one path nothing off-game exercises.
+
 ## 0.1.0
 
 A Valkyrie drops Ingvar the Far-Travelled beside your base at a random moment when you are rested and
