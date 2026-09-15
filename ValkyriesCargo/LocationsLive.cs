@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using RavenIron.ValkyriesCargo.Core;
 
@@ -7,110 +8,118 @@ namespace RavenIron.ValkyriesCargo
     /// The one place the game's own locations are read, the twin of `ActiveAreaLive` and `CarryPinLive`.
     /// The rule it serves is `Core/HomeGround.cs`; the reason it exists is issue #79.
     ///
-    /// `ZoneSystem.m_locationInstances` is a dictionary keyed by the ZONE a location was registered
-    /// against, so this looks at the 3x3 block of zones around the point rather than walking every
-    /// location in the world. A world has thousands of them and the roll runs on a timer; an O(n) sweep
-    /// of the lot once a minute would be a waste that grows with the map. Nine dictionary lookups do not.
+    /// It asks the engine's own `Location.GetLocation(point)` - public static, the same walk the hammer
+    /// uses - which location a point is inside by that location's own exterior radius, at the player and
+    /// at `HomeGround.RingOffsets` around them for the clearance. Then it asks the location instance two
+    /// things that decide whether it COUNTS: does it hold a `Trader` (a merchant's camp), does it have an
+    /// interior (a dungeon's door). Anything else - a ruin, a runestone, a stone circle - is the player's
+    /// to build on and is not reported.
     ///
-    /// The 3x3 block is also why `HomeGround.MaxClearance` stops at one zone: a location filed under a
-    /// zone further out than that could reach a point this never looks at, and a rule that is right only
-    /// sometimes is worse than a rule with a stated bound.
+    /// Why the instance and not the zone registry: `ZoneSystem.m_locationInstances` knows every location
+    /// in the world but nothing about what is inside one, and `ZoneSystem.GetLocation(name)` is private.
+    /// The instance has the answer, and it exists on both sides: the engine spawns a location root with
+    /// its networked children present but INACTIVE (`ZoneSystem.SpawnLocation`, Client mode, sets them
+    /// inactive before `Instantiate` and re-enables the asset after), so `GetComponentInChildren<Trader>
+    /// (includeInactive: true)` finds Haldor on a dedicated server and on a client alike. That is also why
+    /// `cargo status` can answer this on the client, where the registry is empty.
     ///
-    /// Everything named here is public on the real assembly - `ZoneSystem.instance`, the static
-    /// `GetZone`, `m_locationInstances`, `LocationInstance.m_position` and `.m_location`, and
-    /// `ZoneLocation.m_exteriorRadius`, `.m_name` and `.m_prefabName`. House rule 5 holds: our files name
-    /// no private member.
+    /// Everything named here is public on the real assembly: `Location.GetLocation`, `m_exteriorRadius`,
+    /// `m_hasInterior`, `Trader`. House rule 5 holds: our files name no private member.
     /// </summary>
     public static class LocationsLive
     {
-        /// <summary>What the point sits inside, if anything.</summary>
+        /// <summary>What the point sits at, if anything that counts.</summary>
         public struct Verdict
         {
-            /// <summary>True when the point is inside a location's exterior radius plus the clearance.</summary>
+            /// <summary>True when the player, or the ring around them, is inside a location that counts.</summary>
             public bool Inside;
-            /// <summary>The location's name, for the log line. Empty when nothing was found.</summary>
+            /// <summary>The location's prefab name ("Hildir_camp"), for the log line. Empty when clear.</summary>
             public string Name;
-            /// <summary>Metres from the point to that location's centre.</summary>
+            /// <summary>`HomeGround.MerchantCamp` or `HomeGround.DungeonEntrance`. Empty when clear.</summary>
+            public string Kind;
+            /// <summary>Metres from the player to that location's centre.</summary>
             public float Distance;
             /// <summary>The location's own exterior radius, as the game has it.</summary>
             public float Radius;
         }
 
         /// <summary>
-        /// The nearest location to `p` whose exterior radius plus `clearance` contains it, or a Verdict
-        /// with `Inside` false when the point is clear of every location in the 3x3 block.
-        ///
-        /// Answers "clear" when there is no ZoneSystem yet. That is deliberate and matches how every
-        /// probe in this mod fails: a check that has not run is never allowed to be the thing that stops
-        /// a visit. Refusing every candidate because a system had not woken up would be a far worse bug
-        /// than the one this file fixes.
+        /// Answers "clear" when nothing counts, and deliberately also when there is no world yet: a
+        /// check that has not run is never allowed to be the thing that stops a visit.
         /// </summary>
-        public static Verdict Read(Vector3 p, float clearance)
+        public static Verdict Read(Vector3 p, float clearance, bool merchants, bool dungeons)
         {
-            Verdict v = new Verdict { Inside = false, Name = "", Distance = 0f, Radius = 0f };
+            Verdict v = new Verdict { Inside = false, Name = "", Kind = "", Distance = 0f, Radius = 0f };
+            if (!merchants && !dungeons) return v;
+            if (ZNet.instance == null) return v;
 
-            ZoneSystem zs = ZoneSystem.instance;
-            if (zs == null || zs.m_locationInstances == null) return v;
-
-            Vector2s centre = ZoneSystem.GetZone(p);
-            float bestOverlap = float.NegativeInfinity;
-
-            for (int dx = -1; dx <= 1; dx++)
+            // The player's own point first, so when they are standing in a camp it is that camp that
+            // gets named and not a neighbour the ring happened to touch.
+            string kind;
+            Location hit = Counts(Location.GetLocation(p), merchants, dungeons, out kind);
+            if (hit == null)
             {
-                for (int dy = -1; dy <= 1; dy++)
-                {
-                    Vector2s zone = new Vector2s(centre.x + dx, centre.y + dy);
-                    ZoneSystem.LocationInstance li;
-                    if (!zs.m_locationInstances.TryGetValue(zone, out li)) continue;
-                    if (li.m_location == null) continue;
-
-                    // Flat distance: a location's radius is a footprint on the map, and a player on a
-                    // roof thirty metres up is still standing in the camp.
-                    float ddx = p.x - li.m_position.x;
-                    float ddz = p.z - li.m_position.z;
-                    float distance = Mathf.Sqrt(ddx * ddx + ddz * ddz);
-                    float radius = li.m_location.m_exteriorRadius;
-
-                    if (!HomeGround.InsideLocation(distance, radius, clearance)) continue;
-
-                    // Overlapping locations are possible; report the one the point is deepest inside,
-                    // because that is the one a player would say they were standing in.
-                    float overlap = (radius < 0f ? 0f : radius) + clearance - distance;
-                    if (overlap <= bestOverlap) continue;
-
-                    bestOverlap = overlap;
-                    v.Inside = true;
-                    v.Name = Name(li.m_location);
-                    v.Distance = distance;
-                    v.Radius = radius;
-                }
+                float[] ring = HomeGround.RingOffsets(clearance);
+                for (int i = 0; i + 1 < ring.Length && hit == null; i += 2)
+                    hit = Counts(Location.GetLocation(new Vector3(p.x + ring[i], p.y, p.z + ring[i + 1])), merchants, dungeons, out kind);
             }
+            if (hit == null) return v;
 
+            Vector3 c = hit.transform.position;
+            float dx = p.x - c.x, dz = p.z - c.z;
+            v.Inside = true;
+            v.Name = Name(hit);
+            v.Kind = kind;
+            v.Distance = Mathf.Sqrt(dx * dx + dz * dz);
+            v.Radius = hit.m_exteriorRadius;
             return v;
         }
 
-        /// <summary>
-        /// `m_name` is the authored name and is what a person recognises; `m_prefabName` is the fallback
-        /// because a location with neither is a location we cannot talk about.
-        /// </summary>
-        private static string Name(ZoneSystem.ZoneLocation loc)
+        /// <summary>The location, if it is one of the two kinds that count; else null.</summary>
+        private static Location Counts(Location loc, bool merchants, bool dungeons, out string kind)
         {
-            string n = loc.m_name;
-            if (!string.IsNullOrEmpty(n)) return n;
-            n = loc.m_prefabName;
-            return string.IsNullOrEmpty(n) ? "" : n;
+            kind = "";
+            if (loc == null) return null;
+            if (merchants && HoldsTrader(loc)) { kind = HomeGround.MerchantCamp; return loc; }
+            if (dungeons && loc.m_hasInterior) { kind = HomeGround.DungeonEntrance; return loc; }
+            return null;
+        }
+
+        // A camp root has a few hundred children; walking them is cheap but the answer never changes
+        // for a given instance, so it is remembered. Bounded, because instances come and go with zones.
+        private static readonly Dictionary<int, bool> _traderByInstance = new Dictionary<int, bool>();
+
+        private static bool HoldsTrader(Location loc)
+        {
+            int id = loc.GetInstanceID();
+            bool holds;
+            if (_traderByInstance.TryGetValue(id, out holds)) return holds;
+            holds = loc.GetComponentInChildren<Trader>(true) != null;
+            if (_traderByInstance.Count > 256) _traderByInstance.Clear();
+            _traderByInstance[id] = holds;
+            return holds;
+        }
+
+        /// <summary>"Hildir_camp(Clone)" -> "Hildir_camp". A location with no name is one we cannot talk about.</summary>
+        private static string Name(Location loc)
+        {
+            string n = loc.gameObject != null ? loc.gameObject.name : "";
+            if (string.IsNullOrEmpty(n)) return "";
+            int clone = n.IndexOf("(Clone)", System.StringComparison.Ordinal);
+            return clone > 0 ? n.Substring(0, clone).Trim() : n.Trim();
         }
 
         /// <summary>One line for `cargo status`.</summary>
-        public static string StatusLine(Vector3 p, float clearance)
+        public static string StatusLine(Vector3 p, float clearance, bool merchants, bool dungeons)
         {
-            ZoneSystem zs = ZoneSystem.instance;
-            if (zs == null || zs.m_locationInstances == null) return "locations: no ZoneSystem yet (nothing is refused for this)";
-            Verdict v = Read(p, clearance);
+            if (ZNet.instance == null) return "locations: no world yet (nothing is refused for this)";
+            if (!merchants && !dungeons) return "locations: both gates are off (Server.AvoidMerchantCamps, Server.AvoidDungeonEntrances)";
+            Verdict v = Read(p, clearance, merchants, dungeons);
+            string gates = (merchants ? "merchant camps" : "") + (merchants && dungeons ? " + " : "") + (dungeons ? "dungeon entrances" : "");
             if (!v.Inside)
-                return "locations: clear here (" + zs.m_locationInstances.Count + " in the world, clearance " + Wire.Float(clearance) + " m)";
-            return "locations: INSIDE " + v.Name + " (" + Wire.Float(v.Distance) + " m from its centre, exterior radius " +
-                   Wire.Float(v.Radius) + " m, clearance " + Wire.Float(clearance) + " m)";
+                return "locations: clear here (refusing " + gates + "; clearance " + Wire.Float(clearance) + " m)";
+            return "locations: AT " + HomeGround.LocationLabel(v.Name, v.Kind) + " (" + Wire.Float(v.Distance) +
+                   " m from its centre, exterior radius " + Wire.Float(v.Radius) + " m, clearance " + Wire.Float(clearance) + " m)";
         }
     }
 }

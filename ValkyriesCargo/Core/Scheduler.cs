@@ -42,11 +42,14 @@ namespace RavenIron.ValkyriesCargo.Core
         public bool BuiltBase = true;
 
         /// <summary>
-        /// The game's own location this player is standing inside, measured on the SERVER by
-        /// `LocationsLive.Read` against the location's own `m_exteriorRadius`. Empty when the ground is
-        /// clear, which is the default and is what a stub gets.
+        /// The merchant's camp this player is standing at (the location's prefab name, "Hildir_camp"),
+        /// measured on the SERVER by `LocationsLive.Read` against the location's own exterior radius
+        /// plus the clearance. Empty when clear, which is the default and is what a stub gets.
         /// </summary>
-        public string InsideLocationName = "";
+        public string InsideMerchantCamp = "";
+
+        /// <summary>The dungeon whose door this player is standing at ("Crypt2"), the same way. Empty when clear.</summary>
+        public string InsideDungeonEntrance = "";
 
         /// <summary>
         /// What a per-player cooldown is stamped under and looked up by: the stable identity when the
@@ -75,8 +78,9 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>Issue #79: a visit needs ground somebody actually built on.</summary>
         public bool RequireBuiltBase = true;
         public float BuiltBaseRadius = HomeGround.DefaultBuiltRadius;
-        /// <summary>Issue #79: and it must not be the inside of one of the game's own locations.</summary>
-        public bool AvoidVanillaLocations = true;
+        /// <summary>Issue #79: and it must not be another merchant's camp, nor a dungeon's door.</summary>
+        public bool AvoidMerchantCamps = true;
+        public bool AvoidDungeonEntrances = true;
         public float LocationClearance = HomeGround.DefaultClearance;
         /// <summary>Dungeons and the like sit at y ≈ 5000; a player at or above this is not on the surface.</summary>
         public const float DungeonY = 3000f;
@@ -245,7 +249,8 @@ namespace RavenIron.ValkyriesCargo.Core
             // the inside of one of the game's own places. Both sit beside `LowBase` on purpose - they
             // are the two questions vanilla's `baseValue` does not ask.
             if (_rules.RequireBuiltBase && !c.BuiltBase) return NoBuiltBase;
-            if (_rules.AvoidVanillaLocations && c.InsideLocationName.Length > 0) return InLocation;
+            if (_rules.AvoidMerchantCamps && c.InsideMerchantCamp.Length > 0) return InLocation;
+            if (_rules.AvoidDungeonEntrances && c.InsideDungeonEntrance.Length > 0) return InLocation;
             if (c.Y >= SchedulerRules.DungeonY) return Dungeon;
             if (!skipCooldowns && OnPlayerCooldown(c.CooldownKey, now)) return OnCooldown;
             if (!skipCooldowns && NearBaseCooldown(c.X, c.Z, now)) return NearCooldown;
@@ -258,7 +263,13 @@ namespace RavenIron.ValkyriesCargo.Core
         /// </summary>
         private string BucketName(int bucket, Candidate c)
         {
-            if (bucket == InLocation && c != null) return HomeGround.InsideLocationReason(c.InsideLocationName);
+            if (bucket == InLocation && c != null)
+            {
+                string label = _rules.AvoidMerchantCamps && c.InsideMerchantCamp.Length > 0
+                    ? HomeGround.LocationLabel(c.InsideMerchantCamp, HomeGround.MerchantCamp)
+                    : HomeGround.LocationLabel(c.InsideDungeonEntrance, HomeGround.DungeonEntrance);
+                return HomeGround.InsideLocationReason(label);
+            }
             return BucketName(bucket);
         }
 
@@ -270,7 +281,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 case LowComfort: return "comfort < " + Wire.Int(_rules.MinComfort);
                 case LowBase: return "baseValue < " + Wire.Int(_rules.MinBaseValue);
                 case NoBuiltBase: return HomeGround.NoBuiltBaseReason(_rules.BuiltBaseRadius);
-                case InLocation: return "inside one of the game's own locations";
+                case InLocation: return "at a merchant's camp or a dungeon entrance";
                 case Dungeon: return "in a dungeon";
                 case OnCooldown: return "on cooldown";
                 case NearCooldown: return "near a base on cooldown";

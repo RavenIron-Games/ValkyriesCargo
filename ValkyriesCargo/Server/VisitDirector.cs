@@ -772,24 +772,36 @@ namespace RavenIron.ValkyriesCargo.Server
                     BuiltBase = zdo.GetBool(ComfortReporter.BuiltHash, false),
                     // Measured HERE, on the server, not reported by the client: the client could be
                     // standing anywhere and the game's locations are the server's own knowledge.
-                    InsideLocationName = LocationOf(p, rules),
+                    InsideMerchantCamp = MerchantCampAt(p, rules),
+                    InsideDungeonEntrance = DungeonEntranceAt(p, rules),
                 });
             }
             return list;
         }
 
         /// <summary>
-        /// The game's own location a point sits inside, or "" when the ground is clear. Skipped entirely
-        /// when the gate is off, so a server that does not want this rule does not pay for it on every
-        /// gather.
+        /// The merchant's camp a point sits at, or "" when clear. Skipped entirely when the gate is off,
+        /// so a server that does not want this rule does not pay for it on every gather.
         /// </summary>
-        private static string LocationOf(Vector3 p, SchedulerRules rules)
+        private static string MerchantCampAt(Vector3 p, SchedulerRules rules)
         {
-            if (rules == null || !rules.AvoidVanillaLocations) return "";
-            try { return LocationsLive.Read(p, rules.LocationClearance).Name; }
+            if (rules == null || !rules.AvoidMerchantCamps) return "";
+            try { return LocationsLive.Read(p, rules.LocationClearance, true, false).Name; }
             catch (Exception ex)
             {
-                if (_locationThrows++ < 3) ValkyriesCargo.Log.LogWarning("location check threw " + ex.Message + "; the ground is treated as clear");
+                if (_locationThrows++ < 3) ValkyriesCargo.Log.LogWarning("merchant-camp check threw " + ex.Message + "; the ground is treated as clear");
+                return "";
+            }
+        }
+
+        /// <summary>The dungeon whose door a point sits at, or "" when clear. Same shape, its own switch.</summary>
+        private static string DungeonEntranceAt(Vector3 p, SchedulerRules rules)
+        {
+            if (rules == null || !rules.AvoidDungeonEntrances) return "";
+            try { return LocationsLive.Read(p, rules.LocationClearance, false, true).Name; }
+            catch (Exception ex)
+            {
+                if (_locationThrows++ < 3) ValkyriesCargo.Log.LogWarning("dungeon-entrance check threw " + ex.Message + "; the ground is treated as clear");
                 return "";
             }
         }
@@ -801,7 +813,8 @@ namespace RavenIron.ValkyriesCargo.Server
         {
             return c + " (uid " + Wire.Long(c.Uid) + "): rested=" + (c.Rested ? "yes" : "no") + " comfort=" + c.Comfort + " base=" + c.BaseValue +
                    " built=" + (c.BuiltBase ? "yes" : "no") +
-                   (c.InsideLocationName.Length > 0 ? " INSIDE " + c.InsideLocationName : "") +
+                   (c.InsideMerchantCamp.Length > 0 ? " AT " + c.InsideMerchantCamp + " (merchant)" : "") +
+                   (c.InsideDungeonEntrance.Length > 0 ? " AT " + c.InsideDungeonEntrance + " (dungeon)" : "") +
                    " y=" + Wire.Float((float)Math.Round(c.Y)) + (c.Alive ? "" : " DEAD") +
                    (_scheduler.OnPlayerCooldown(c.CooldownKey, now) ? " on cooldown" : "") + (_scheduler.NearBaseCooldown(c.X, c.Z, now) ? " near a base on cooldown" : "");
         }
