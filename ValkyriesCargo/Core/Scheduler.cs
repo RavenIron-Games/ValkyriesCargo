@@ -81,7 +81,7 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>Issue #79: a visit needs ground somebody actually built on.</summary>
         public bool RequireBuiltBase = true;
         public float BuiltBaseRadius = HomeGround.DefaultBuiltRadius;
-        /// <summary>Issue #79: and it must not be another merchant's camp, nor a dungeon's door.</summary>
+        /// <summary>Issue #79: and it must not be another merchant's camp, nor a dungeon's door, nor (the third switch) one of the game's landmarks. One kind per location, in that order.</summary>
         public bool AvoidMerchantCamps = true;
         public bool AvoidDungeonEntrances = true;
         /// <summary>The third switch (2026-09-15): the places the game pins on the map - the spawn stones, the boss altars.</summary>

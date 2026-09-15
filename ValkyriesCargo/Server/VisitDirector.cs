@@ -756,6 +756,15 @@ namespace RavenIron.ValkyriesCargo.Server
             var list = new List<Candidate>();
             ZNet znet = ZNet.instance;
             if (znet == null) return list;
+            if (!_landmarksLogged && ZoneSystem.instance != null && ZoneSystem.instance.m_locationInstances != null &&
+                ZoneSystem.instance.m_locationInstances.Count > 0)
+            {
+                // Once per boot, the first time the registry is there to read: what the third switch refuses in
+                // THIS world, by name, so the default's reach is in the log and not a guess.
+                _landmarksLogged = true;
+                try { ValkyriesCargo.Log.LogInfo(LocationsLive.LandmarkTypesLine()); }
+                catch (Exception ex) { ValkyriesCargo.Log.LogWarning("landmark list threw " + ex.Message); }
+            }
             foreach (ZDO zdo in znet.GetAllCharacterZDOS())
             {
                 if (zdo == null) continue;
@@ -829,6 +838,7 @@ namespace RavenIron.ValkyriesCargo.Server
         }
 
         private static int _locationThrows;
+        private static bool _landmarksLogged;
 
         /// <summary>One candidate in words for `cargo status`.</summary>
         public string Describe(Candidate c, double now)

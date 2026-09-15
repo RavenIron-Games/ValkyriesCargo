@@ -154,7 +154,7 @@ namespace RavenIron.ValkyriesCargo.Config
             AvoidDungeonEntrances = S(cfg, "Server", "AvoidDungeonEntrances", true,
                 "Refuse a visit to a player standing at the door of a crypt, cave, mine or fortress - any location with an interior. Being INSIDE one is refused regardless. Read on the SERVER.");
             AvoidLandmarks = S(cfg, "Server", "AvoidLandmarks", true,
-                "Refuse a visit to a player standing at a place the game itself pins on the map - the Sacrificial Stones, every boss altar, the merchant camps: any location with a map icon. No list to keep. Read on the SERVER.");
+                "Refuse a visit to a player standing at a place the game itself pins on the map - the Sacrificial Stones, every boss altar: any location with a map icon that is not a merchant's camp or a dungeon's door (those have their own switches above, and a camp is a camp first even though every vanilla camp is pinned too). No list to keep; the server log names what this world has at the first roll. Read on the SERVER.");
             LocationClearance = S(cfg, "Server", "LocationClearance", Core.HomeGround.DefaultClearance,
                 "Metres around the player also asked 'is this a merchant's camp, a dungeon door or a landmark'. Small on purpose: the location's own radius does the work and this is the margin that stops a drop on its boundary fence. Read on the SERVER.",
                 new AcceptableValueRange<float>(Core.HomeGround.MinClearance, Core.HomeGround.MaxClearance));

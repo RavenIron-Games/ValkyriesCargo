@@ -334,7 +334,8 @@ namespace RavenIron.ValkyriesCargo.Patches
 
             Say(args, "  " + CarryPinLive.StatusLine());
 
-            // Issue #79's two gates, said out loud on the machine that can see the answer. A gate that
+            // Issue #79's gates (built ground, and the three location switches), said out loud on the machine
+            // that can see the answer. A gate that
             // refuses silently is the hardest kind to report a bug about.
             {
                 bool requireBuilt = ModConfig.RequireBuiltBase != null && ModConfig.RequireBuiltBase.Value;

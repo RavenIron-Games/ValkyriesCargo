@@ -18,18 +18,27 @@ namespace RavenIron.ValkyriesCargo
     ///   3x3 block around the point is nine lookups, each with the location's own `m_exteriorRadius`.
     ///   What is INSIDE a location - a `Trader`, an interior - is read off the location's prefab ASSET
     ///   through the same `m_prefab.Load()` / `.Asset` / `.Release()` the engine's own `ZoneSystem`
-    ///   uses, once per location type, and remembered.
+    ///   uses, once per location type, and remembered. The third fact, whether the game pins the location
+    ///   on the map, is on the registry ENTRY itself - `ZoneLocation.m_iconAlways`, or `m_iconPlaced` with
+    ///   the instance's `m_placed`, exactly the engine's own `ZoneSystem.GetLocationIcons` test - so it is
+    ///   the server's alone.
     /// - **A client reads the instances.** `Location.GetLocation(point)` - public static, the walk the
     ///   hammer uses - at the player and at `HomeGround.RingOffsets` for the clearance; the instance
-    ///   root carries the same two facts.
+    ///   root carries the Trader and the interior; the map-icon flag is not on it, so a client cannot see
+    ///   a landmark at all and says so.
     ///
-    /// A location COUNTS when it holds a `Trader` (a merchant's camp - Haldor, Hildir, the Bog Witch, any
-    /// modded one; no name list) or has an interior (a dungeon's door). A ruin, a runestone, a stone
-    /// circle is the player's to build on and is never reported.
+    /// A location has ONE kind, decided in this order, and each kind answers to exactly one switch: a
+    /// merchant's camp when it holds a `Trader` (Haldor, Hildir, the Bog Witch, any modded one; no name
+    /// list) - and never ALSO a landmark, though every vanilla camp carries the map icon, so that
+    /// `Server.AvoidMerchantCamps=false` really does open the camps (the rule-2 review of PR #84 caught the
+    /// first cut refusing them as landmarks instead); else a dungeon's door when it has an interior; else a
+    /// landmark when the game pins it on the map (the Sacrificial Stones, every boss altar). A ruin, a
+    /// runestone, a stone circle is the player's to build on and is never reported.
     ///
     /// Everything named here is public on the real assembly: `ZoneSystem.instance`, `GetZone`,
-    /// `m_locationInstances`, `LocationInstance.m_position` / `.m_location`, `ZoneLocation.m_prefab` /
-    /// `.m_exteriorRadius` / `.m_name` / `.m_prefabName`, `SoftReference.Load` / `.Asset` / `.Release`,
+    /// `m_locationInstances`, `LocationInstance.m_position` / `.m_location` / `.m_placed`, `ZoneLocation.m_prefab` /
+    /// `.m_exteriorRadius` / `.m_name` / `.m_prefabName` / `.m_iconAlways` / `.m_iconPlaced`, `SoftReference.Load` /
+    /// `.Asset` / `.Release`,
     /// `Location.GetLocation` / `.m_exteriorRadius` / `.m_hasInterior`, `Trader`. House rule 5 holds.
     /// </summary>
     public static class LocationsLive
@@ -41,7 +50,7 @@ namespace RavenIron.ValkyriesCargo
             public bool Inside;
             /// <summary>The location's name ("Hildir_camp"), for the log line. Empty when clear.</summary>
             public string Name;
-            /// <summary>`HomeGround.MerchantCamp` or `HomeGround.DungeonEntrance`. Empty when clear.</summary>
+            /// <summary>`HomeGround.MerchantCamp`, `HomeGround.DungeonEntrance` or `HomeGround.Landmark`. Empty when clear.</summary>
             public string Kind;
             /// <summary>Metres from the point to that location's centre.</summary>
             public float Distance;
@@ -50,12 +59,16 @@ namespace RavenIron.ValkyriesCargo
         }
 
         /// <summary>
-        /// The three facts the rule turns on, for one location type. Trader and Interior come off the prefab
-        /// asset; Landmark is the registry entry's own map-icon flag (`m_iconAlways` / `m_iconPlaced`), which
-        /// a location INSTANCE does not carry - so on a client, where only instances exist, it is unknown
-        /// and reads false. The gate runs on the server, which has the registry.
+        /// The facts the rule turns on, for one location type. Trader and Interior come off the prefab
+        /// asset; the two icon flags are the registry entry's own (`m_iconAlways` / `m_iconPlaced`), which a
+        /// location INSTANCE does not carry - so on a client, where only instances exist, they read false.
+        /// Whether the flags PIN the location is decided per instance (`Pinned`), because `m_iconPlaced` only
+        /// counts once the instance is placed - the engine's own test. The gate runs on the server.
         /// </summary>
-        private struct Facts { public bool Trader; public bool Interior; public bool Landmark; }
+        private struct Facts { public bool Trader; public bool Interior; public bool IconAlways; public bool IconPlaced; }
+
+        /// <summary>`ZoneSystem.GetLocationIcons`'s test, verbatim: always, or placed-and-flagged.</summary>
+        private static bool Pinned(Facts f, bool placed) => f.IconAlways || (f.IconPlaced && placed);
 
         /// <summary>
         /// Answers "clear" when nothing counts, and deliberately also when there is no world yet: a
@@ -90,7 +103,7 @@ namespace RavenIron.ValkyriesCargo
                     float distance = Mathf.Sqrt(ddx * ddx + ddz * ddz);
                     float radius = li.m_location.m_exteriorRadius;
                     if (!HomeGround.InsideLocation(distance, radius, clearance)) continue;
-                    string kind = KindOf(FactsOf(li.m_location), merchants, dungeons, landmarks);
+                    string kind = KindOf(FactsOf(li.m_location), li.m_placed, merchants, dungeons, landmarks);
                     if (kind.Length == 0) continue;
                     // Overlapping locations are possible; the one the point is deepest inside is the one
                     // a player would say they were standing in.
@@ -111,10 +124,10 @@ namespace RavenIron.ValkyriesCargo
             string key = loc.m_prefabName ?? "";
             Facts f;
             if (_factsByPrefab.TryGetValue(key, out f)) return f;
-            // The map-icon flag is on the registry entry itself; no asset needed for it. Caching it by prefab
-            // name is exact: the registry holds ONE ZoneLocation per prefab name and every LocationInstance
-            // points at that one object, so the flag cannot differ between two instances of a prefab.
-            f = new Facts { Trader = false, Interior = false, Landmark = loc.m_iconAlways || loc.m_iconPlaced };
+            // The icon flags are on the registry entry itself; no asset needed for them. Caching them by
+            // prefab name is exact: the registry holds ONE ZoneLocation per prefab name and every
+            // LocationInstance points at that one object, so they cannot differ between two instances.
+            f = new Facts { Trader = false, Interior = false, IconAlways = loc.m_iconAlways, IconPlaced = loc.m_iconPlaced };
             try
             {
                 loc.m_prefab.Load();
@@ -164,7 +177,7 @@ namespace RavenIron.ValkyriesCargo
         {
             kind = "";
             if (loc == null) return null;
-            kind = KindOf(new Facts { Trader = HoldsTrader(loc), Interior = loc.m_hasInterior, Landmark = false }, merchants, dungeons, false);
+            kind = KindOf(new Facts { Trader = HoldsTrader(loc), Interior = loc.m_hasInterior, IconAlways = false, IconPlaced = false }, true, merchants, dungeons, false);
             return kind.Length == 0 ? null : loc;
         }
 
@@ -183,12 +196,17 @@ namespace RavenIron.ValkyriesCargo
 
         // ---- shared ---------------------------------------------------------------------------------
 
-        /// <summary>The kind a location counts as under the three switches, or "" when it does not count.</summary>
-        private static string KindOf(Facts f, bool merchants, bool dungeons, bool landmarks)
+        /// <summary>
+        /// The ONE kind a location is, in this order, and whether its own switch is on: a Trader makes it a
+        /// merchant's camp and nothing else (every vanilla camp is also pinned on the map, and the merchant
+        /// switch must be the switch that opens them); else an interior makes it a dungeon's door; else the
+        /// map pin makes it a landmark. "" when it is none of these, or its kind's switch is off.
+        /// </summary>
+        private static string KindOf(Facts f, bool placed, bool merchants, bool dungeons, bool landmarks)
         {
-            if (merchants && f.Trader) return HomeGround.MerchantCamp;
-            if (dungeons && f.Interior) return HomeGround.DungeonEntrance;
-            if (landmarks && f.Landmark) return HomeGround.Landmark;
+            if (f.Trader) return merchants ? HomeGround.MerchantCamp : "";
+            if (f.Interior) return dungeons ? HomeGround.DungeonEntrance : "";
+            if (Pinned(f, placed)) return landmarks ? HomeGround.Landmark : "";
             return "";
         }
 
@@ -235,7 +253,7 @@ namespace RavenIron.ValkyriesCargo
                         sb.Append(' ').Append(Name(li.m_location)).Append("[r=").Append(Wire.Float(li.m_location.m_exteriorRadius))
                           .Append(" d=").Append(Wire.Float(Mathf.Sqrt(ddx * ddx + ddz * ddz)))
                           .Append(" trader=").Append(f.Trader ? "y" : "n").Append(" interior=").Append(f.Interior ? "y" : "n")
-                          .Append(" landmark=").Append(f.Landmark ? "y" : "n").Append(']');
+                          .Append(" icon=").Append(Pinned(f, li.m_placed) ? "y" : "n").Append(']');
                     }
             if (n == 0) sb.Append(" none in the 3x3");
             sb.Append("; instances: GetLocation=").Append(One(Location.GetLocation(p), p));
@@ -251,21 +269,63 @@ namespace RavenIron.ValkyriesCargo
                    " trader=" + (HoldsTrader(loc) ? "y" : "n") + " interior=" + (loc.m_hasInterior ? "y" : "n") + "]";
         }
 
+        /// <summary>
+        /// One line for the server log, once per world: every location TYPE the game pins on the map, sorted
+        /// by our rule - the ones `Server.AvoidLandmarks` refuses, then the camps and the doors, which are
+        /// pinned too but answer to their own switches. This is the blast radius of the default, printed
+        /// where an admin can read it instead of guessed from whatever sat near one test player.
+        /// </summary>
+        public static string LandmarkTypesLine()
+        {
+            ZoneSystem zs = ZoneSystem.instance;
+            if (zs == null || zs.m_locationInstances == null || zs.m_locationInstances.Count == 0)
+                return "landmarks: no registry on this side (a client has none)";
+            var landmarks = new SortedDictionary<string, int>(System.StringComparer.Ordinal);
+            var camps = new SortedDictionary<string, int>(System.StringComparer.Ordinal);
+            var doors = new SortedDictionary<string, int>(System.StringComparer.Ordinal);
+            foreach (ZoneSystem.LocationInstance li in zs.m_locationInstances.Values)
+            {
+                ZoneSystem.ZoneLocation loc = li.m_location;
+                if (loc == null) continue;
+                // The flags first, off the entry: only a pinned type pays for its asset read.
+                if (!(loc.m_iconAlways || (loc.m_iconPlaced && li.m_placed))) continue;
+                Facts f = FactsOf(loc);
+                SortedDictionary<string, int> bucket = f.Trader ? camps : f.Interior ? doors : landmarks;
+                string name = Name(loc);
+                int n;
+                bucket.TryGetValue(name, out n);
+                bucket[name] = n + 1;
+            }
+            return "landmarks in this world (Server.AvoidLandmarks refuses these): " + Join(landmarks) +
+                   "; pinned on the map but a merchant's camp (Server.AvoidMerchantCamps): " + Join(camps) +
+                   "; pinned but a dungeon's door (Server.AvoidDungeonEntrances): " + Join(doors);
+        }
+
+        private static string Join(SortedDictionary<string, int> d)
+        {
+            if (d.Count == 0) return "none";
+            var parts = new List<string>();
+            foreach (KeyValuePair<string, int> kv in d) parts.Add(kv.Key + " x" + kv.Value);
+            return string.Join(", ", parts.ToArray());
+        }
+
         /// <summary>One line for `cargo status`.</summary>
         public static string StatusLine(Vector3 p, float clearance, bool merchants, bool dungeons, bool landmarks)
         {
             if (ZoneSystem.instance == null) return "locations: no world yet (nothing is refused for this)";
             if (!merchants && !dungeons && !landmarks) return "locations: all three gates are off (Server.AvoidMerchantCamps, Server.AvoidDungeonEntrances, Server.AvoidLandmarks)";
             Verdict v = Read(p, clearance, merchants, dungeons, landmarks);
+            // A client has no registry, so it never evaluated the landmark gate: say what WAS checked here and
+            // that the third answer is the server's, rather than claim a refusal this side cannot make.
+            bool registry = ZoneSystem.instance.m_locationInstances != null && ZoneSystem.instance.m_locationInstances.Count > 0;
             var g = new List<string>();
             if (merchants) g.Add("merchant camps");
             if (dungeons) g.Add("dungeon entrances");
-            if (landmarks) g.Add("landmarks");
-            string gates = string.Join(" + ", g.ToArray());
-            bool registry = ZoneSystem.instance.m_locationInstances != null && ZoneSystem.instance.m_locationInstances.Count > 0;
+            if (landmarks && registry) g.Add("landmarks");
+            string gates = g.Count == 0 ? "nothing checked on this side" : "refusing " + string.Join(" + ", g.ToArray());
+            string note = landmarks && !registry ? "; landmarks are the server's read and not visible from a client" : "";
             if (!v.Inside)
-                return "locations: clear here (refusing " + gates + "; clearance " + Wire.Float(clearance) + " m" +
-                       (landmarks && !registry ? "; landmarks are the server's read, not visible from a client" : "") + ")";
+                return "locations: clear here (" + gates + "; clearance " + Wire.Float(clearance) + " m" + note + ")";
             return "locations: AT " + HomeGround.LocationLabel(v.Name, v.Kind) + " (" + Wire.Float(v.Distance) +
                    " m from its centre, exterior radius " + Wire.Float(v.Radius) + " m, clearance " + Wire.Float(clearance) + " m)";
         }
