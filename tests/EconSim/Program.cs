@@ -185,7 +185,7 @@ namespace ValkyriesCargo.EconSim
                 md.Line("is a decision for DESIGN section 8, next to 'a bulk deal beats a drip-feed', which is where it comes from.");
             }
             md.Blank();
-            md.Line("**2. ACCEPTED AS DOCUMENTED 2026-09-07 — `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the 72 rows has `Max = 3 x Target`, so the");
+            md.Line("**2. ACCEPTED AS DOCUMENTED 2026-09-07 — `MinPriceMultiplier` 0.4 is unreachable and always will be.** Every one of the " + Sim.N(Catalogue.Parse(Catalogue.DefaultLine, null).Count) + " rows has `Max = 3 x Target`, so the");
             md.Line("lowest multiplier any shelf can reach by trading is `(1/3)^0.35 = " + Sim.Fact("floor.min") + "`; the floor would need `Max > 13.7 x Target`.");
             md.Line("Nothing is broken — but the knob reads like a promise the catalogue cannot keep. *Change the documentation, not the");
             md.Line("number*: `MinPriceMultiplier` is a guard for an owner's edited catalogue, not a price a player will ever see. If a real");

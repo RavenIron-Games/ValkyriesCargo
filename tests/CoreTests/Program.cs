@@ -206,12 +206,12 @@ namespace ValkyriesCargo.Tests
             var cat = Catalogue.Parse(Catalogue.DefaultLine, problems);
 
             Equal(0, problems.Count, "DefaultLine parses with zero problems");
-            Equal(72, cat.Count, "DefaultLine has exactly 72 entries");
+            Equal(101, cat.Count, "DefaultLine has exactly 101 entries (72 + the 29 food rows of 2026-09-15)");
 
             int wareCount = cat.CountOf(EntryKind.Ware);
             int wantCount = cat.CountOf(EntryKind.Want);
-            Equal(18, wareCount, "exactly 18 Ware entries");
-            Equal(54, wantCount, "exactly 54 Want entries");
+            Equal(27, wareCount, "exactly 27 Ware entries");
+            Equal(74, wantCount, "exactly 74 Want entries");
         }
 
         private static void CatalogueValidationTests()
@@ -389,13 +389,13 @@ namespace ValkyriesCargo.Tests
             string line = Catalogue.Upsert(Catalogue.DefaultLine, "YmirRemains:100:5:15:Ware", out report);
             Check(line != null, "a new, well-formed entry is accepted");
             Catalogue cat = Catalogue.Parse(line, null);
-            Equal(73, cat.Count, "the catalogue grows by one");
-            Check(cat.Entries[72].Prefab == "YmirRemains" && cat.Entries[72].BasePrice == 100 && cat.Entries[72].Kind == EntryKind.Ware, "the new entry is last, as given");
+            Equal(102, cat.Count, "the catalogue grows by one");
+            Check(cat.Entries[101].Prefab == "YmirRemains" && cat.Entries[101].BasePrice == 100 && cat.Entries[101].Kind == EntryKind.Ware, "the new entry is last, as given");
             Check(report.StartsWith("added YmirRemains"), "and the report says added: " + report);
 
             line = Catalogue.Upsert(Catalogue.DefaultLine, "Iron:30:25:75:Ware", out report);
             cat = Catalogue.Parse(line, null);
-            Equal(72, cat.Count, "re-adding a prefab already there does not grow the catalogue");
+            Equal(101, cat.Count, "re-adding a prefab already there does not grow the catalogue");
             Equal(1, IndexOfPrefab(cat, "Iron"), "the edited entry keeps its position (Iron is still second)");
             CatalogueEntry iron = cat.Find("Iron");
             Check(iron.BasePrice == 30 && iron.TargetStock == 25 && iron.MaxStock == 75, "and carries the new numbers");
@@ -403,7 +403,7 @@ namespace ValkyriesCargo.Tests
 
             line = Catalogue.Upsert(Catalogue.DefaultLine, "iron:31:20:60:want", out report);
             cat = Catalogue.Parse(line, null);
-            Equal(72, cat.Count, "prefab names match ignoring case on an edit");
+            Equal(101, cat.Count, "prefab names match ignoring case on an edit");
             Check(cat.Find("iron") != null && cat.Find("iron").Kind == EntryKind.Want && cat.Find("Iron") == null,
                   "the new spelling and kind win (the game's own check on the name comes first, on the server)");
 
@@ -417,7 +417,7 @@ namespace ValkyriesCargo.Tests
 
             line = Catalogue.Remove(Catalogue.DefaultLine, "Iron", out report);
             cat = Catalogue.Parse(line, null);
-            Equal(71, cat.Count, "remove takes one entry away");
+            Equal(100, cat.Count, "remove takes one entry away");
             Check(cat.Find("Iron") == null && cat.Find("Bronze") != null && cat.Find("Silver") != null, "the named one, and only it");
             Check(report.StartsWith("removed Iron"), "the report says removed: " + report);
             line = Catalogue.Remove(Catalogue.DefaultLine, "IRON", out report);
@@ -426,10 +426,10 @@ namespace ValkyriesCargo.Tests
             Check(Catalogue.Remove(Catalogue.DefaultLine, "  ", out report) == null, "no name is refused");
 
             Catalogue without = shipped.Without(new List<string> { "Iron", "NotThere" });
-            Equal(71, without.Count, "Without drops the named entries and ignores names it does not have");
+            Equal(100, without.Count, "Without drops the named entries and ignores names it does not have");
             Check(without.Find("Iron") == null && without.Find("Wood") != null, "the right one went");
-            Equal(72, shipped.Count, "and the original is untouched");
-            Equal(72, shipped.Without(null).Count, "Without(null) is a copy");
+            Equal(101, shipped.Count, "and the original is untouched");
+            Equal(101, shipped.Without(null).Count, "Without(null) is a copy");
         }
 
         private static int IndexOfPrefab(Catalogue cat, string prefab)
@@ -506,7 +506,7 @@ namespace ValkyriesCargo.Tests
             problems.Clear();
             MarketSnapshot snap = MarketSnapshot.Parse(MarketSnapshot.Demo, problems);
             Check(problems.Count == 0, "Demo parses with zero problems");
-            Check(snap.Count == 72, "Demo has 72 rows");
+            Check(snap.Count == 101, "Demo has 101 rows");
             Check(snap.VisitId == 1, "Demo VisitId is 1");
             Check(snap.Purse == 800, "Demo Purse is 800");
             foreach (MarketRow row in snap.Rows)
@@ -1077,7 +1077,7 @@ namespace ValkyriesCargo.Tests
             Section("Market construction");
 
             Market m = NewMarket(1234.5);
-            Equal(72, m.Count, "the default catalogue builds 72 items");
+            Equal(101, m.Count, "the default catalogue builds 101 items");
             Equal(800, m.Purse, "the purse starts at MarketRules.PurseCoins");
             Equal(0, m.VisitId, "no visit has started yet");
 
@@ -1118,7 +1118,7 @@ namespace ValkyriesCargo.Tests
 
             // The snapshot is a value copy of the state, not a window onto it.
             MarketSnapshot snap = m.Snapshot();
-            Equal(72, snap.Count, "the snapshot carries every row");
+            Equal(101, snap.Count, "the snapshot carries every row");
             Equal(m.Purse, snap.Purse, "and the purse");
             Equal(m.VisitId, snap.VisitId, "and the visit id");
             int stockWas = snap.Find("Iron").Stock;
@@ -1637,7 +1637,7 @@ namespace ValkyriesCargo.Tests
 
             string summary;
             Market b = a.WithCatalogue(next, 200, out summary);
-            Equal(72, b.Count, "the new shelf has the new catalogue's rows");
+            Equal(101, b.Count, "the new shelf has the new catalogue's rows");
             Check(b.Find("Iron") == null, "the dropped prefab is gone");
             Equal(5, b.Find("YmirRemains").Stock, "a new row starts at its target stock");
             Equal(200.0, b.Find("YmirRemains").UpdatedWorldTime, "stamped now, so its drift starts from the swap");
@@ -1655,7 +1655,7 @@ namespace ValkyriesCargo.Tests
             Equal(Market.PriceFor(80, 12, 3, b.Rules), b.Charge(b.Find("Silver")), "a changed base reprices at once");
             Check(summary.Contains("1 added (YmirRemains at 5)") && summary.Contains("1 dropped (Iron with 18 in stock)") && summary.Contains("Wood 555 to 100"),
                   "the summary names what moved: " + summary);
-            Check(summary.Contains("71 kept"), "and counts what did not");
+            Check(summary.Contains("100 kept"), "and counts what did not");
 
             // A row that changed kind keeps its stock, and a buy against it is refused the way any non-ware is.
             line = Catalogue.Upsert(Catalogue.DefaultLine, "Iron:25:20:60:Want", out _);
@@ -1667,7 +1667,7 @@ namespace ValkyriesCargo.Tests
             // The same catalogue twice is the same market twice.
             Market d = a.WithCatalogue(Catalogue.Parse(Catalogue.DefaultLine, null), 200, out summary);
             Equal(a.EncodeState(), d.EncodeState(), "an unchanged catalogue carries the whole state byte for byte");
-            Check(summary.Contains("72 kept, 0 added, 0 dropped"), "and says nothing moved: " + summary);
+            Check(summary.Contains("101 kept, 0 added, 0 dropped"), "and says nothing moved: " + summary);
             Check(!summary.Contains("clamped"), "nothing clamped either");
 
             // The nonce ring does NOT carry: the director only swaps between visits for exactly this reason.
@@ -1691,7 +1691,7 @@ namespace ValkyriesCargo.Tests
             Catalogue cat = Catalogue.Parse(Catalogue.DefaultLine, null);
             var pool = new List<string>();
             foreach (CatalogueEntry e in cat.Entries) pool.Add(e.Prefab);
-            Equal(72, pool.Count, "the pool is the whole shipped catalogue, Wares and Wants alike");
+            Equal(101, pool.Count, "the pool is the whole shipped catalogue, Wares and Wants alike");
 
             List<string> a = Shelf.Roll("w4790ce", 26, pool, 20);
             Equal(20, a.Count, "twenty of seventy-two");
@@ -1704,8 +1704,8 @@ namespace ValkyriesCargo.Tests
             Check(Names(a) != Names(Shelf.Roll("other", 26, pool, 20)), "another world rolls a different shelf");
             Check(new HashSet<string>(a).IsSupersetOf(Shelf.Roll("w4790ce", 26, pool, 10)),
                   "a bigger shelf for the same period is a superset of the smaller (raising ShelfSize swaps nothing out)");
-            Equal(72, Shelf.Roll("w4790ce", 1, pool, 72).Count, "a size covering the pool is the pool");
-            Equal(72, Shelf.Roll("w4790ce", 1, pool, 500).Count, "and so is a bigger one");
+            Equal(101, Shelf.Roll("w4790ce", 1, pool, 101).Count, "a size covering the pool is the pool");
+            Equal(101, Shelf.Roll("w4790ce", 1, pool, 500).Count, "and so is a bigger one");
             Equal(0, Shelf.Roll("w4790ce", 1, pool, 0).Count, "size 0 is empty");
             Equal(0, Shelf.Roll("w4790ce", 1, pool, -4).Count, "a negative size is empty");
             Equal(0, Shelf.Roll("w4790ce", 1, null, 5).Count, "no pool is empty, not a throw");
@@ -1714,10 +1714,11 @@ namespace ValkyriesCargo.Tests
             var shown = new Dictionary<string, int>();
             for (long p = 0; p < 200; p++)
                 foreach (string s in Shelf.Roll("w4790ce", p, pool, 20)) { seen.Add(s); int n; shown.TryGetValue(s, out n); shown[s] = n + 1; }
-            Equal(72, seen.Count, "over two hundred periods every entry has been on the shelf");
+            Equal(101, seen.Count, "over two hundred periods every entry has been on the shelf");
             int least = int.MaxValue, most = 0;
             foreach (int n in shown.Values) { if (n < least) least = n; if (n > most) most = n; }
-            Check(least >= 30 && most <= 85, "and no entry is starved or favoured (expected 56 of 200; least " + least + ", most " + most + ")");
+            // 200 x 20 / 101 = 39.6 a row; the bounds are the 30..85 that held at 72 rows (0.54 and 1.53 of the expectation), scaled.
+            Check(least >= 21 && most <= 61, "and no entry is starved or favoured (expected 40 of 200; least " + least + ", most " + most + ")");
 
             Section("Shelf.Scaled (the backpack add-on, 2026-09-08)");
             Equal(20, Shelf.Scaled(20, 2, false), "no backpack mod: the shelf is ShelfSize");
@@ -1733,7 +1734,7 @@ namespace ValkyriesCargo.Tests
             Equal(Shelf.MaxSize, Shelf.Scaled(int.MaxValue, 4, true), "without overflowing");
             Check(new HashSet<string>(Shelf.Roll("w4790ce", 26, pool, Shelf.Scaled(20, 2, true))).IsSupersetOf(Shelf.Roll("w4790ce", 26, pool, 20)),
                   "the scaled shelf for a period is a superset of the unscaled one: the mod arriving swaps nothing out");
-            Equal(72, Shelf.Roll("w4790ce", 26, pool, Shelf.Scaled(20, 4, true)).Count, "x4 on the shipped catalogue is the whole catalogue");
+            Equal(80, Shelf.Roll("w4790ce", 26, pool, Shelf.Scaled(20, 4, true)).Count, "x4 on the shipped catalogue is 80 of its 101 (it was the whole 72 until the food rows)");
 
             Section("Shelf.Period (the game-day clock)");
             Equal(0L, Shelf.Period(0, 1800, 2), "period 0 at the start of the world");
@@ -1775,7 +1776,7 @@ namespace ValkyriesCargo.Tests
             Equal(EntryKind.Want, f.KindOf(f.Find("Wood")), "Wood the Want");
             Equal(EntryKind.Want, f.KindOf(null), "no item is a Want (never a throw)");
             int wares = 0; foreach (MarketRow row in f.Snapshot().Rows) if (row.Kind == EntryKind.Ware) wares++;
-            Equal(18, wares, "the snapshot carries the catalogue's 18 wares");
+            Equal(27, wares, "the snapshot carries the catalogue's 27 wares");
             f.StartVisit(1, 100, 0);
             Equal(DealReason.UnknownItem, f.Settle(new Deal { VisitId = 1, Nonce = 5, Wanted = new DealLine { Prefab = "Wood", Count = 1, UnitPriceSeen = 1 } }, 100, 100).Reason,
                   "buying a Want is unknown_item, as it always was");
@@ -1793,7 +1794,7 @@ namespace ValkyriesCargo.Tests
             Equal(20, onShelf, "OnShelf says yes for exactly twenty");
             Equal(20, wareRows, "the snapshot carries exactly twenty Ware rows: the terminal's left pane, with no client change");
             Check(!m.OnShelf(null) && !m.OnShelf("") && !m.OnShelf("Nonsense"), "and no for nothing, nothing and a stranger");
-            Check(m.DescribeShelf(100).StartsWith("shelf 20 of 72, period 0, rolls every ") && m.DescribeShelf(100).Contains("next in "), "the status line: " + m.DescribeShelf(100));
+            Check(m.DescribeShelf(100).StartsWith("shelf 20 of 101, period 0, rolls every ") && m.DescribeShelf(100).Contains("next in "), "the status line: " + m.DescribeShelf(100));
             string offWare = null, onWant = null;
             foreach (MarketItem it in m.Items)
             {
@@ -2512,7 +2513,7 @@ namespace ValkyriesCargo.Tests
             DemoMarket demo = DemoMarket.Default();
             Equal(1, demo.Market.VisitId, "the demo opens on visit 1");
             Equal(800, demo.Market.Purse, "with the default purse of 800");
-            Equal(72, demo.Market.Count, "and the whole default catalogue");
+            Equal(101, demo.Market.Count, "and the whole default catalogue");
             Check(demo.Core != null && demo.Core.Find("Iron") != null, "Core exposes the real Market underneath");
             Equal("demo", demo.Core.Salt, "the demo's delivery ids are salted 'demo', so a real server's never collide with them in the inbox");
             Check(!ReferenceEquals(demo.Market, demo.Market), "Market hands out a FRESH snapshot on every call");
@@ -2562,7 +2563,7 @@ namespace ValkyriesCargo.Tests
                 if (!every.Tick(row.Prefab, true)) stuck++;
                 if (!every.Tick(row.Prefab, false)) stuck++;
             }
-            Equal(0, stuck, "all 72 rows move scarcer and less scarce from target (the quarter-target step left 42 of them stuck)");
+            Equal(0, stuck, "every row moves scarcer and less scarce from target (the quarter-target step left 42 of the original 72 stuck)");
 
             // Advance relaxes the ticked line back toward target and leaves the rest alone.
             DemoMarket drift = DemoMarket.Default();
@@ -3990,7 +3991,7 @@ namespace ValkyriesCargo.Tests
             // UseDemo(true) publishes Visit and Market events
             bool visitFired = false, marketFired = false;
             CargoRpc.VisitChanged += v => { visitFired = true; Check(v.Phase == VisitPhase.Trading, "Visit event has Trading phase"); };
-            CargoRpc.MarketChanged += m => { marketFired = true; Check(m.Count == 72, "Market event has 72 rows"); };
+            CargoRpc.MarketChanged += m => { marketFired = true; Check(m.Count == 101, "Market event has 101 rows"); };
 
             CargoRpc.UseDemo(true);
             Check(CargoRpc.Ready, "After UseDemo(true), Ready is true");
