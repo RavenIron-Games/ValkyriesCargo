@@ -34,12 +34,16 @@ next login, never twice.
 on a Dverger clone whose renderers are switched off (`Server.CustomBody` puts the stand-in back). **Later:** the horn,
 a barter basket, rare rotating stock, localisation.
 
-**Where it is, 2026-09-11.** Every package is merged; `main` builds clean at 1987 off-game checks and **`v0.1.0-rc5`
-is tagged and published to Hexium** — the first cut to reach a store. It is the **Valheim 1.0.12** build and runs on
-nothing else. **Twenty-seven live visits** have been run across five sessions on dedicated servers: the flight, the
-drop, Ingvar in his own baked body, the walk-up, the terminal on a real visit, deals at the price curve, the vanish,
-a relog mid-visit, a visit resumed across a restart, and the carry offset tuned live while the bird was in the air.
-Never seen in a game: **redelivery after a lost connection**, proven off-game only, and every two-client item.
+**Where it is, 2026-09-15.** `main` builds clean at 2093 off-game checks and **`v0.1.1-rc6` is tagged** — the
+first cut with its own version number, a GitHub pre-release; the store copy is still `v0.1.0-rc5` until the owner
+uploads. It is the **Valheim 1.0.12** build and runs on nothing else. rc6 carries issue #79's fix (Ingvar insists on
+ground somebody built and refuses merchants' camps, dungeon doors and landmarks, proven live), food and drink in
+the catalogue (72 → 101), one row per item token, and the console lines in the client log. **Twenty-seven live
+visits** stood behind rc5 and four more ran on 2026-09-15, all on dedicated servers: the flight, the drop, Ingvar in his own baked body, the walk-up, the
+terminal on a real visit, deals at the price curve, the vanish, a relog mid-visit, a visit resumed across a
+restart, the carry offset tuned live while the bird was in the air, and on 2026-09-15 the location refusals and
+six deals on the new catalogue. Never seen in a game: **redelivery after a lost connection**, proven off-game
+only, and every two-client item.
 Tracker: `TODO.md`; the bar that was shipped against is `RELEASE.md` §4.
 
 **Settled facts.** Valheim 1.0 runs on Unity 6000.0.75, so bundles are built with that Editor (it was 6000.0.61f1 on 0.221.12). ServerSync broadcasts on

@@ -8,7 +8,7 @@
 [![Framework](https://img.shields.io/badge/Requires-BepInEx-red.svg)]()
 [![Economy](https://img.shields.io/badge/Economy-Supply_%26_Demand-green.svg)]()
 [![Custom Character](https://img.shields.io/badge/Ingvar-Custom_Character-purple.svg)]()
-[![Version](https://img.shields.io/badge/Version-0.1.0-lightgrey.svg)]()
+[![Version](https://img.shields.io/badge/Version-0.1.1-lightgrey.svg)]()
 
 > *"You bank the fire, set down your axe, and the light goes strange. Wings beat in the upper skies —*
 > *and she comes down out of the cloud with a red-bearded dwarf hanging from her talons, and sets him*
@@ -43,7 +43,7 @@ Then he vanishes into the mist the way Odin does.
 - [🛠️ Compatibility](#️-compatibility)
 - [📦 Dependencies](#-dependencies)
 - [📥 Installation](#-installation)
-- [📖 Status — 0.1.0](#-status--010)
+- [📖 Status — 0.1.1](#-status--011)
 - [🐦‍⬛ Credits](#-credits)
 
 </details>
@@ -221,7 +221,13 @@ Thunderstore-compatible manager — the dependency above is pulled in for you.
 
 ---
 
-## 📖 Status — 0.1.0
+## 📖 Status — 0.1.1
+
+**0.1.1 (2026-09-15).** Ingvar now insists on ground somebody built and keeps away from other merchants'
+camps, dungeon doors and the game's landmarks (a player's report from the Bog Witch's camp); he buys and
+sells food and drink — 101 catalogue rows, and a server that already had the mod takes them with
+`cargo catalogue reset`; and the version number moves with each release, so a server and its players
+must run the same one.
 
 **A first playable, and honest about it.** The loop has been run end to end on a dedicated server
 with real players — twenty-seven visits so far: the roll, the flight, the drop, the walk-up, the
