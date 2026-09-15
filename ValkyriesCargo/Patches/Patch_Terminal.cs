@@ -629,8 +629,17 @@ namespace RavenIron.ValkyriesCargo.Patches
 
         private static void Say(Terminal.ConsoleEventArgs args, string text)
         {
-            if (args != null && args.Context != null) args.Context.AddString(text);
-            else ValkyriesCargo.Log.LogInfo(text);
+            if (args != null && args.Context != null)
+            {
+                args.Context.AddString(text);
+                // A headless server's Terminal.AddString already writes every console line to the
+                // log (the P10a client-vs-server sweep); a client's does not. So nothing a player
+                // typed into `cargo status` survived a relog - and `cargo status` is the line that
+                // gets pasted into bug reports. Mirror it here, only where the engine does not.
+                if (ValkyriesCargo.HasRenderer) ValkyriesCargo.Log.LogInfo("console: " + text);
+                return;
+            }
+            ValkyriesCargo.Log.LogInfo(text);
         }
     }
 }
