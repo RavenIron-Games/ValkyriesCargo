@@ -26,7 +26,7 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 **CUT 2026-09-16: `v0.1.3` — the visit clock** (the owner: "merge 97 and cut 0.1.3", with two notes: the changelog
 and the README say a server updating from an earlier version deletes its old config file first, because a stored
-line beats a shipped default). A GitHub pre-release with the store zip and the kit attached; the upload is the
+line beats a shipped default (0.1.3 and earlier; 0.1.4 migrates the file itself instead). A GitHub pre-release with the store zip and the kit attached; the upload is the
 owner's. The code change since 0.1.2: PR #97 — the visit's event registers with `m_pauseIfNoPlayerInArea` OFF so
 the clock runs whoever is near him and a visit ends on time with nobody online; the new synced
 `Server.PauseVisitWhenEmpty` (default false) holds it on an empty server; no VisitState republish while the server
@@ -346,8 +346,10 @@ The owner's client runs through Gale (`%APPDATA%\com.kesomannen.gale\valheim\pro
 dedicated test servers live under `C:\Users\donfr\ValheimServers\` (CairnTest on port 2466 is the
 minimal one; the runbook is `RagnaroksWrath\docs\HANDOFF.md`). Valheim locks the DLL while running.
 
-Console today: `cargo status | version | engine | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] |
+Console today: `cargo status | version | engine | config | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] |
 deal buy|sell <prefab> [count] | claim | terminal demo|open|close | visit [player] | dismiss | reset | save`.
+`config` (2026-09-16, anyone, local) prints the config file's own layout version against the current one, the
+catalogue overrides in words, and the last migration's boot line - the config-migration twin of `engine`.
 `engine` (P10b) prints the Valheim build this DLL was written on against the one actually running, then every
 engine probe with its risk rank, what it looked at and what turns itself off when it fails; `cargo status`
 carries the same thing in one line, second from the top. It is the first thing to ask for in a bug report from
@@ -366,10 +368,13 @@ Built:
 ```
 ValkyriesCargo/
   ValkyriesCargo.cs          plugin entry: config (creates the ConfigSync), Harmony, tick, boot line
-  Config/ModConfig.cs        Server.* synced+locked, Client.* local, VisitState/MarketState channels
+  Config/ModConfig.cs        Server.* synced+locked, Client.* local, VisitState/MarketState/CatalogueEffective channels
+  Config/ConfigMigration.cs  the config migration's engine-facing half (2026-09-16): Begin before any bind, Finish after every bind
   Core/CargoTick.cs          the ONLY Update and the only OnGUI in the mod; role decided at runtime
   Core/Keys.cs               PURE: every ZDO key and RPC name this mod owns, typed once, under the VCargo_ prefix
-  Core/Catalogue.cs          PURE: the catalogue line parser and the 101 defaults
+  Core/Catalogue.cs          PURE: the catalogue line parser and the 101 defaults, plus the retired 0.1.0 LegacyDefaultLine72
+  Core/ConfigLedger.cs       PURE: the config migration's decisions (2026-09-16) - the stamped version, the rebase table, the boot line
+  Core/CatalogueOverrides.cs PURE: Server.CatalogueOverrides (2026-09-16) - Apply onto the shipped catalogue, Derive from an old stored line
   Core/Wire.cs Core/MarketSnapshot.cs Core/VisitSnapshot.cs Core/Deal.cs   PURE: the contract (PR #1)
   Core/Market.cs             PURE: rules, price curve, purse, drift, settlement, sidecar rows
   Core/Shelf.cs              PURE: the rotating shelf (2026-09-08): the period clock and the seeded roll, in catalogue order
@@ -1314,6 +1319,22 @@ Ghost mode (F11; the owner's decision 2026-09-07), a visit running, any client:
     (the `catalogue applied:` line follows the visit's end line). `cargo catalogue add Nonsense:1:1:1:Ware` is
     refused with `this game has no prefab named 'Nonsense'`; `cargo catalogue add Boar:1:1:1:Ware` with `not an
     item`. `cargo catalogue list` on a client shows the edit; `cargo catalogue reset` puts the 72 back.
+
+    **Renamed 2026-09-16 (0.1.4, the config migration).** The lines above are the 2026-09-07 proof, pasted
+    verbatim under the cfg key as it was then (`Server.Catalogue`, the whole line). From 0.1.4 the console
+    verbs edit `Server.CatalogueOverrides` instead - the shipped catalogue plus what changed, not the whole
+    line - so the cfg file carries `CatalogueOverrides = Ruby:40:15:45:Ware` rather than a rewritten
+    `Catalogue = ...` line, and `cargo status`'s catalogue line reads `catalogue: 101 shipped + 1 override(s):
+    Ruby changed; 101 entries (...)`. The verbs, the sync, the lock and the live-apply-between-visits behaviour
+    are otherwise unchanged; see item 27 and `docs/CATALOGUE.md` section 9.
+27. **Config migration** — **NOT YET PROVEN IN A GAME** (built 2026-09-16, branch `a/config-migration`, off-game
+    only: `ConfigLedgerTests`/`CatalogueOverridesTests` in `tests/CoreTests/Program.cs`). A 0.1.3-style config
+    file with a customised 72-row `Catalogue` line (some rows changed, one removed) dropped in before boot
+    should bring the mod up with `config: version 0 -> 2: Catalogue was customised, kept as N override(s): ...`
+    on the boot line, a `com.raveniron.valkyriescargo.cfg.v0.bak` beside it holding the pre-migration file
+    byte for byte, `cargo catalogue list` showing the 29 food rows the admin's old file never had AND the
+    admin's own changes, and `cargo config` naming the file's version (now 2) against the current one. A
+    second boot on the now-migrated file should show `cargo config` unchanged and no new `.bak`.
 
 ---
 

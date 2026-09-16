@@ -168,6 +168,7 @@ server-synced and admin-controlled**; only cosmetics are local.
 | `FairMarketAct` | `on` | He never pays more than he charges |
 | `CustomBody` | `on` | Ingvar's own body; off keeps the stand-in |
 | `CarryOffset` | `0, 0, 0` | Where he hangs from the Valkyrie's talon, `x, y, z` in the talon's own space. The default puts his feet on it. Leave it empty to follow the Valkyrie prefab instead |
+| `CatalogueOverrides` | (empty) | **0.1.4.** The shipped catalogue plus your changes: `Prefab:Base:Target:Max:Kind` to add or change a row, `-Prefab` to remove one, comma-separated. Empty = the shipped 101 rows as they ship. `cargo catalogue add\|remove\|reset` edit it |
 
 ### 🎨 Local to Your Game
 
@@ -220,20 +221,31 @@ Thunderstore-compatible manager — the dependency above is pulled in for you.
 3. On a dedicated server, install it on the **server and every client**.
 4. Go and get comfortable.
 
-**Updating from an earlier version:** with the server down, delete
+**Updating from 0.1.3 or earlier:** with the server down, delete
 `BepInEx/config/com.raveniron.valkyriescargo.cfg` on the **server** before starting it on the new version, so
 the config is written fresh with the new defaults — a stored line beats a new default (0.1.3 adds
 `PauseVisitWhenEmpty`; 0.1.1 grew the catalogue to 101 rows, and an old file hides them). Set your own values
 again afterwards. A client's copy can stay.
 
+**Updating from 0.1.4 on:** nothing to delete. The mod migrates the config file itself before it binds
+anything — a value still at an old default moves to the new one, a value you set stays, a backup lands beside
+the file, and the boot log says what it did.
+
 ---
 
 ## 📖 Status — 0.1.3
 
+**Unreleased (0.1.4), in progress on a branch.** The mod will migrate its own config file: a value still at
+an old default moves to the new one, a value you set stays, a backup lands beside the file, and the boot log
+says what it did — no more deleting the config file to pick up a new default. The catalogue moves to
+`CatalogueOverrides`: the shipped catalogue plus your changes, so it can grow without a stored line ever
+shadowing it again. Not cut, not on the store yet.
+
 **0.1.3 (2026-09-16).** The visit clock runs whoever is near Ingvar: a visit ends on time with nobody online
 (before, it never ended without a player within 96 m of him, and held every raid with it). The new server
-option `PauseVisitWhenEmpty` holds it on an empty server instead, off by default. **Updating a server: delete
-the old config file first** (Installation, above).
+option `PauseVisitWhenEmpty` holds it on an empty server instead, off by default. **Updating a server on 0.1.3
+or earlier: delete the old config file first** (Installation, above); **0.1.4 on: nothing to do, the mod
+migrates it.**
 
 **0.1.2 (2026-09-15).** The merchant guard: Ingvar trades and hovers as himself on a server whose taming mod
 made the Dvergr a pet.

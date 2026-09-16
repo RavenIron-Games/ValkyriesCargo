@@ -241,13 +241,20 @@ client code.
 On a Gale-managed client the plugin folder is
 `%APPDATA%\com.kesomannen.gale\valheim\profiles\<profile>\BepInEx\plugins\`, not the Steam folder.
 
-**Updating a server that already has the mod: delete the old config file first.** Take the server down,
-remove `BepInEx\config\com.raveniron.valkyriescargo.cfg`, put the new DLL in, start it: the file is written
-fresh with the shipped defaults (0.1.3 adds `Server.PauseVisitWhenEmpty`; 0.1.1 grew the catalogue to 101
-rows). A stored line beats the shipped default, so an old file hides new rows and new knobs — on Wonderland
-the 72-row catalogue from 0.1.0 outlived two updates. Anything set on purpose (`PurseCoins`, the roll, the
-flight) wants setting again afterwards; `cargo catalogue reset` as an admin takes the shipped catalogue alone.
-A client's copy can stay: every `Server.*` value on it is overruled by the server.
+**Updating a server that already has the mod (0.1.3 and earlier): delete the old config file first.** Take
+the server down, remove `BepInEx\config\com.raveniron.valkyriescargo.cfg`, put the new DLL in, start it: the
+file is written fresh with the shipped defaults (0.1.3 adds `Server.PauseVisitWhenEmpty`; 0.1.1 grew the
+catalogue to 101 rows). A stored line beats the shipped default, so an old file hides new rows and new knobs
+— on Wonderland the 72-row catalogue from 0.1.0 outlived two updates. Anything set on purpose (`PurseCoins`,
+the roll, the flight) wants setting again afterwards; `cargo catalogue reset` as an admin takes the shipped
+catalogue alone. A client's copy can stay: every `Server.*` value on it is overruled by the server.
+
+**Updating a server that already has the mod, from 0.1.4 on: nothing to do.** The mod migrates the file
+itself, before it binds anything: a value still at an old default moves to the new one, a value you set on
+purpose stays exactly as you set it, and a backup of the old file lands beside it (`<file>.v<N>.bak`) before
+anything is touched. The catalogue in particular moves to `Server.CatalogueOverrides` - the shipped catalogue
+plus your changes, so a new default (the next set of rows, whatever they are) can never be shadowed by an old
+stored line again. The boot log names what it did, and `cargo config` says it again on request.
 
 Requires [BepInExPack Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/)
 and nothing else: no Jotunn, no JSON library (the BarrkBOT export writes its files through the mod's
@@ -262,8 +269,10 @@ keeps it; `v0.1.0-rc3` was the last build for it).
 
 ## Configuration
 
-`BepInEx\config\com.raveniron.valkyriescargo.cfg`. **After an update, delete the server's copy** so it is
-written fresh with the shipped defaults — a stored line beats a new default (Installing, above).
+`BepInEx\config\com.raveniron.valkyriescargo.cfg`. **0.1.3 and earlier: after an update, delete the server's
+copy** so it is written fresh with the shipped defaults — a stored line beats a new default (Installing,
+above). **From 0.1.4 the mod migrates the file itself** on boot (a stamped `Meta.ConfigVersion`, a backup
+beside the file, a boot line saying what moved and what was kept) — nothing to delete any more.
 
 **Every `Server.*` value is synced from the server and locked**: on a connected client the local
 value is shown read-only, and a client's write is rejected unless that client is on the server's
@@ -301,7 +310,7 @@ itself is what arms the lock.
 | `FlightSpeed` | `8` | 2-40 | Metres a second the Valkyrie flies, overriding the prefab's own speed. 8 gives design 3.2's 15-20 s of sky over a 90 m approach. Read on the **client that owns the bird**, synced from the server; the server never reads it. |
 | `FlightTurnRate` | `45` | 5-360 | Degrees a second the Valkyrie may turn, overriding the prefab's own. Read on the **client that owns the bird**, synced from the server. |
 | `CarryOffset` | `0, 0, 0` | +/-5 an axis | Where Ingvar hangs while the Valkyrie carries him: `x, y, z` in the **talon's own space**, SUBTRACTED from the talon. The default holds his feet **on** the talon, tuned on a machine for his height; bigger numbers hang him further off it (`y` below, `z` behind) and negative ones carry him past it. Leave it **empty** to follow the Valkyrie prefab's own offset instead, `0, 0.3, 0.4` on the shipped bird, which is vanilla's framing for a full-height player in the intro. Anything that is not three numbers, or past 5 m on an axis, is refused with one log line and the prefab's used. Read on **every machine that has him instanced** (the pin runs on each, and every screen must agree), synced from the server; a change lands on the next physics step, so it can be tuned while he is in the air. |
-| `Catalogue` | 101 entries | | What Ingvar sells and buys: `Prefab:BasePrice:TargetStock:MaxStock:Kind` entries separated by commas; `Kind` is `Ware` (sells and buys back) or `Want` (buys only). The default is 18 wares and 54 wants; every number's reason is in `docs/CATALOGUE.md`. A prefab the game has no item for is dropped with one log line and the rest still loads. Editable on a running server with `cargo catalogue add|remove|reset` (admin) or Configuration Manager as an admin; a change applies as soon as no visit is running (`docs/CATALOGUE.md` §4). |
+| `CatalogueOverrides` | (empty) | | **0.1.4.** The shipped catalogue plus your changes: `Prefab:BasePrice:TargetStock:MaxStock:Kind` to add or change a shipped row, `-Prefab` to remove one, comma-separated. Empty (the default) is the shipped catalogue exactly as it ships - 101 entries, every number's reason in `docs/CATALOGUE.md`. Editable on a running server with `cargo catalogue add|remove|reset` (admin) or Configuration Manager as an admin; a change applies as soon as no visit is running. Replaces the old `Catalogue` key, which stored the whole line and let a stale value shadow a new shipped default forever (`docs/CATALOGUE.md` "Overrides"). |
 | `PriceElasticity` | `0.35` | 0.05-1.5 | Exponent of (target / stock) in the price; higher is steeper. |
 | `MinPriceMultiplier` | `0.4` | 0.05-1 | Floor on the price multiplier when he is flooded. |
 | `MaxPriceMultiplier` | `3` | 1-10 | Ceiling on the price multiplier when he is out. |
@@ -317,6 +326,12 @@ itself is what arms the lock.
 | `PurseCarryPercent` | `50` | 0-100 | Percent of last visit's takings added to the next purse, capped at three purses. |
 | `EnableBarter` | `true` | | Allow paying with goods he wants, valued at his live buy price. `false` makes the terminal refuse goods staged beside a ware ("Coins for my wares on this shore") and hides "Cover it with my goods"; the server settles a barter deal either way. Read on the **client**, synced from the server. |
 | `BarrkBotExport` | `true` | | Write `barrkbot_cargo_market.json`, `barrkbot_cargo_traders.json` and `barrkbot_cargo_visits.json` under `BepInEx/config/ValkyriesCargo/` for BarrkBOT to read, refreshed about once a minute; the world sidecar is still the source of truth. |
+
+### `[Meta]`
+
+| Key | Default | Meaning |
+|---|---|---|
+| `ConfigVersion` | `0` | **0.1.4.** The config file's layout version, stamped by the mod. Do not edit it: the mod migrates the file itself on boot (backing it up beside itself first) and stamps this when it finishes. Local, never synced. `cargo config` reads it against the current version. |
 
 ### `[Client]`
 
@@ -338,6 +353,7 @@ Prefix `cargo`. Console commands are not config: `LockConfiguration` does not to
 |---|---|
 | `cargo status` | Role, which side owns the config, the catalogue, the state channels, the transport, and — where the world runs — the director, the visit, the wire, the sidecar and every candidate. The instrument to reach for first. |
 | `cargo version` | This build, and that every client must run exactly it. |
+| `cargo config` | **0.1.4.** The config file's layout version against the current one, the catalogue overrides in words, and the last migration's boot line. Anyone, local. |
 | `cargo prefab <name>` | A game prefab's components, children, effect lists (with the networked/local branch each entry takes) and animator parameters. Try `Valkyrie`, `Dverger`, `odin`, `Haldor`. |
 | `cargo stock [prefab]` | His shelf as this machine last heard it: stock against target, what you pay, what he pays, the trend. Names one row, or the first 24. |
 | `cargo deal buy\|sell <prefab> [count]` | A deal without the terminal: builds the same `Deal`, sends it over the same wire, applies the same answer. The reference path. |
