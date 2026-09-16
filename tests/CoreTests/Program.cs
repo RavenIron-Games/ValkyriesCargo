@@ -3486,9 +3486,9 @@ namespace ValkyriesCargo.Tests
             {
                 // A stored line carrying only the rows TWO defaults share, with no evidence of either
                 // one's own extra row, is no longer scored as a raw-count/proportion tie (that was the
-                // must-fix bug's own mechanism): PickBase's eligibility gate requires at least half of
-                // what a candidate INTRODUCED over the previous one to survive in the stored line, and
-                // Ruby is 100% of what the newer default introduces here, so the newer default is simply
+                // must-fix bug's own mechanism): PickBase's eligibility gate wants at least ONE of the rows
+                // a candidate INTRODUCED over the previous default to survive in the stored line (zero is
+                // the only signal it was never reached), and Ruby is all the newer default introduces here, so the newer default is simply
                 // INELIGIBLE - the older one wins outright, which is also the safer answer (it does not
                 // invent a "-Ruby" removal the admin never made; Ruby just arrives from the shipped
                 // catalogue, exactly like a food row nobody customised).
@@ -3501,8 +3501,8 @@ namespace ValkyriesCargo.Tests
             {
                 // A genuine tie under the fixed algorithm: the newer default changes A (so it counts as
                 // "introduced", same as a brand-new row) and introduces D; the stored line keeps the OLD
-                // value of A and carries D, so it is 50% eligible for the newer default (one of the two
-                // rows it introduced survives) and the two candidates score an EQUAL number of raw matches
+                // value of A and carries D, so the newer default is eligible (one of the two rows it
+                // introduced survives; the gate wants at least one) and the two candidates score an EQUAL number of raw matches
                 // (new gains a match on D but loses the one it had on A). "ties go to the LAST" must still
                 // pick the newer one - provable because the two bases derive DIFFERENT overrides: picking
                 // the older one loses A's change entirely (D turns out to be a no-op against the current
@@ -3760,6 +3760,18 @@ namespace ValkyriesCargo.Tests
                       "Plan: the transform notices the stored line IS the current shipped line, not merely a line that happens to derive no overrides");
                 Equal("config: version 0 -> 2: Catalogue already matched the shipped 101 rows; overrides: none",
                       ConfigLedger.Describe(plan101), "Describe: an already-current-default file reads as such, not as 'customised, kept as none'");
+            {
+                // The version-1 rung (nit, review round 3): a file stamped 1 that still carries the 0.1.0
+                // line is past the rebase that would have moved it, so nothing lands in Kept and the
+                // transform derives no overrides - the 29 rows are about to arrive, and the line must not
+                // claim the stored line "matches the shipped default".
+                var snap1 = ConfigLedger.ParseIni(new[] { "[Meta]", "ConfigVersion = 1", "[Server]", "Catalogue = " + Catalogue.LegacyDefaultLine72 });
+                var plan1 = ConfigLedger.Plan(snap1, 1, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                string line1 = ConfigLedger.Describe(plan1);
+                Check(!line1.Contains("matches the shipped default"), "Describe: a file stamped 1 still on the 0.1.0 line is not called a match (" + line1 + ")");
+                Check(line1.Contains("older shipped default") && line1.Contains("101 rows"), "Describe: it says the older default moved to the shipped rows (" + line1 + ")");
+                Check(line1.StartsWith("config: version 1 -> 2: "), "Describe: the rung is named");
+            }
 
                 // A genuinely ambiguous file: not textually the LEGACY rebase default (so "kept"), not the
                 // CURRENT shipped line either, and its derived overrides prune to nothing anyway (the

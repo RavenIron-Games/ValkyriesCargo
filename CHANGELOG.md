@@ -18,8 +18,10 @@ the file itself, before any BepInEx bind, and decides what to do with every valu
   half-finished earlier run cannot destroy the only clean copy. A backup that could not be written at all
   leaves the retired key in the file and the version unstamped, so the migration retries next boot rather
   than losing the admin's line with no copy anywhere.
-- A failed migration never stops the mod loading - worst case the config binds exactly as it always did, and
-  `ConfigVersion` is left unstamped so the next boot retries rather than treating the failure as done.
+- A failed migration never stops the mod loading: every other value binds as it always did; the retired
+  `Catalogue` line is not read that boot (the shipped catalogue plus `CatalogueOverrides` is in force, and the
+  log says so), and `ConfigVersion` is left unstamped so the next boot retries rather than treating the
+  failure as done. A retry never overwrites overrides an admin has set from the console in the meantime.
 - One boot line says what happened, e.g. `config: version 0 -> 2: Catalogue was the 0.1.0 default, moved to
   the shipped 101 rows; overrides: none` or `config: version 0 -> 2: Catalogue was customised, kept as 3
   override(s): Ruby changed, FlametalNew added, Honey removed`. `cargo status` carries the short form; the new

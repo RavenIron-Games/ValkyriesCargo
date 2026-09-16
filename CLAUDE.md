@@ -1334,7 +1334,8 @@ Ghost mode (F11; the owner's decision 2026-09-07), a visit running, any client:
     on the boot line, a `com.raveniron.valkyriescargo.cfg.v0.bak` beside it holding the pre-migration file
     byte for byte, `cargo catalogue list` showing the 29 food rows the admin's old file never had AND the
     admin's own changes, and `cargo config` naming the file's version (now 2) against the current one. A
-    second boot on the now-migrated file should show `cargo config` unchanged and no new `.bak`.
+    second boot on the now-migrated file should show `cargo config: file version 2 of 2`, the same overrides,
+    `last migration: none` (the summary is this boot's, not the file's), and no new `.bak`.
 
 ---
 

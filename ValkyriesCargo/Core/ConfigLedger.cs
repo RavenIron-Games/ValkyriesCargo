@@ -207,7 +207,12 @@ namespace RavenIron.ValkyriesCargo.Core
             CatalogueTransformResult t = plan.CatalogueTransform;
             if (t == null)
             {
-                clause = "nothing to migrate";
+                // No catalogue transform on this rung: say what the rung did do, so a later version's
+                // plan never reads "nothing to migrate" over a list of moved values (nit, review round 3).
+                clause = plan.ResetToDefault.Count == 0 && plan.Kept.Count == 0
+                    ? "nothing to migrate"
+                    : plan.ResetToDefault.Count.ToString(CultureInfo.InvariantCulture) + " value(s) moved to their new defaults, " +
+                      plan.Kept.Count.ToString(CultureInfo.InvariantCulture) + " kept as yours";
             }
             else if (t.StoredLine == null)
             {
@@ -233,9 +238,14 @@ namespace RavenIron.ValkyriesCargo.Core
                     clause = "Catalogue differed from every shipped default but nothing of it survives as an override";
                 else if (keptValue != null)
                     clause = "Catalogue was customised, kept as " + t.Summary;
+                else if (t.AlreadyCurrentShippedLine)
+                    clause = "Catalogue matches the shipped default; overrides: none";
                 else
+                    // Nothing in Kept and not the current line: the stored line is an OLDER shipped default
+                    // that this rung no longer rebases (a file stamped 1 still carrying the 0.1.0 line), so
+                    // the shipped rows arrive and nothing of it survives as an override (nit, review round 3).
                     clause = t.Overrides.Length == 0
-                        ? "Catalogue matches the shipped default; overrides: none"
+                        ? "Catalogue was an older shipped default, moved to the shipped " + t.ShippedCount.ToString(CultureInfo.InvariantCulture) + " rows; overrides: none"
                         : "Catalogue carries " + t.Summary;
             }
 

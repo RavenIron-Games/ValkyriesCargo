@@ -318,10 +318,13 @@ namespace RavenIron.ValkyriesCargo.Config
             // (including CatalogueOverrides, just bound above) and hand its derived line to it.
             ConfigMigration.Finish(cfg, ConfigVersion);
 
-            // Where the world runs, this is the source of truth CatalogueEffective broadcasts; on a
-            // client it is refused by the sync (the server is the only writer) and stays as this
-            // machine's own computed line - shipped + its local overrides, same as before this existed -
-            // until the server's real value arrives and CatalogueEffective.ValueChanged reparses it.
+            // Where the world runs, this is the source of truth CatalogueEffective broadcasts. A client
+            // writes only its own copy: ServerSync's Broadcast is gated on `!IsLocked || isServer`, so a
+            // locked non-admin never sends it, an admin's write is held back by ProcessingServerUpdate
+            // during a server update and by ZNet.instance being null at bind time, and the server's value
+            // overwrites it at the handshake. Until then the client holds its own computed line - shipped
+            // + its local overrides, same as before this existed - and CatalogueEffective.ValueChanged
+            // reparses the server's when it lands.
             RecomputeCatalogue();
             CatalogueOverrides.SettingChanged += (_, __) => RecomputeCatalogue();
         }
