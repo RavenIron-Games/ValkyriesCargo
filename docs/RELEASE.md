@@ -100,6 +100,11 @@ wrong.
 > are his, and no agent logs into the store, creates an account, uploads, or accepts terms. The next
 > upload is his too.
 >
+> **`v0.1.3` cut 2026-09-16** (the visit clock: a visit ends on time with nobody online, and
+> `Server.PauseVisitWhenEmpty` holds it on an empty server; a 0.1.2 client is refused; a server updating from an
+> earlier version deletes its old config file first). Tagged, with the zip and the kit attached on GitHub;
+> **not uploaded at the time of the cut** — the owner's step.
+>
 > **`v0.1.2` cut 2026-09-15 evening** (the merchant guard; the store takes one upload per version number, so
 > it is a number of its own and the gate refuses a 0.1.1 client). Tagged, with the zip and the kit attached on
 > GitHub; **not uploaded at the time of the cut** — the owner's step.

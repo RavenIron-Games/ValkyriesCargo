@@ -23,7 +23,6 @@ option off): visit #21. Second boot (07:44, the second commit 4333134, PauseVisi
 [Info   : Unity Log] 09/16/2026 07:43:15: Game - OnApplicationQuit
 
 === boot 07:44, option on: visit #22 ===
-[Info   : Unity Log] 09/16/2026 07:43:15: Game - OnApplicationQuit
 [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.2 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
 [Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.
 [Info   : Unity Log] 09/16/2026 07:44:23: ZRpc timeout set to 30s 
@@ -44,6 +43,7 @@ option off): visit #21. Second boot (07:44, the second commit 4333134, PauseVisi
 [Info   :Valkyrie's Cargo] visit #22: dropped at (-56.27202, 65.25546, -6.993665)
 [Info   : Unity Log] 09/16/2026 07:49:17: Keep socket for playfab/8BF4F5368AF43770, try to reconnect before timeout
 [Info   : Unity Log] 09/16/2026 07:49:17: Player connection lost server "Storm10" that has join code 608444, now 1 player(s)
+[Info   : Unity Log] 09/16/2026 07:49:17: Failed to send, suspend TX on playfab/8BF4F5368AF43770 while trying to reconnect
 [Warning: Unity Log] 09/16/2026 07:50:46: ZRpc timeout detected
 [Info   :Valkyrie's Cargo] visit #22: clock paused: nobody online (Server.PauseVisitWhenEmpty)
 [Info   : Unity Log] 09/16/2026 07:56:38: Player joined server "Storm10" that has join code 608444, now 1 player(s)
@@ -57,3 +57,9 @@ option off): visit #21. Second boot (07:44, the second commit 4333134, PauseVisi
 [Info   :Valkyrie's Cargo] visit #22: one minute left
 [Info   :Valkyrie's Cargo] visit #22 ended: timer; takings 0 coins, purse 100000, 0 clock republish(es), 0 owed deliveries
 [Info   :Valkyrie's Cargo] visit #22: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   : Unity Log] 09/16/2026 08:00:16: Lobby cb55e99d-1408-4e16-a7e4-16d7de0d787f.r-20260323 for world 'Storm10' and network 59b486c7-ba8f-4b90-b17d-5634a096b758|AwAY0zwu7NXFFfQdr0WKl7//8tsU+Fdlc3RVcwAAAAAAAAAAAAAAAAAA5XZhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtZGU1N2U4NDAtY2RmMS00OWZjLTk0NGMtZjMxMzUzZTI0MTJjLndlc3R1cy5jbG91ZGFwcC5henVyZS5jb20= refreshed
+[Info   : Unity Log] 09/16/2026 08:01:01: Keep socket for playfab/8BF4F5368AF43770, try to reconnect before timeout
+[Info   : Unity Log] 09/16/2026 08:01:01: Player connection lost server "Storm10" that has join code 608444, now 1 player(s)
+[Info   : Unity Log] 09/16/2026 08:01:01: Failed to send, suspend TX on playfab/8BF4F5368AF43770 while trying to reconnect
+[Warning: Unity Log] 09/16/2026 08:02:31: ZRpc timeout detected
+[Info   : Unity Log] 09/16/2026 08:04:21: Game - OnApplicationQuit
