@@ -761,6 +761,7 @@ namespace RavenIron.ValkyriesCargo
             NeedMethod(typeof(ZNet), "IsServer", Type.EmptyTypes, bad);       // the role, decided at runtime (CargoTick)
             NeedMethod(typeof(ZNet), "GetServerRPC", Type.EmptyTypes, bad);
             NeedMethod(typeof(ZNet), "GetPeers", Type.EmptyTypes, bad);
+            NeedMethod(typeof(ZNet), "GetNrOfPlayers", Type.EmptyTypes, bad);   // the empty-server count the visit clock shares with the engine's world clock
             NeedField(typeof(ZNetPeer), "m_rpc", rpc, true, bad);
             NeedField(typeof(ZNetPeer), "m_socket", typeof(ISocket), true, bad);   // the platform id the ledgers key on
             NeedMethod(typeof(ISocket), "GetHostName", Type.EmptyTypes, bad);
@@ -769,7 +770,7 @@ namespace RavenIron.ValkyriesCargo
             NeedGenericMethod(typeof(ZRoutedRpc), "Register", 2, 2, bad);
             NeedMethod(typeof(ZRoutedRpc), "InvokeRoutedRPC", new[] { typeof(long), typeof(string), typeof(object[]) }, bad);
             NeedLongValue(typeof(ZRoutedRpc), "Everybody", 0L, bad);         // Spawner sends Keys.Vanish to it
-            return 15;
+            return 16;
         }
 
         private static void ProbeLocalisation()

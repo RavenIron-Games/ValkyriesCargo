@@ -131,6 +131,9 @@ director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entr
 roll: held: a random event is active (a raid, a storm, or a visit)
 ```
 
+The registration line is the 2026-09-06 wording; since 2026-09-16 (PR #97) it reads `duration 300 s, runs
+whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, …`.
+
 The day length the price drift counts is read from the live `EnvMan` and was 1800 s, not the
 compiled default of 1200. The hold was against a real foreign event — another mod had a storm
 running. No exception from this mod in that log.
@@ -170,7 +173,8 @@ beside it. No exception from the mod on either side, all day.
   then counted. `cargo terminal demo` drew the window on an in-process market first.
 - **Visits begin and end**: natural rolls and forced ones; of the morning's six, three ended by the
   timer and three by dismissal (`cargo dismiss` and "Send him off"); the eligibility refusals
-  (`not rested`, `comfort < 4`, `on cooldown`) echoed to the client; the clock paused with nobody near;
+  (`not rested`, `comfort < 4`, `on cooldown`) echoed to the client; the clock paused with nobody near
+  (a behaviour removed 2026-09-16, PR #97: the clock runs whoever is near him);
   and a relog mid-visit that the persistent merchant survived. Not yet seen: the centre banner and a
   non-admin refused.
 - **The sidecar and the export**: stock, purse, visit, cooldown and session rows written on every
@@ -267,7 +271,7 @@ itself is what arms the lock.
 | `AvoidLandmarks` | `true` | | Refuse a visit at a place the game pins on the map that is neither a camp nor a dungeon door: the Sacrificial Stones, every boss altar. The game's own map-icon flag, no name list; the server log names what this world has at the first roll. Read on the server; a client's `cargo status` cannot see it. |
 | `LocationClearance` | `8` | 0-64 | Metres around the player added to a location's own radius for the three checks above; the margin that keeps him off the boundary fence. |
 | `MerchantLifespanSeconds` | `300` | 30-1800 | How long Ingvar stays, as the vanilla random event's duration. The clock runs from the moment the visit begins whoever is near him or not, on the server's own time. |
-| `PauseVisitWhenEmpty` | `false` | | Hold a running visit's clock while nobody is online, so a visit started at bedtime is still there in the morning. Off: he leaves when the lifespan runs out, empty server or not. Read on the server. |
+| `PauseVisitWhenEmpty` | `false` | | Hold a running visit's clock while nobody is online, so a visit started at bedtime is still there in the morning. Off: he leaves when the lifespan runs out, empty server or not. A listen host counts as a player online, so it never engages there. Read on the server. |
 | `ApproachDistance` | `3.5` | 1-10 | Metres from the player at which he stops walking up. Read on the **client that owns the merchant**, synced from the server. |
 | `BodyPrefab` | `Dverger` | | The engine creature prefab the merchant is **cloned from, for good** — `Character`, `MonsterAI` and the collider all come from it, whatever body is drawn on top. Must have a `Humanoid`, a `MonsterAI` and an `Animator`. This is not the custom-body switch; that is `CustomBody`. |
 | `CustomBody` | `true` | | Put Ingvar's own body on the `BodyPrefab` clone from the AssetBundle embedded in this DLL. `false` keeps the Dverger stand-in visible, and so does a build with no bundle embedded (`cargo body` says which). This is the switch, not `BodyPrefab`. Read on the **client**, synced from the server; a dedicated server never reads it. |

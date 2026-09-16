@@ -380,7 +380,9 @@ audio; it is not the summon horn.
   `GetNrOfPlayers() == 0` the engine freezes the world clock on, so a visit started at bedtime is still there
   in the morning. The event's `m_time` (real seconds; held only by that option) is the authority; the server republishes
   `VisitState.endWorldTime` whenever `now + (duration − m_time)` drifts more than a second from what it published (a
-  pause, a resume, a sleep skip), and every `VisitClock` retargets without re-arming its one-minute warning.
+  sleep skip, a stretch the option held, a stretch nobody was online to mirror: with nobody online the server does
+  not republish at all, and the first tick with a player back retargets it once), and every `VisitClock` retargets
+  without re-arming its one-minute warning. A listen host counts itself online, so the option never engages there.
 - Two terminals open: both render `MarketState`; a deal from either updates both. Listen host: works as pilot and server.
 
 ### 3.8 Messages

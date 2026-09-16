@@ -183,7 +183,7 @@ namespace RavenIron.ValkyriesCargo.Core
                                   "the market's drift half-life falls back to the compiled 1200 s");
             Declare(AdminList, 10, "ZNet.IsAdmin(string), ZNet.GetUID / GetWorldUID / IsDedicated",
                                    "nothing: AdminGate already fails closed on its own");
-            Declare(Rpc, 11, "ZRpc.Register<T> and Register(string,RpcMethod.Method) / Invoke, ZNet.instance / IsServer / GetServerRPC / GetPeers, ZNetPeer.m_rpc / m_socket, ISocket.GetHostName, ZRoutedRpc.instance / Register<T,U> / InvokeRoutedRPC / Everybody == 0",
+            Declare(Rpc, 11, "ZRpc.Register<T> and Register(string,RpcMethod.Method) / Invoke, ZNet.instance / IsServer / GetServerRPC / GetPeers / GetNrOfPlayers, ZNetPeer.m_rpc / m_socket, ISocket.GetHostName, ZRoutedRpc.instance / Register<T,U> / InvokeRoutedRPC / Everybody == 0",
                              "the deal wire and the admin wire (DealWire, AdminRpc)");
             Declare(Localisation, 12, "Localization.instance / Localize(string), MessageHud.instance / ShowMessage / MessageType.Center / TopLeft",
                                       "the terminal shows raw $item_ tokens instead of names, and the arrival and delivery banners are not shown");

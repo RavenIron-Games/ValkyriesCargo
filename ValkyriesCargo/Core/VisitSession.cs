@@ -84,8 +84,10 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>
         /// Every server tick while active: the event says how many real seconds remain. If the
         /// world-time deadline that implies has drifted more than a second from what was published
-        /// (the event paused with nobody near, resumed, or the world clock jumped through a sleep),
-        /// retarget the clock and hand back the state to republish. Otherwise null.
+        /// (the world clock jumped through a sleep, the event's clock ran on through a stretch nobody
+        /// was online to mirror, or Server.PauseVisitWhenEmpty held it), retarget the clock and hand
+        /// back the state to republish. Otherwise null. The director does not call this while the
+        /// server is empty.
         /// </summary>
         public string Sync(double worldTime, double eventRemainingSeconds)
         {

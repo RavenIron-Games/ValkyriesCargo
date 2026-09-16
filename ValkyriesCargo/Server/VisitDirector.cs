@@ -246,8 +246,19 @@ namespace RavenIron.ValkyriesCargo.Server
                     }
                     else
                     {
-                        string republish = _session.Sync(worldTime, CargoEvent.Remaining(res));
-                        if (republish != null) Publish(republish);
+                        // The clock mirror is for players. With nobody online the engine freezes the world
+                        // clock (ZNet.UpdateNetTime) while the event's own clock runs on, so a Sync every tick
+                        // would republish a moving end time to nobody, once a second, for the whole empty
+                        // stretch (visit #21, 2026-09-16: 206 republishes with the server empty). Nothing is
+                        // synced while the server is empty; the first tick with a player back retargets the
+                        // mirror once (one republish per empty stretch), and End() takes a timer end's
+                        // duration from the lifespan, not from this clock.
+                        int online = ZNet.instance != null ? ZNet.instance.GetNrOfPlayers() : 0;
+                        if (online > 0)
+                        {
+                            string republish = _session.Sync(worldTime, CargoEvent.Remaining(res));
+                            if (republish != null) Publish(republish);
+                        }
 
                         // Issue #59 (2026-09-08): how many terminals are open on him rides in VisitState, so
                         // the merchant's owner can hold the leash for a player it may not have instanced.
@@ -271,7 +282,6 @@ namespace RavenIron.ValkyriesCargo.Server
                         // The clock runs whoever is near him (CargoEvent registers the event that way, the
                         // owner's decision of 2026-09-16); the one exception is Server.PauseVisitWhenEmpty:
                         // an EMPTY server holds it. Applied to the running event once a second, logged on change.
-                        int online = ZNet.instance != null ? ZNet.instance.GetNrOfPlayers() : 0;
                         bool pause = VisitPause.ShouldPause(ModConfig.PauseVisitWhenEmpty != null && ModConfig.PauseVisitWhenEmpty.Value, online);
                         bool flipped = CargoEvent.SetPaused(res, pause);
                         if (flipped || pause != _clockPaused)
@@ -560,11 +570,15 @@ namespace RavenIron.ValkyriesCargo.Server
             // the `started_at` derived from it would land before the visit began. It also keeps running
             // while the event's clock is held (Server.PauseVisitWhenEmpty, an empty server), which the
             // clock deliberately does not.
-            // `Sync` retargets the clock's end from the event's own remaining seconds, so this is elapsed
-            // event time: 300 at the timer, less on a dismiss. Found by review, 2026-09-07.
-            double duration = _session.Clock != null
-                ? Math.Max(0.0, CargoEvent.Lifespan() - _session.Clock.Remaining(worldTime))
-                : 0.0;
+            // A timer end is the whole lifespan by definition. A dismiss reads the clock, which `Sync`
+            // retargets from the event's own remaining seconds while anyone is online (not while the
+            // server is empty: nothing to mirror, see Tick), so that is elapsed event time. Found by
+            // review, 2026-09-07; the timer case split out 2026-09-16 with the empty-server Sync dropped.
+            double duration = reason == "timer"
+                ? CargoEvent.Lifespan()
+                : _session.Clock != null
+                    ? Math.Max(0.0, CargoEvent.Lifespan() - _session.Clock.Remaining(worldTime))
+                    : 0.0;
             DateTime endedUtc = DateTime.UtcNow;
             _visitHistory.Record(id, pilot, endedUtc.AddSeconds(-duration), endedUtc, duration, _lastTakings, reason);
 

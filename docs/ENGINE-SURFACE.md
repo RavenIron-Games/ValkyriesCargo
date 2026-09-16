@@ -248,7 +248,7 @@ RandomEvent.m_forceMusic | assembly_valheim | call | empty: no raid music
 RandomEvent.m_forceEnvironment | assembly_valheim | call | empty: no weather; house rule 4 never touches EnvMan
 RandomEvent.m_time | assembly_valheim | call | CargoEvent.Remaining and cargo status; real seconds off FixedUpdate, which has no players-online gate
 RandomEvent.m_pos | assembly_valheim | fact | where the pause radius is measured from
-RandomEvent.Update | assembly_valheim | fact | THE clock rule, the other half: m_time += dt every tick UNLESS m_pauseIfNoPlayerInArea is on and nobody is in the area; ends past m_duration
+RandomEvent.Update | assembly_valheim | fact | THE clock rule, the other half: m_time += dt every tick UNLESS m_pauseIfNoPlayerInArea is on and nobody is in the area; ends past m_duration; AddShake when the curve has keys
 RandomEvent.OnActivate | assembly_valheim | fact | shows m_startMessage once, on a client inside the range
 RandomEvent.OnDeactivate | assembly_valheim | fact | shows m_endMessage when the event ended while active
 Heightmap.Biome | assembly_valheim | type | RandomEvent.m_biome = Heightmap.Biome.All

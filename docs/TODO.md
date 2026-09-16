@@ -75,8 +75,8 @@ step 4).
 - [ ] **Boot and status:** the client boot line with `renderer=True` (2); the config lock, a local
       `MinComfortLevel` edit loses to the server (4); `cargo prefab Valkyrie|Dverger|odin|Haldor` pasted
       back into CLAUDE.md (5); the runtime `m_activeArea` in `cargo status` (6); the comfort report (7).
-- [ ] **Visit A:** `cargo visit` with the banner and the pilot line (8); the clock pausing past 96 m and
-      resuming (9); the timer end at 300 s with the one-minute warning (10); an unrested player refused
+- [ ] **Visit A:** `cargo visit` with the banner and the pilot line (8); the clock running on past 96 m and
+      the empty-server halves (9); the timer end at 300 s with the one-minute warning (10); an unrested player refused
       at the gate (12).
 - [ ] **Visit B:** `cargo dismiss` ends it early with `ended: admin <name>` (11).
 - [ ] **Visit C:** a deal on the wire with the price moving on every machine (13); the refusals

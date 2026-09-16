@@ -11,7 +11,9 @@ namespace RavenIron.ValkyriesCargo.Core
     /// gate), so a visit ends its lifespan after it began, full stop. The ONE exception is the owner's
     /// option `Server.PauseVisitWhenEmpty` (off by default): an EMPTY server holds the clock, so a visit
     /// started at bedtime is still there in the morning. "Empty" is `ZNet.GetNrOfPlayers() == 0`, the same
-    /// count the engine freezes the world clock on. Distance never enters into it any more.
+    /// count the engine freezes the world clock on; a listen host counts itself, so the option never engages
+    /// there. Distance never enters into it any more. With nobody online the director also stops mirroring
+    /// the clock to VisitState (nothing to mirror; the first tick with a player back retargets it once).
     /// </summary>
     public static class VisitPause
     {
