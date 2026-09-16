@@ -208,14 +208,15 @@ stay and the body can move.
 | `Chat.SetNpcText(GameObject, Vector3, float, float, string, string, bool)` | public | 34745 |
 | `Odin.m_despawn` | public `EffectList` | 116195 |
 | `EffectList.Create(Vector3, Quaternion, Transform, float, int)` | public | 29968 |
-| `Player.Interact(GameObject, bool, bool)` | **private** (the 1.0.12 decompile, line 13708) | - |
-| `Player.m_lastHoverInteractTime` | **private** `float` (1.0.12, line 9817) | - |
+| `Player.Interact(GameObject, bool, bool)` | **private** | 13708 (1.0.12) |
+| `Player.m_lastHoverInteractTime` | **private** `float` | 9817 (1.0.12) |
 
 The two `Player` rows landed with PR #94 (2026-09-15): `Patch_Player_Interact` names the method in its
 Harmony attribute and the field through `___injection`, so both are the `RPC_Damage` class of silence -
 a rename is a failure at PatchAll, not a compile error - and without them the use key on Ingvar falls
 back to the first `Interactable` in component order (on a machine with a taming mod, the tame-follow).
-They are asked for as private; the count is 24.
+The two line numbers are the 1.0.12 decompile's, not the 0.221.12 one the rows above cite. They are
+asked for without the public check (a probe asserts presence and shape, never privacy); the count is 24.
 
 `Character.Faction.Players` is asked for **by name**, never by value: vanilla's enums are ordered and
 a member inserted ahead of it renumbers every one that follows, so the name is the durable half and

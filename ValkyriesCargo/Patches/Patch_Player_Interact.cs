@@ -19,12 +19,15 @@ namespace RavenIron.ValkyriesCargo.Patches
     /// House rule 1: <c>Priority.Low</c> and <c>__runOriginal</c> honoured. A mod that refuses interaction
     /// outright (a seated or spectator gate, a "no use while a window is open" rule) prefixes the same
     /// method and cancels it; running last and stepping aside when it has, we never open the terminal or
-    /// fire a dismiss in a state such a mod forbade. Running last is also what "ours whatever else sits on
-    /// the prefab" wants.
+    /// fire a dismiss in a state such a mod forbade. Priority orders us only against other PREFIXES on
+    /// this method; the component order the Wonderland bug lives in is untouched by it, and is handled by
+    /// <c>MerchantGuard</c> and by this prefix asking for <c>CargoMerchant</c> by type, never for "the first
+    /// Interactable".
     ///
     /// What changes for every player, taming mod or not: the interact animation is NOT played for him.
-    /// Vanilla's <c>DoInteractAnimation</c> is private (it snaps the player round to face the target and
-    /// fires the <c>interact</c> trigger) and ran whenever <c>CargoMerchant.Interact</c> answered true; no
+    /// Vanilla's <c>DoInteractAnimation</c> is <c>protected</c> on <c>Humanoid</c>, out of a static patch
+    /// class's reach (it snaps the player round to face the target and fires the <c>interact</c> trigger),
+    /// and ran whenever <c>CargoMerchant.Interact</c> answered true; no
     /// vanilla trader plays one either - Haldor's <c>Trader.Interact</c> answers false on a successful
     /// open - so he now behaves like the game's own traders. Deliberate, and the reason it is written here.
     /// </summary>

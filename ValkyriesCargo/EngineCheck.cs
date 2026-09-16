@@ -592,7 +592,8 @@ namespace RavenIron.ValkyriesCargo
             NeedField(typeof(Odin), "m_despawn", typeof(EffectList), true, bad);
             // Patch_Player_Interact names both in strings (the target, and the stamp by ___injection): a
             // rename is a Harmony failure at PatchAll, not a compile error - the RPC_Damage class of silence.
-            // Both PRIVATE, asked for as such. Without them the use key on Ingvar falls back to the first
+            // Both PRIVATE today, asked for without the public check (a probe asserts presence and shape,
+            // never privacy). Without them the use key on Ingvar falls back to the first
             // Interactable in component order: on a machine with a taming mod, the tame-follow again.
             NeedMethod(typeof(Player), "Interact", new[] { typeof(GameObject), typeof(bool), typeof(bool) }, bad);
             NeedField(typeof(Player), "m_lastHoverInteractTime", typeof(float), false, bad);
