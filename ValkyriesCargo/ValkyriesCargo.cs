@@ -84,7 +84,7 @@ namespace RavenIron.ValkyriesCargo
                 $"{PluginName} v{PluginVersion} loaded - renderer={HasRenderer}, " +
                 $"{patches.StatusLine()}, " +
                 $"catalogue={ModConfig.CatalogueParsed.Count} entries" +
-                (ModConfig.CatalogueProblems.Count > 0 ? $" ({ModConfig.CatalogueProblems.Count} problem(s), see `cargo status`)" : "") +
+                (ModConfig.CatalogueProblemCount > 0 ? $" ({ModConfig.CatalogueProblemCount} problem(s), see `cargo status`)" : "") +
                 $", {EngineCheck.StatusLine()}" +
                 ", ServerSync version gate armed; role is decided when a world loads.");
         }

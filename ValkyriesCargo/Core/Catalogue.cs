@@ -71,6 +71,38 @@ namespace RavenIron.ValkyriesCargo.Core
             "LoxMeat:6:40:120:Want, SerpentMeat:5:40:120:Want, ChickenMeat:2:40:120:Want, HareMeat:7:40:120:Want, " +
             "FishRaw:2:40:120:Want";
 
+        /// <summary>
+        /// The 0.1.0 default, verbatim (`git show v0.1.0-rc5:ValkyriesCargo/Core/Catalogue.cs`; unchanged rc1
+        /// through rc5; md5 of the joined string 9590a53b88234607916ca9ab3fc364ea). Kept ONLY for
+        /// <c>ConfigLedger</c>'s version-1 rebase and <c>CatalogueOverrides</c>' base-picking transform
+        /// (2026-09-16, the config migration): a stored config line still carrying this exact text is the
+        /// mod's own old default, never an admin's edit. Never shipped again.
+        /// </summary>
+        public const string LegacyDefaultLine72 =
+            "Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Silver:40:12:36:Ware, BlackMetal:60:10:30:Ware, " +
+            "FlametalNew:110:6:18:Ware, Eitr:45:10:30:Ware, BlackCore:300:2:6:Ware, Amber:7:30:90:Ware, AmberPearl:14:20:60:Ware, " +
+            "Ruby:29:15:45:Ware, SilverNecklace:43:8:24:Ware, ArrowIron:2:100:300:Ware, ArrowFrost:3:100:300:Ware, " +
+            "BoltIron:3:100:300:Ware, MeadHealthMinor:12:10:30:Ware, MeadStaminaMinor:12:10:30:Ware, MeadTasty:10:10:30:Ware, " +
+            "Honey:2:50:150:Ware, " +
+            "Wood:1:200:600:Want, RoundLog:3:100:300:Want, FineWood:3:100:300:Want, ElderBark:3:60:180:Want, " +
+            "Blackwood:4:60:180:Want, YggdrasilWood:5:60:180:Want, Resin:1:100:300:Want, Coal:1:100:300:Want, " +
+            "Stone:1:200:600:Want, Flint:1:60:180:Want, Feathers:3:60:180:Want, " +
+            "LeatherScraps:3:60:180:Want, DeerHide:3:60:180:Want, TrollHide:6:20:60:Want, WolfPelt:6:40:120:Want, " +
+            "LoxPelt:8:40:120:Want, ScaleHide:6:40:120:Want, AskHide:10:40:120:Want, BjornHide:10:40:120:Want, " +
+            "Flax:3:100:300:Want, LinenThread:10:50:150:Want, Barley:3:100:300:Want, JuteRed:6:40:120:Want, " +
+            "JuteBlue:8:40:120:Want, WolfHairBundle:4:40:120:Want, " +
+            "CopperOre:5:40:120:Want, TinOre:5:40:120:Want, IronScrap:22:30:90:Want, SilverOre:36:20:60:Want, " +
+            "BlackMetalScrap:50:20:60:Want, FlametalOreNew:90:10:30:Want, " +
+            "Guck:4:40:120:Want, Bloodbag:3:40:120:Want, Entrails:3:40:120:Want, Ooze:3:40:120:Want, Chain:12:20:60:Want, " +
+            "Chitin:5:40:120:Want, Obsidian:4:40:120:Want, Crystal:8:20:60:Want, FreezeGland:4:40:120:Want, " +
+            "Needle:6:40:120:Want, SurtlingCore:15:10:30:Want, Sap:6:40:120:Want, Softtissue:8:30:90:Want, " +
+            "Carapace:10:40:120:Want, WitheredBone:8:30:90:Want, " +
+            "TrophyDeer:8:10:30:Want, TrophyBoar:8:10:30:Want, TrophyNeck:6:10:30:Want, TrophyGreydwarf:8:10:30:Want, " +
+            "TrophySkeleton:8:10:30:Want, TrophyDraugr:12:10:30:Want, TrophyWolf:15:10:30:Want, TrophyGoblin:15:10:30:Want";
+
+        /// <summary>Every default this catalogue has shipped with, oldest first. <c>CatalogueOverrides.Derive</c> picks whichever one a stored line descends from.</summary>
+        public static readonly string[] HistoricalDefaults = { LegacyDefaultLine72, DefaultLine };
+
         private readonly List<CatalogueEntry> _entries = new List<CatalogueEntry>();
         private readonly Dictionary<string, CatalogueEntry> _byPrefab =
             new Dictionary<string, CatalogueEntry>(StringComparer.Ordinal);

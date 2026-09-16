@@ -54,6 +54,9 @@
     <Compile Include="..\..\ValkyriesCargo\Core\BarrkExport.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\SidecarThenMirror.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\BodyMotion.cs" />
+    <!-- The config migration (2026-09-16): the ledger's decisions and the catalogue-overrides model. -->
+    <Compile Include="..\..\ValkyriesCargo\Core\ConfigLedger.cs" />
+    <Compile Include="..\..\ValkyriesCargo\Core\CatalogueOverrides.cs" />
     <!-- P10b: the compiled-in baseline and the probe registry. Both are pure by design - the game
          side that reads the live numbers and touches the game types is ValkyriesCargo\EngineCheck.cs,
          which this harness deliberately cannot see. -->

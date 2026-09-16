@@ -188,10 +188,13 @@ takings, measured on the gross.
 
 ---
 
-## 4. The config line (mirrors the tables; `Prefab:Base:Target:Max:Kind`)
+## 4. The shipped defaults (mirrors the tables; `Prefab:Base:Target:Max:Kind`)
+
+`Core/Catalogue.DefaultLine`, verbatim - no longer a literal cfg key since 0.1.4 (section 9: the shipped
+catalogue stays code, and the cfg holds only `Server.CatalogueOverrides`, what changed from this):
 
 ```
-Catalogue = Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Silver:40:12:36:Ware, BlackMetal:60:10:30:Ware,
+Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Silver:40:12:36:Ware, BlackMetal:60:10:30:Ware,
   FlametalNew:110:6:18:Ware, Eitr:45:10:30:Ware, BlackCore:300:2:6:Ware, Amber:7:30:90:Ware,
   AmberPearl:14:20:60:Ware, Ruby:29:15:45:Ware, SilverNecklace:43:8:24:Ware, ArrowIron:2:100:300:Ware,
   ArrowFrost:3:100:300:Ware, BoltIron:3:100:300:Ware, MeadHealthMinor:12:10:30:Ware, MeadStaminaMinor:12:10:30:Ware,
@@ -222,15 +225,16 @@ Catalogue = Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Silver:40:12:36:Ware, Blac
 A hundred and one entries (72 until 2026-09-15; section 8). `MarketState` at ~40 bytes a row is about 4 KB, still
 under ServerSync's compression floor (10 KB), so it goes uncompressed on every change.
 
-**Editing it on a running server (2026-09-07).** The line is the config entry `Server.Catalogue`, synced and locked,
-so it can change three ways: the cfg file on the server (a restart reads it), Configuration Manager on an admin's
-client (ServerSync accepts a locked value from anyone on the admin list), or the console — `cargo catalogue add
-Prefab:Base:Target:Max:Kind` (add, or change an entry already there, in place), `cargo catalogue remove Prefab`,
-`cargo catalogue reset`, all admin, from any console; `cargo catalogue list` prints it and needs no admin. The console
-verbs edit the entry itself, so the sync, the lock, the cfg file and the BarrkBOT export all follow. However it
-changed, the director applies it as soon as no visit is running: stock and drift stamps carry by prefab, a new row
-starts at target, a dropped row goes, a lowered max clamps, and the purse, the visit number and the delivery sequence
-carry (`Market.WithCatalogue`, in the harness). While a visit runs the change waits, once in the log and always in
+**Editing it on a running server (2026-09-07; the key renamed 2026-09-16 - see section 9).** The config entry is
+`Server.CatalogueOverrides` (`Server.Catalogue` retired), synced and locked, so it can change three ways: the cfg
+file on the server (a restart reads it), Configuration Manager on an admin's client (ServerSync accepts a locked
+value from anyone on the admin list), or the console — `cargo catalogue add Prefab:Base:Target:Max:Kind` (add, or
+change an entry already there, in place), `cargo catalogue remove Prefab`, `cargo catalogue reset`, all admin, from
+any console; `cargo catalogue list` prints the full effective catalogue and needs no admin. The console verbs edit
+`CatalogueOverrides`, so the sync, the lock, the cfg file and the BarrkBOT export all follow. However it changed, the
+director applies it as soon as no visit is running: stock and drift stamps carry by prefab, a new row starts at
+target, a dropped row goes, a lowered max clamps, and the purse, the visit number and the delivery sequence carry
+(`Market.WithCatalogue`, in the harness). While a visit runs the change waits, once in the log and always in
 `cargo status`, because the settled-deal ring does not carry. A prefab this game has no item for is refused by `add` in
 words, and dropped from a hand-edited line with one log line.
 
@@ -389,3 +393,32 @@ tier 0) and its base here is the raw rule for a tier-2 common (4 × 0.7 → 3). 
 catalogue - 34 of 101 with Honey, Barley and the three shipped meads - about seven of a twenty-row shelf, fourteen
 of forty with the backpack mod. The owner's line to move; the next four to go would be `DeerMeat`, `ChickenMeat`,
 `CarrotSeeds` and one of the two Meadows dishes.
+
+---
+
+## 9. Overrides (0.1.4; the config migration)
+
+`Server.Catalogue` - the whole line above, section 4 - is retired. The shipped catalogue stays code (this
+file, `Core/Catalogue.DefaultLine`); the cfg holds only `Server.CatalogueOverrides`, what an admin actually
+changed. This is what stops a stored line from shadowing a new default forever - which is exactly how
+Wonderland kept the 72-row 0.1.0 catalogue across two updates and never saw the 29 food rows in section 8
+(2026-09-16). An existing 0.1.3-or-earlier file migrates itself on boot: `Core/ConfigLedger.cs` and
+`Config/ConfigMigration.cs`, the boot line, the backup and all.
+
+**Format**: the catalogue's own row syntax, `Prefab:Base:Target:Max:Kind`, to add a new row or change a
+shipped one; `-Prefab`, to remove a shipped row; comma-separated. Empty (the default) is the shipped
+catalogue exactly as it ships.
+
+- `Ruby:40:15:45:Ware` - Ruby is shipped at `29:15:45:Ware`; this overrides its base price to 40, keeping its
+  shipped position on the shelf.
+- `FlametalNew:120:6:18:Ware, -Honey` - FlametalNew's base price raised to 120, and Honey (a shipped Ware)
+  taken off the shelf entirely.
+
+`Core/CatalogueOverrides.cs` (pure) is `Apply` (shipped + overrides -> the catalogue that actually trades,
+shipped rows in shipped order, upserts in place, new rows appended, removals last) and `Derive` (an old
+`Server.Catalogue` line -> the overrides that reproduce it, for the migration alone). Editable on a running
+server the same three ways as before: the cfg file, Configuration Manager as an admin, or the console -
+`cargo catalogue add|remove|reset` (admin) edit `CatalogueOverrides`, `cargo catalogue list` (anyone) still
+shows the full effective catalogue. `cargo status` names it `catalogue: 101 shipped + <N override(s) in
+words>`; `cargo config` (2026-09-16, anyone, local) shows the config file's own migration version alongside
+the overrides.

@@ -79,6 +79,8 @@ namespace ValkyriesCargo.Tests
             EngineBaselineTests();
             EngineProbeTests();
             VisitPauseTests();
+            CatalogueOverridesTests();
+            ConfigLedgerTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
             return _failed == 0 ? 0 : 1;
@@ -3360,6 +3362,473 @@ namespace ValkyriesCargo.Tests
             Check(VisitPause.ShouldPause(true, -1), "a negative count is an empty server too");
             Check(VisitPause.Describe(true, 0).Contains("nobody online") && VisitPause.Describe(true, 0).Contains("PauseVisitWhenEmpty"), "the pause line names the option");
             Check(VisitPause.Describe(false, 3) == "clock running: 3 online", "the run line counts them");
+        }
+
+        // ---- the config migration (2026-09-16) ------------------------------------------------------
+
+        /// <summary>Index of the entry named `prefab`, or -1. Test-local; Catalogue itself exposes no public index lookup.</summary>
+        private static int IndexOf(Catalogue cat, string prefab)
+        {
+            for (int i = 0; i < cat.Entries.Count; i++)
+                if (string.Equals(cat.Entries[i].Prefab, prefab, StringComparison.OrdinalIgnoreCase)) return i;
+            return -1;
+        }
+
+        /// <summary>The 0.1.0 default with Ruby's numbers changed, Honey removed, FlametalNew's numbers changed, and a new Coins:1:1:1:Want row - the customised-72 scenario the brief's Part 1/2 tests share.</summary>
+        private static string BuildCustomised72()
+        {
+            string report;
+            string line = Catalogue.LegacyDefaultLine72;
+            line = Catalogue.Upsert(line, "Ruby:40:15:45:Ware", out report);
+            line = Catalogue.Upsert(line, "FlametalNew:130:6:18:Ware", out report);
+            line = Catalogue.Upsert(line, "Coins:1:1:1:Want", out report);
+            line = Catalogue.Remove(line, "Honey", out report);
+            return line;
+        }
+
+        /// <summary>The 0.1.4 default (101 rows) with one row changed (Ruby), two removed (Bread, Onion -
+        /// both food rows the legacy default never carried) and one added (Coins) - the regression case
+        /// PickBase's proportion score used to lose (review, must-fix): a proportion-scored 72-row legacy
+        /// default beats a damaged 101-row default on every such line.</summary>
+        private static string BuildCustomised101()
+        {
+            string report;
+            string line = Catalogue.DefaultLine;
+            line = Catalogue.Upsert(line, "Ruby:40:15:45:Ware", out report);
+            line = Catalogue.Remove(line, "Bread", out report);
+            line = Catalogue.Remove(line, "Onion", out report);
+            line = Catalogue.Upsert(line, "Coins:1:1:1:Want", out report);
+            return line;
+        }
+
+        /// <summary>The Part 2 invariant: Apply(Parse(DefaultLine), Derive(stored, HistoricalDefaults, DefaultLine)) reproduces every row `stored` actually had.</summary>
+        private static void RoundTrip(string stored, string label)
+        {
+            string overrides = CatalogueOverrides.Derive(stored, Catalogue.HistoricalDefaults, Catalogue.DefaultLine);
+            var problems = new List<string>();
+            Catalogue applied = CatalogueOverrides.Apply(Catalogue.Parse(Catalogue.DefaultLine, null), overrides, problems);
+            Catalogue storedCat = Catalogue.Parse(stored, null);
+            Check(problems.Count == 0, "round-trip (" + label + "): Apply reports no problems");
+            foreach (CatalogueEntry e in storedCat.Entries)
+            {
+                CatalogueEntry a = applied.Find(e.Prefab);
+                Check(a != null && a.BasePrice == e.BasePrice && a.TargetStock == e.TargetStock &&
+                      a.MaxStock == e.MaxStock && a.Kind == e.Kind,
+                      "round-trip (" + label + "): " + e.Prefab + " reproduces the stored row");
+            }
+        }
+
+        private static void CatalogueOverridesTests()
+        {
+            Section("CatalogueOverrides: the shipped catalogue stays code; the cfg holds only what changed (2026-09-16)");
+
+            string shippedLine = "Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Honey:2:50:150:Ware, Wood:1:200:600:Want";
+            Catalogue shipped = Catalogue.Parse(shippedLine, null);
+
+            // ---- Apply ----
+            {
+                var problems = new List<string>();
+                Catalogue applied = CatalogueOverrides.Apply(shipped, "Iron:30:20:60:Ware", problems);
+                Equal(0, problems.Count, "Apply: a clean upsert reports nothing");
+                Equal(4, applied.Count, "Apply: changing a shipped row does not change the count");
+                Equal(30, applied.Find("Iron").BasePrice, "Apply: the upsert's numbers win");
+                Equal(1, IndexOf(applied, "Iron"), "Apply: a changed row keeps its shipped position");
+            }
+            {
+                var problems = new List<string>();
+                Catalogue applied = CatalogueOverrides.Apply(shipped, "Ruby:40:15:45:Ware", problems);
+                Equal(0, problems.Count, "Apply: a new prefab reports nothing");
+                Equal(5, applied.Count, "Apply: a new prefab appends");
+                Equal(4, IndexOf(applied, "Ruby"), "Apply: it appends after every shipped row");
+            }
+            {
+                var problems = new List<string>();
+                Catalogue applied = CatalogueOverrides.Apply(shipped, "-Honey", problems);
+                Equal(0, problems.Count, "Apply: a clean removal reports nothing");
+                Equal(3, applied.Count, "Apply: -Prefab removes the shipped row");
+                Check(applied.Find("Honey") == null, "Apply: Honey is gone");
+            }
+            {
+                var problems = new List<string>();
+                Catalogue applied = CatalogueOverrides.Apply(shipped, "-Nonsense", problems);
+                Equal(1, problems.Count, "Apply: removing an unknown prefab is a problem, not a throw");
+                Equal(4, applied.Count, "Apply: and nothing else changes");
+            }
+            {
+                var problems = new List<string>();
+                Catalogue applied = CatalogueOverrides.Apply(shipped, "NotEnoughFields:1:2", problems);
+                Equal(1, problems.Count, "Apply: a malformed row is a problem, not a throw");
+                Equal(4, applied.Count, "Apply: and it is skipped, the shipped catalogue intact");
+            }
+            {
+                var problems = new List<string>();
+                Catalogue applied = CatalogueOverrides.Apply(shipped, "Iron:30:20:60:Ware, FlametalNew:120:6:18:Ware, -Honey", problems);
+                Equal(0, problems.Count, "Apply: a clean combined edit (upsert + append + remove) reports nothing");
+                Equal(4, applied.Count, "Apply: shipped 4 - Honey + FlametalNew = 4");
+                Equal(30, applied.Find("Iron").BasePrice, "Apply: Iron changed");
+                Check(applied.Find("FlametalNew") != null, "Apply: FlametalNew added");
+                Check(applied.Find("Honey") == null, "Apply: Honey removed");
+            }
+
+            // ---- Derive: problems in a stored row that does not parse are reported, not swallowed
+            //      (should-fix, review: Derive used to parse the stored line with a null problems bag,
+            //      so a bad row in a migrated file vanished with nothing said anywhere) ----
+            {
+                string withBadRow = Catalogue.LegacyDefaultLine72 + ", Rubbish:notanumber:1:1:Ware";
+                var problems = new List<string>();
+                string overrides = CatalogueOverrides.Derive(withBadRow, Catalogue.HistoricalDefaults, Catalogue.DefaultLine, problems);
+                Equal("", overrides, "Derive: the bad row aside, the other 72 still match the legacy default exactly");
+                Check(problems.Count > 0 && problems[0].IndexOf("Rubbish", StringComparison.OrdinalIgnoreCase) >= 0,
+                      "Derive: the unparseable row is named in the problems bag, not silently dropped");
+            }
+
+            // ---- Derive: the tie rule ----
+            {
+                // A stored line carrying only the rows TWO defaults share, with no evidence of either
+                // one's own extra row, is no longer scored as a raw-count/proportion tie (that was the
+                // must-fix bug's own mechanism): PickBase's eligibility gate wants at least ONE of the rows
+                // a candidate INTRODUCED over the previous default to survive in the stored line (zero is
+                // the only signal it was never reached), and Ruby is all the newer default introduces here, so the newer default is simply
+                // INELIGIBLE - the older one wins outright, which is also the safer answer (it does not
+                // invent a "-Ruby" removal the admin never made; Ruby just arrives from the shipped
+                // catalogue, exactly like a food row nobody customised).
+                string oldDefault = "Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Honey:2:50:150:Ware";
+                string newDefault = "Bronze:15:20:60:Ware, Iron:25:20:60:Ware, Ruby:29:15:45:Ware";
+                string tiedStored = "Bronze:15:20:60:Ware, Iron:25:20:60:Ware";
+                string overrides = CatalogueOverrides.Derive(tiedStored, new[] { oldDefault, newDefault }, newDefault);
+                Equal("", overrides, "Derive: no evidence of the newer default's own row (Ruby) makes it ineligible, so the older default is picked and nothing is missing from it");
+            }
+            {
+                // A genuine tie under the fixed algorithm: the newer default changes A (so it counts as
+                // "introduced", same as a brand-new row) and introduces D; the stored line keeps the OLD
+                // value of A and carries D, so the newer default is eligible (one of the two rows it
+                // introduced survives; the gate wants at least one) and the two candidates score an EQUAL number of raw matches
+                // (new gains a match on D but loses the one it had on A). "ties go to the LAST" must still
+                // pick the newer one - provable because the two bases derive DIFFERENT overrides: picking
+                // the older one loses A's change entirely (D turns out to be a no-op against the current
+                // shipped line and prunes away, leaving only "-C").
+                string oldDefault = "A:1:1:1:Ware, B:1:1:1:Ware, C:1:1:1:Ware";
+                string newDefault = "A:2:1:1:Ware, B:1:1:1:Ware, C:1:1:1:Ware, D:1:1:1:Ware";
+                string stored = "A:1:1:1:Ware, B:1:1:1:Ware, D:1:1:1:Ware";
+                string overrides = CatalogueOverrides.Derive(stored, new[] { oldDefault, newDefault }, newDefault);
+                Equal("A:1:1:1:Ware, -C", overrides,
+                      "Derive: a genuine tie (both candidates score 2 raw matches) picks the LAST (newest) default as base, so A's change survives as an override instead of being lost to the older base");
+            }
+
+            // ---- Derive: pruning ----
+            {
+                string oldDefault = "Alpha:10:1:3:Ware, Beta:20:1:3:Ware, Gamma:5:1:3:Want";
+                string stored = "Alpha:15:1:3:Ware, Beta:20:1:3:Ware"; // Alpha moved to what shipping moved to as well; Gamma dropped
+                string shippedNow = "Alpha:15:1:3:Ware"; // Beta and Gamma are both no longer shipped at all
+                string overrides = CatalogueOverrides.Derive(stored, new[] { oldDefault }, shippedNow);
+                Equal("", overrides, "Derive: a no-op upsert (Alpha already matches the CURRENT shipped value) and a moot removal (Gamma is not shipped any more either) both prune to nothing");
+            }
+
+            // ---- Upsert / Remove / Describe reports ----
+            {
+                string report;
+                string next = CatalogueOverrides.Upsert("", "Ruby:40:15:45:Ware", shipped, out report);
+                Equal("Ruby:40:15:45:Ware", next, "Upsert: an empty overrides string gets exactly the one entry");
+                Check(report.Contains("Ruby") && report.Contains("added"), "Upsert: the report says it was added");
+
+                string next2 = CatalogueOverrides.Upsert(next, "Ruby:41:15:45:Ware", shipped, out report);
+                Equal("Ruby:41:15:45:Ware", next2, "Upsert: editing an existing override replaces it in place");
+                Check(report.Contains("changed"), "Upsert: the report says it changed, not added, the second time");
+
+                string next3 = CatalogueOverrides.Upsert("bad", "NotEnoughFields:1:2", shipped, out report);
+                Check(next3 == null && report.Length > 0, "Upsert: a malformed entry is refused with a reason, not applied");
+
+                // Nit (review, config-migration fix round 1): an add exactly matching the shipped row is a
+                // no-op, not a stored-but-meaningless override.
+                string next4 = CatalogueOverrides.Upsert("", "Iron:25:20:60:Ware", shipped, out report);
+                Equal("", next4, "Upsert: an entry identical to the shipped row adds nothing");
+                Check(report.Contains("already"), "Upsert: the report says it already matched the shipped value");
+
+                string next5 = CatalogueOverrides.Upsert("Iron:30:20:60:Ware", "Iron:25:20:60:Ware", shipped, out report);
+                Equal("", next5, "Upsert: an edit back to the exact shipped value drops the stale override entirely");
+            }
+            {
+                string report;
+                string next = CatalogueOverrides.Remove("", "Bronze", shipped, out report);
+                Equal("-Bronze", next, "Remove: a shipped prefab with no prior override gets a bare -Prefab token");
+                Check(report.Contains("Bronze"), "Remove: the report names it");
+
+                string next2 = CatalogueOverrides.Remove("Ruby:40:15:45:Ware", "Ruby", shipped, out report);
+                Equal("", next2, "Remove: an override-only prefab just loses its row");
+
+                string next3 = CatalogueOverrides.Remove("", "Nonsense", shipped, out report);
+                Check(next3 == null && report.Contains("not"), "Remove: neither shipped nor overridden is refused");
+
+                string next4 = CatalogueOverrides.Remove("Bronze:20:20:60:Ware", "Bronze", shipped, out report);
+                Equal("-Bronze", next4, "Remove: a changed shipped row's upsert is dropped and replaced with -Prefab");
+            }
+            {
+                Equal("none", CatalogueOverrides.Describe("", shipped), "Describe: an empty overrides string is 'none'");
+                string desc = CatalogueOverrides.Describe("Ruby:40:15:45:Ware, FlametalNew:120:6:18:Ware, -Honey",
+                    Catalogue.Parse("Bronze:15:20:60:Ware, Ruby:29:15:45:Ware, Honey:2:50:150:Ware", null));
+                Equal("3 override(s): Ruby changed, FlametalNew added, Honey removed", desc,
+                      "Describe: changed vs added is decided against the shipped catalogue passed in");
+            }
+
+            // ---- The round-trip invariant (Part 2): every stored line that descends from either default
+            //      reproduces its own rows through Apply(shipped, Derive(...)), the food rows it never saw included. ----
+            {
+                string overrides0 = CatalogueOverrides.Derive(Catalogue.LegacyDefaultLine72, Catalogue.HistoricalDefaults, Catalogue.DefaultLine);
+                Equal("", overrides0, "round-trip: the untouched 0.1.0 default derives no overrides at all");
+                var problems = new List<string>();
+                Catalogue applied0 = CatalogueOverrides.Apply(Catalogue.Parse(Catalogue.DefaultLine, null), overrides0, problems);
+                Equal(Catalogue.Parse(Catalogue.DefaultLine, null).Count, applied0.Count,
+                      "round-trip: an untouched admin lands on the full shipped catalogue - all 101 rows, including the 29 they never saw");
+            }
+            RoundTrip(Catalogue.LegacyDefaultLine72, "the untouched 0.1.0 default");
+
+            // ---- Regression (review, must-fix): PickBase must not hand a customised 101-row line to the
+            //      72-row legacy default just because every legacy row still matches it. Before the fix,
+            //      the legacy default scored a perfect 1.000 against any 0.1.1-0.1.3 line with rows
+            //      deleted, so an admin's own deletion silently came back. ----
+            {
+                string report;
+                string oneFoodRowRemoved = Catalogue.Remove(Catalogue.DefaultLine, "HareMeat", out report);
+                string overrides = CatalogueOverrides.Derive(oneFoodRowRemoved, Catalogue.HistoricalDefaults, Catalogue.DefaultLine);
+                Equal("-HareMeat", overrides,
+                      "regression: removing one food row from the 101-row default must derive '-HareMeat', not '' (PickBase must not silently hand this to the 72-row legacy default)");
+            }
+            {
+                // A customised 101-row line: one row changed, two removed, one added.
+                string report;
+                string customised101 = Catalogue.Upsert(Catalogue.DefaultLine, "Ruby:40:15:45:Ware", out report);
+                customised101 = Catalogue.Remove(customised101, "Bread", out report);
+                customised101 = Catalogue.Remove(customised101, "Onion", out report);
+                customised101 = Catalogue.Upsert(customised101, "Coins:1:1:1:Want", out report);
+
+                string overrides = CatalogueOverrides.Derive(customised101, Catalogue.HistoricalDefaults, Catalogue.DefaultLine);
+                var problems = new List<string>();
+                Catalogue applied = CatalogueOverrides.Apply(Catalogue.Parse(Catalogue.DefaultLine, null), overrides, problems);
+                Equal(0, problems.Count, "regression: applying the derived overrides for a customised 101-row line reports no problems");
+                Equal(100, applied.Count, "regression: 101 - 2 (Bread, Onion) + 1 (Coins) = 100");
+                Equal(40, applied.Find("Ruby").BasePrice, "regression: Ruby keeps the admin's changed price");
+
+                var expectedPrefabs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (CatalogueEntry e in Catalogue.Parse(Catalogue.DefaultLine, null).Entries) expectedPrefabs.Add(e.Prefab);
+                expectedPrefabs.Remove("Bread");
+                expectedPrefabs.Remove("Onion");
+                expectedPrefabs.Add("Coins");
+                var actualPrefabs = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (CatalogueEntry e in applied.Entries) actualPrefabs.Add(e.Prefab);
+                Check(expectedPrefabs.SetEquals(actualPrefabs),
+                      "regression: the exact prefab set matches - nothing the admin removed comes back, nothing the admin kept goes missing");
+            }
+
+            // ---- Regression (should-fix, review round 2): PickBase's eligibility gate used to require
+            //      at least HALF of what a candidate introduced to survive in the stored line
+            //      (introducedPresent * 2 >= introduced). The 101-row default introduces 29 food rows over
+            //      the 72-row legacy default, so that gate held fine against a handful of deletions - but
+            //      the next default only has to add a few rows for the same admin habit (prune the ones you
+            //      do not want) to trip it on the very next update: delete more than half of what a small
+            //      default introduced and the gate falls back to the OLDER default, which carries none of
+            //      them, and every one of those deletions is silently undone. Fixed to introducedPresent >=
+            //      1: one surviving row is proof the file has been through this default at all. ----
+            {
+                // Fifteen of the 29 food rows removed by hand - comfortably past "half of 29" (15), which
+                // the round-1 gate treated as evidence the file was never on the 101-row default at all and
+                // handed it back to the 72-row legacy default (which carries none of the food rows), so
+                // none of the fifteen ever showed up as a removal - the admin's pruning silently reverted.
+                string report;
+                string fifteenFoodRowsRemoved = Catalogue.DefaultLine;
+                string[] toRemove =
+                {
+                    "BoarJerky", "Bread", "MinceMeatSauce", "SerpentStew", "CookedLoxMeat",
+                    "MeadHealthMedium", "MeadStaminaMedium", "MeadFrostResist", "MeadPoisonResist",
+                    "Raspberry", "Blueberries", "Cloudberry", "Mushroom", "MushroomYellow", "Carrot",
+                };
+                foreach (string prefab in toRemove)
+                    fifteenFoodRowsRemoved = Catalogue.Remove(fifteenFoodRowsRemoved, prefab, out report);
+
+                string overrides = CatalogueOverrides.Derive(fifteenFoodRowsRemoved, Catalogue.HistoricalDefaults, Catalogue.DefaultLine);
+                string expected = string.Join(", ", Array.ConvertAll(toRemove, p => "-" + p));
+                Equal(expected, overrides,
+                      "regression (review round 2): removing 15 of the 29 food rows (more than half) must derive all 15 removals, not '' - the 101-row default stays eligible on ONE surviving food row, let alone the fourteen this leaves");
+            }
+            {
+                // The general shape, with a default that grows by only three rows: an admin who deletes
+                // two of the three trips the OLD "half" gate on the very next update (1 * 2 < 3), which is
+                // exactly the routine case the fix has to cover, not just the 29-row outlier.
+                string oldDefault = "A:1:1:1:Ware, B:1:1:1:Ware, C:1:1:1:Ware";
+                string newDefault = "A:1:1:1:Ware, B:1:1:1:Ware, C:1:1:1:Ware, D:1:1:1:Ware, E:1:1:1:Ware, F:1:1:1:Ware";
+                string stored = "A:1:1:1:Ware, B:1:1:1:Ware, C:1:1:1:Ware, D:1:1:1:Ware"; // E and F deleted, D kept
+                string overrides = CatalogueOverrides.Derive(stored, new[] { oldDefault, newDefault }, newDefault);
+                Equal("-E, -F", overrides,
+                      "regression (review round 2): a synthetic three-row growth with two of the three deleted derives '-E, -F' - one surviving introduced row (D) is enough to stay eligible for the newer default");
+            }
+
+            RoundTrip(BuildCustomised101(), "a customised 0.1.4 default (one row changed, two removed, one added)");
+            {
+                string customised = BuildCustomised72();
+                string overrides = CatalogueOverrides.Derive(customised, Catalogue.HistoricalDefaults, Catalogue.DefaultLine);
+                var problems = new List<string>();
+                Catalogue applied = CatalogueOverrides.Apply(Catalogue.Parse(Catalogue.DefaultLine, null), overrides, problems);
+                Equal(101, applied.Count, "round-trip: 101 - 1 (Honey) + 1 (Coins) = 101 rows");
+                Equal(40, applied.Find("Ruby").BasePrice, "round-trip: Ruby keeps the admin's number");
+                Check(applied.Find("Honey") == null, "round-trip: Honey stays gone");
+                Check(applied.Find("Coins") != null, "round-trip: Coins stays added");
+                CatalogueEntry raspberry = applied.Find("Raspberry");
+                Check(raspberry != null && raspberry.BasePrice == 2, "round-trip: a food row the admin never saw arrives at its shipped default");
+            }
+            RoundTrip(BuildCustomised72(), "a customised 0.1.0 default (Ruby changed, Honey removed, FlametalNew changed, Coins added)");
+            RoundTrip(Catalogue.DefaultLine, "the untouched 0.1.4 default (101 rows)");
+        }
+
+        private static void ConfigLedgerTests()
+        {
+            Section("ConfigLedger: the config migration's decisions (2026-09-16, the owner: backfill the schema version and the overrides)");
+
+            // ---- ParseIni ----
+            {
+                var lines = new[]
+                {
+                    "# a comment",
+                    "",
+                    "[Server]",
+                    "Enabled = true",
+                    "  CraftingRequirements = Feathers:10,LeatherScraps:10  ",
+                    "AnEquation = a=b",
+                    "[Meta]",
+                    "ConfigVersion = 1",
+                    "[Server]",           // re-opened: still the same section
+                    "Enabled = false",    // duplicate key: the LAST wins
+                };
+                var snap = ConfigLedger.ParseIni(lines);
+                Equal(4, snap.Count, "ParseIni: comments and blank lines contribute nothing; keyed Section::Key");
+                Equal("false", snap["Server::Enabled"], "ParseIni: the LAST duplicate wins");
+                Equal("Feathers:10,LeatherScraps:10", snap["Server::CraftingRequirements"], "ParseIni: a value may itself contain ',' and is trimmed");
+                Equal("a=b", snap["Server::AnEquation"], "ParseIni: a value may itself contain '='");
+                Equal("1", snap["Meta::ConfigVersion"], "ParseIni: a later [Section] header re-opens the same section by name");
+                Check(snap.ContainsKey("server::enabled"), "ParseIni: keys are ordinal-ignore-case");
+            }
+
+            // ---- ReadVersion ----
+            {
+                Equal(0, ConfigLedger.ReadVersion(null), "ReadVersion: no snapshot at all is 0");
+                Equal(0, ConfigLedger.ReadVersion(new Dictionary<string, string>()), "ReadVersion: an empty snapshot is 0");
+                var withVersion = ConfigLedger.ParseIni(new[] { "[Meta]", "ConfigVersion = 1" });
+                Equal(1, ConfigLedger.ReadVersion(withVersion), "ReadVersion: a stamped version reads back");
+                var garbage = ConfigLedger.ParseIni(new[] { "[Meta]", "ConfigVersion = banana" });
+                Equal(0, ConfigLedger.ReadVersion(garbage), "ReadVersion: unparseable is 0");
+            }
+
+            // ---- Plan ----
+            {
+                var plan0 = ConfigLedger.Plan(null, 0, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                Equal(0, plan0.ResetToDefault.Count, "Plan: a missing snapshot resets nothing");
+                Equal(0, plan0.Kept.Count, "Plan: and keeps nothing");
+                Check(plan0.CatalogueTransform == null, "Plan: and plans no catalogue transform at all - a fresh install just binds its own defaults");
+
+                var snapCurrent = ConfigLedger.ParseIni(new[] { "[Meta]", "ConfigVersion = 2" });
+                var planCurrent = ConfigLedger.Plan(snapCurrent, 2, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                Check(planCurrent.CatalogueTransform == null, "Plan: a file already at CurrentVersion plans nothing");
+
+                var snapLegacy = ConfigLedger.ParseIni(new[] { "[Server]", "Catalogue = " + Catalogue.LegacyDefaultLine72 });
+                var planLegacy = ConfigLedger.Plan(snapLegacy, 0, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                Check(planLegacy.ResetToDefault.Contains("Server::Catalogue"), "Plan: version 0 with the untouched 0.1.0 default resets Server::Catalogue");
+                Check(planLegacy.CatalogueTransform != null && planLegacy.CatalogueTransform.Overrides == "", "Plan: and its transform derives no overrides");
+
+                string customised = BuildCustomised72();
+                var snapCustom = ConfigLedger.ParseIni(new[] { "[Server]", "Catalogue = " + customised });
+                var planCustom = ConfigLedger.Plan(snapCustom, 0, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                Check(!planCustom.ResetToDefault.Contains("Server::Catalogue"), "Plan: a customised line is not reset");
+                bool kept = false;
+                foreach (ConfigLedger.KeptSlot k in planCustom.Kept) if (k.Slot == "Server::Catalogue") kept = true;
+                Check(kept, "Plan: and is logged as kept (customised)");
+                string overridesCustom = planCustom.CatalogueTransform.Overrides;
+                Equal(4, overridesCustom.Split(',').Length, "Plan: the customised line derives exactly four overrides");
+                Check(overridesCustom.Contains("Ruby") && overridesCustom.Contains("FlametalNew") &&
+                      overridesCustom.Contains("Coins") && overridesCustom.Contains("-Honey"),
+                      "Plan: Ruby, FlametalNew, Coins and -Honey, exactly as changed");
+                var problemsX = new List<string>();
+                Catalogue appliedCustom = CatalogueOverrides.Apply(Catalogue.Parse(Catalogue.DefaultLine, null), overridesCustom, problemsX);
+                Equal(101, appliedCustom.Count, "Plan: Apply(shipped101, overrides) is 101 - 1 + 1 rows");
+
+                var snapAlready101 = ConfigLedger.ParseIni(new[] { "[Server]", "Catalogue = " + Catalogue.DefaultLine });
+                var plan101 = ConfigLedger.Plan(snapAlready101, 0, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                Check(!plan101.ResetToDefault.Contains("Server::Catalogue"), "Plan: version 0 with the 101-row default already is not a rebase (it is not the LEGACY default text)");
+                Equal("", plan101.CatalogueTransform.Overrides, "Plan: and its transform derives no overrides either way");
+                // Regression (should-fix, review): this file was never customised - it already IS the
+                // current shipped default, just not textually the version-1 rebase table's LEGACY text -
+                // so the boot line must not call it "customised" or claim it "differed from every shipped
+                // default"; it is exactly one of them.
+                Check(plan101.CatalogueTransform.AlreadyCurrentShippedLine,
+                      "Plan: the transform notices the stored line IS the current shipped line, not merely a line that happens to derive no overrides");
+                Equal("config: version 0 -> 2: Catalogue already matched the shipped 101 rows; overrides: none",
+                      ConfigLedger.Describe(plan101), "Describe: an already-current-default file reads as such, not as 'customised, kept as none'");
+            {
+                // The version-1 rung (nit, review round 3): a file stamped 1 that still carries the 0.1.0
+                // line is past the rebase that would have moved it, so nothing lands in Kept and the
+                // transform derives no overrides - the 29 rows are about to arrive, and the line must not
+                // claim the stored line "matches the shipped default".
+                var snap1 = ConfigLedger.ParseIni(new[] { "[Meta]", "ConfigVersion = 1", "[Server]", "Catalogue = " + Catalogue.LegacyDefaultLine72 });
+                var plan1 = ConfigLedger.Plan(snap1, 1, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                string line1 = ConfigLedger.Describe(plan1);
+                Check(!line1.Contains("matches the shipped default"), "Describe: a file stamped 1 still on the 0.1.0 line is not called a match (" + line1 + ")");
+                Check(line1.Contains("older shipped default") && line1.Contains("101 rows"), "Describe: it says the older default moved to the shipped rows (" + line1 + ")");
+                Check(line1.StartsWith("config: version 1 -> 2: "), "Describe: the rung is named");
+            }
+
+                // A genuinely ambiguous file: not textually the LEGACY rebase default (so "kept"), not the
+                // CURRENT shipped line either, and its derived overrides prune to nothing anyway (the
+                // Derive-pruning scenario above, replayed through Plan/Describe).
+                {
+                    string oldDefaultX = "Alpha:10:1:3:Ware, Beta:20:1:3:Ware, Gamma:5:1:3:Want";
+                    string storedX = "Alpha:15:1:3:Ware, Beta:20:1:3:Ware";
+                    string shippedNowX = "Alpha:15:1:3:Ware";
+                    var snapX = ConfigLedger.ParseIni(new[] { "[Server]", "Catalogue = " + storedX });
+                    var planX = ConfigLedger.Plan(snapX, 0, shippedNowX, new[] { oldDefaultX });
+                    Check(!planX.CatalogueTransform.AlreadyCurrentShippedLine, "Plan: this stored line is not the current shipped line either");
+                    Equal("config: version 0 -> 2: Catalogue differed from every shipped default but nothing of it survives as an override",
+                          ConfigLedger.Describe(planX), "Describe: a genuinely ambiguous file that prunes to no overrides says so, distinctly from 'already matched'");
+                }
+
+                var snapV1 = ConfigLedger.ParseIni(new[] { "[Meta]", "ConfigVersion = 1", "[Server]", "Catalogue = " + Catalogue.DefaultLine });
+                var planV1 = ConfigLedger.Plan(snapV1, 1, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                Equal(0, planV1.ResetToDefault.Count, "Plan: version 1 runs no rebase step - only version 2's transform is left");
+                Equal(0, planV1.Kept.Count, "Plan: and logs nothing kept either");
+                Equal("", planV1.CatalogueTransform.Overrides, "Plan: the transform alone derives no overrides");
+
+                string withBadRow = Catalogue.LegacyDefaultLine72 + ", NotEnoughFields:1:2";
+                var snapBad = ConfigLedger.ParseIni(new[] { "[Server]", "Catalogue = " + withBadRow });
+                var planBad = ConfigLedger.Plan(snapBad, 0, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                Equal("", planBad.CatalogueTransform.Overrides, "Plan: one unparseable trailing row is ignored; the other 72 still match the legacy default exactly");
+            }
+
+            // ---- Describe: the exact boot lines ----
+            {
+                var snap = ConfigLedger.ParseIni(new[] { "[Server]", "Catalogue = " + Catalogue.LegacyDefaultLine72 });
+                var plan = ConfigLedger.Plan(snap, 0, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                Equal("config: version 0 -> 2: Catalogue was the 0.1.0 default, moved to the shipped 101 rows; overrides: none",
+                      ConfigLedger.Describe(plan), "Describe: the reset case, exact boot line");
+            }
+            {
+                // A scenario built to land on exactly "3 override(s): Ruby changed, FlametalNew added,
+                // Honey removed" against a shipped line where FlametalNew is not shipped at all (so it
+                // reads as added, not changed) - the brief's own Describe example.
+                string shippedTest = "Ruby:29:15:45:Ware, Honey:2:50:150:Ware, Bronze:15:20:60:Ware";
+                string storedTest = "Ruby:40:15:45:Ware, FlametalNew:120:6:18:Ware, Bronze:15:20:60:Ware";
+                var snap = ConfigLedger.ParseIni(new[] { "[Server]", "Catalogue = " + storedTest });
+                var plan = ConfigLedger.Plan(snap, 0, shippedTest, new[] { shippedTest });
+                Equal("config: version 0 -> 2: Catalogue was customised, kept as 3 override(s): Ruby changed, FlametalNew added, Honey removed",
+                      ConfigLedger.Describe(plan), "Describe: the customised case, exact boot line");
+            }
+            {
+                // Nit (review round 2): a version-0 file with no Server.Catalogue key at all (just some
+                // other setting) has nothing to compare against a shipped default. It used to read as
+                // "Catalogue matches the shipped default" - a match that was never attempted, because
+                // t.StoredLine is null, not equal-to-anything.
+                var snap = ConfigLedger.ParseIni(new[] { "[Server]", "PurseCoins = 1500" });
+                var plan = ConfigLedger.Plan(snap, 0, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                Check(plan.CatalogueTransform != null && plan.CatalogueTransform.StoredLine == null,
+                      "Plan: a file with no Catalogue key at all has a null StoredLine, not an empty one");
+                Equal("config: version 0 -> 2: the file carried no Catalogue line; the shipped catalogue applies",
+                      ConfigLedger.Describe(plan), "Describe: a missing Catalogue key is distinct from one that matches the shipped default");
+            }
         }
 
         private static void GhostTests()

@@ -1,5 +1,54 @@
 # Changelog
 
+## Unreleased (0.1.4)
+
+### The config migration (branch `a/config-migration`, built at the owner's word 2026-09-16 - not yet cut)
+
+**From 0.1.4 the mod migrates its own config file; the "delete the old config file first" step retires.**
+0.1.3 and earlier told a server owner to delete `com.raveniron.valkyriescargo.cfg` on every update, because
+BepInEx keeps a stored value across the update and a stored value beats a new shipped default - that is how
+Wonderland kept the 72-row `Catalogue` line from 0.1.0 across two updates and never saw the 29 food rows
+(2026-09-16). Deleting the file threw away everything an admin had set on purpose. From 0.1.4 the mod reads
+the file itself, before any BepInEx bind, and decides what to do with every value already on it:
+
+- A value still equal to one of the mod's own OLD defaults belongs to the mod and moves to the new default.
+- Anything else is real admin work and is kept, unchanged.
+- The whole file is backed up beside itself first, `<file>.v<N>.bak` (`N` the version it was migrating FROM) -
+  never overwritten: a second migration of the same file writes `<file>.v<N>.<timestamp>.bak` instead, so a
+  half-finished earlier run cannot destroy the only clean copy. A backup that could not be written at all
+  leaves the retired key in the file and the version unstamped, so the migration retries next boot rather
+  than losing the admin's line with no copy anywhere.
+- A failed migration never stops the mod loading: every other value binds as it always did; the retired
+  `Catalogue` line is not read that boot (the shipped catalogue plus `CatalogueOverrides` is in force, and the
+  log says so), and `ConfigVersion` is left unstamped so the next boot retries rather than treating the
+  failure as done. A retry never overwrites overrides an admin has set from the console in the meantime.
+- One boot line says what happened, e.g. `config: version 0 -> 2: Catalogue was the 0.1.0 default, moved to
+  the shipped 101 rows; overrides: none` or `config: version 0 -> 2: Catalogue was customised, kept as 3
+  override(s): Ruby changed, FlametalNew added, Honey removed`. `cargo status` carries the short form; the new
+  `cargo config` verb (anyone, local) carries the whole thing.
+
+The shape is Wu'barrk's `ConfigMigration.cs` from WingsoftheValkyrie (the family's, alongside TortalPortal and
+Fatty), adapted here: `Config/ConfigMigration.cs` (the engine-facing half) and `Core/ConfigLedger.cs` (the pure
+decisions - a stamped `Meta.ConfigVersion`, currently `2`, and a rebase table keyed by the version it produces).
+
+**The catalogue moves to an overrides model that never needs migrating again.** `Server.Catalogue` (the whole
+101-row line) is retired; `Server.CatalogueOverrides` replaces it and holds only what an admin actually
+changed - `Prefab:BasePrice:TargetStock:MaxStock:Kind` to add or change a shipped row, `-Prefab` to remove
+one, comma-separated, empty by default. The shipped catalogue itself stays code (`docs/CATALOGUE.md`,
+`Core/Catalogue.DefaultLine`) and can grow forever - the next 29 rows, whatever they are - without a stored
+line ever shadowing it again. `Core/CatalogueOverrides.cs` (pure) is `Apply` (shipped + overrides -> the
+catalogue that actually trades) and `Derive` (an old stored `Catalogue` line -> the overrides that reproduce
+it, for the migration). `cargo catalogue add|remove|reset` now edit `CatalogueOverrides`, not the whole line;
+`cargo status`'s catalogue line reads `catalogue: 101 shipped + <overrides in words>; N entries (...)`. The
+retired `Catalogue` key is consumed from the cfg file once the migration has read it - bound under a
+throwaway default and removed again, both public `ConfigFile` API, after the backup exists - so BepInEx
+does not keep rewriting it forever (BepInEx's own orphan-tracking, `ConfigFile.OrphanedEntries`, is a
+private property; nothing here touches it directly).
+
+Tests: `ConfigLedgerTests` and `CatalogueOverridesTests` in `tests/CoreTests/Program.cs`, including the
+round-trip invariant (`Apply(Parse(DefaultLine), Derive(stored, HistoricalDefaults, DefaultLine))` reproduces
+every row a stored line actually had, food rows the admin never saw included).
+
 ## 0.1.3
 
 ### 0.1.3 — cut 2026-09-16, the visit clock; a pre-release on GitHub, the store upload is the owner's
