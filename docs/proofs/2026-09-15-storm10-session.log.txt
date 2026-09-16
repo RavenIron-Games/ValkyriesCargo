@@ -257,3 +257,71 @@ purse	101638
 purseStart	100000
 coined	1638
 visit	15
+
+=== SERVER, the PR #94 DLL (0.1.1+3285704, md5 9FFEB463..., unmerged) with DvergrAllies 1.0.7 + Jotunn 2.30.0 + JsonDotNET 13.0.4 beside it, boot 18:51 and visit #18 ===
+14587: [Info   :   BepInEx] Loading [Jotunn 2.30.0]
+14599: [Info   :Valkyrie's Cargo] built against Valheim 1.0.12 (network 40, player 46, world 41; Steam build 25253764 client / 25253791 server; bodies read 2026-09-11); running same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable.
+14600: [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.1 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+14604: [Info   :   BepInEx] Loading [DvergrAllies 1.0.7]
+14606: [Info   :DvergrAllies.Plugin] [Patches] 7 applied, none failed.
+14806: [Info   :DvergrAllies.Patch_ZNetScene_Awake_Dvergrs] Successfully injected Taming/Breeding components into 8 wild Dvergr prefabs!
+14923: [Info   :Valkyrie's Cargo] role: dedicated server
+14926: [Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 101 entries, purse 99580, next visit #18, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (106 rows loaded); shelf 100 of 101, period 3, rolls every 2 game day(s...
+14954: [Info   : Unity Log] 09/15/2026 18:51:23: Session "Storm10" with join code 608444 and IP 172.59.201.230:2477 is active with 0 player(s)
+14972: [Info   : Unity Log] 09/15/2026 18:53:27: Player joined server "Storm10" that has join code 608444, now 1 player(s)
+14982: [Info   : Unity Log] Received Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1 from the client.
+14990: [Info   : Unity Log] 09/15/2026 18:53:36: Server: New peer connected,sending global keys
+14994: [Info   :Valkyrie's Cargo] admin wire registered for Nomadtest (661371129)
+14995: [Info   :Valkyrie's Cargo] deal wire registered for Nomadtest (661371129)
+15009: [Info   :Valkyrie's Cargo] admin Nomadtest (661371129): cargo visit
+15011: [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-63.07003, -18.3787785); 1 eligible, 1 ticket(s)
+15014: [Info   :Valkyrie's Cargo] visit #18 begins: pilot Nomadtest (uid 661371129) at (-63.07003, -18.3787785), 300 s, purse 100000, seed 10513232
+15015: [Info   :Valkyrie's Cargo] visit #18: flight authored: start (12.23876, -67.65947) at 184.441055, descent (-8.881171, -53.83897) at 147.540482 (50 m short), drop (-50.7193871, -26.4608116) at 64.4410553, straight in 90 m out; bird -442251640:84579, Dverger -442251640:84580, both owned by the pilot
+15020: [Info   :Valkyrie's Cargo] visit #18: dropped at (-50.7193871, 65.9969559, -26.4608116)
+15023: [Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-18-1 with Nomadtest: sold 2 BlackCore at 300, coins -600 to the player; purse 100600
+15025: [Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-18-2 with Nomadtest: sold 6 Eitr at 45, coins -270 to the player; purse 100870
+15027: [Info   :Valkyrie's Cargo] VCargo_dismiss from Nomadtest: visit #18 dismissed (dismissed by Nomadtest)
+15028: [Info   :Valkyrie's Cargo] visit #18 ended: dismissed by Nomadtest; takings 870 coins, purse 100870, 0 clock republish(es), 0 owed deliveries
+15030: [Info   :Valkyrie's Cargo] visit #18: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+15038: [Info   :Valkyrie's Cargo] admin Nomadtest (661371129): cargo visit
+15040: [Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-64.0124, -17.8191757); 1 eligible, 1 ticket(s)
+
+=== CLIENT, profiles\testing on the same DLL and the same three mods, launched 18:52 (visit #18) ===
+16: [Info   :   BepInEx] Loading [Jotunn 2.30.0]
+22: [Info   :Valkyrie's Cargo] built against Valheim 1.0.12 (network 40, player 46, world 41; Steam build 25253764 client / 25253791 server; bodies read 2026-09-11); running same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable.
+23: [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.1 loaded - renderer=True, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+30: [Info   :   BepInEx] Loading [DvergrAllies 1.0.7]
+642: [Info   :DvergrAllies.Patch_ZNetScene_Awake_Dvergrs] Successfully injected Taming/Breeding components into 8 wild Dvergr prefabs!
+708: [Info   :Valkyrie's Cargo] role: client
+731: [Info   : Unity Log] 09/15/2026 18:53:26: Joining server 'Storm10' at PlayFab network 25dc3f3c-96f7-4ddd-90ba-e50cde6fafba|AwBnINM2qPieAOCwpkOdn0qcBJpp+1dlc3RVcwAAAAAAAAAAAAAAAAAAxnVhtFmwm2+5xoip1gMQZO0ZPAJr9HsbOYa1hNGP3Va8FUtkbnMtaXIwLTgxZTUtODUxM2VmZDQtNjRiNy00OTg0LWI2MjItYWZlZjRlZTQ2OGFmLndlc3R1cy5jbG91ZGFwcC5henVyZS5...
+753: [Info   :Valkyrie's Cargo] admin wire: registered VCargo_reply on the server socket
+754: [Info   :Valkyrie's Cargo] deal wire: registered VCargo_dealt on the server socket
+806: [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-63.07003, -18.3787785); 1 eligible, 1 ticket(s)
+807: [Info   :Valkyrie's Cargo] cargo flight #18: flying from (12.23876, 184.441055, -67.65947) via (-8.881171, 147.540482, -53.83897) to (-50.7193871, 64.4410553, -26.4608116), 75.24 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+808: [Info   :Valkyrie's Cargo] merchant guard: removed DvergrAllies.DvergrTameable, DvergrAllies.DvergrProcreation, DvergrAllies.DvergrGenetics from Ingvar's clone; SoMStealthExempt stamped
+813: [Info   :Valkyrie's Cargo] cargo merchant #18: awake as carried, ours (owner 661371129), body=Ingvar
+820: [Info   :Valkyrie's Cargo] cargo flight #18: dropped at (-50.7193871, 65.9969559, -26.4608116) after 16.66019 s
+821: [Info   :Valkyrie's Cargo] cargo merchant #18: carried -> approaching via the ZDO, 16.66019 s after waking; carrier none, 18.3953533 m from the player, ours (owner 661371129), 0 reclaim(s) during the carry, grounded no; walk-up budget 20 s
+823: [Info   :Valkyrie's Cargo] cargo merchant #18: trading (entered: reached the player) [callout]
+824: [Info   :Valkyrie's Cargo] terminal opened: visit #18 on Dverger(Clone)
+825: [Info   :Valkyrie's Cargo] cargo merchant #18: a terminal is open on him (0 on the wire): the leash holds
+827: [Info   :Valkyrie's Cargo] terminal closed: escape
+831: [Info   :Valkyrie's Cargo] cargo merchant #18: no terminal open on him: the leash is armed again
+832: [Info   :Valkyrie's Cargo] terminal opened: visit #18 on Dverger(Clone)
+833: [Info   :Valkyrie's Cargo] cargo merchant #18: a terminal is open on him (0 on the wire): the leash holds
+835: [Info   :Valkyrie's Cargo] cargo flight #18: ground unknown at (96.0810547, 175.86525, -122.221016) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+841: [Info   :Valkyrie's Cargo] terminal deal on visit #18: ok wffffffffa3c7dd22-18-1 +2 BlackCore, -600 coins
+845: [Info   :Valkyrie's Cargo] terminal deal on visit #18: ok wffffffffa3c7dd22-18-2 +6 Eitr, -270 coins
+846: [Info   :Valkyrie's Cargo] VCargo_dismissed: ok
+847: [Info   :Valkyrie's Cargo] terminal closed: sent him off
+848: [Info   :Valkyrie's Cargo] cargo merchant #18: into the mist: 1 renderer(s) off with the smoke; the Clear follows in 2 s
+861: [Info   :Valkyrie's Cargo] server answered: cargo visit Nomadtest: forced visit: Nomadtest at (-64.0124, -17.8191757); 1 eligible, 1 ticket(s)
+863: [Info   :Valkyrie's Cargo] merchant guard: removed DvergrAllies.DvergrTameable, DvergrAllies.DvergrProcreation, DvergrAllies.DvergrGenetics from Ingvar's clone; SoMStealthExempt stamped
+882: [Info   :Valkyrie's Cargo] terminal opened: visit #19 on Dverger(Clone)
+890: [Info   :Valkyrie's Cargo] terminal deal on visit #19: ok wffffffffa3c7dd22-19-1 +10 MeadStaminaMinor, -120 coins
+896: [Info   :Valkyrie's Cargo] terminal deal on visit #19: ok wffffffffa3c7dd22-19-2 +10 SerpentStew, -180 coins
+902: [Info   :Valkyrie's Cargo] terminal deal on visit #19: ok wffffffffa3c7dd22-19-3 +10 MinceMeatSauce, -90 coins
+908: [Info   :Valkyrie's Cargo] terminal deal on visit #19: ok wffffffffa3c7dd22-19-4 +10 Bread, -400 coins
+912: [Info   :Valkyrie's Cargo] terminal deal on visit #19: ok wffffffffa3c7dd22-19-5 +50 Honey, -100 coins
+918: [Info   :Valkyrie's Cargo] terminal deal on visit #19: ok wffffffffa3c7dd22-19-6 +1 MeadTasty, -10 coins
+924: [Info   :Valkyrie's Cargo] terminal deal on visit #19: ok wffffffffa3c7dd22-19-7 +9 MeadTasty, -90 coins

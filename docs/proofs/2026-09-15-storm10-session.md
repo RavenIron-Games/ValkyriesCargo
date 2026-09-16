@@ -149,3 +149,62 @@ the previous visit took in, through a full stop and relaunch. Before PR #91 this
 (visit #14 above, after visit #13's 780). The one assignment no off-game check reaches is now the one line a
 machine has shown.
 
+## Visit #18 — the merchant guard with DvergrAllies on both sides (PR #94), 18:51–18:55
+
+**Why.** On Wonderland the same afternoon (VC 0.1.0 both sides, Wu'barrk's DvergrAllies 1.0.7 in the set) the
+use key on Ingvar gave vanilla's tame-follow ("Ingvar the Far-Travelled follows you") and no terminal, and his
+hover carried "(Female)" and "Hungry". DvergrAllies puts a `Tameable` subclass, a `Procreation` and a genetics
+component on every Dvergr prefab at `ZNetScene.Awake`, on every process that loads it; Ingvar is a clone of that
+prefab; `Player.Interact` takes the FIRST `Interactable` in component order, and a prefab component always
+precedes `CargoMerchant`, added at runtime. PR #94 (branch `a/merchant-guard`, head `3285704`, four commits,
+reviewed twice under rule 2, **unmerged**) is the answer in our files: `Client/MerchantGuard.cs` removes those
+components from our clone before `CargoMerchant` is added, and `Patches/Patch_Player_Interact.cs` hands a use on
+anything carrying `CargoMerchant` to `CargoMerchant`.
+
+**Setup.** DvergrAllies is Jotunn `NetworkCompatibility(EveryoneMustHaveMod)`, so a client carrying it cannot join
+a server without it: `Wubarrk-DvergrAllies`, `ValheimModding-Jotunn` and `ValheimModding-JsonDotNET` were copied
+from the `WonderlandAdmin` profile into Storm10's `plugins` AND the `testing` profile's, with the PR #94 DLL
+(`0.1.1+3285704`, md5 `9FFEB463AAB0932CDE0BB1D0C15D44AA`) on both sides. Storm10 relaunched 18:51.
+
+**Server boot 18:51**, in order: `Loading [Jotunn 2.30.0]`, `built against Valheim 1.0.12 … running same build
+1.0.12 …; probes 19/19 ok, 8 not probeable`, **`patches 19/19 applied`** (18/18 before this branch: the prefix is
+the nineteenth class), `Loading [DvergrAllies 1.0.7]` … `[Patches] 7 applied, none failed`, and
+`Successfully injected Taming/Breeding components into 8 wild Dvergr prefabs!` — the injection runs on the
+dedicated server as well. `director up: … purse 99580, next visit #18`. The `probes 19/19 ok` line is the
+proof the branch's docs still owed: the `merchant` probe now asks for the private `Player.Interact(GameObject,
+bool, bool)` and the private `Player.m_lastHoverInteractTime`, and both resolved on the real assembly.
+
+**Client boot 18:52** (`testing`): the same `patches 19/19 applied … probes 19/19 ok` with `renderer=True`,
+`Loading [DvergrAllies 1.0.7]`, and the same `injected Taming/Breeding components into 8 wild Dvergr prefabs!`
+— the Wonderland condition, reproduced on the client that instantiates him. Joined 18:53:27
+(`Received Valkyrie's Cargo version 0.1.1 and minimum version 0.1.1`), wires registered for `Nomadtest (661371129)`.
+
+**`cargo visit` at (-63.1, -18.4)**: `visit #18 begins … purse 100000` (no carry: the previous session's last
+visit took nothing in), flight authored straight in 90 m out, dropped after 16.66 s. On the pilot's client, the
+moment the clone woke, BEFORE the body lines and before `cargo merchant #18: awake`:
+
+```
+merchant guard: removed DvergrAllies.DvergrTameable, DvergrAllies.DvergrProcreation, DvergrAllies.DvergrGenetics from Ingvar's clone; SoMStealthExempt stamped
+cargo merchant #18: awake as carried, ours (owner 661371129), body=Ingvar
+```
+
+All three named, in the order the guard walks them (the `Tameable` loop, the `Procreation` loop, the by-name
+loop); the SoM key written because the pilot's client owned the ZDO at `Humanoid.Awake`, as `Spawner` intends.
+Then `carried -> approaching via the ZDO, 16.66 s after waking; … 18.4 m from the player, ours …, 0 reclaim(s)`,
+`trading (entered: reached the player)` — and **`terminal opened: visit #18 on Dverger(Clone)`**: the use key
+reached our terminal with DvergrAllies' `Tameable` on the prefab, which is the Wonderland failure not happening.
+Closed with Escape, opened again on the second press (`terminal closed: escape` … `terminal opened: visit #18`),
+two deals settled through it (`18-1: sold 2 BlackCore at 300, coins -600`, `18-2: sold 6 Eitr at 45, coins -270`;
+`purse 100870`), and the visit sent off from the terminal: `VCargo_dismiss from Nomadtest: visit #18 dismissed`,
+`visit #18 ended: dismissed by Nomadtest; takings 870 coins, purse 100870`, `into the mist: 1 renderer(s) off with
+the smoke`, `merchant and bird reclaimed`. No `Patch_Player_Interact threw`, no `merchant guard threw`, no line
+from DvergrAllies about him after the guard's (its own `[Procreation]` and tame-count lines never appeared).
+
+**The screen half, the owner's word at 18:57: "text is fine."** The hover carried our two lines and nothing
+under them — the "(Female)" and "Hungry" lines were painted by the genetics component's `LateUpdate`, gone with
+the component — and the use key opened the terminal, not the tame-follow.
+
+**What this does not show.** The SoM key's effect: nothing here reads it, Shadows of Midgard was not installed. A
+second client (a watcher that does not own him) was not on. And a merchant adopted across a restart, where no
+instantiating client owns the ZDO and the stamp therefore never lands, was not run; that case is the one-line
+authoring-time stamp proposed for `Spawner.cs`, Wu'barrk's file.
