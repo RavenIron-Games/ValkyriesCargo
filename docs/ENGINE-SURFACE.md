@@ -36,12 +36,14 @@ which is ours), and it could not see any of:
   `ZPlayFabSocket`, `StringExtensionMethods`, `Version`, `SE_Rested`, `ZSyncAnimation`,
   `VisEquipment`, `FootStep`, `RandomAnimation`, `Projectile`, `Console`.
 
-There are no `___field` injections anywhere this mod reaches, P5 included: `grep -rnoE
-'___[A-Za-z_][A-Za-z0-9_]*'` over `ValkyriesCargo/` on `origin/b/p5-merchant` returns nothing, same
-as main. All six patches - the three already merged plus P5's `Patch_Humanoid_Awake`,
-`Patch_Character_InIntro` and `Patch_Character_Damage` (which patches `Character.RPC_Damage`, not
-`Damage` - see the row below) - take `__instance`, `__runOriginal` and `__result` only. This
-paragraph used to predict P5 would need one; checked directly against P5's own tree, it does not.
+There is exactly ONE `___field` injection anywhere this mod reaches, since PR #94 (2026-09-15):
+`grep -rnoE '___[A-Za-z_][A-Za-z0-9_]*'` over `ValkyriesCargo/` returns only
+`Patches/Patch_Player_Interact.cs` and its `___m_lastHoverInteractTime` (the row below). Every other
+patch class - ten Harmony classes under `Patches/` today, `Patch_Character_Damage.cs` carrying two,
+the one on `Character.RPC_Damage` and not `Damage` (see its row) - takes `__instance`,
+`__runOriginal` and `__result` only. This paragraph used to say there were none, and predicted P5
+would need one; P5 did not, and the first one arrived with the use-key prefix, where the hold
+throttle's stamp is private and the prefix has to read and write it to be the original minus one call.
 
 Four types are named only as a `GetComponent<T>()` type argument in `cargo prefab`'s dump —
 `MonsterAI`, `NpcTalk`, `Tameable`, `ZSyncAnimation` — so only their existence matters, and a build
@@ -273,6 +275,8 @@ Player.IsDead | assembly_valheim | call | a terminal panel rule
 Player.m_comfortLevel | assembly_valheim | fact | private and computed locally: the whole reason the client reports comfort itself
 Player.TakeInput | assembly_valheim | fact | consults Chat.HasFocus; the choke point UIFocus works through
 Player.Update | assembly_valheim | fact | reads TakeInput() before any OnGUI runs
+Player.Interact(GameObject, bool, bool) | assembly_valheim | patch | private; our prefix (Patch_Player_Interact, Priority.Low, __runOriginal) hands a use on an object carrying CargoMerchant to CargoMerchant and cancels the original, which would take the FIRST Interactable in component order (a taming mod's Tameable on the Dverger prefab, Wonderland 2026-09-15); gates kept, DoInteractAnimation not played
+Player.m_lastHoverInteractTime | assembly_valheim | patch | private float; the hold throttle's stamp, read and written by the prefix through ___injection so a hold on Ingvar throttles the next hold as vanilla would
 Character.GetAllCharacters | assembly_valheim | call | CargoFlight.FindMerchantByCarrier, the only path on a pure client
 Character.GetSEMan | assembly_valheim | call | ComfortReporter
 Character.m_name | assembly_valheim | call | cargo prefab dump

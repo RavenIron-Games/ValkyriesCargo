@@ -46,7 +46,12 @@ namespace RavenIron.ValkyriesCargo.Patches
                 if (zdo == null) zdo = ZNetView.m_initZDO;
                 if (zdo == null || zdo.GetInt(Spawner.IngvarHash, 0) == 0) return;
                 if (__instance.GetComponent<CargoMerchant>() == null)
+                {
+                    // First the guard, then the merchant: what a taming mod put on the prefab comes
+                    // off our clone before CargoMerchant's own SetTamed can trip that mod's patches.
+                    MerchantGuard.Apply(__instance.gameObject, zdo);
                     __instance.gameObject.AddComponent<CargoMerchant>();
+                }
             }
             catch (Exception ex)
             {

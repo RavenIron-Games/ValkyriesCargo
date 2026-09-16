@@ -590,9 +590,16 @@ namespace RavenIron.ValkyriesCargo
             NeedMethod(typeof(Chat), "SetNpcText",
                        new[] { typeof(GameObject), typeof(Vector3), typeof(float), typeof(float), typeof(string), typeof(string), typeof(bool) }, bad);
             NeedField(typeof(Odin), "m_despawn", typeof(EffectList), true, bad);
+            // Patch_Player_Interact names both in strings (the target, and the stamp by ___injection): a
+            // rename is a Harmony failure at PatchAll, not a compile error - the RPC_Damage class of silence.
+            // Both PRIVATE today, asked for without the public check (a probe asserts presence and shape,
+            // never privacy). Without them the use key on Ingvar falls back to the first
+            // Interactable in component order: on a machine with a taming mod, the tame-follow again.
+            NeedMethod(typeof(Player), "Interact", new[] { typeof(GameObject), typeof(bool), typeof(bool) }, bad);
+            NeedField(typeof(Player), "m_lastHoverInteractTime", typeof(float), false, bad);
             NeedMethod(typeof(EffectList), "Create",
                        new[] { typeof(Vector3), typeof(Quaternion), typeof(Transform), typeof(float), typeof(int), typeof(ZDOID) }, bad);
-            return 22;
+            return 24;
         }
 
         private static void ProbeInterfaces()
