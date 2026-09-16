@@ -1,6 +1,6 @@
 {
     "name":  "ValkyriesCargo",
-    "version_number":  "0.1.3",
+    "version_number":  "0.1.4",
     "website_url":  "https://ravenirongames.com/",
     "description":  "A Valkyrie air-drops Ingvar the Far-Travelled, a red-bearded dwarven merchant, beside your hearth when rested. Buy \u0026 sell wares at dynamic supply-and-demand prices before he vanishes like Odin. Server-synced.",
     "dependencies":  [

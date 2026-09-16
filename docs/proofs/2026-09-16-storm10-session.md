@@ -142,6 +142,7 @@ with an empty `CatalogueOverrides`, the old line gone, the purse kept; the backu
 the export 101 rows with the 29 food rows and Honey and Amber back.
 
 Storm10 was stopped after each boot and left down on the migrated real file; nothing shipped was copied to it.
+The 0.1.4 cut's build then booted on Storm10 at the cut, on that migrated file: `Loading [Valkyrie's Cargo 0.1.4]`, `v0.1.4 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` (10:58, no client, no migration line because the file was already at version 2, director up at visit #23).
 
 ## Not seen on the day
 

@@ -1,8 +1,15 @@
 # Changelog
 
-## Unreleased (0.1.4)
+## 0.1.4
 
-### The config migration (branch `a/config-migration`, built at the owner's word 2026-09-16 - not yet cut)
+### 0.1.4 — cut 2026-09-16 (the day's second), the config migration; a pre-release on GitHub, the store upload is the owner's
+
+**Why a number.** The store takes one upload per version number, and this changes what the config file holds and
+how the catalogue is stored. **A 0.1.3 client is refused by a 0.1.4 server** by the version gate, so both sides move
+together. **Updating a server from 0.1.3 or earlier: nothing to delete any more** — the first boot on 0.1.4 migrates
+the file itself, as below; 0.1.3's delete-the-file note is history.
+
+### The config migration (PR #99, merged 2026-09-16 at the owner's word)
 
 **From 0.1.4 the mod migrates its own config file; the "delete the old config file first" step retires.**
 0.1.3 and earlier told a server owner to delete `com.raveniron.valkyriescargo.cfg` on every update, because
@@ -48,6 +55,17 @@ private property; nothing here touches it directly).
 Tests: `ConfigLedgerTests` and `CatalogueOverridesTests` in `tests/CoreTests/Program.cs`, including the
 round-trip invariant (`Apply(Parse(DefaultLine), Derive(stored, HistoricalDefaults, DefaultLine))` reproduces
 every row a stored line actually had, food rows the admin never saw included).
+
+**Seen on Storm10, 2026-09-16 10:42–10:48, three headless boots of the branch head** (the record:
+`docs/proofs/2026-09-16-storm10-session.md`, the migration section): a synthesised Wonderland-style file (the 0.1.0
+72-row `Catalogue` line with Ruby's numbers changed, Honey and Amber removed, Thistle added, no stamp) booted to
+`config: version 0 -> 2: Catalogue was customised, kept as 4 override(s): Ruby changed, Thistle added, Amber removed,
+Honey removed`, the file stamped 2 with exactly those overrides and no old line, the purse untouched, a byte-identical
+`.v0.bak` beside it, and the market export carrying all 29 food rows next to the admin's changes; the same file booted
+again as a no-op; Storm10's own 0.1.3 file migrated with empty overrides.
+
+**Which build ran.** The three boots were on the branch head `0.1.3+10bc018`; the record's commit changed documents
+only, and no `.cs` file changed from there to this cut. A 0.1.4 build booted on Storm10 at the cut: `Loading [Valkyrie's Cargo 0.1.4]`, `v0.1.4 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` (10:58, no client, no migration line because the file was already at version 2, director up at visit #23).
 
 ## 0.1.3
 

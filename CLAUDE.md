@@ -24,6 +24,17 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ## Status
 
+**CUT 2026-09-16, the day's second: `v0.1.4` — the config migration** (the owner: "merge 99 and cut 0.1.4"). A
+GitHub pre-release with the store zip and the kit attached; the upload is the owner's. The code change since 0.1.3:
+PR #99 — `Config/ConfigMigration.cs` (Wu'barrk's Wings machinery, credited), `Core/ConfigLedger.cs` and
+`Core/CatalogueOverrides.cs` (pure): the file is read before any bind, `[Meta] ConfigVersion` stamps the layout
+(0 = unstamped rc1..0.1.3, 1 = the 0.1.1 catalogue, 2 = this), a value still at an old default moves, a value the
+admin set stays, a `.vN.bak` lands first, the catalogue becomes shipped rows + `Server.CatalogueOverrides` reaching
+clients as a ServerSync custom value, `cargo config`. Proven on Storm10 with three headless boots (the Wonderland
+case kept four admin changes and gained the 29 food rows; a no-op second boot; Storm10's own file). A 0.1.3 client is
+refused by a 0.1.4 server. A 0.1.4 build booted on Storm10 at the cut: `Loading [Valkyrie's Cargo 0.1.4]`, `v0.1.4 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` (10:58, no client, no migration line because the file was already at version 2, director up at visit #23). 2540 checks, 0 warnings. The
+lines: `docs/proofs/2026-09-16-storm10-session.md`, the migration section. The delete-the-file note is history.
+
 **CUT 2026-09-16: `v0.1.3` — the visit clock** (the owner: "merge 97 and cut 0.1.3", with two notes: the changelog
 and the README say a server updating from an earlier version deletes its old config file first, because a stored
 line beats a shipped default (0.1.3 and earlier; 0.1.4 migrates the file itself instead). A GitHub pre-release with the store zip and the kit attached; the upload is the

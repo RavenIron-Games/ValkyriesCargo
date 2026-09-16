@@ -6,16 +6,19 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.3`, a first playable; a pre-release on GitHub, the store upload is the owner's.** Cut
-> 2026-09-16 from `main`. **For Valheim 1.0.12 only**: 1.0.12 moved the network version to 40, so
-> `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The store carries whichever
-> cut the owner last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first); 0.1.3 reaches it when he uploads
-> it, and **a 0.1.2 client is refused by a 0.1.3 server** by the version gate — on purpose: the store takes
-> one upload per number, and both sides move together. **Updating a server: delete the old config file
-> first** (Installing, below) — a stored line beats a shipped default.
+> **Status: `v0.1.4`, a first playable; a pre-release on GitHub, the store upload is the owner's.** Cut
+> 2026-09-16 from `main`, the day's second. **For Valheim 1.0.12 only**: 1.0.12 moved the network version to 40,
+> so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The store carries whichever
+> cut the owner last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first); 0.1.4 reaches it when he uploads
+> it, and **a 0.1.3 client is refused by a 0.1.4 server** by the version gate — on purpose: the store takes
+> one upload per number, and both sides move together. **Updating a server: nothing to delete any more** —
+> from 0.1.4 the mod migrates its own config file (Installing, below).
 > The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
 > because 0.1.x is a first playable and says so.
-> What 0.1.3 adds: the visit clock runs whoever is near him, so a visit ends on time with nobody online
+> What 0.1.4 adds: the mod migrates its own config file (a value still at an old default moves, a value you set
+> stays, a backup lands beside the file, the boot line says what it did) and the catalogue becomes the shipped rows
+> plus your `CatalogueOverrides`, so a stored line never hides a new default again.
+> What 0.1.3 added: the visit clock runs whoever is near him, so a visit ends on time with nobody online
 > (before, it never ended without a player within 96 m of him, and held every raid with it); the new server
 > option `PauseVisitWhenEmpty` holds it on an empty server instead (off by default).
 > What 0.1.2 added: the merchant guard — Ingvar trades and hovers as himself on a server whose taming mod made
@@ -68,7 +71,7 @@ from our own interact handler. Nothing happens on command except an admin's `car
 
 ## Status
 
-**Truth pass against `main` at the `v0.1.3` cut, 2026-09-16.** This mod runs on **Valheim 1.0.12**
+**Truth pass against `main` at the `v0.1.4` cut, 2026-09-16 (the day's second).** This mod runs on **Valheim 1.0.12**
 and on nothing else: 1.0.12 moved the network version to 40, so a build for 1.0.7 or 0.221.12 cannot
 connect at all. `v0.1.0-rc4` is a 1.0.7 build and is superseded; `v0.1.0-rc3` remains the last 0.221.12
 build.
@@ -97,6 +100,13 @@ its timer with the server empty; visit #22 paused on the tick the engine dropped
 minutes, resumed on the pilot's return and ended by its timer, 0 clock republishes;
 `docs/proofs/2026-09-16-storm10-session.md`). The recorded visit duration now comes off the event's own clock; the
 ZNet probe names `GetNrOfPlayers`; 2100 checks, 0 warnings. A 0.1.3 build booted on Storm10 at the cut: `Loading [Valkyrie's Cargo 0.1.3]`, `v0.1.3 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` (08:08, no client, the sidecar's 110 rows loaded, next visit #23).
+**0.1.4 adds the config migration on top (PR #99)** — the file is read before any bind, a `[Meta] ConfigVersion` stamp
+says its layout, a value still at an old default moves to the new one, a value the admin set stays and is named in the
+log, a `.vN.bak` lands beside the file first, and the catalogue becomes the shipped rows plus `Server.CatalogueOverrides`
+(`Prefab:Base:Target:Max:Kind` to add or change a row, `-Prefab` to remove one). Proven on Storm10 2026-09-16 with three
+headless boots (a Wonderland-style 0.1.0 file kept its admin's four changes and gained all 29 food rows; a second boot was
+a no-op; Storm10's own 0.1.3 file migrated clean; `docs/proofs/2026-09-16-storm10-session.md`). 2540 checks, 0
+warnings. A 0.1.4 build booted on Storm10 at the cut: `Loading [Valkyrie's Cargo 0.1.4]`, `v0.1.4 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` (10:58, no client, no migration line because the file was already at version 2, director up at visit #23).
 
 **What is proven and what is not, at this cut** (`docs/proofs/2026-09-11-release-session.md`,
 `docs/proofs/2026-09-15-storm10-session.md`). The
@@ -207,7 +217,7 @@ So today a visit puts Ingvar in the yard, walks him up and trades through the te
 screen against a dedicated server across twenty-seven visits. The first approach reaching the player,
 the vanish and the carry holding its owner were all open questions at the rc2 cut and have since been
 watched and fixed. What has still never been seen is **redelivery after a lost connection**, and no
-two-client item has run. The tag is `v0.1.3`; the store carries whichever cut the owner last uploaded;
+two-client item has run. The tag is `v0.1.4`; the store carries whichever cut the owner last uploaded;
 `docs/RELEASE.md` §4 records the three-item bar that was met and the one item skipped, with the reason.
 ---
 
