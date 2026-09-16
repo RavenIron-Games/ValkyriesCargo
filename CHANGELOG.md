@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.1.3
+
+### 0.1.3 — cut 2026-09-16, the visit clock; a pre-release on GitHub, the store upload is the owner's
+
+**Updating a server from 0.1.2 or earlier: delete the mod's old config file first** (the owner, 2026-09-16).
+That is `BepInEx\config\com.raveniron.valkyriescargo.cfg` on the SERVER, removed while the server is down, so
+the first boot on 0.1.3 writes it fresh with this cut's defaults: the new `Server.PauseVisitWhenEmpty` line and
+the 101-row `Catalogue`. A stored config file keeps its own values across an update, and a stored line beats the
+shipped default: on Wonderland the 72-row `Catalogue` line from 0.1.0 outlived two updates and hid the 29 food
+rows until the owner found them missing (2026-09-16). Anything set on purpose in that file (`PurseCoins`, the
+roll, the flight, the shelf) goes with it and wants setting again afterwards; `cargo catalogue reset` as an admin
+takes the shipped catalogue alone, if that is all a server needs. A client's copy holds nothing the server does
+not overrule, and can stay.
+
+**Why a number.** The store takes one upload per version number, and this changes a behaviour that shipped: when
+a visit ends. **A 0.1.2 client is refused by a 0.1.3 server** by the version gate, so both sides move together.
+
+- **The visit clock runs whoever is near him (PR #97; 2100 checks, 7 new).** The owner's finding, 2026-09-16: a
+  visit whose pilot walked off or logged out never ended. The vanilla random event a visit rides was registered
+  with `m_pauseIfNoPlayerInArea` on, and the engine adds no time to such an event while nobody is within 96 m of
+  it; Valheim runs one random event at a time, so an open visit also held every raid and every later visit
+  (`held: a random event is active`). Now the event registers with that flag OFF: the clock runs from the moment
+  the visit begins, on the server's own real time, and Ingvar leaves `MerchantLifespanSeconds` later whoever is
+  there or not — with nobody online too, the merchant reclaimed server-side with no vanish seen. The one
+  exception is the **new synced option `Server.PauseVisitWhenEmpty`** (default off): an empty server holds the
+  clock, so a visit started at bedtime is still there in the morning. "Empty" is the engine's own player count,
+  the one it freezes the world clock on; a listen host counts itself, so the option never engages there, and a
+  lost connection keeps its peer counted until the engine's 90 s reconnect timeout drops it. Logged on change:
+  `visit #N: clock paused: nobody online (Server.PauseVisitWhenEmpty)` / `clock running: K online`; the
+  registration line reads `runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server)`.
+  With it: the server no longer republishes the countdown while nobody is online (it had re-sent it every
+  second to nobody); a visit's recorded duration (`duration_seconds` in the BarrkBOT export) comes off the
+  event's own clock as the server last saw it, so an admin's `stopevent` records the truth; `docs/PROOF-CLIENT.md`
+  item 9 tests the new clock instead of the pause; the ZNet probe learns `GetNrOfPlayers`. **Seen on Storm10,
+  2026-09-16:** option off, visit #21 — the pilot logged out at 07:33:44 and with nobody online the log carries
+  `visit #21 ended: timer` about 300 s after `begins`; option on, visit #22 — `clock paused: nobody online` on
+  the tick the engine dropped the lost peer (07:50:46), six empty minutes with no end line, `clock running: 1
+  online` on the pilot's return (07:56), then `one minute left` and `visit #22 ended: timer … 0 clock
+  republish(es)`. The record: `docs/proofs/2026-09-16-storm10-session.md`, with the log extract beside it.
+
+**Which build ran.** The live runs were on the branch's first and second commits (`0.1.2+19cb8bb`,
+`0.1.2+4333134`); its third commit changed the recorded duration and the option's description text
+(`Server/VisitDirector.cs`, `Config/ModConfig.cs`) and has not run live; nothing else in `.cs` changed from
+there to this cut. A 0.1.3 build booted on Storm10 at the cut: `Loading [Valkyrie's Cargo 0.1.3]`, `v0.1.3 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` (08:08, no client, the sidecar's 110 rows loaded, next visit #23).
+
 ## 0.1.2
 
 ### 0.1.2 — cut 2026-09-15 evening, the merchant guard; a pre-release on GitHub, the store upload is the owner's

@@ -34,13 +34,15 @@ next login, never twice.
 on a Dverger clone whose renderers are switched off (`Server.CustomBody` puts the stand-in back). **Later:** the horn,
 a barter basket, rare rotating stock, localisation.
 
-**Where it is, 2026-09-15 evening.** `main` builds clean at 2093 off-game checks and **`v0.1.2` is tagged** — a
+**Where it is, 2026-09-16.** `main` builds clean at 2100 off-game checks and **`v0.1.3` is tagged** — a
 GitHub pre-release; the store upload is the owner's. It is the **Valheim 1.0.12** build and runs on nothing else.
-0.1.2 adds the merchant guard: Ingvar trades and hovers as himself on a server whose taming mod made the Dvergr a
+0.1.3 makes the visit clock run whoever is near him (a visit ends on time with nobody online; the new
+`Server.PauseVisitWhenEmpty` holds it on an empty server; a server updating from an earlier version deletes its old
+config file first). 0.1.2 added the merchant guard: Ingvar trades and hovers as himself on a server whose taming mod made the Dvergr a
 pet (DvergrAllies; found on Wonderland, proven on Storm10 with the mod on both sides). 0.1.1 carried issue #79's fix (Ingvar insists on
 ground somebody built and refuses merchants' camps, dungeon doors and landmarks, proven live), food and drink in
 the catalogue (72 → 101), one row per item token, and the console lines in the client log. **Twenty-seven live
-visits** stood behind rc5 and four more ran on 2026-09-15, all on dedicated servers: the flight, the drop, Ingvar in his own baked body, the walk-up, the
+visits** stood behind rc5 and more have run since on Storm10, the last two on 2026-09-16 behind this cut's clock, all on dedicated servers: the flight, the drop, Ingvar in his own baked body, the walk-up, the
 terminal on a real visit, deals at the price curve, the vanish, a relog mid-visit, a visit resumed across a
 restart, the carry offset tuned live while the bird was in the air, and on 2026-09-15 the location refusals and
 seven deals on the new catalogue. Never seen in a game: **redelivery after a lost connection**, proven off-game

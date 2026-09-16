@@ -8,7 +8,7 @@
 [![Framework](https://img.shields.io/badge/Requires-BepInEx-red.svg)]()
 [![Economy](https://img.shields.io/badge/Economy-Supply_%26_Demand-green.svg)]()
 [![Custom Character](https://img.shields.io/badge/Ingvar-Custom_Character-purple.svg)]()
-[![Version](https://img.shields.io/badge/Version-0.1.2-lightgrey.svg)]()
+[![Version](https://img.shields.io/badge/Version-0.1.3-lightgrey.svg)]()
 
 > *"You bank the fire, set down your axe, and the light goes strange. Wings beat in the upper skies —*
 > *and she comes down out of the cloud with a red-bearded dwarf hanging from her talons, and sets him*
@@ -220,9 +220,23 @@ Thunderstore-compatible manager — the dependency above is pulled in for you.
 3. On a dedicated server, install it on the **server and every client**.
 4. Go and get comfortable.
 
+**Updating from an earlier version:** with the server down, delete
+`BepInEx/config/com.raveniron.valkyriescargo.cfg` on the **server** before starting it on the new version, so
+the config is written fresh with the new defaults — a stored line beats a new default (0.1.3 adds
+`PauseVisitWhenEmpty`; 0.1.1 grew the catalogue to 101 rows, and an old file hides them). Set your own values
+again afterwards. A client's copy can stay.
+
 ---
 
-## 📖 Status — 0.1.1
+## 📖 Status — 0.1.3
+
+**0.1.3 (2026-09-16).** The visit clock runs whoever is near Ingvar: a visit ends on time with nobody online
+(before, it never ended without a player within 96 m of him, and held every raid with it). The new server
+option `PauseVisitWhenEmpty` holds it on an empty server instead, off by default. **Updating a server: delete
+the old config file first** (Installation, above).
+
+**0.1.2 (2026-09-15).** The merchant guard: Ingvar trades and hovers as himself on a server whose taming mod
+made the Dvergr a pet.
 
 **0.1.1 (2026-09-15).** Ingvar now insists on ground somebody built and keeps away from other merchants'
 camps, dungeon doors and the game's landmarks (a player's report from the Bog Witch's camp); he buys and

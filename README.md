@@ -6,15 +6,19 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.2`, a first playable; a pre-release on GitHub, the store upload is the owner's.** Cut
-> 2026-09-15 evening from `main`. **For Valheim 1.0.12 only**: 1.0.12 moved the network version to 40, so
+> **Status: `v0.1.3`, a first playable; a pre-release on GitHub, the store upload is the owner's.** Cut
+> 2026-09-16 from `main`. **For Valheim 1.0.12 only**: 1.0.12 moved the network version to 40, so
 > `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The store carries whichever
-> cut the owner last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first); 0.1.2 reaches it when he uploads
-> it, and **a 0.1.1 client is refused by a 0.1.2 server** by the version gate — on purpose: the store takes
-> one upload per number, so the merchant guard ships as a number of its own.
+> cut the owner last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first); 0.1.3 reaches it when he uploads
+> it, and **a 0.1.2 client is refused by a 0.1.3 server** by the version gate — on purpose: the store takes
+> one upload per number, and both sides move together. **Updating a server: delete the old config file
+> first** (Installing, below) — a stored line beats a shipped default.
 > The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
 > because 0.1.x is a first playable and says so.
-> What 0.1.2 adds: the merchant guard — Ingvar trades and hovers as himself on a server whose taming mod made
+> What 0.1.3 adds: the visit clock runs whoever is near him, so a visit ends on time with nobody online
+> (before, it never ended without a player within 96 m of him, and held every raid with it); the new server
+> option `PauseVisitWhenEmpty` holds it on an empty server instead (off by default).
+> What 0.1.2 added: the merchant guard — Ingvar trades and hovers as himself on a server whose taming mod made
 > the Dvergr a pet (DvergrAllies; found on Wonderland, proven on Storm10 with the mod on both sides).
 > What 0.1.1 added: Ingvar insists on ground somebody built and refuses a drop at another merchant's camp, a
 > dungeon door or one of the game's landmarks (issue #79; three switches, proven live); food and drink in
@@ -64,7 +68,7 @@ from our own interact handler. Nothing happens on command except an admin's `car
 
 ## Status
 
-**Truth pass against `main` at the `v0.1.2` cut, 2026-09-15 evening.** This mod runs on **Valheim 1.0.12**
+**Truth pass against `main` at the `v0.1.3` cut, 2026-09-16.** This mod runs on **Valheim 1.0.12**
 and on nothing else: 1.0.12 moved the network version to 40, so a build for 1.0.7 or 0.221.12 cannot
 connect at all. `v0.1.0-rc4` is a 1.0.7 build and is superseded; `v0.1.0-rc3` remains the last 0.221.12
 build.
@@ -86,6 +90,13 @@ sides (visit #18: the guard named all three of its components on Ingvar's wake, 
 two deals, the owner's hover clean; `docs/proofs/2026-09-15-storm10-session.md`, the last section); no other
 `.cs` change since 0.1.1's zip; a 0.1.2 build booted on Storm10 at the cut (`v0.1.2 loaded … patches 19/19
 applied … probes 19/19 ok`); 2093 checks, 0 warnings.
+**0.1.3 adds the visit clock on top (PR #97)** — the event registers with vanilla's pause-out-of-range OFF, so a
+visit ends `MerchantLifespanSeconds` after it began whoever is near him, with nobody online too; the new synced
+`Server.PauseVisitWhenEmpty` (off) holds it on an empty server. Proven live on Storm10 2026-09-16 (visit #21 ended by
+its timer with the server empty; visit #22 paused on the tick the engine dropped the lost peer, held six empty
+minutes, resumed on the pilot's return and ended by its timer, 0 clock republishes;
+`docs/proofs/2026-09-16-storm10-session.md`). The recorded visit duration now comes off the event's own clock; the
+ZNet probe names `GetNrOfPlayers`; 2100 checks, 0 warnings. A 0.1.3 build booted on Storm10 at the cut: `Loading [Valkyrie's Cargo 0.1.3]`, `v0.1.3 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` (08:08, no client, the sidecar's 110 rows loaded, next visit #23).
 
 **What is proven and what is not, at this cut** (`docs/proofs/2026-09-11-release-session.md`,
 `docs/proofs/2026-09-15-storm10-session.md`). The
@@ -196,7 +207,7 @@ So today a visit puts Ingvar in the yard, walks him up and trades through the te
 screen against a dedicated server across twenty-seven visits. The first approach reaching the player,
 the vanish and the carry holding its owner were all open questions at the rc2 cut and have since been
 watched and fixed. What has still never been seen is **redelivery after a lost connection**, and no
-two-client item has run. The tag is `v0.1.2`; the store carries whichever cut the owner last uploaded;
+two-client item has run. The tag is `v0.1.3`; the store carries whichever cut the owner last uploaded;
 `docs/RELEASE.md` §4 records the three-item bar that was met and the one item skipped, with the reason.
 ---
 
@@ -230,6 +241,14 @@ client code.
 On a Gale-managed client the plugin folder is
 `%APPDATA%\com.kesomannen.gale\valheim\profiles\<profile>\BepInEx\plugins\`, not the Steam folder.
 
+**Updating a server that already has the mod: delete the old config file first.** Take the server down,
+remove `BepInEx\config\com.raveniron.valkyriescargo.cfg`, put the new DLL in, start it: the file is written
+fresh with the shipped defaults (0.1.3 adds `Server.PauseVisitWhenEmpty`; 0.1.1 grew the catalogue to 101
+rows). A stored line beats the shipped default, so an old file hides new rows and new knobs — on Wonderland
+the 72-row catalogue from 0.1.0 outlived two updates. Anything set on purpose (`PurseCoins`, the roll, the
+flight) wants setting again afterwards; `cargo catalogue reset` as an admin takes the shipped catalogue alone.
+A client's copy can stay: every `Server.*` value on it is overruled by the server.
+
 Requires [BepInExPack Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/)
 and nothing else: no Jotunn, no JSON library (the BarrkBOT export writes its files through the mod's
 own `Core/Json.cs`). `manifest.json`'s dependency list is that one entry.
@@ -243,7 +262,8 @@ keeps it; `v0.1.0-rc3` was the last build for it).
 
 ## Configuration
 
-`BepInEx\config\com.raveniron.valkyriescargo.cfg`.
+`BepInEx\config\com.raveniron.valkyriescargo.cfg`. **After an update, delete the server's copy** so it is
+written fresh with the shipped defaults — a stored line beats a new default (Installing, above).
 
 **Every `Server.*` value is synced from the server and locked**: on a connected client the local
 value is shown read-only, and a client's write is rejected unless that client is on the server's

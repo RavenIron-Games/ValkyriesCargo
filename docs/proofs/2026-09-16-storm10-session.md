@@ -19,7 +19,8 @@ probeable` (the second with `ZNet.GetNrOfPlayers` new in the Rpc probe), and bot
 the new line: `event 'valkyries_cargo' registered (19 events now); duration 300 s, runs whoever is near him
 (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.` The third
 commit (`a2344d3`: the recorded duration read off the event's own clock, the contract row, the reconnect
-note) has not booted on a server; it changes what `visits` records, not what the log prints.
+note) changes what `visits` records, not what the log prints. The 0.1.3 cut's build booted on Storm10 at the
+cut, `Loading [Valkyrie's Cargo 0.1.3]`, `v0.1.3 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` (08:08, no client, the sidecar's 110 rows loaded, next visit #23).
 
 ## Visit #21 — the option off: the visit ends with nobody online, 07:31–07:38
 
@@ -96,12 +97,14 @@ visit #22 ended: timer; takings 0 coins, purse 100000, 0 clock republish(es), 0 
 visit #22: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
 ```
 
-stamped between 07:56:46 and 07:59:25. A visit that would have ended at about 07:51 with the option off
+stamped after 07:57:03 (`Got character ZDOID`, the last timestamped engine line before them) and before
+08:00:16 (the next one). A visit that would have ended at about 07:51 with the option off
 ended at about 07:58 with it on, the six empty minutes held. **0 clock republishes** across a lost
 connection, a 90 s reconnect window, a six-minute pause and a resume: with the option on the engine
 freezes the world clock on the same count that holds the event's clock, so the mirror never drifted —
 the second commit's expectation for the option-on case (visit #21, option off, on the first commit's
-build, republished 206 times to nobody).
+build, republished 206 times to nobody). The extract runs on to the pilot's second session (08:00) and the
+stop at 08:04:21.
 
 ## Not seen on the day
 

@@ -24,6 +24,18 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ## Status
 
+**CUT 2026-09-16: `v0.1.3` — the visit clock** (the owner: "merge 97 and cut 0.1.3", with two notes: the changelog
+and the README say a server updating from an earlier version deletes its old config file first, because a stored
+line beats a shipped default). A GitHub pre-release with the store zip and the kit attached; the upload is the
+owner's. The code change since 0.1.2: PR #97 — the visit's event registers with `m_pauseIfNoPlayerInArea` OFF so
+the clock runs whoever is near him and a visit ends on time with nobody online; the new synced
+`Server.PauseVisitWhenEmpty` (default false) holds it on an empty server; no VisitState republish while the server
+is empty; the recorded duration off the event's own clock; the ZNet probe names `GetNrOfPlayers`. Proven live on
+Storm10 2026-09-16 (visit #21 ended by its timer with the server empty; visit #22 paused on the tick the engine
+dropped the lost peer, held six empty minutes, resumed on the pilot's return, ended by its timer with 0 clock
+republishes). A 0.1.2 client is refused by a 0.1.3 server. A 0.1.3 build booted on Storm10 at the cut: `Loading [Valkyrie's Cargo 0.1.3]`, `v0.1.3 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` (08:08, no client, the sidecar's 110 rows loaded, next visit #23).
+2100 checks, 0 warnings. The lines: `docs/proofs/2026-09-16-storm10-session.md`.
+
 **CUT 2026-09-15 evening: `v0.1.2` — the merchant guard** (the owner: "cut 0.1.2"; the store takes one upload per
 version number, so the guard could not ship as a second 0.1.1 zip). A GitHub pre-release with the store zip and the
 kit attached; the upload is the owner's. One code change since 0.1.1's refreshed zip: PR #94 (`Client/MerchantGuard.cs`,
