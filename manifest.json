@@ -1,9 +1,9 @@
 {
-    "name": "ValkyriesCargo",
-    "version_number": "0.1.1",
-    "website_url": "https://ravenirongames.com/",
-    "description": "A Valkyrie air-drops Ingvar the Far-Travelled, a red-bearded dwarven merchant, beside your hearth when rested. Buy & sell wares at dynamic supply-and-demand prices before he vanishes like Odin. Server-synced.",
-    "dependencies": [
-        "denikson-BepInExPack_Valheim-5.4.2350"
-    ]
+    "name":  "ValkyriesCargo",
+    "version_number":  "0.1.2",
+    "website_url":  "https://ravenirongames.com/",
+    "description":  "A Valkyrie air-drops Ingvar the Far-Travelled, a red-bearded dwarven merchant, beside your hearth when rested. Buy \u0026 sell wares at dynamic supply-and-demand prices before he vanishes like Odin. Server-synced.",
+    "dependencies":  [
+                         "denikson-BepInExPack_Valheim-5.4.2350"
+                     ]
 }

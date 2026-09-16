@@ -6,14 +6,17 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.1`, a first playable with its own version number; a pre-release on GitHub, not yet
-> on the store.** Cut 2026-09-15 from `main`. **For Valheim 1.0.12 only**: 1.0.12 moved the network
-> version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The
-> store copy is still `v0.1.0-rc5` (published 2026-09-11) until the owner uploads this one, and **an rc5
-> client is refused by a 0.1.1 server** by the version gate — on purpose, which is why the number moved.
+> **Status: `v0.1.2`, a first playable; a pre-release on GitHub, the store upload is the owner's.** Cut
+> 2026-09-15 evening from `main`. **For Valheim 1.0.12 only**: 1.0.12 moved the network version to 40, so
+> `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The store carries whichever
+> cut the owner last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first); 0.1.2 reaches it when he uploads
+> it, and **a 0.1.1 client is refused by a 0.1.2 server** by the version gate — on purpose: the store takes
+> one upload per number, so the merchant guard ships as a number of its own.
 > The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
 > because 0.1.x is a first playable and says so.
-> What 0.1.1 adds: Ingvar insists on ground somebody built and refuses a drop at another merchant's camp, a
+> What 0.1.2 adds: the merchant guard — Ingvar trades and hovers as himself on a server whose taming mod made
+> the Dvergr a pet (DvergrAllies; found on Wonderland, proven on Storm10 with the mod on both sides).
+> What 0.1.1 added: Ingvar insists on ground somebody built and refuses a drop at another merchant's camp, a
 > dungeon door or one of the game's landmarks (issue #79; three switches, proven live); food and drink in
 > the catalogue, 72 → 101 rows (an existing server takes them with `cargo catalogue reset`); one row per
 > item token and deals keyed by prefab; every console line in the client's log; the BarrkBOT export per
@@ -61,7 +64,7 @@ from our own interact handler. Nothing happens on command except an admin's `car
 
 ## Status
 
-**Truth pass against `main` at the `v0.1.1` cut, 2026-09-15.** This mod runs on **Valheim 1.0.12**
+**Truth pass against `main` at the `v0.1.2` cut, 2026-09-15 evening.** This mod runs on **Valheim 1.0.12**
 and on nothing else: 1.0.12 moved the network version to 40, so a build for 1.0.7 or 0.221.12 cannot
 connect at all. `v0.1.0-rc4` is a 1.0.7 build and is superseded; `v0.1.0-rc3` remains the last 0.221.12
 build.
@@ -78,6 +81,11 @@ bought in two deals and all 40 sold back in three through the new prefab-keyed r
 `main` at `ad6c334`, before the version bump; no `.cs` file changed between it and the cut, and a 0.1.1
 build (from `4ff22fc`, the zip's code but for the commit id a build embeds) booted on Storm10 at the cut
 (`v0.1.1 loaded … catalogue=101 entries … probes 19/19 ok`). Off-game: 2093 checks, 0 warnings.
+**0.1.2 adds the merchant guard on top (PR #94)** — proven live on Storm10 with DvergrAllies 1.0.7 on both
+sides (visit #18: the guard named all three of its components on Ingvar's wake, the terminal opened on him,
+two deals, the owner's hover clean; `docs/proofs/2026-09-15-storm10-session.md`, the last section); no other
+`.cs` change since 0.1.1's zip; a 0.1.2 build booted on Storm10 at the cut (`v0.1.2 loaded … patches 19/19
+applied … probes 19/19 ok`); 2093 checks, 0 warnings.
 
 **What is proven and what is not, at this cut** (`docs/proofs/2026-09-11-release-session.md`,
 `docs/proofs/2026-09-15-storm10-session.md`). The
@@ -184,7 +192,7 @@ So today a visit puts Ingvar in the yard, walks him up and trades through the te
 screen against a dedicated server across twenty-seven visits. The first approach reaching the player,
 the vanish and the carry holding its owner were all open questions at the rc2 cut and have since been
 watched and fixed. What has still never been seen is **redelivery after a lost connection**, and no
-two-client item has run. The tag is `v0.1.1`; the store copy is `v0.1.0-rc5` until the owner uploads;
+two-client item has run. The tag is `v0.1.2`; the store carries whichever cut the owner last uploaded;
 `docs/RELEASE.md` §4 records the three-item bar that was met and the one item skipped, with the reason.
 ---
 

@@ -8,7 +8,7 @@
 [![Framework](https://img.shields.io/badge/Requires-BepInEx-red.svg)]()
 [![Economy](https://img.shields.io/badge/Economy-Supply_%26_Demand-green.svg)]()
 [![Custom Character](https://img.shields.io/badge/Ingvar-Custom_Character-purple.svg)]()
-[![Version](https://img.shields.io/badge/Version-0.1.1-lightgrey.svg)]()
+[![Version](https://img.shields.io/badge/Version-0.1.2-lightgrey.svg)]()
 
 > *"You bank the fire, set down your axe, and the light goes strange. Wings beat in the upper skies —*
 > *and she comes down out of the cloud with a red-bearded dwarf hanging from her talons, and sets him*

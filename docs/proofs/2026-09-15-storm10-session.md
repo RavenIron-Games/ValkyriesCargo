@@ -157,7 +157,7 @@ hover carried "(Female)" and "Hungry". DvergrAllies puts a `Tameable` subclass, 
 component on every Dvergr prefab at `ZNetScene.Awake`, on every process that loads it; Ingvar is a clone of that
 prefab; `Player.Interact` takes the FIRST `Interactable` in component order, and a prefab component always
 precedes `CargoMerchant`, added at runtime. PR #94 (branch `a/merchant-guard`, head `3285704`, four commits,
-reviewed twice under rule 2, **unmerged**) is the answer in our files: `Client/MerchantGuard.cs` removes those
+reviewed twice under rule 2, merged as main `81ef199`) is the answer in our files: `Client/MerchantGuard.cs` removes those
 components from our clone before `CargoMerchant` is added, and `Patches/Patch_Player_Interact.cs` hands a use on
 anything carrying `CargoMerchant` to `CargoMerchant`.
 

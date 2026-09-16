@@ -24,6 +24,15 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ## Status
 
+**CUT 2026-09-15 evening: `v0.1.2` — the merchant guard** (the owner: "cut 0.1.2"; the store takes one upload per
+version number, so the guard could not ship as a second 0.1.1 zip). A GitHub pre-release with the store zip and the
+kit attached; the upload is the owner's. One code change since 0.1.1's refreshed zip: PR #94 (`Client/MerchantGuard.cs`,
+`Patches/Patch_Player_Interact.cs`, two members added to the `merchant` probe), proven live on Storm10 with DvergrAllies
+1.0.7, Jötunn and JsonDotNET on both sides (visit #18: the guard named all three components on Ingvar's wake, the
+terminal opened on him, two deals, the owner's hover clean). The boot line counts `patches 19/19 applied`. A 0.1.1
+client is refused by a 0.1.2 server. A 0.1.2 build booted on Storm10 at the cut (`v0.1.2 loaded … patches 19/19 applied …
+probes 19/19 ok`). 2093 checks, 0 warnings. The lines: `docs/proofs/2026-09-15-storm10-session.md`, the last section.
+
 **CUT 2026-09-15: `v0.1.1` — the first cut with its own version number** (the owner: "we need to start
 updating versions as well"); a GitHub pre-release with the store zip and the kit attached, **NOT yet on the store**
 (the upload is the owner's, `docs/RELEASE.md` §5). It carries issue #79's fix (built ground + three location
