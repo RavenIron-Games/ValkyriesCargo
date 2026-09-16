@@ -383,6 +383,7 @@ audio; it is not the summon horn.
   sleep skip, a stretch the option held, a stretch nobody was online to mirror: with nobody online the server does
   not republish at all, and the first tick with a player back retargets it once), and every `VisitClock` retargets
   without re-arming its one-minute warning. A listen host counts itself online, so the option never engages there.
+  A lost connection keeps its peer counted until the engine's ZRpc timeout drops it, 90 s later; a clean logout drops it at once.
 - Two terminals open: both render `MarketState`; a deal from either updates both. Listen host: works as pilot and server.
 
 ### 3.8 Messages

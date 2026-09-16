@@ -54,6 +54,8 @@ namespace RavenIron.ValkyriesCargo.Server
         private string _pendingEndReason;
         /// <summary>Whether the running visit's clock is held (Server.PauseVisitWhenEmpty on an empty server); logged on change.</summary>
         private bool _clockPaused;
+        /// <summary>The event's own remaining seconds as Tick last saw them (-1 when it has not); End() reads the visit's duration off it.</summary>
+        private double _lastEventRemaining = -1.0;
         private string _pendingSessionRow;
         /// <summary>F3's grace period: the visit id `End` sent Keys.Vanish for and is waiting to reclaim. 0 = nothing pending.</summary>
         private int _pendingVanishVisitId;
@@ -251,12 +253,13 @@ namespace RavenIron.ValkyriesCargo.Server
                         // would republish a moving end time to nobody, once a second, for the whole empty
                         // stretch (visit #21, 2026-09-16: 206 republishes with the server empty). Nothing is
                         // synced while the server is empty; the first tick with a player back retargets the
-                        // mirror once (one republish per empty stretch), and End() takes a timer end's
-                        // duration from the lifespan, not from this clock.
+                        // mirror once (one republish per empty stretch), and End() reads the visit's duration
+                        // off the event's own clock as last seen here, not off this mirror.
+                        _lastEventRemaining = CargoEvent.Remaining(res);
                         int online = ZNet.instance != null ? ZNet.instance.GetNrOfPlayers() : 0;
                         if (online > 0)
                         {
-                            string republish = _session.Sync(worldTime, CargoEvent.Remaining(res));
+                            string republish = _session.Sync(worldTime, _lastEventRemaining);
                             if (republish != null) Publish(republish);
                         }
 
@@ -570,12 +573,15 @@ namespace RavenIron.ValkyriesCargo.Server
             // the `started_at` derived from it would land before the visit began. It also keeps running
             // while the event's clock is held (Server.PauseVisitWhenEmpty, an empty server), which the
             // clock deliberately does not.
-            // A timer end is the whole lifespan by definition. A dismiss reads the clock, which `Sync`
-            // retargets from the event's own remaining seconds while anyone is online (not while the
-            // server is empty: nothing to mirror, see Tick), so that is elapsed event time. Found by
-            // review, 2026-09-07; the timer case split out 2026-09-16 with the empty-server Sync dropped.
-            double duration = reason == "timer"
-                ? CargoEvent.Lifespan()
+            // The event's own clock as Tick last saw it (every second while it ran, whoever was online),
+            // so this is elapsed event time: within a second of 300 at the timer, less on a dismiss, and
+            // the truth when something else cleared the event early (vanilla's `stopevent` console
+            // command nulls it, and this End then reads as "timer"). It does not lean on the VisitState
+            // mirror, which Tick does not retarget while the server is empty. The clock is the fallback
+            // for a visit whose event this process never saw. Found by review, 2026-09-07; re-cut
+            // 2026-09-16 (review of PR #97).
+            double duration = _lastEventRemaining >= 0.0
+                ? Math.Max(0.0, CargoEvent.Lifespan() - _lastEventRemaining)
                 : _session.Clock != null
                     ? Math.Max(0.0, CargoEvent.Lifespan() - _session.Clock.Remaining(worldTime))
                     : 0.0;
@@ -610,6 +616,7 @@ namespace RavenIron.ValkyriesCargo.Server
             Publish(endedState);
             _pendingEndReason = null;
             _clockPaused = false;
+            _lastEventRemaining = -1.0;
             _dirty = true;
             ValkyriesCargo.Log.LogInfo("visit #" + id + " ended: " + reason + "; takings " + _lastTakings + " coins, purse " + _market.Purse +
                                        ", " + _session.Republishes + " clock republish(es), " + _ledger.Count + " owed deliver" + (_ledger.Count == 1 ? "y" : "ies"));

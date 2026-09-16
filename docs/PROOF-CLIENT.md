@@ -414,7 +414,9 @@ with the server empty (Storm10 2026-09-16, visit #21). With the option on: log o
 the end, log back in. He is still there, the countdown resumed where it stood, and the log has
 `visit #<n>: clock paused: nobody online (Server.PauseVisitWhenEmpty)` on your leaving and
 `clock running: 1 online` on your return. A listen host counts as a player online, so the option never
-engages there.
+engages there. A lost connection (the log's `Keep socket … try to reconnect before timeout`) keeps its peer
+counted until the engine's ZRpc timeout drops it, 90 s later (`ZRpc timeout detected`); a clean logout drops
+it at once (Storm10 2026-09-16, visit #22: paused 89 s after the loss).
 
 **Paste back:** the two countdown readings with the wall-clock times, and item 10's end line.
 

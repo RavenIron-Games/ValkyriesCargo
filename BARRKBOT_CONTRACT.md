@@ -130,7 +130,7 @@ recent slice).
 | :--- | :--- |
 | `pilot` | The chosen player's name at dispatch. |
 | `started_at`, `ended_at` | ISO 8601 UTC. `started_at` is derived, not stamped independently — see "Known imprecision". |
-| `duration_seconds` | Exact: `worldTime` at end minus `VisitClock.StartWorldTime`, and world seconds are real seconds here (the vanilla event's own `m_time`, paused only while nobody is near — `VisitSession`'s own doc comment). |
+| `duration_seconds` | Exact: elapsed EVENT time, the vanilla event's own `m_time` as the server last saw it (it runs whoever is near him; `Server.PauseVisitWhenEmpty` holds it on an empty server), so within a second of the lifespan at the timer, less on a dismiss or when something cleared the event early. Not world time, which sleeping skips and an empty server freezes. |
 | `takings_coins` | `Market.Takings` at the moment the visit ended: coins gained this visit, never negative. |
 | `ended_reason` | Free text from `VisitSession.End`: `"timer"`, `"dismissed by <name>"`, `"admin <name>"`, `"displaced by event '<name>'"`. |
 
@@ -165,7 +165,7 @@ recent slice).
   every row is read at the same instant this export runs, so this is the honest value, not an
   approximation standing in for a more precise one.
 - **`visits`' `started_at` is derived** (`ended_at` minus `duration_seconds`), not tracked
-  independently. `duration_seconds` itself is exact (the visit's own world clock); only the derived
+  independently. `duration_seconds` itself is exact (the event's own clock); only the derived
   wall-clock `started_at` can drift, and only across something that moves world time faster than real
   time relative to the visit's own span (a sleep skipped through mid-visit). `ended_at` is always exact.
 - **If the world sidecar cannot be saved, the export is skipped that cycle too, on purpose.** Decision
