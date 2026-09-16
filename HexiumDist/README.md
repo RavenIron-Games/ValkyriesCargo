@@ -8,7 +8,7 @@
 [![Framework](https://img.shields.io/badge/Requires-BepInEx-red.svg)]()
 [![Economy](https://img.shields.io/badge/Economy-Supply_%26_Demand-green.svg)]()
 [![Custom Character](https://img.shields.io/badge/Ingvar-Custom_Character-purple.svg)]()
-[![Version](https://img.shields.io/badge/Version-0.1.3-lightgrey.svg)]()
+[![Version](https://img.shields.io/badge/Version-0.1.4-lightgrey.svg)]()
 
 > *"You bank the fire, set down your axe, and the light goes strange. Wings beat in the upper skies —*
 > *and she comes down out of the cloud with a red-bearded dwarf hanging from her talons, and sets him*
@@ -233,13 +233,13 @@ the file, and the boot log says what it did.
 
 ---
 
-## 📖 Status — 0.1.3
+## 📖 Status — 0.1.4
 
-**Unreleased (0.1.4), in progress on a branch.** The mod will migrate its own config file: a value still at
-an old default moves to the new one, a value you set stays, a backup lands beside the file, and the boot log
-says what it did — no more deleting the config file to pick up a new default. The catalogue moves to
-`CatalogueOverrides`: the shipped catalogue plus your changes, so it can grow without a stored line ever
-shadowing it again. Not cut, not on the store yet.
+**0.1.4 (2026-09-16).** The mod migrates its own config file: a value still at an old default moves to the
+new one, a value you set stays, a backup lands beside the file, and the boot log says what it did — no more
+deleting the config file to pick up a new default. The catalogue is now `CatalogueOverrides`: the shipped
+catalogue plus your changes, so it can grow without a stored line ever shadowing it again. Update the
+server and every client together: a 0.1.3 client is refused by a 0.1.4 server.
 
 **0.1.3 (2026-09-16).** The visit clock runs whoever is near Ingvar: a visit ends on time with nobody online
 (before, it never ended without a player within 96 m of him, and held every raid with it). The new server

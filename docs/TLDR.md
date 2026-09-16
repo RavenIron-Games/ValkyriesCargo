@@ -34,9 +34,11 @@ next login, never twice.
 on a Dverger clone whose renderers are switched off (`Server.CustomBody` puts the stand-in back). **Later:** the horn,
 a barter basket, rare rotating stock, localisation.
 
-**Where it is, 2026-09-16.** `main` builds clean at 2100 off-game checks and **`v0.1.3` is tagged** — a
-GitHub pre-release; the store upload is the owner's. It is the **Valheim 1.0.12** build and runs on nothing else.
-0.1.3 makes the visit clock run whoever is near him (a visit ends on time with nobody online; the new
+**Where it is, 2026-09-16, later the same day.** `main` builds clean at 2540 off-game checks and **`v0.1.4` is
+tagged** — a GitHub pre-release; the store upload is the owner's. It is the **Valheim 1.0.12** build and runs on
+nothing else. 0.1.4 makes the mod migrate its own config file (a value still at an old default moves, a value you set
+stays, a backup lands beside the file) and turns the catalogue into the shipped rows plus `CatalogueOverrides`; the
+delete-the-file step is history. 0.1.3 made the visit clock run whoever is near him (a visit ends on time with nobody online; the new
 `Server.PauseVisitWhenEmpty` holds it on an empty server; a server updating from an earlier version deletes its old
 config file first). 0.1.2 added the merchant guard: Ingvar trades and hovers as himself on a server whose taming mod made the Dvergr a
 pet (DvergrAllies; found on Wonderland, proven on Storm10 with the mod on both sides). 0.1.1 carried issue #79's fix (Ingvar insists on
