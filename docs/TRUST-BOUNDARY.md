@@ -169,8 +169,8 @@ given". Any client, anywhere in the world, ended anyone's visit.
 
 **Picked: a visitor is someone within the event's own `m_eventRange` (96 m) of the visit's drop point.** That
 is the radius that already means "at this visit" everywhere else in this mod — inside it a player sees the
-banner and keeps the clock running, outside it vanilla pauses the clock (`CargoEvent.Register`'s
-`m_eventRange = 96f` and `m_pauseIfNoPlayerInArea`). Being online is not being a visitor.
+banner (`CargoEvent.Register`'s `m_eventRange = 96f`; the clock itself runs whoever is near him since
+2026-09-16, `m_pauseIfNoPlayerInArea` off). Being online is not being a visitor.
 
 **Enforced**, with the honest caveat written into the code: the position is `peer.GetRefPos()`, which `ZNet`
 attributes to the socket (`RPC_ServerSyncedPlayerData` resolves the peer from the `ZRpc`) but takes on the

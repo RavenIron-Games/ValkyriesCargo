@@ -4,10 +4,11 @@ namespace RavenIron.ValkyriesCargo.Core
 {
     /// <summary>
     /// The visit's countdown in WORLD seconds (ZNet.GetTimeSeconds), the one clock every machine shares.
-    /// The authority is the event's own timer on the server (RandomEvent.m_time: REAL seconds, and it
-    /// pauses while nobody is within range); the server republishes the end time whenever
-    /// now + (duration − m_time) drifts more than a second from what it last published (a pause, a
-    /// resume, a sleep skip), and every mirror calls Retarget. The terminal's countdown, the one-minute
+    /// The authority is the event's own timer on the server (RandomEvent.m_time: REAL seconds; it runs
+    /// whoever is near him, and stands still only while Server.PauseVisitWhenEmpty holds it on an empty
+    /// server); the server republishes the end time whenever now + (duration − m_time) drifts more than
+    /// a second from what it last published (a sleep skip, a stretch the option held, a stretch nobody
+    /// was online to mirror), and every mirror calls Retarget. The terminal's countdown, the one-minute
     /// warning and the restart sweep all read this. Whether the visit ENDED is VisitSnapshot.Phase, not
     /// Expired: a dismissal ends it early. PURE.
     /// </summary>

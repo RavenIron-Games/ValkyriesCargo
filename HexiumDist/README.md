@@ -157,7 +157,8 @@ server-synced and admin-controlled**; only cosmetics are local.
 | Setting | Default | What it does |
 | :--- | :--- | :--- |
 | `MinComfortLevel` | `4` | Comfort you need at your fire to qualify |
-| `MerchantLifespanSeconds` | `300` | How long the visit lasts |
+| `MerchantLifespanSeconds` | `300` | How long the visit lasts, from the moment it begins, whoever is near him |
+| `PauseVisitWhenEmpty` | `false` | Hold the visit's clock while nobody is online (dedicated servers; a listen host is never empty) |
 | `PurseCoins` | `1500` | What Ingvar arrives with |
 | `PurseCarryPercent` | `50` | How much of his takings carries to the next visit |
 | `ShelfSize` | `20` | How many of the 101 he carries |

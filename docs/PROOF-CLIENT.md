@@ -398,18 +398,31 @@ needs a listen host; on a dedicated server the countdown is the terminal's heade
 **Where:** client. **Do:** note the countdown in the terminal (`cargo terminal open`, header
 `<mm:ss> left`), close it, walk **more than 96 m** away for a full minute, come back, reopen.
 
-The event's `m_time` only advances while a player is within `m_eventRange` (96 m) of the drop, so the
-visit outlives 300 s of wall clock by roughly the time you were away, and the server republishes the
-clock whenever it drifts a second from what it published (design 3.7). The republish count is carried by
-the end line (item 10): `<n> clock republish(es)`, and it must be **more than 0**.
+The clock runs whoever is near him (since 2026-09-16, PR #97: the event is registered with vanilla's
+pause-out-of-range OFF), so the countdown keeps running while you are away and the visit ends
+`MerchantLifespanSeconds` (300 s) of real time after it began, whoever is there. The server republishes
+the clock only when it drifts a second from what it published (design 3.7): a walk costs no republish, and
+the count on the end line (item 10), `<n> clock republish(es)`, is **0** unless you slept or the server
+stood empty for a stretch.
 
-Second half: sleep through a night mid-visit; the countdown must not jump.
+Second half: sleep through a night mid-visit; the countdown must not jump (the world clock skips, the end
+is retargeted, one republish).
 
-**Paste back:** the two countdown readings with the wall-clock times, and item 10's end line showing the
-republish count.
+Third half, the empty server, with `Server.PauseVisitWhenEmpty` off (the default): log out mid-visit with
+nobody else on, wait past the end, log back in. He is gone, and the server log has `visit #<n> ended: timer`
+with the server empty (Storm10 2026-09-16, visit #21). With the option on: log out the same way, wait past
+the end, log back in. He is still there, the countdown resumed where it stood, and the log has
+`visit #<n>: clock paused: nobody online (Server.PauseVisitWhenEmpty)` on your leaving and
+`clock running: 1 online` on your return. A listen host counts as a player online, so the option never
+engages there. A lost connection (the log's `Keep socket … try to reconnect before timeout`) keeps its peer
+counted until the engine's ZRpc timeout drops it, 90 s later (`ZRpc timeout detected`); a clean logout drops
+it at once (Storm10 2026-09-16, visit #22: paused 89 s after the loss).
 
-**Common failure:** the countdown runs down while you are away — the pause did not happen; note the
-distance you actually reached (96 m is not far).
+**Paste back:** the two countdown readings with the wall-clock times, and item 10's end line.
+
+**Common failure:** the countdown stands still while you are away — the old pause is back (the event was
+registered with `m_pauseIfNoPlayerInArea` on); with the option off, he is still there after the empty
+stretch — the clock did not run on the empty server.
 
 ---
 
@@ -752,7 +765,7 @@ A healthy dedicated boot, in order (StormTest, 2026-09-06 19:25):
 [Message:   BepInEx] Chainloader started
 [Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.0]
 [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches=13, catalogue=72 entries, ServerSync version gate armed; role is decided when a world loads.
-[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (<n> events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (<n> events now); duration 300 s, runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.
 [Info   : Unity Log] Registered 'com.raveniron.valkyriescargo ConfigSync' RPC - waiting for incoming connections
 [Info   : Unity Log] <time>: Load world: Dedicated (Dedicated)
 [Info   :Valkyrie's Cargo] role: dedicated server

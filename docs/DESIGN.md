@@ -373,10 +373,17 @@ audio; it is not the summon horn.
 - **Pilot disconnects mid-flight**: the bird's ZDO is non-persistent and owner-less → vanilla drops it; the merchant's ZDO
   is persistent and gets adopted by whichever client's block holds it; none within 30 s → server reclaims, visit ends.
 - **Pilot disconnects mid-visit**: the merchant is adopted by a nearer client; the visit continues.
-- A raid while he is there: impossible, one random event at a time. Nobody within 96 m: the clock pauses (vanilla).
-  The event's `m_time` (real seconds, paused out of range) is the authority; the server republishes
+- A raid while he is there: impossible, one random event at a time. **The clock runs whoever is near him** (the
+  owner, 2026-09-16; until then the event was registered with vanilla's pause-out-of-range on, and a visit whose
+  pilot walked off or logged out never ended, holding every raid and every later visit with it). The one
+  exception is `Server.PauseVisitWhenEmpty` (off by default): an EMPTY server holds the clock, the same
+  `GetNrOfPlayers() == 0` the engine freezes the world clock on, so a visit started at bedtime is still there
+  in the morning. The event's `m_time` (real seconds; held only by that option) is the authority; the server republishes
   `VisitState.endWorldTime` whenever `now + (duration − m_time)` drifts more than a second from what it published (a
-  pause, a resume, a sleep skip), and every `VisitClock` retargets without re-arming its one-minute warning.
+  sleep skip, a stretch the option held, a stretch nobody was online to mirror: with nobody online the server does
+  not republish at all, and the first tick with a player back retargets it once), and every `VisitClock` retargets
+  without re-arming its one-minute warning. A listen host counts itself online, so the option never engages there.
+  A lost connection keeps its peer counted until the engine's ZRpc timeout drops it, 90 s later; a clean logout drops it at once.
 - Two terminals open: both render `MarketState`; a deal from either updates both. Listen host: works as pilot and server.
 
 ### 3.8 Messages

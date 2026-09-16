@@ -31,6 +31,7 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<int>    MinComfortLevel;
         public static ConfigEntry<int>    MinBaseValue;
         public static ConfigEntry<bool>   DaytimeOnly;
+        public static ConfigEntry<bool>   PauseVisitWhenEmpty;
         public static ConfigEntry<float>  EventCheckIntervalMinutes;
         public static ConfigEntry<float>  EventChancePercent;
         public static ConfigEntry<float>  PlayerCooldownMinutes;
@@ -132,6 +133,9 @@ namespace RavenIron.ValkyriesCargo.Config
                 new AcceptableValueRange<int>(0, 10));
             DaytimeOnly = S(cfg, "Server", "DaytimeOnly", true,
                 "Only roll visits by day; the flight is the show. Read on the SERVER.");
+            PauseVisitWhenEmpty = S(cfg, "Server", "PauseVisitWhenEmpty", false,
+                "Hold a running visit's clock while NOBODY is online, so a visit started at bedtime is still there in the morning. " +
+                "Off: the clock runs from the moment the visit begins, whoever is near him or not, and he leaves when it runs out. A listen host counts as a player online, so it never engages there. A lost connection keeps its peer counted until the engine's ZRpc timeout drops it, 90 s later; a clean logout drops it at once. Read on the SERVER.");
             EventCheckIntervalMinutes = S(cfg, "Server", "EventCheckIntervalMinutes", 25f,
                 "Real minutes between rolls. Read on the SERVER.",
                 new AcceptableValueRange<float>(1f, 240f));

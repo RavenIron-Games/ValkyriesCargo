@@ -1,0 +1,59 @@
+Storm10 (Valheim 1.0.12 dedicated server), 2026-09-16 -- lines copied out of BepInEx\LogOutput.log on the day,
+filtered to the mod's own lines and the engine's join, leave, keep-socket and timeout lines; the 'Poll tick',
+flight-authoring and shelf-roll noise is left out. First boot (07:20, the branch's first commit 19cb8bb, the
+option off): visit #21. Second boot (07:44, the second commit 4333134, PauseVisitWhenEmpty = true): visit #22.
+
+=== boot 07:20, option off: visit #21 ===
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.2 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.
+[Info   : Unity Log] 09/16/2026 07:20:30: Player history entry with index 0:  NomadicWar (Steam_76561198392625778, 76B6E4CA9E5270D)
+[Info   :Valkyrie's Cargo] role: dedicated server
+[Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 101 entries, purse 100516, next visit #21, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (110 rows loaded); shelf 32 of 101, period 3, rolls every 2 game day(s), next in 0.2 game day(s)
+[Info   : Unity Log] 09/16/2026 07:20:32: Session "Storm10" registered with join code 608444
+[Info   : Unity Log] 09/16/2026 07:20:34: Session "Storm10" with join code 608444 and IP 172.59.201.230:2477 is active with 0 player(s)
+[Info   : Unity Log] 09/16/2026 07:31:39: Player joined server "Storm10" that has join code 608444, now 1 player(s)
+[Info   : Unity Log] 09/16/2026 07:32:23: Got character ZDOID from Nomadtest : -364342149:1
+[Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-63.8012733, -18.058363); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] visit #21 begins: pilot Nomadtest (uid -364342149) at (-63.8012733, -18.058363), 300 s, purse 100011, seed 2108171057
+[Info   :Valkyrie's Cargo] visit #21: dropped at (-57.8128738, 64.88655, -5.6153903)
+[Info   : Unity Log] 09/16/2026 07:33:44: Player connection lost server "Storm10" that has join code 608444, now 0 player(s)
+[Info   :Valkyrie's Cargo] visit #21: one minute left
+[Info   :Valkyrie's Cargo] visit #21 ended: timer; takings 0 coins, purse 100011, 206 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] visit #21: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   : Unity Log] 09/16/2026 07:43:15: Game - OnApplicationQuit
+
+=== boot 07:44, option on: visit #22 ===
+[Info   : Unity Log] 09/16/2026 07:43:15: Game - OnApplicationQuit
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.2 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (19 events now); duration 300 s, runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.
+[Info   : Unity Log] 09/16/2026 07:44:23: ZRpc timeout set to 30s 
+[Info   : Unity Log] 09/16/2026 07:44:24: Player history entry with index 0:  NomadicWar (Steam_76561198392625778, 76B6E4CA9E5270D)
+[Info   :Valkyrie's Cargo] role: dedicated server
+[Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 101 entries, purse 100011, next visit #22, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (111 rows loaded); shelf 32 of 101, period 3, rolls every 2 game day(s), next in 0.15 game day(s)
+[Info   : Unity Log] 09/16/2026 07:44:27: Session "Storm10" registered with join code 608444
+[Info   : Unity Log] 09/16/2026 07:44:30: Session "Storm10" with join code 608444 and IP 172.59.201.230:2477 is active with 0 player(s)
+[Info   : Unity Log] 09/16/2026 07:45:59: Player joined server "Storm10" that has join code 608444, now 1 player(s)
+[Info   : Unity Log] 09/16/2026 07:45:59: ZRpc timeout set to 90s 
+[Info   : Unity Log] 09/16/2026 07:45:59: Got handshake from client playfab/8BF4F5368AF43770
+[Info   : Unity Log] 09/16/2026 07:46:03: Network version check, their:40, mine:40
+[Info   :Valkyrie's Cargo] admin wire registered for Nomadtest (-456726670)
+[Info   :Valkyrie's Cargo] deal wire registered for Nomadtest (-456726670)
+[Info   : Unity Log] 09/16/2026 07:46:22: Got character ZDOID from Nomadtest : -456726670:1
+[Info   :Valkyrie's Cargo] roll: forced visit: Nomadtest at (-63.61094, -17.71189); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] visit #22 begins: pilot Nomadtest (uid -456726670) at (-63.61094, -17.71189), 300 s, purse 100000, seed 1585188344
+[Info   :Valkyrie's Cargo] visit #22: dropped at (-56.27202, 65.25546, -6.993665)
+[Info   : Unity Log] 09/16/2026 07:49:17: Keep socket for playfab/8BF4F5368AF43770, try to reconnect before timeout
+[Info   : Unity Log] 09/16/2026 07:49:17: Player connection lost server "Storm10" that has join code 608444, now 1 player(s)
+[Warning: Unity Log] 09/16/2026 07:50:46: ZRpc timeout detected
+[Info   :Valkyrie's Cargo] visit #22: clock paused: nobody online (Server.PauseVisitWhenEmpty)
+[Info   : Unity Log] 09/16/2026 07:56:38: Player joined server "Storm10" that has join code 608444, now 1 player(s)
+[Info   : Unity Log] 09/16/2026 07:56:38: ZRpc timeout set to 90s 
+[Info   : Unity Log] 09/16/2026 07:56:38: Got handshake from client playfab/8BF4F5368AF43770
+[Info   : Unity Log] 09/16/2026 07:56:44: Network version check, their:40, mine:40
+[Info   :Valkyrie's Cargo] admin wire registered for Nomadtest (570052953)
+[Info   :Valkyrie's Cargo] deal wire registered for Nomadtest (570052953)
+[Info   :Valkyrie's Cargo] visit #22: clock running: 1 online
+[Info   : Unity Log] 09/16/2026 07:57:03: Got character ZDOID from Nomadtest : 570052953:1
+[Info   :Valkyrie's Cargo] visit #22: one minute left
+[Info   :Valkyrie's Cargo] visit #22 ended: timer; takings 0 coins, purse 100000, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] visit #22: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)

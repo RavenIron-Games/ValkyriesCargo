@@ -195,8 +195,8 @@ namespace RavenIron.ValkyriesCargo.Net
         /// <summary>
         /// Design 3.8 says VCargo_dismiss may come from "any visitor". A visitor is someone AT the visit, and
         /// the radius that already means that in this mod is the event's own `m_eventRange` (96 m,
-        /// CargoEvent): inside it a player sees the banner and keeps the visit's clock running, outside it
-        /// the clock pauses. Being online is not being a visitor.
+        /// CargoEvent): inside it a player sees the banner (the clock itself runs whoever is near him,
+        /// since 2026-09-16). Being online is not being a visitor.
         ///
         /// The position is the peer's own reported reference position (`ZNet.RPC_ServerSyncedPlayerData`
         /// resolves the peer from the SOCKET, so it belongs to this caller), but the number in it is the

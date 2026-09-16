@@ -13,8 +13,13 @@ namespace RavenIron.ValkyriesCargo.Server
     /// What the engine does with it, from the decompile (2026-09-06):
     /// - `m_random = false` keeps it out of `GetPossibleRandomEvents` (checked at RandEventSystem.cs:417), and
     ///   `m_standaloneInterval = 0` keeps it out of the standalone loop; only we start it, by name.
-    /// - the server's FixedUpdate runs `Update(...)`: `m_time += dt` while a player is within `m_eventRange` of
-    ///   `m_pos` (`m_pauseIfNoPlayerInArea`), and ends it (`SetRandomEvent(null)`) when `m_time > m_duration`.
+    /// - the server's FixedUpdate runs `Update(...)`: `m_time += dt` every physics tick, UNLESS the event's own
+    ///   `m_pauseIfNoPlayerInArea` is on and no player is within `m_eventRange` of `m_pos`; it ends the event
+    ///   (`SetRandomEvent(null)`) when `m_time > m_duration`. FixedUpdate has no players-online gate, so with
+    ///   the flag OFF the clock is the server's real time. Ours registers it OFF (the owner, 2026-09-16: a visit
+    ///   whose pilot walked off never ended, and held every raid with it); `SetPaused` turns it on for the
+    ///   running event while `Server.PauseVisitWhenEmpty` says the server is empty - nobody is in the area
+    ///   then, so vanilla's own test holds the clock. `Core/VisitPause.cs` is the decision.
     /// - every 2 s the server broadcasts name, time and position; a client whose local player is inside the
     ///   range makes it the ACTIVE event: `OnActivate` shows `m_startMessage` once, `OnDeactivate(end)` shows
     ///   `m_endMessage` when the event ended while active.
@@ -81,7 +86,7 @@ namespace RavenIron.ValkyriesCargo.Server
                     m_random = false,
                     m_duration = Lifespan(),
                     m_nearBaseOnly = false,
-                    m_pauseIfNoPlayerInArea = true,
+                    m_pauseIfNoPlayerInArea = false,
                     m_eventRange = 96f,
                     m_standaloneInterval = 0f,
                     m_standaloneChance = 0f,
@@ -95,7 +100,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 };
                 res.m_events.Add(ev);
                 ValkyriesCargo.Log.LogInfo("event '" + Name + "' registered (" + res.m_events.Count + " events now); duration " +
-                                           ev.m_duration.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + " s, pauses with nobody within 96 m, no spawns, no music, no weather.");
+                                           ev.m_duration.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + " s, runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.");
             }
             catch (Exception ex)
             {
@@ -121,9 +126,24 @@ namespace RavenIron.ValkyriesCargo.Server
             RandomEvent proto = Prototype(res);
             if (proto == null) { Register(res); proto = Prototype(res); if (proto == null) return false; }
             proto.m_duration = Lifespan();
+            proto.m_pauseIfNoPlayerInArea = false;   // the clock runs whoever is near; the director holds it, if at all
             res.SetRandomEventByName(Name, pos);
             RandomEvent current = res.GetCurrentRandomEvent();
             return current != null && current.m_name == Name;
+        }
+
+        /// <summary>
+        /// Hold or release the RUNNING event's clock. The per-event `m_pauseIfNoPlayerInArea` is the only switch
+        /// vanilla's FixedUpdate consults; with it on and nobody online, nobody is in the area and the clock
+        /// stands still. True if the flag changed. Nothing to do when the current event is not ours.
+        /// </summary>
+        public static bool SetPaused(RandEventSystem res, bool paused)
+        {
+            RandomEvent current = res != null ? res.GetCurrentRandomEvent() : null;
+            if (current == null || current.m_name != Name) return false;
+            if (current.m_pauseIfNoPlayerInArea == paused) return false;
+            current.m_pauseIfNoPlayerInArea = paused;
+            return true;
         }
 
         /// <summary>

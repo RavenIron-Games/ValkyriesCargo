@@ -78,6 +78,7 @@ namespace ValkyriesCargo.Tests
             SidecarThenMirrorTests();
             EngineBaselineTests();
             EngineProbeTests();
+            VisitPauseTests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
             return _failed == 0 ? 0 : 1;
@@ -3347,6 +3348,18 @@ namespace ValkyriesCargo.Tests
             // The words for cargo status.
             Equal("near 2 classic: a claim is kept within 96 m of the reference zone's centre on both axes", ActiveArea.Describe(stock), "stock, in one line");
             Check(ActiveArea.Describe(circle).EndsWith("and inside a 112 m circle"), "the circle is named when there is one");
+        }
+
+        private static void VisitPauseTests()
+        {
+            Section("VisitPause: the visit clock runs whoever is near him; Server.PauseVisitWhenEmpty holds it on an empty server (owner, 2026-09-16)");
+            Check(!VisitPause.ShouldPause(false, 0), "option off, nobody online: the clock runs - the default; a visit ends its lifespan after it began, whoever is there");
+            Check(!VisitPause.ShouldPause(false, 2), "option off, players online: runs");
+            Check(VisitPause.ShouldPause(true, 0), "option on, nobody online: the clock stands still");
+            Check(!VisitPause.ShouldPause(true, 1), "option on, one player online wherever they are: runs - the option is about an empty server, not about distance");
+            Check(VisitPause.ShouldPause(true, -1), "a negative count is an empty server too");
+            Check(VisitPause.Describe(true, 0).Contains("nobody online") && VisitPause.Describe(true, 0).Contains("PauseVisitWhenEmpty"), "the pause line names the option");
+            Check(VisitPause.Describe(false, 3) == "clock running: 3 online", "the run line counts them");
         }
 
         private static void GhostTests()

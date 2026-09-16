@@ -6,7 +6,7 @@ namespace RavenIron.ValkyriesCargo.Server
     /// <summary>
     /// Where the visit IS. The drop point is where he landed; after the leash walk (MerchantPlan) he can
     /// be a hundred metres from it, following a player. Everything the server measures a player against
-    /// -- the event's 96 m area (the banner, the clock's pause) and the deal wire's dismiss rule -- wants
+    /// -- the event's 96 m area (the banner) and the deal wire's dismiss rule -- wants
     /// his live position, which the server reads off his ZDO (the owner syncs it like any other); the
     /// drop point is the fallback while none is bound (the flight, an adopted row before the spawn).
     /// Visit 21 (2026-09-08): a dismiss from beside him was refused as "134 m from the drop point".

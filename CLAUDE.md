@@ -116,7 +116,8 @@ server, where `Server/AdminGate.cs` (vanilla's `ZNet.IsAdmin`, fail closed) deci
 `Valkyrie's Cargo v0.1.0 loaded - renderer=False, patches=13, catalogue=72 entries, ServerSync version gate armed; role is decided when a world loads.`
 (13 = the 10 above, UIFocus's 2, our RandEventSystem.Awake prefix; the breakdown of the 10 was never checked
 against `Harmony.GetAllPatchedMethods()`), then
-`event 'valkyries_cargo' registered (20 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.`,
+`event 'valkyries_cargo' registered (20 events now); duration 300 s, pauses with nobody within 96 m, no spawns, no music, no weather.`
+(the 2026-09-06 wording; since 2026-09-16, PR #97, it reads `runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server)`),
 then `role: dedicated server`, `routed RPCs registered for this session: VCargo_admin, VCargo_reply`, then
 `director up: salt w4790ce, day 1800 s (EnvMan.m_dayLengthSec), catalogue 72 entries, purse 800, roll every 60 s at 25%, first roll one interval from now; market state is NOT persisted yet (P6)`
 (**the scene's day length IS 1800 s**: read from the live EnvMan, so the drift half-life is right), then one
@@ -626,8 +627,10 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
   the COMPILED default is 1200, the scene overrides it). The market's drift counts this number, never a constant.
 - **The vanilla random event**: `RandEventSystem.SetRandomEvent` is private; `SetRandomEventByName`,
   `ResetRandomEvent`, `GetCurrentRandomEvent`, `HaveEvent` and `m_events` are public. The server's
-  `FixedUpdate` advances `m_time` only while a player is within `m_eventRange` (96 m) of `m_pos` and
-  ends the event when `m_time > m_duration`; every 2 s it broadcasts name, time and position, and a client
+  `FixedUpdate` advances `m_time` every physics tick unless the event's own `m_pauseIfNoPlayerInArea` is on
+  and no player is within `m_eventRange` (96 m) of `m_pos` (ours registers it OFF since 2026-09-16, so the
+  clock runs whoever is near; `Server.PauseVisitWhenEmpty` turns it on for the running event while nobody
+  is online, `Core/VisitPause.cs`) and ends the event when `m_time > m_duration`; every 2 s it broadcasts name, time and position, and a client
   resolves the name from ITS OWN `m_events`, which is why the event is registered on every machine. A
   client inside the range makes it the active event and shows `m_startMessage` once. `m_random = false`
   keeps it out of the random pool. `m_cameraShakeCurve` must be EMPTY: with keys, `Update` calls
@@ -1052,6 +1055,8 @@ P3, needs a client on a server whose adminlist.txt names it (CairnTest or StormT
    rejoined mid-visit (the visit outlived its own end time by the pause), `visit #5 … 11 clock republish(es)`; the
    sleep half not run. As written: walk more than 96 m away for a minute, come back: the countdown resumed where it paused and
    the server log counted a clock republish; sleep through a night mid-visit: the countdown did not jump.
+   Re-cut 2026-09-16 (PR #97): the pause is gone, the clock runs whoever is near him, and the item now tests
+   that plus the empty-server halves; Storm10 visit #21 ended by its timer with nobody online.
 10. **The end** — server half 2026-09-07 11:05: `visit #1 ended: timer; takings 0 coins, purse 800, 0 clock
     republish(es), 0 owed deliveries` (and visit 6 the same at 11:36); the end banner and `cargo status` not read.
     **The vanish itself was WATCHED by the owner on 2026-09-08**: it plays, "but not timed perfectly" — **late**:
