@@ -115,6 +115,7 @@ ZDOVars.s_baseValue | assembly_valheim | call | VisitDirector.Gather; the eligib
 ZDOVars.s_dead | assembly_valheim | call | VisitDirector.Gather
 ZDOVars.s_velHash | assembly_valheim | call | CargoFlight.Fly writes it so every other screen dead-reckons a glide
 ZNet.instance | assembly_valheim | call | everywhere
+ZNet.GetNrOfPlayers | assembly_valheim | call | VisitDirector: the "empty server" Server.PauseVisitWhenEmpty holds the visit clock on, the same count UpdateNetTime freezes the world clock on
 ZNet.IsServer | assembly_valheim | call | CargoTick.Role, DealWire, AdminRpc
 ZNet.IsDedicated | assembly_valheim | fact | NOT used: HasRenderer is graphicsDeviceType, because the client reference assembly hardcodes this false
 ZNet.IsAdmin | assembly_valheim | call | AdminGate.Check - the ONE method naming the game's admin API; fail closed
@@ -234,7 +235,7 @@ RandomEvent.m_enabled | assembly_valheim | call | CargoEvent.Register
 RandomEvent.m_random | assembly_valheim | call | false: out of the random pool
 RandomEvent.m_duration | assembly_valheim | call | refreshed from config before every start
 RandomEvent.m_nearBaseOnly | assembly_valheim | call | CargoEvent.Register
-RandomEvent.m_pauseIfNoPlayerInArea | assembly_valheim | call | true: the clock pauses when nobody is within 96 m
+RandomEvent.m_pauseIfNoPlayerInArea | assembly_valheim | call | FALSE since 2026-09-16 (the owner: a visit whose pilot walked off never ended, and held every raid): the clock runs whoever is near him; CargoEvent.SetPaused sets it true on the RUNNING event while Server.PauseVisitWhenEmpty says the server is empty, which is when vanilla's own area test then holds the clock
 RandomEvent.m_eventRange | assembly_valheim | call | 96
 RandomEvent.m_standaloneInterval | assembly_valheim | call | 0: out of the standalone loop
 RandomEvent.m_standaloneChance | assembly_valheim | call | 0
@@ -245,9 +246,9 @@ RandomEvent.m_startMessage | assembly_valheim | call | the centre banner
 RandomEvent.m_endMessage | assembly_valheim | call | the centre banner
 RandomEvent.m_forceMusic | assembly_valheim | call | empty: no raid music
 RandomEvent.m_forceEnvironment | assembly_valheim | call | empty: no weather; house rule 4 never touches EnvMan
-RandomEvent.m_time | assembly_valheim | call | CargoEvent.Remaining and cargo status
+RandomEvent.m_time | assembly_valheim | call | CargoEvent.Remaining and cargo status; real seconds off FixedUpdate, which has no players-online gate
 RandomEvent.m_pos | assembly_valheim | fact | where the pause radius is measured from
-RandomEvent.Update | assembly_valheim | fact | THE clock rule, the other half: m_time += dt ONLY with a player in the area; ends past m_duration; AddShake when the curve has keys
+RandomEvent.Update | assembly_valheim | fact | THE clock rule, the other half: m_time += dt every tick UNLESS m_pauseIfNoPlayerInArea is on and nobody is in the area; ends past m_duration
 RandomEvent.OnActivate | assembly_valheim | fact | shows m_startMessage once, on a client inside the range
 RandomEvent.OnDeactivate | assembly_valheim | fact | shows m_endMessage when the event ended while active
 Heightmap.Biome | assembly_valheim | type | RandomEvent.m_biome = Heightmap.Biome.All

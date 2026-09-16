@@ -626,8 +626,10 @@ rule "never move what you do not own", stated as an API fact. `ZDO.GetVec3` has 
   the COMPILED default is 1200, the scene overrides it). The market's drift counts this number, never a constant.
 - **The vanilla random event**: `RandEventSystem.SetRandomEvent` is private; `SetRandomEventByName`,
   `ResetRandomEvent`, `GetCurrentRandomEvent`, `HaveEvent` and `m_events` are public. The server's
-  `FixedUpdate` advances `m_time` only while a player is within `m_eventRange` (96 m) of `m_pos` and
-  ends the event when `m_time > m_duration`; every 2 s it broadcasts name, time and position, and a client
+  `FixedUpdate` advances `m_time` every physics tick unless the event's own `m_pauseIfNoPlayerInArea` is on
+  and no player is within `m_eventRange` (96 m) of `m_pos` (ours registers it OFF since 2026-09-16, so the
+  clock runs whoever is near; `Server.PauseVisitWhenEmpty` turns it on for the running event while nobody
+  is online, `Core/VisitPause.cs`) and ends the event when `m_time > m_duration`; every 2 s it broadcasts name, time and position, and a client
   resolves the name from ITS OWN `m_events`, which is why the event is registered on every machine. A
   client inside the range makes it the active event and shows `m_startMessage` once. `m_random = false`
   keeps it out of the random pool. `m_cameraShakeCurve` must be EMPTY: with keys, `Update` calls

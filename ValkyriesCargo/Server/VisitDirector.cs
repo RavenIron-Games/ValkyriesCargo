@@ -52,6 +52,8 @@ namespace RavenIron.ValkyriesCargo.Server
         private int _lastCoined;
         private string _lastLogged = "";
         private string _pendingEndReason;
+        /// <summary>Whether the running visit's clock is held (Server.PauseVisitWhenEmpty on an empty server); logged on change.</summary>
+        private bool _clockPaused;
         private string _pendingSessionRow;
         /// <summary>F3's grace period: the visit id `End` sent Keys.Vanish for and is waiting to reclaim. 0 = nothing pending.</summary>
         private int _pendingVanishVisitId;
@@ -265,6 +267,18 @@ namespace RavenIron.ValkyriesCargo.Server
                         // republished VisitState every tick and had the deal wire refuse his dismiss.
                         Vector3 him;
                         if (_session.Phase != VisitPhase.Flying && VisitAnchor.MerchantAt(out him)) CargoEvent.Follow(res, him);
+
+                        // The clock runs whoever is near him (CargoEvent registers the event that way, the
+                        // owner's decision of 2026-09-16); the one exception is Server.PauseVisitWhenEmpty:
+                        // an EMPTY server holds it. Applied to the running event once a second, logged on change.
+                        int online = ZNet.instance != null ? ZNet.instance.GetNrOfPlayers() : 0;
+                        bool pause = VisitPause.ShouldPause(ModConfig.PauseVisitWhenEmpty != null && ModConfig.PauseVisitWhenEmpty.Value, online);
+                        bool flipped = CargoEvent.SetPaused(res, pause);
+                        if (flipped || pause != _clockPaused)
+                        {
+                            _clockPaused = pause;
+                            ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + ": " + VisitPause.Describe(pause, online));
+                        }
 
                         if (_session.Clock.OneMinuteWarningDue(worldTime))
                             ValkyriesCargo.Log.LogInfo("visit #" + _session.VisitId + ": one minute left");   // P5: VCargo_say the line
@@ -544,7 +558,8 @@ namespace RavenIron.ValkyriesCargo.Server
             // `ZNet.GetTimeSeconds()`, and `EnvMan.SkipToMorning` drives it forward to the next morning
             // when players sleep -- so a 300 s visit slept through would read as a thousand and more, and
             // the `started_at` derived from it would land before the visit began. It also keeps running
-            // while the event is paused with nobody within 96 m, which the clock deliberately does not.
+            // while the event's clock is held (Server.PauseVisitWhenEmpty, an empty server), which the
+            // clock deliberately does not.
             // `Sync` retargets the clock's end from the event's own remaining seconds, so this is elapsed
             // event time: 300 at the timer, less on a dismiss. Found by review, 2026-09-07.
             double duration = _session.Clock != null
@@ -580,6 +595,7 @@ namespace RavenIron.ValkyriesCargo.Server
 
             Publish(endedState);
             _pendingEndReason = null;
+            _clockPaused = false;
             _dirty = true;
             ValkyriesCargo.Log.LogInfo("visit #" + id + " ended: " + reason + "; takings " + _lastTakings + " coins, purse " + _market.Purse +
                                        ", " + _session.Republishes + " clock republish(es), " + _ledger.Count + " owed deliver" + (_ledger.Count == 1 ? "y" : "ies"));
