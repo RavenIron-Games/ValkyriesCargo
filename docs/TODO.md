@@ -1,5 +1,12 @@
 # TODO — Valkyrie's Cargo, cut 2026-09-07 after the 0.1.0-rc1 merge
 
+> **2026-09-15 night.** This file has not been re-cut since rc1; the current state is `CLAUDE.md`'s Status section,
+> `CHANGELOG.md` (0.1.0 → 0.1.1 → 0.1.2, each item with its PR and check count) and the two handoffs' section 0.
+> `v0.1.2` is published (main `52c83f5`); the store upload is Don's. Open: Wu'barrk's PRs #69 and #65 and issue #59;
+> the `Spawner.cs` SoM one-liner and the DvergrAllies skip (his, proposed in `docs/HANDOFF-WUBARRK.md` §0); Wonderland
+> and Tartarus to 0.1.2, both sides (Don); the adopt-window `Force` hole (unfixed, no issue). Items below that a later PR
+> closed are closed whether or not their checkbox says so.
+
 Three tracks, one per owner. **Each track edits only its own section.** An item leaves the list by the
 PR or the log line that closes it, named in the checkbox. Sources are the documents the items came
 from; when this file and a source disagree, fix the source first, then this file.

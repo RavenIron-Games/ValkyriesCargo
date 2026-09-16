@@ -1,9 +1,55 @@
-# Handoff for Wu'barrk — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-08 morning: #55 merged, 1.0 held, the rotating shelf waiting on you
+# Handoff for Wu'barrk — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-15 night: v0.1.2 is out, the merchant guard is in, your two servers are on 0.1.0
 
 The repo is scaffolded, builds clean, tests pass, and boots headless on a dedicated server. This is
 what it is, what of yours is already in it, what we need from you, and exactly where each thing goes.
 
-## 0. Where things stand, 2026-09-08 night: everything merged through #64, the dismiss follows him, no release
+## 0. Where things stand, 2026-09-15 night: `v0.1.2` is out, the merchant guard is in, your two servers are on 0.1.0
+
+**Your list is `docs/TODO.md` section 2** and **issue #59**; when this file and those disagree, they win. The
+subsections below this one are the earlier states, kept as history. The full story of the week is `CHANGELOG.md`
+(0.1.0 → 0.1.1 → 0.1.2) and `CLAUDE.md`'s Status.
+
+**What shipped.** `v0.1.0-rc5` (2026-09-11) was the first cut to reach the store — the Valheim 1.0.12 build, uploaded
+by Don. `v0.1.1` (2026-09-15) carried issue #79's fix (Ingvar insists on ground somebody built and refuses a drop at a
+merchant's camp, a dungeon door or a landmark — three `Server.*` switches, proven live), food and drink in the
+catalogue (72 → 101), one row per item token with deals keyed by prefab, every `cargo` line mirrored into the client
+log, the BarrkBOT contract-v4 fix (`market_not_achievements`), and the purse carry surviving a restart (PR #91).
+**`v0.1.2` (tonight, main `52c83f5`) carries the merchant guard**, PR #94; a GitHub pre-release, the store upload is
+Don's. **Every existing server keeps its stored `Catalogue` line across an update**: `cargo catalogue reset` as an
+admin takes the 101 rows.
+
+**Wonderland and Tartarus are both on `0.1.0+2731b8c`, the pre-#79 build**, and the gate now moves with the number
+(a 0.1.1 client is refused by a 0.1.2 server, and so on): moving either server is both sides to 0.1.2 together.
+
+**The Wonderland finding and what we did about it — two things on your side.** On Wonderland (VC 0.1.0 both sides,
+DvergrAllies 1.0.7 in the set) the use key on Ingvar gave the tame-follow ("Ingvar the Far-Travelled follows you")
+and no terminal, and his hover carried "(Female)" and "Hungry". Your `MakePrefabTamable` runs on every Dvergr prefab on
+every process that loads the mod, and Ingvar is a clone of the Dverger prefab; `Player.Interact` takes the first
+`Interactable` in component order, which your `DvergrTameable` is. **PR #94 is ours and in our files** — on the client,
+the moment our clone wakes and before `CargoMerchant` is added, `Client/MerchantGuard.cs` takes `DvergrTameable`,
+`DvergrProcreation` and `DvergrGenetics` off him by type name (with `DestroyImmediate`, because our `SetTamed(true)`
+fires in the same frame and your two `SetTamed` postfixes key on `GetComponent<DvergrGenetics>`), and
+`Patches/Patch_Player_Interact.cs` hands a use on him to `CargoMerchant` whatever sits ahead of it. Proven on Storm10
+with DvergrAllies + Jötunn on both sides (visit #18; `docs/proofs/2026-09-15-storm10-session.md`, the last section).
+Yours, when you get to them: **(1) the DvergrAllies skip** — leave any Dvergr whose ZDO carries `VCargo_ingvar`
+(`zdo.GetInt("VCargo_ingvar", 0) != 0`), so a future clone of ours is safe too and Ingvar is never counted as a tame;
+**(2) one line in `Spawner.cs`**, your file, beside `npc.SetOwner(pilotUid)`: `npc.Set("SoMStealthExempt", 1)` — the
+guard stamps that key owner-side on a fresh visit, but a merchant the server ADOPTED across a restart is never
+stamped (no instantiating client owns him then); the authoring-time stamp closes it. Your SoM doc
+(`SOM-EXEMPT-FLAG.md`) is what we followed: int, `== 1`, owner-side, inert without SoM. One behaviour change for
+every player from #94: the interact animation and the snap-turn are no longer played on Ingvar (Haldor-like).
+
+**Your open PRs, untouched: #69 (the store page) and #65 (the empty bird, the invisible pack, the fly-in).** Every
+remote branch already merged into `main` was pruned tonight, ours and your `b/*` alike (28 of them; say which and it
+comes back from its PR's head sha); `b/backpack-body`, `b/store-readme`, `b/d5-carry-ownership` and `b/truth-pass`
+remain. Nothing of yours in the tree was edited this week except through your own PRs; the one seam we touched near
+your code is the guard's call in `Patches/Patch_Humanoid_Awake.cs`, ours.
+
+**Storm10 is down** (the 1.0.12 testbed, join code 608444 when it is up; the shipped 0.1.2 DLL on it and on Don's
+`testing` profile). The purse there is the 100000 test value, not the shipped 1500.
+
+### The night of 2026-09-08 (history)
+
 
 **Your list is `docs/TODO.md` section 2** and **issue #59**; when this file and those disagree, they win. The
 day's earlier states are kept below as history.

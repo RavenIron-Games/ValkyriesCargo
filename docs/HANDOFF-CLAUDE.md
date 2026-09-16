@@ -1,4 +1,4 @@
-# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-08 morning: #55 merged, 1.0 verified and held, the rotating shelf waiting on you
+# Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-15 night: v0.1.2 published, the merchant guard in, Wonderland and Tartarus still on 0.1.0
 
 You are the second engineering session on this mod. Don's session (me) built what is here; you and
 Wu'barrk take part of what is left. This file tells you everything you need to act, in the order to
@@ -9,7 +9,84 @@ Repo: <https://github.com/RavenIron-Games/ValkyriesCargo> (public, org RavenIron
 
 ---
 
-## 0. State on 2026-09-08 night: everything merged through #64, the dismiss follows him, no release — READ THIS FIRST
+## 0. State on 2026-09-15 night: `v0.1.2` published, the merchant guard in, Wonderland and Tartarus still on 0.1.0 — READ THIS FIRST
+
+**The tracker is still `docs/TODO.md`** (its top note, added tonight, says where the current state lives); when this
+file and that one disagree, that one wins. The subsections below this one are the earlier states, kept as history.
+`CLAUDE.md`'s Status section is current to tonight and is the longer version of this.
+
+**Where main is.** `52c83f5` = tag **`v0.1.2`** (PR #95), 0 warnings, **2093/2093 off-game checks**. Published tonight as
+a GitHub pre-release (<https://github.com/RavenIron-Games/ValkyriesCargo/releases/tag/v0.1.2>): the store zip
+(`RavenIronStudios-ValkyriesCargo-0.1.2.zip`, DLL `0.1.2+52c83f5`, md5 `5C445D285EDA04CED93F99AEE1653A1B`) and the
+kit. **The store upload is Don's**; the store takes one upload per version number, which is why the guard is 0.1.2 and
+not a second 0.1.1 zip (his words: "we can't upload another 0.1.1"). The version gate follows the number: a 0.1.1
+client is refused by a 0.1.2 server. **Open PRs: Wu'barrk's #69 (the store page) and #65 (the empty bird, the
+invisible pack, the fly-in), both untouched.** Issue #59 is his list. No branch of ours is open. Every remote branch
+already merged into `main` was pruned tonight, ours and his `b/*` alike (28 of them; each is restorable from its
+PR's head sha if he wants one back); `b/backpack-body` (#65), `b/store-readme` (#69), `b/d5-carry-ownership` and
+`b/truth-pass` remain.
+
+**Since the 2026-09-08 state below, in order.** 2026-09-10: `v0.1.0-rc4`, the Valheim 1.0.7 build. 2026-09-11:
+Valheim 1.0.12 (network 40) and **`v0.1.0-rc5`, the first cut to reach the store** (Hexium, uploaded by Don);
+`docs/proofs/2026-09-11-release-session.md`. 2026-09-14/15: issue #79 (Ingvar at the Bog Witch) — PRs #80, #82, #84:
+built ground plus three location switches, one kind per location, proven live; #81 (every `cargo` line to the client
+log); #83 (BarrkBOT contract v4, `market_not_achievements`); #85 (food and drink, 72 → 101 rows — an existing server
+keeps its stored `Catalogue` line, `cargo catalogue reset` takes the rows); #86 (one row per item token, deals keyed by
+prefab); #87/#88/#89 **`v0.1.1`** (the first cut with its own number); #90 (proofs: visit #14, the stack walk proven,
+the purse carry lost across a restart); #91 (**the purse carry survives a restart**: `_lastCoined` seeded from the
+sidecar at boot, proven on visits #15/#16); #92 (its proof); #93 (the 0.1.1 zip refreshed with #91, same number);
+**#94 the merchant guard**; #95 the 0.1.2 cut. `CHANGELOG.md` has each with its check count; the day's lines are
+`docs/proofs/2026-09-15-storm10-session.md` with the log excerpt beside it.
+
+**The merchant guard, worth knowing by heart (PR #94).** On Wonderland (VC 0.1.0 both sides, Wu'barrk's DvergrAllies
+1.0.7 in the set) the use key on Ingvar gave vanilla's tame-follow and no terminal, and his hover carried "(Female)"
+and "Hungry": DvergrAllies puts a `Tameable` subclass, a `Procreation` and a genetics component on every Dvergr
+prefab at `ZNetScene.Awake`, on every process that loads it; Ingvar is a clone of that prefab; `Player.Interact`
+takes the FIRST `Interactable` in component order, and a prefab component always precedes `CargoMerchant`, added at
+runtime. Ours, in our files: `Client/MerchantGuard.cs` (from the `Humanoid.Awake` postfix, BEFORE `AddComponent<CargoMerchant>`:
+`DestroyImmediate` every `Tameable`/`Procreation` of any subclass and the three DvergrAllies components by type name,
+and `SoMStealthExempt = 1` on the ZDO if this machine owns it — `DestroyImmediate` because `CargoMerchant.Awake` calls
+`SetTamed(true)` in the same frame and DvergrAllies' `SetTamed` postfixes key on `GetComponent<DvergrGenetics>`, which
+a deferred `Destroy` still answers until the end of the frame) and `Patches/Patch_Player_Interact.cs` (a prefix,
+`Priority.Low`, `__runOriginal` honoured, vanilla's gates and the hold throttle kept, the stamp through
+`___m_lastHoverInteractTime` — the mod's ONE `___field` injection; a use on anything carrying `CargoMerchant` goes to
+`CargoMerchant`). The boot line counts `patches 19/19`; the `merchant` probe asks for the two string-named members
+(24 now). One behaviour change for every player: no interact animation and no snap-turn on Ingvar (Haldor-like).
+**Proven live** on Storm10 with DvergrAllies + Jötunn + JsonDotNET on both sides (DvergrAllies is Jötunn
+`EveryoneMustHaveMod`, so a live test needs it on both): visit #18, the guard line naming all three components, the
+terminal opened on him twice, two deals, the owner's hover clean. **Not covered:** a merchant the server ADOPTED across
+a restart is never stamped for SoM (no instantiating client owns him then; SoM tests "not tamed" first, and we tame
+him) — the fix is one line beside `Spawner`'s `SetOwner`, Wu'barrk's file, PROPOSED to him and not written. His own
+DvergrAllies skip (leave any Dvergr whose ZDO carries `VCargo_ingvar`) is still worth having.
+
+**Two more findings of the day.** (1) The purse carry did not survive a restart (#91): `StartVisit` is handed the
+director's `_lastCoined`, which only `End()` set, so the first visit after a boot opened at `PurseCoins` with no carry;
+`LoadSidecar` now seeds it from the sidecar's `coined` row. (2) `DealApplier.Remove`'s stack walk is proven live (60
+Blackwood in one deal across two stacks, visit #14). And from the #79 work: **a dedicated server never instantiates a
+location root** — the registry is on the server, the instances on a client, and what is INSIDE a location is read off
+the prefab asset (`LocationsLive.cs`).
+
+**Machine state tonight.** Storm10 (the 1.0.12 testbed: `C:\Users\donfr\ValheimServers\Storm10`, port 2477, world
+Storm10, pw stormhold, `-public 0 -crossplay`, join code 608444) is **DOWN** since 19:19, stopped gracefully, nobody
+online, the world saved; its DLL is the shipped `v0.1.2` build (md5 above) and so is Don's Gale `testing` profile's;
+sidecar clean (`purse 100516`, `visit 20`, no open visit; the cfg's `PurseCoins` is the 100000 test value). The three
+taming-test mods were REMOVED from both sides after the proof. **Wonderland** (Wu'barrk's, 73.215.216.195:2456) and
+**Tartarus** and Don's `WonderlandAdmin` / `TartarusClient` / `TartarusServer` profiles are all on **0.1.0+2731b8c,
+the pre-#79 build**: moving them is both sides to 0.1.2 together (the gate), plus `cargo catalogue reset` on each
+server. Launch facts for Storm10 from an agent shell: `Start-Process valheim_server.exe` with `$env:SteamAppId='892970'`
+and the .bat's arguments (the .bat itself does not start it from here); graceful stop `taskkill /PID <pid>` with no
+`/F`; never launch through a background Bash (a double start); a build embeds its commit id, so `package.ps1` gives a
+new hash per commit with no code change; the boot log is appended across boots.
+
+**Open, needing a word or a hand.** Wu'barrk's #69 and #65; the `Spawner.cs` SoM one-liner and the DvergrAllies skip
+(his); Wonderland/Tartarus to 0.1.2 (Don, both sides); the store upload of 0.1.2 (Don); the adopt-window `Force` hole
+found 2026-09-15 midday around the director's adopt of a saved visit and a forced visit — unfixed, no issue filed, Don
+has the detail; the "[Forward]" key label on Wonderland (`$KEY_Use` rendered as "Forward" there: some mod in that set
+renames bindings, not ours, left alone). **Rule 2 of the working agreement** (CLAUDE.md): working agents on Sonnet,
+sub-agents on Haiku, reviews on Opus, never the session model; tens not hundreds; say the count first.
+
+### The night of 2026-09-08 and the 1.0.7 morning (history)
+
 
 **The tracker is still `docs/TODO.md`**, three tracks, each editing only its own section; when this file and
 that one disagree, that one wins. The subsections below this one are the day's earlier states, kept as history.
