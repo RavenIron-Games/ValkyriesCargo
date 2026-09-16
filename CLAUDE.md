@@ -390,6 +390,9 @@ ValkyriesCargo/
   Patches/Patch_Character_InIntro.cs  postfix: __result true while the carry link is set, so the fall never accumulates
   Patches/Patch_Character_Damage.cs   prefix on Character.RPC_Damage (NOT Damage): the merchant is immortal
   Patches/Patch_BaseAI_IsEnemy.cs     prefix on the static BaseAI.IsEnemy(a, b): any pair with the merchant answers "not enemies" (ghost mode, F11)
+  Patches/Patch_Character_Hover.cs    postfixes on Character.GetHoverText/GetHoverName: CargoMerchant's text when the component is present
+  Patches/Patch_Player_Interact.cs    prefix, Priority.Low, __runOriginal: a use on an object carrying CargoMerchant goes to CargoMerchant, never to another mod's Interactable ahead of it (PR #94)
+  Client/MerchantGuard.cs    from the Humanoid.Awake postfix, before CargoMerchant: DestroyImmediate every Tameable/Procreation and the DvergrAllies components a taming mod put on the Dverger prefab; SoMStealthExempt=1 owner-side (PR #94)
   Core/Ghost.cs              PURE: the ghost-mode decision (run vanilla / honour a prior cancel / not enemies), the Immortality shape
   Server/VisitDirector.cs    where the world runs: gather ZDOs -> Scheduler -> event -> VisitState/MarketState
   Server/CargoEvent.cs       the vanilla RandomEvent `valkyries_cargo`: definition, registration, start, remaining

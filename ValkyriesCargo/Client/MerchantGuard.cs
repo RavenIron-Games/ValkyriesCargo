@@ -71,6 +71,12 @@ namespace RavenIron.ValkyriesCargo.Client
 
                 // The pilot owns the ZDO from the spawn (Spawner hands it over last), so this lands on the
                 // pilot's machine and rides with the ZDO through saves; a watcher's machine skips it.
+                // Not covered: a merchant the server ADOPTED across a restart. Spawner.Sweep takes his ZDO to
+                // the server's session id and no client that instantiates him owns it, so no stamp lands and
+                // the guard runs once per instantiation. Acceptable: SoM's own guard sequence tests 'not
+                // tamed' before the exempt key, and CargoMerchant tames him on the owner, so the stamp is a
+                // second defence, not the only one. The authoring-time stamp beside Spawner's SetOwner would
+                // close it for good; that file is Wu'barrk's, so it is proposed, not written.
                 bool stamped = false;
                 if (zdo != null && zdo.IsOwner() && zdo.GetInt(SoMExemptKey, 0) != 1)
                 {

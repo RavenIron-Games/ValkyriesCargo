@@ -273,6 +273,8 @@ Player.IsDead | assembly_valheim | call | a terminal panel rule
 Player.m_comfortLevel | assembly_valheim | fact | private and computed locally: the whole reason the client reports comfort itself
 Player.TakeInput | assembly_valheim | fact | consults Chat.HasFocus; the choke point UIFocus works through
 Player.Update | assembly_valheim | fact | reads TakeInput() before any OnGUI runs
+Player.Interact(GameObject, bool, bool) | assembly_valheim | patch | private; our prefix (Patch_Player_Interact, Priority.Low, __runOriginal) hands a use on an object carrying CargoMerchant to CargoMerchant and cancels the original, which would take the FIRST Interactable in component order (a taming mod's Tameable on the Dverger prefab, Wonderland 2026-09-15); gates kept, DoInteractAnimation not played
+Player.m_lastHoverInteractTime | assembly_valheim | patch | private float; the hold throttle's stamp, read and written by the prefix through ___injection so a hold on Ingvar throttles the next hold as vanilla would
 Character.GetAllCharacters | assembly_valheim | call | CargoFlight.FindMerchantByCarrier, the only path on a pure client
 Character.GetSEMan | assembly_valheim | call | ComfortReporter
 Character.m_name | assembly_valheim | call | cargo prefab dump
