@@ -242,13 +242,15 @@ namespace RavenIron.ValkyriesCargo.Core
         }
 
         /// <summary>
-        /// `cargo catalogue add|remove|reset` (2026-09-07), where the world runs: edit the synced
-        /// `Server.Catalogue` line through its own config entry, so ServerSync carries it to every client,
-        /// the lock still applies, BepInEx rewrites the cfg file, and `ModConfig` re-parses it; then ask
-        /// the director to apply it, which it does at once if no visit is running and otherwise as soon
-        /// as one is not. `add` is also an edit: the same prefab replaces its entry in place. The game is
-        /// asked whether the prefab exists and is an item BEFORE the line changes, so a typo is refused
-        /// in words instead of being dropped at the next boot. `list` never reaches here: it is local.
+        /// `cargo catalogue add|remove|reset` (2026-09-07; overrides model since 2026-09-16), where the
+        /// world runs: edit the synced `Server.CatalogueOverrides` string through its own config entry, so
+        /// ServerSync carries it to every client, the lock still applies, BepInEx rewrites the cfg file,
+        /// and `ModConfig.RecomputeCatalogue` rebuilds `CatalogueEffective` from the shipped catalogue plus
+        /// this; then ask the director to apply it, which it does at once if no visit is running and
+        /// otherwise as soon as one is not. `add` is also an edit: the same prefab replaces its override in
+        /// place. The game is asked whether the prefab exists and is an item BEFORE the overrides change,
+        /// so a typo is refused in words instead of being dropped at the next boot. `list` never reaches
+        /// here: it is local.
         /// </summary>
         private static string CatalogueVerb(VisitDirector d, string arg, ZNet znet)
         {
@@ -256,7 +258,8 @@ namespace RavenIron.ValkyriesCargo.Core
             int space = a.IndexOf(' ');
             string sub = (space < 0 ? a : a.Substring(0, space)).ToLowerInvariant();
             string rest = space < 0 ? "" : a.Substring(space + 1).Trim();
-            string line, report;
+            Catalogue shipped = Catalogue.Parse(Catalogue.DefaultLine, null);
+            string next, report;
             switch (sub)
             {
                 case "add":
@@ -270,23 +273,23 @@ namespace RavenIron.ValkyriesCargo.Core
                         return "catalogue add refused: '" + prefab + "' carries the same item token as '" + holder + "', already in the catalogue (" +
                                VisitDirector.ItemToken(prefab) + "); the inventory counts goods by that token, so only one of the two can be traded - remove " +
                                holder + " first if this is the one you mean";
-                    line = Catalogue.Upsert(ModConfig.CatalogueLine.Value, rest, out report);
+                    next = CatalogueOverrides.Upsert(ModConfig.CatalogueOverrides.Value, rest, out report);
                     break;
                 }
                 case "remove":
                     if (rest.Length == 0) return "catalogue remove needs a prefab name";
-                    line = Catalogue.Remove(ModConfig.CatalogueLine.Value, rest, out report);
+                    next = CatalogueOverrides.Remove(ModConfig.CatalogueOverrides.Value, rest, shipped, out report);
                     break;
                 case "reset":
-                    line = Catalogue.DefaultLine;
+                    next = "";
                     report = "reset to the shipped catalogue (docs/CATALOGUE.md)";
                     break;
                 default:
                     return "catalogue: add <Prefab:Base:Target:Max:Kind> | remove <Prefab> | reset (list needs no admin)";
             }
-            if (line == null) return "catalogue " + sub + " refused: " + report;
-            if (line == ModConfig.CatalogueLine.Value) return "catalogue " + report + "; the line is already exactly that, nothing changed";
-            ModConfig.CatalogueLine.Value = line;   // SettingChanged: re-parsed, sent to every client, the cfg file rewritten
+            if (next == null) return "catalogue " + sub + " refused: " + report;
+            if (next == ModConfig.CatalogueOverrides.Value) return "catalogue " + report + "; the overrides are already exactly that, nothing changed";
+            ModConfig.CatalogueOverrides.Value = next;   // SettingChanged: recomputed, sent to every client, the cfg file rewritten
             return "catalogue " + report + "; " + d.SwapCatalogue(znet.GetTimeSeconds());
         }
     }

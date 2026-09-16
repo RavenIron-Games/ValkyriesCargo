@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using BepInEx.Configuration;
 using RavenIron.ValkyriesCargo.Core;
 using ServerSync;
+using OverridesCore = RavenIron.ValkyriesCargo.Core.CatalogueOverrides;
 
 namespace RavenIron.ValkyriesCargo.Config
 {
@@ -52,7 +53,7 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<float>  FlightSpeed;
         public static ConfigEntry<float>  FlightTurnRate;
         public static ConfigEntry<string> CarryOffset;
-        public static ConfigEntry<string> CatalogueLine;
+        public static ConfigEntry<string> CatalogueOverrides;
         public static ConfigEntry<float>  PriceElasticity;
         public static ConfigEntry<float>  MinPriceMultiplier;
         public static ConfigEntry<float>  MaxPriceMultiplier;
@@ -68,6 +69,9 @@ namespace RavenIron.ValkyriesCargo.Config
         public static ConfigEntry<int>    PurseCarryPercent;
         public static ConfigEntry<bool>   EnableBarter;
         public static ConfigEntry<bool>   BarrkBotExport;
+
+        // ---- Meta (local, not synced: the mod migrates and stamps the file itself, 2026-09-16) --------
+        public static ConfigEntry<int>    ConfigVersion;
 
         // ---- Client (local) ---------------------------------------------------------------
 
@@ -90,6 +94,8 @@ namespace RavenIron.ValkyriesCargo.Config
 
         public static CustomSyncedValue<string> VisitState;
         public static CustomSyncedValue<string> MarketState;
+        /// <summary>The shipped catalogue plus `CatalogueOverrides`, applied on the SERVER (`RecomputeCatalogue`) and read everywhere else, exactly like `VisitState`/`MarketState`.</summary>
+        public static CustomSyncedValue<string> CatalogueEffective;
 
         // ---- Derived --------------------------------------------------------------------
 
@@ -109,6 +115,10 @@ namespace RavenIron.ValkyriesCargo.Config
 
         public static void Bind(ConfigFile cfg, string pluginId, string displayName, string version)
         {
+            // BEFORE any bind (2026-09-16): snapshot the raw file and plan the migration off what is
+            // actually on disk, not what BepInEx is about to write over it.
+            ConfigMigration.Begin(cfg);
+
             Sync = new ConfigSync(pluginId)
             {
                 DisplayName = displayName,
@@ -120,6 +130,9 @@ namespace RavenIron.ValkyriesCargo.Config
             LockConfiguration = cfg.Bind("Server", "LockConfiguration", true,
                 "Server enforces every Server.* value on every client. Admins on adminlist.txt may still change them. Read by ServerSync on EVERY machine; the server's value is the one that arrives.");
             Sync.AddLockingConfigEntry(LockConfiguration);
+
+            ConfigVersion = cfg.Bind(ConfigLedger.MetaSection, ConfigLedger.VersionKey, 0,
+                "The config file's layout version, stamped by the mod. Do not edit; the mod migrates the file itself on boot and backs it up beside this file first.");
 
             Enabled = S(cfg, "Server", "Enabled", true,
                 "Roll visits at all. Read on the SERVER.");
@@ -198,8 +211,8 @@ namespace RavenIron.ValkyriesCargo.Config
             // must agree.
             CarryOffset = S(cfg, "Server", "CarryOffset", Core.CarryOffset.TunedDefault,
                 "Where the merchant hangs while the Valkyrie carries him: three numbers 'x, y, z' in the TALON's own space, SUBTRACTED from the talon. The default '0, 0, 0' holds his feet on the talon itself, tuned on a machine for Ingvar's height; bigger numbers hang him further off it (y below, z behind) and negative ones carry him past it. Leave it EMPTY to follow the Valkyrie prefab's own offset instead, (0, 0.3, 0.4) on the shipped bird, which is vanilla's framing for a full-height player. Each axis is bounded at 5 m, and a value past that or any text that is not three numbers is refused with one log line and the prefab's used instead. Read on EVERY machine that has him instanced, synced from the server; it can be changed while he is in the air and lands on the next physics step.");
-            CatalogueLine = S(cfg, "Server", "Catalogue", Catalogue.DefaultLine,
-                "What Ingvar sells and buys: Prefab:BasePrice:TargetStock:MaxStock:Kind entries separated by commas; Kind is Ware (sells and buys back) or Want (buys only). Every number's reason is in docs/CATALOGUE.md. A prefab this game has no item for is dropped with one log line when the shelf is built (at boot, and on every live edit). Editable on a running server: `cargo catalogue add|remove|reset` (admin), or Configuration Manager as an admin; a change applies as soon as no visit is running. Read on the SERVER.");
+            CatalogueOverrides = S(cfg, "Server", "CatalogueOverrides", "",
+                "What changed from the shipped catalogue (docs/CATALOGUE.md): Prefab:BasePrice:TargetStock:MaxStock:Kind to add or change a shipped row, -Prefab to remove one, comma-separated. Empty = the shipped catalogue exactly as it ships. A prefab this game has no item for is dropped with one log line when the shelf is built (at boot, and on every live edit). Editable on a running server: `cargo catalogue add|remove|reset` (admin), or Configuration Manager as an admin; a change applies as soon as no visit is running. From 0.1.4 the shipped catalogue itself is never stored here, so a new default (like the 29 food rows) can never be shadowed by an old stored line again (Core/ConfigLedger.cs, the 2026-09-16 migration). Read on the SERVER.");
             PriceElasticity = S(cfg, "Server", "PriceElasticity", 0.35f,
                 "Exponent of (target / stock) in the price; higher = steeper. Read on the SERVER.",
                 new AcceptableValueRange<float>(0.05f, 1.5f));
@@ -276,14 +289,42 @@ namespace RavenIron.ValkyriesCargo.Config
 
             VisitState  = new CustomSyncedValue<string>(Sync, "visit", "");
             MarketState = new CustomSyncedValue<string>(Sync, "market", "");
+            CatalogueEffective = new CustomSyncedValue<string>(Sync, "catalogue", "");
 
             // The channels feed the client-side surface the terminal reads (design WORKSPLIT §2).
             // ServerSync raises ValueChanged on every server write and on the initial sync at login.
             VisitState.ValueChanged  += () => Net.CargoRpc.PublishVisit(VisitState.Value);
             MarketState.ValueChanged += () => Net.CargoRpc.PublishMarket(MarketState.Value);
+            // On EVERY side: reparse whenever the effective line changes, whether that is this
+            // machine's own RecomputeCatalogue (below) or the server's broadcast arriving.
+            CatalogueEffective.ValueChanged += ReparseCatalogue;
 
-            ReparseCatalogue();
-            CatalogueLine.SettingChanged += (_, __) => ReparseCatalogue();
+            // AFTER every bind, so ConfigMigration.Finish can see every ConfigEntry it might reset
+            // (including CatalogueOverrides, just bound above) and hand its derived line to it.
+            ConfigMigration.Finish(cfg, ConfigVersion);
+
+            // Where the world runs, this is the source of truth CatalogueEffective broadcasts; on a
+            // client it is refused by the sync (the server is the only writer) and stays as this
+            // machine's own computed line - shipped + its local overrides, same as before this existed -
+            // until the server's real value arrives and CatalogueEffective.ValueChanged reparses it.
+            RecomputeCatalogue();
+            CatalogueOverrides.SettingChanged += (_, __) => RecomputeCatalogue();
+        }
+
+        /// <summary>
+        /// The effective catalogue: the shipped default with `CatalogueOverrides` applied, published
+        /// through `CatalogueEffective` exactly like `VisitState`/`MarketState`. Called at the end of
+        /// `Bind` and whenever `CatalogueOverrides` changes (config load, `cargo catalogue`, an admin's
+        /// Configuration Manager).
+        /// </summary>
+        public static void RecomputeCatalogue()
+        {
+            var problems = new List<string>();
+            Catalogue shipped = Catalogue.Parse(Catalogue.DefaultLine, null);
+            Catalogue effective = OverridesCore.Apply(shipped, CatalogueOverrides.Value, problems);
+            CatalogueEffective.Value = effective.ToLine();
+            if (problems.Count > 0)
+                ValkyriesCargo.Log.LogWarning("catalogue overrides: " + problems.Count + " problem(s), first: " + problems[0]);
         }
 
         // ---- The pure cores' rule bags, filled from the live entries (the director refreshes them once a second) ----
@@ -352,7 +393,7 @@ namespace RavenIron.ValkyriesCargo.Config
         private static void ReparseCatalogue()
         {
             var problems = new List<string>();
-            CatalogueParsed = Catalogue.Parse(CatalogueLine.Value, problems);
+            CatalogueParsed = Catalogue.Parse(CatalogueEffective.Value, problems);
             CatalogueProblems = problems;
             CatalogueVersion++;
         }

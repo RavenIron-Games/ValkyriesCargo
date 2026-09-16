@@ -33,7 +33,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             try
             {
                 new Terminal.ConsoleCommand("cargo",
-                    "Valkyrie's Cargo: status | version | engine | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] | deal buy|sell <prefab> [count] | claim | terminal demo|open|close | catalogue list|add|remove|reset | visit [player] | dismiss | reset | save", Run);
+                    "Valkyrie's Cargo: status | version | engine | config | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] | deal buy|sell <prefab> [count] | claim | terminal demo|open|close | catalogue list|add|remove|reset | visit [player] | dismiss | reset | save", Run);
             }
             catch (Exception ex)
             {
@@ -51,6 +51,7 @@ namespace RavenIron.ValkyriesCargo.Patches
                     case "status":  Status(args); return;
                     case "version": Version(args); return;
                     case "engine":  Engine(args); return;
+                    case "config":  ConfigCommand(args); return;
                     case "prefab":  Prefab(args); return;
                     case "body":    Body(args); return;
                     case "visit":   Admin(args, "visit", args.Args.Length > 2 ? args.Args[2] : ""); return;
@@ -77,6 +78,7 @@ namespace RavenIron.ValkyriesCargo.Patches
             Say(args, "cargo status          - role, config authority, catalogue, the director, the engine numbers the design depends on");
             Say(args, "cargo version         - this build and the ServerSync gate");
             Say(args, "cargo engine          - the Valheim build this DLL was written on against the one running, and every engine probe with its rank");
+            Say(args, "cargo config          - the config file's layout version against the current one, the catalogue overrides, and the last migration");
             Say(args, "cargo prefab <name>   - components, children and effect lists of a game prefab (Valkyrie, Dverger, odin, Haldor)");
             Say(args, "cargo body            - Ingvar's body: where the bundle came from, the six clips and their lengths, the rig, the derived ground offset");
             Say(args, "cargo body preview    - stand him 2.5 m in front of you, facing you: no ZDO, nothing networked, nobody else sees him");
@@ -120,6 +122,22 @@ namespace RavenIron.ValkyriesCargo.Patches
             Say(args, EngineCheck.Ran ? p.Encode() : "probes: EngineCheck.Run() never ran (this is a bug, not a game change)");
             foreach (string line in p.Report()) Say(args, "  " + line);
             foreach (string problem in p.Problems) Say(args, "  registry: " + problem);
+        }
+
+        /// <summary>
+        /// `cargo config` (2026-09-16): anyone, local, no admin gate - the same instrument as `status` and
+        /// `engine`, just for the config migration. The file's stamped layout version against the current
+        /// one, the catalogue overrides in words, and the last migration's boot line (or "none" on a fresh
+        /// install, or a file already current).
+        /// </summary>
+        private static void ConfigCommand(Terminal.ConsoleEventArgs args)
+        {
+            int fileVersion = ModConfig.ConfigVersion != null ? ModConfig.ConfigVersion.Value : 0;
+            Catalogue shipped = Catalogue.Parse(Catalogue.DefaultLine, null);
+            string overridesDesc = CatalogueOverrides.Describe(ModConfig.CatalogueOverrides != null ? ModConfig.CatalogueOverrides.Value : "", shipped);
+            Say(args, "cargo config: file version " + fileVersion + " of " + ConfigLedger.CurrentVersion +
+                      "; overrides: " + overridesDesc +
+                      "; last migration: " + (string.IsNullOrEmpty(ConfigMigration.LastSummary) ? "none" : ConfigMigration.LastSummary));
         }
 
         /// <summary>An admin verb: run it here if the world runs here, else ask the server and let its answer print when it comes.</summary>
@@ -300,8 +318,15 @@ namespace RavenIron.ValkyriesCargo.Patches
                       ", comfort>=" + ModConfig.MinComfortLevel.Value + ", baseValue>=" + ModConfig.MinBaseValue.Value +
                       ", daytimeOnly=" + ModConfig.DaytimeOnly.Value + ", lifespan " + F(ModConfig.MerchantLifespanSeconds.Value, "0") + " s");
 
+            // The config migration (2026-09-16): the file's own stamped version against the one this
+            // build wants, and the last time `ConfigMigration` had anything to do. `cargo config` for more.
+            Say(args, "  config: version " + (ModConfig.ConfigVersion != null ? ModConfig.ConfigVersion.Value.ToString() : "?") + " (file), migration: " +
+                      (string.IsNullOrEmpty(ConfigMigration.LastSummary) ? "none" : ConfigMigration.LastSummary));
+
             Catalogue cat = ModConfig.CatalogueParsed;
-            Say(args, "  catalogue: " + cat.Count + " entries (" + cat.CountOf(EntryKind.Ware) + " wares, " +
+            Catalogue shippedCat = Catalogue.Parse(Catalogue.DefaultLine, null);
+            Say(args, "  catalogue: " + shippedCat.Count + " shipped + " + CatalogueOverrides.Describe(ModConfig.CatalogueOverrides.Value, shippedCat) +
+                      "; " + cat.Count + " entries (" + cat.CountOf(EntryKind.Ware) + " wares, " +
                       cat.CountOf(EntryKind.Want) + " wants), " + ModConfig.CatalogueProblems.Count + " problem(s)" +
                       (ModConfig.CatalogueProblems.Count > 0 ? " - first: " + ModConfig.CatalogueProblems[0] : ""));
 
