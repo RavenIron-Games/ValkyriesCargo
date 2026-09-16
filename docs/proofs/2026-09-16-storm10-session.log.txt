@@ -63,3 +63,26 @@ option off): visit #21. Second boot (07:44, the second commit 4333134, PauseVisi
 [Info   : Unity Log] 09/16/2026 08:01:01: Failed to send, suspend TX on playfab/8BF4F5368AF43770 while trying to reconnect
 [Warning: Unity Log] 09/16/2026 08:02:31: ZRpc timeout detected
 [Info   : Unity Log] 09/16/2026 08:04:21: Game - OnApplicationQuit
+
+=== the config migration boots (PR #99), 10:42-10:48, the branch head 10bc018 (DLL md5 81E180F284C47195F52F8A11F06271A8, version string 0.1.3+10bc018) ===
+--- boot one (10:42): the synthesised Wonderland-style file (unstamped 72-row Catalogue, Ruby changed, Honey and Amber removed, Thistle added, PurseCoins 100000)
+[Info   : Unity Log] 09/16/2026 10:42:18: Game - OnApplicationQuit
+[Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.3]
+[Warning:Valkyrie's Cargo] config: version 0 -> 2: Catalogue was customised, kept as 4 override(s): Ruby changed, Thistle added, Amber removed, Honey removed (the previous file is backed up beside it, .v0.bak)
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.3 loaded - renderer=False, patches 19/19 applied, catalogue=100 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 100 entries, purse 100000, next visit #23, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (108 rows loaded); shelf 32 of 100, period 4, rolls every 2 game day(s), next in 1.8 game day(s)
+[Info   : Unity Log] 09/16/2026 10:42:53: Session "Storm10" with join code 608444 and IP 172.59.201.230:2477 is active with 0 player(s)
+[Info   : Unity Log] 09/16/2026 10:44:05: Game - OnApplicationQuit
+--- boot three (10:44): the same file again, now migrated
+[Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.3]
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.3 loaded - renderer=False, patches 19/19 applied, catalogue=100 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 100 entries, purse 100000, next visit #23, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (108 rows loaded); shelf 32 of 100, period 4, rolls every 2 game day(s), next in 1.8 game day(s)
+[Info   : Unity Log] 09/16/2026 10:44:40: Session "Storm10" with join code 608444 and IP 172.59.201.230:2477 is active with 0 player(s)
+[Info   : Unity Log] 09/16/2026 10:45:51: Game - OnApplicationQuit
+--- boot two (10:46): Storm10's own unstamped 0.1.3 file (the 101-row Catalogue, PurseCoins 100000)
+[Info   :   BepInEx] Loading [Valkyrie's Cargo 0.1.3]
+[Warning:Valkyrie's Cargo] config: version 0 -> 2: Catalogue already matched the shipped 101 rows; overrides: none (the previous file is backed up beside it, .v0.bak)
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.3 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 101 entries, purse 100000, next visit #23, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (108 rows loaded); shelf 32 of 101, period 4, rolls every 2 game day(s), next in 1.8 game day(s); problems: stock row for unknown prefab Thistle ignored
+[Info   : Unity Log] 09/16/2026 10:46:21: Session "Storm10" with join code 608444 and IP 172.59.201.230:2477 is active with 0 player(s)
+[Info   : Unity Log] 09/16/2026 10:47:42: Game - OnApplicationQuit

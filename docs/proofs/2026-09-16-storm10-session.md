@@ -106,10 +106,52 @@ the second commit's expectation for the option-on case (visit #21, option off, o
 build, republished 206 times to nobody). The extract runs on to the pilot's second session (08:00) and the
 stop at 08:04:21.
 
+## The config migration boots (PR #99), 10:42–10:48 — the mod migrates its own file
+
+**What this is.** Three headless boots of the `a/config-migration` head (`10bc018`; DLL md5
+`81E180F284C47195F52F8A11F06271A8`, version string `0.1.3+10bc018`, the version number moves at the cut) on
+Storm10 with no client, at the owner's word ("ok you can boot it on storm10"). The files were swapped in while
+the server was down; the lines are in the extract's last section. Read by a checker that waits for `director up`,
+then reads the cfg, the backup, and the BarrkBOT market export the server writes 60 s later (every catalogue
+row by name, so the 29 food rows are checked one by one).
+
+**Boot one, the Wonderland case.** A synthesised file: Storm10's real 0.1.3 cfg with its `Catalogue` line
+replaced by the 0.1.0 72-row default as an admin might have left it — Ruby's numbers changed (`Ruby:40:15:45:Ware`),
+Honey and Amber removed, `Thistle:4:30:90:Want` added (71 rows), no `ConfigVersion`, `PurseCoins = 100000`. The boot:
+
+```
+[Warning:Valkyrie's Cargo] config: version 0 -> 2: Catalogue was customised, kept as 4 override(s): Ruby changed, Thistle added, Amber removed, Honey removed (the previous file is backed up beside it, .v0.bak)
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.3 loaded - renderer=False, patches 19/19 applied, catalogue=100 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, …
+[Info   :Valkyrie's Cargo] director up: … catalogue 100 entries, purse 100000, next visit #23 …
+```
+
+The file afterwards: `ConfigVersion = 2` under `[Meta]`, `CatalogueOverrides = Ruby:40:15:45:Ware,
+Thistle:4:30:90:Want, -Amber, -Honey`, no `Catalogue` line, `PurseCoins = 100000` untouched;
+`com.raveniron.valkyriescargo.cfg.v0.bak` beside it byte-identical to the pre-migration file (20,527 bytes). The
+market export 60 s later: 100 rows, **all 29 food rows present by name**, Thistle present, Honey and Amber absent,
+Ruby at target 15 / max 45. The server that never saw the food has it, with the admin's every change kept.
+
+**Boot three, the no-op.** The same file booted again, nothing swapped: no `config:` line at all, `ConfigVersion`
+still 2, the same overrides, the backup's hash unchanged, catalogue 100 in the boot line, the director and the
+export the same.
+
+**Boot two, Storm10's own file.** The real unstamped 0.1.3 cfg (the 101-row line the cut boot had written,
+`PurseCoins = 100000`): `config: version 0 -> 2: Catalogue already matched the shipped 101 rows; overrides: none
+(the previous file is backed up beside it, .v0.bak)`, `catalogue=101 entries`, `purse 100000`; the file stamped 2
+with an empty `CatalogueOverrides`, the old line gone, the purse kept; the backup byte-identical (21,585 bytes);
+the export 101 rows with the 29 food rows and Honey and Amber back.
+
+Storm10 was stopped after each boot and left down on the migrated real file; nothing shipped was copied to it.
+
 ## Not seen on the day
 
 - The countdown a returning client shows (the pilot's screen was not pasted back); the resume line and the
   end are the server's.
+- The migration's failure paths (a backup that cannot be written, a `Begin` that throws) on a machine; the
+  Opus reviewer ran them against the real BepInEx assembly off-game, the code is written for them, and no boot
+  here hit one.
+- `cargo config` and `cargo status` on a client (a headless server logs no console answer); `cargo catalogue
+  add` writing an override on a live server.
 - The third commit's recorded duration (`visits.duration_seconds` off the event's own clock) on a
   machine; a `stopevent` mid-visit.
 - The option on a listen host (it never engages there: the host counts itself, `ZNet.UpdatePlayerList`).
