@@ -17,7 +17,9 @@ namespace RavenIron.ValkyriesCargo.Patches
     ///
     /// - `:6817` -- `public class Character : MonoBehaviour, IDestructible, Hoverable, IWaterInteractable, IMonoUpdater`.
     /// - `:10158` -- `public virtual string GetHoverText()`: returns `Tameable.GetHoverText()` if a
-    ///   `Tameable` is present, else `""`. The shipped Dverger has no `Tameable` (CLAUDE.md engine facts).
+    ///   `Tameable` is present, else `""`. The shipped Dverger has no `Tameable` (CLAUDE.md engine facts);
+    ///   a taming mod can put one on the prefab (DvergrAllies does), and `MerchantGuard` takes it off our
+    ///   clone before this postfix ever runs for him.
     /// - `:10168` -- `public virtual string GetHoverName()`: same shape, else
     ///   `Localization.instance.Localize(m_name)`. Both PUBLIC VIRTUAL -- confirmed, not assumed.
     /// - `:12799` -- `public class Humanoid : Character` (the Dverger's own script; grepping the whole
