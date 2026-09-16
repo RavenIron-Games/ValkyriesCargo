@@ -67,6 +67,13 @@ namespace RavenIron.ValkyriesCargo.Core
             public string Summary;
             /// <summary>Row count of the current shipped catalogue, for the boot line's "moved to the shipped N rows".</summary>
             public int ShippedCount;
+            /// <summary>Rows of the stored line that failed to parse (from `CatalogueOverrides.Derive`'s own parse of it), so a bad row is named next to the boot line instead of vanishing silently.</summary>
+            public List<string> Problems = new List<string>();
+            /// <summary>The stored line, trimmed, is ordinally identical to the CURRENT shipped line - an
+            /// up-to-date file nobody customised, not text matching the version-1 rebase table's LEGACY
+            /// default (which is the only thing `ResetToDefault`/`Kept` distinguish). Lets <see cref="Describe"/>
+            /// tell "nothing to say" from "genuinely could not be explained".</summary>
+            public bool AlreadyCurrentShippedLine;
         }
 
         /// <summary>The whole plan a file's snapshot produces. Nothing to do plans an empty one (<see cref="CatalogueTransform"/> null).</summary>
@@ -149,7 +156,8 @@ namespace RavenIron.ValkyriesCargo.Core
                 {
                     string stored;
                     snapshot.TryGetValue(CatalogueSlot, out stored);
-                    string overrides = CatalogueOverrides.Derive(stored, historicalDefaults, currentShippedLine);
+                    var catProblems = new List<string>();
+                    string overrides = CatalogueOverrides.Derive(stored, historicalDefaults, currentShippedLine, catProblems);
                     Catalogue shipped = Catalogue.Parse(currentShippedLine, null);
                     plan.CatalogueTransform = new CatalogueTransformResult
                     {
@@ -157,6 +165,9 @@ namespace RavenIron.ValkyriesCargo.Core
                         Overrides = overrides,
                         Summary = CatalogueOverrides.Describe(overrides, shipped),
                         ShippedCount = shipped.Count,
+                        Problems = catProblems,
+                        AlreadyCurrentShippedLine = stored != null && currentShippedLine != null &&
+                            string.Equals(stored.Trim(), currentShippedLine.Trim(), StringComparison.Ordinal),
                     };
                     continue;
                 }
@@ -209,6 +220,10 @@ namespace RavenIron.ValkyriesCargo.Core
 
                 if (wasReset)
                     clause = "Catalogue was the 0.1.0 default, moved to the shipped " + t.ShippedCount.ToString(CultureInfo.InvariantCulture) + " rows; overrides: none";
+                else if (keptValue != null && t.AlreadyCurrentShippedLine)
+                    clause = "Catalogue already matched the shipped " + t.ShippedCount.ToString(CultureInfo.InvariantCulture) + " rows; overrides: none";
+                else if (keptValue != null && t.Overrides.Length == 0)
+                    clause = "Catalogue differed from every shipped default but nothing of it survives as an override";
                 else if (keptValue != null)
                     clause = "Catalogue was customised, kept as " + t.Summary;
                 else

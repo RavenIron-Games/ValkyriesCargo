@@ -203,7 +203,7 @@ namespace RavenIron.ValkyriesCargo.Server
                 ModConfig.FillMarketRules(_market.Rules, null);
                 ModConfig.FillSchedulerRules(_scheduler.Rules, null);
 
-                // A changed Server.Catalogue (2026-09-07), by whatever route it arrived: applied here, between visits.
+                // A changed Server.CatalogueOverrides (2026-09-07; renamed 2026-09-16), by whatever route it arrived: applied here, between visits.
                 if (ModConfig.CatalogueVersion != _catalogueVersion) SwapCatalogue(worldTime);
                 RollShelfIfDue(worldTime);
 
@@ -659,7 +659,7 @@ namespace RavenIron.ValkyriesCargo.Server
         // ---- the catalogue swap (2026-09-07) --------------------------------------------------------
 
         /// <summary>
-        /// Apply a changed `Server.Catalogue` to the live market: `cargo catalogue add|remove|reset`, an
+        /// Apply a changed `Server.CatalogueOverrides` to the live market: `cargo catalogue add|remove|reset`, an
         /// admin's Configuration Manager, a listen host's own file - every route ends in
         /// `ModConfig.CatalogueVersion` moving, and the tick calls this when it has. BETWEEN VISITS ONLY:
         /// `Market.WithCatalogue` carries everything the sidecar carries and nothing else, and the nonce
@@ -724,7 +724,7 @@ namespace RavenIron.ValkyriesCargo.Server
             _catalogueWaitingLogged = false;
             if (unknown != null) summary += "; dropped, no item prefab of that name in this game: " + unknown;
             if (clashed != null) summary += "; dropped, one row per item token: " + clashed;
-            int refused = ModConfig.CatalogueProblems.Count;
+            int refused = ModConfig.CatalogueProblemCount;
             if (refused > 0) summary += "; " + refused + " entr" + (refused == 1 ? "y" : "ies") + " did not parse (cargo status names the first)";
             _dirty = true;
             PublishMarket();

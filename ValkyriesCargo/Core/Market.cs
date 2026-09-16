@@ -522,7 +522,7 @@ namespace RavenIron.ValkyriesCargo.Core
 
         /// <summary>
         /// This market carried onto a new catalogue (2026-09-07: `cargo catalogue add|remove|reset`, an
-        /// admin's Configuration Manager, any live edit of `Server.Catalogue`). Every row still in the
+        /// admin's Configuration Manager, any live edit of `Server.CatalogueOverrides`). Every row still in the
         /// catalogue keeps its stock and its drift stamp (clamped to a lowered max); a new row starts at
         /// target; a dropped row goes with whatever it held. The purse, this visit's baseline, the coins
         /// taken, the visit number and the delivery sequence all carry, through the same rows the sidecar

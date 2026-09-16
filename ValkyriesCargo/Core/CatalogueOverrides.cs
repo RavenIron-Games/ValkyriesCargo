@@ -69,14 +69,15 @@ namespace RavenIron.ValkyriesCargo.Core
         /// differing from that base (as upserts, in stored order) plus `-Prefab` for every base row absent
         /// from the stored line. Then pruned: an upsert identical to the CURRENT shipped row is dropped (a
         /// no-op), and a removal of a prefab the current shipped catalogue does not carry is dropped (moot).
-        /// A null/empty stored line derives "". A stored row that does not parse is ignored (the boot log's
-        /// parse problems already cover it). Never throws.
+        /// A null/empty stored line derives "". A stored row that does not parse is reported in
+        /// <paramref name="problems"/> (when given) and ignored - the caller (`ConfigLedger.Plan`) carries
+        /// those onto the boot line, so they are never silently dropped. Never throws.
         /// </summary>
-        public static string Derive(string storedLine, IList<string> historicalDefaults, string currentShippedLine)
+        public static string Derive(string storedLine, IList<string> historicalDefaults, string currentShippedLine, List<string> problems = null)
         {
             if (string.IsNullOrEmpty(storedLine)) return "";
 
-            Catalogue stored = Catalogue.Parse(storedLine, null);
+            Catalogue stored = Catalogue.Parse(storedLine, problems);
             if (stored.Count == 0) return "";
 
             string baseLine = PickBase(stored, historicalDefaults);
@@ -117,33 +118,61 @@ namespace RavenIron.ValkyriesCargo.Core
         }
 
         /// <summary>
-        /// The historical default with the most rows identical to <paramref name="stored"/>; ties go to
-        /// the newest (last). Scored as a PROPORTION of the candidate's own rows, not a raw count: a newer
-        /// default is usually a superset of an older one (the 29 food rows never dropped anything), so by
-        /// raw count it can never score lower than the older one it contains - a customised 72-row line
-        /// would otherwise always "tie" the 101-row default (both match the same 69 untouched rows) and
-        /// the tie-break would hand it the wrong base. Measuring what fraction of EACH candidate survives
-        /// in the stored line lets the closer, smaller default win outright instead.
+        /// The historical default this stored line descends from. Neither a raw match count nor a
+        /// proportion of the candidate's own rows can tell "a 0.1.0 file" from "a 0.1.1 file with rows
+        /// deleted": a newer default is usually a superset of an older one (the 29 food rows never
+        /// dropped anything), so a customised line that has lost some of the newer rows still matches
+        /// every row the OLDER default has, and a plain proportion score then hands the older, smaller
+        /// default a perfect 1.000 against the newer default's damaged score - undoing the admin's own
+        /// deletions on every migration (found live: a 0.1.3 file with four food rows removed by hand
+        /// scored the 72-row 0.1.0 default 1.000 against 97/101, so the admin's deletions silently came
+        /// back). Gate on EVIDENCE instead, then score: a candidate is eligible only if the stored line
+        /// still carries at least half of the rows THAT CANDIDATE introduced over the previous one in the
+        /// list (the 101-row default introduces the 29 food rows; a Wonderland 72-row line carries zero
+        /// of them and is ineligible for it; a 0.1.3 line with four of the 29 removed carries 25 and is
+        /// eligible). Among eligible candidates, pick the most raw matches; ties go to the LAST (newest).
+        /// If nothing is eligible (a stored line unrelated to either default), fall back to the newest.
         /// </summary>
         private static string PickBase(Catalogue stored, IList<string> historicalDefaults)
         {
-            string best = historicalDefaults != null && historicalDefaults.Count > 0 ? historicalDefaults[0] : Catalogue.DefaultLine;
-            double bestScore = -1;
-            if (historicalDefaults == null) return best;
+            if (historicalDefaults == null || historicalDefaults.Count == 0) return Catalogue.DefaultLine;
+
+            string best = null;
+            int bestMatches = -1;
+            Catalogue previous = null;
 
             for (int i = 0; i < historicalDefaults.Count; i++)
             {
                 Catalogue candidate = Catalogue.Parse(historicalDefaults[i], null);
-                int matches = 0;
-                foreach (CatalogueEntry e in stored.Entries)
+
+                int introduced = 0;
+                int introducedPresent = 0;
+                foreach (CatalogueEntry e in candidate.Entries)
                 {
-                    CatalogueEntry c = FindCI(candidate, e.Prefab);
-                    if (c != null && RowsIdentical(e, c)) matches++;
+                    CatalogueEntry carriedOver = previous != null ? FindCI(previous, e.Prefab) : null;
+                    if (carriedOver != null && RowsIdentical(e, carriedOver)) continue; // not new to this candidate
+
+                    introduced++;
+                    CatalogueEntry s = FindCI(stored, e.Prefab);
+                    if (s != null && RowsIdentical(s, e)) introducedPresent++;
                 }
-                double score = candidate.Count > 0 ? (double)matches / candidate.Count : 0.0;
-                if (score >= bestScore) { bestScore = score; best = historicalDefaults[i]; }
+                bool eligible = introduced == 0 || introducedPresent * 2 >= introduced;
+
+                if (eligible)
+                {
+                    int matches = 0;
+                    foreach (CatalogueEntry e in stored.Entries)
+                    {
+                        CatalogueEntry c = FindCI(candidate, e.Prefab);
+                        if (c != null && RowsIdentical(e, c)) matches++;
+                    }
+                    if (matches >= bestMatches) { bestMatches = matches; best = historicalDefaults[i]; }
+                }
+
+                previous = candidate;
             }
-            return best;
+
+            return best ?? historicalDefaults[historicalDefaults.Count - 1];
         }
 
         // ---- the console verbs (2026-09-16: `cargo catalogue add|remove` edit the overrides, not the line) ----
@@ -151,10 +180,13 @@ namespace RavenIron.ValkyriesCargo.Core
         /// <summary>
         /// `overrides` with `entryText` (one `Prefab:Base:Target:Max:Kind`) upserted: replacing an existing
         /// override of the same prefab in place (an edit keeps its position), replacing a `-Prefab` removal
-        /// of the same prefab in place (undoing it), or appended. Null, with the reason in `report`, when
-        /// the entry does not parse or is not exactly one entry. PURE, never throws.
+        /// of the same prefab in place (undoing it), or appended. When the entry is IDENTICAL to
+        /// <paramref name="shipped"/>'s own row for that prefab, it is a no-op: any existing token for it
+        /// is dropped rather than storing a redundant override, and `report` says so (pass null to skip
+        /// this check). Null, with the reason in `report`, when the entry does not parse or is not exactly
+        /// one entry. PURE, never throws.
         /// </summary>
-        public static string Upsert(string overrides, string entryText, out string report)
+        public static string Upsert(string overrides, string entryText, Catalogue shipped, out string report)
         {
             var problems = new List<string>();
             Catalogue one = Catalogue.Parse(entryText, problems);
@@ -168,6 +200,24 @@ namespace RavenIron.ValkyriesCargo.Core
             CatalogueEntry e = one.Entries[0];
             var tokens = new List<string>(SplitTokens(overrides));
             int at = IndexOfToken(tokens, e.Prefab);
+
+            CatalogueEntry shippedRow = FindCI(shipped, e.Prefab);
+            if (shippedRow != null && RowsIdentical(e, shippedRow))
+            {
+                // Exactly the shipped row: no override is needed. Drop whatever was there (an edit or an
+                // undone removal) rather than store a redundant upsert that matches the shipped default.
+                if (at >= 0)
+                {
+                    tokens.RemoveAt(at);
+                    report = "that already matches the shipped value now; the earlier override for " + e.Prefab + " is dropped";
+                }
+                else
+                {
+                    report = "that is already the shipped value, nothing changed";
+                }
+                return string.Join(", ", tokens.ToArray());
+            }
+
             string entryLine = e.ToString();
 
             if (at >= 0)

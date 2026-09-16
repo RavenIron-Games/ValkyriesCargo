@@ -46,7 +46,12 @@ namespace RavenIron.ValkyriesCargo.Config
 
                 _plan = ConfigLedger.Plan(_snapshot, fileVersion, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
                 LastSummary = ConfigLedger.Describe(_plan);
-                ValkyriesCargo.Log.LogWarning(LastSummary + " (the previous file is backed up beside it, .v" + fileVersion + ".bak)");
+
+                List<string> catProblems = _plan.CatalogueTransform != null ? _plan.CatalogueTransform.Problems : null;
+                string problemsSuffix = catProblems != null && catProblems.Count > 0
+                    ? " (" + catProblems.Count + " old catalogue row(s) did not parse and were dropped, first: " + catProblems[0] + ")"
+                    : "";
+                ValkyriesCargo.Log.LogWarning(LastSummary + problemsSuffix + " (the previous file is backed up beside it, .v" + fileVersion + ".bak)");
             }
             catch (Exception ex)
             {
@@ -58,10 +63,11 @@ namespace RavenIron.ValkyriesCargo.Config
 
         /// <summary>
         /// After every bind, before <see cref="ModConfig.RecomputeCatalogue"/>: reset the slots version 1
-        /// found at an old default, hand version 2's derived line to `CatalogueOverrides`, stamp the
-        /// version, save, then rewrite the raw file once to drop the now-unbound `Catalogue = ...` line
-        /// under `[Server]` (BepInEx keeps an orphaned line forever; `ConfigFile.OrphanedEntries` is
-        /// internal - house rule 5 - so this is a plain line filter over the file instead).
+        /// found at an old default, hand version 2's derived line to `CatalogueOverrides`, consume the
+        /// retired `Server.Catalogue` key (BepInEx keeps an orphaned line forever otherwise: it lives in
+        /// `ConfigFile.OrphanedEntries`, a PRIVATE property - not touched, house rule 5 - so this binds it
+        /// under a throwaway default, which pulls it out of the orphan set, then removes it, both public
+        /// `ConfigFile` API), stamp the version and save.
         /// </summary>
         public static void Finish(ConfigFile cfg, ConfigEntry<int> versionEntry)
         {
@@ -83,10 +89,10 @@ namespace RavenIron.ValkyriesCargo.Config
                         ModConfig.CatalogueOverrides.Value = _plan.CatalogueTransform.Overrides;
                 }
 
+                if (_path != null && cfg != null) ConsumeRetiredCatalogueKey(cfg);
+
                 if (versionEntry != null) versionEntry.Value = ConfigLedger.CurrentVersion;
                 if (cfg != null) cfg.Save();
-
-                if (_path != null) DropCatalogueLine(_path);
             }
             catch (Exception ex)
             {
@@ -104,7 +110,17 @@ namespace RavenIron.ValkyriesCargo.Config
         {
             try
             {
-                File.Copy(path, path + ".v" + fromVersion.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".bak", overwrite: true);
+                string bak = path + ".v" + fromVersion.ToString(System.Globalization.CultureInfo.InvariantCulture) + ".bak";
+                if (File.Exists(bak))
+                {
+                    // Somebody's only clean copy already lives here - a migration that half-finished on an
+                    // earlier boot (Finish threw after the file was partly rewritten but before the version
+                    // stamped) would otherwise be overwritten by File.Copy's own overwrite:true. Fall back
+                    // to a timestamped name instead of clobbering it.
+                    bak = path + ".v" + fromVersion.ToString(System.Globalization.CultureInfo.InvariantCulture) + "." +
+                          DateTime.UtcNow.ToString("yyyyMMddHHmmss", System.Globalization.CultureInfo.InvariantCulture) + ".bak";
+                }
+                File.Copy(path, bak, overwrite: false);
             }
             catch (Exception ex)
             {
@@ -113,47 +129,23 @@ namespace RavenIron.ValkyriesCargo.Config
         }
 
         /// <summary>
-        /// Drop the `Catalogue = ...` line under `[Server]`, once, now that it is unbound. A plain line
-        /// filter: parse just enough to know the current section, keep everything else byte for byte.
+        /// Drop the retired `Server.Catalogue` key through public `ConfigFile` API alone: `Bind` under a
+        /// throwaway default reads whatever is still in `OrphanedEntries` (BepInEx's own `Bind` removes it
+        /// from there the moment it binds), and `Remove` then takes the now-bound entry back out of
+        /// `Entries` too, so neither collection carries it into the next `Save`. Never names the private
+        /// property itself.
         /// </summary>
-        private static void DropCatalogueLine(string path)
+        private static void ConsumeRetiredCatalogueKey(ConfigFile cfg)
         {
             try
             {
-                string[] lines = File.ReadAllLines(path);
-                var keep = new List<string>(lines.Length);
-                string section = "";
-                bool dropped = false;
-
-                foreach (string raw in lines)
-                {
-                    string line = raw.Trim();
-                    if (line.Length > 0 && line[0] == '[' && line[line.Length - 1] == ']')
-                    {
-                        section = line.Substring(1, line.Length - 2).Trim();
-                        keep.Add(raw);
-                        continue;
-                    }
-
-                    if (string.Equals(section, "Server", StringComparison.OrdinalIgnoreCase))
-                    {
-                        int eq = line.IndexOf('=');
-                        string key = eq > 0 ? line.Substring(0, eq).Trim() : "";
-                        if (string.Equals(key, "Catalogue", StringComparison.OrdinalIgnoreCase))
-                        {
-                            dropped = true;
-                            continue;
-                        }
-                    }
-
-                    keep.Add(raw);
-                }
-
-                if (dropped) File.WriteAllLines(path, keep.ToArray());
+                var def = new ConfigDefinition("Server", "Catalogue");
+                cfg.Bind<string>(def, "");
+                cfg.Remove(def);
             }
             catch (Exception ex)
             {
-                ValkyriesCargo.Log.LogError("Could not drop the retired Catalogue line from the config file (harmless - it is unbound and ignored from here). Reason: " + ex.Message);
+                ValkyriesCargo.Log.LogError("Could not drop the retired Catalogue key from the config file (harmless - it is unbound and ignored from here). Reason: " + ex.Message);
             }
         }
     }

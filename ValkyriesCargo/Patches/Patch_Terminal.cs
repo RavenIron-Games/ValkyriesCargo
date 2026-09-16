@@ -169,9 +169,9 @@ namespace RavenIron.ValkyriesCargo.Patches
             if (sub == "list")
             {
                 Catalogue cat = ModConfig.CatalogueParsed;
-                int refused = ModConfig.CatalogueProblems.Count;
+                int refused = ModConfig.CatalogueProblemCount;
                 Say(args, "catalogue: " + cat.Count + " entries (" + cat.CountOf(EntryKind.Ware) + " wares, " + cat.CountOf(EntryKind.Want) + " wants)" +
-                          (refused > 0 ? "; " + refused + " entr" + (refused == 1 ? "y" : "ies") + " refused, first: " + ModConfig.CatalogueProblems[0] : "") +
+                          (refused > 0 ? "; " + refused + " entr" + (refused == 1 ? "y" : "ies") + " refused, first: " + ModConfig.FirstCatalogueProblem : "") +
                           "; each row is Prefab base target/max");
                 ListKind(args, cat, EntryKind.Ware, "wares (he sells these and buys them back)");
                 ListKind(args, cat, EntryKind.Want, "wants (he only buys these)");
@@ -327,8 +327,8 @@ namespace RavenIron.ValkyriesCargo.Patches
             Catalogue shippedCat = Catalogue.Parse(Catalogue.DefaultLine, null);
             Say(args, "  catalogue: " + shippedCat.Count + " shipped + " + CatalogueOverrides.Describe(ModConfig.CatalogueOverrides.Value, shippedCat) +
                       "; " + cat.Count + " entries (" + cat.CountOf(EntryKind.Ware) + " wares, " +
-                      cat.CountOf(EntryKind.Want) + " wants), " + ModConfig.CatalogueProblems.Count + " problem(s)" +
-                      (ModConfig.CatalogueProblems.Count > 0 ? " - first: " + ModConfig.CatalogueProblems[0] : ""));
+                      cat.CountOf(EntryKind.Want) + " wants), " + ModConfig.CatalogueProblemCount + " problem(s)" +
+                      (ModConfig.CatalogueProblemCount > 0 ? " - first: " + ModConfig.FirstCatalogueProblem : ""));
 
             Say(args, "  channels: VisitState=" + Describe(ModConfig.VisitState.Value) +
                       ", MarketState=" + Describe(ModConfig.MarketState.Value) +

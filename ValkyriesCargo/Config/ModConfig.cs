@@ -102,8 +102,23 @@ namespace RavenIron.ValkyriesCargo.Config
         /// <summary>The parsed catalogue; re-parsed whenever the synced line changes.</summary>
         public static Catalogue CatalogueParsed { get; private set; } = Catalogue.Parse(null, null);
 
-        /// <summary>Every entry the parser refused, in words, for `cargo status`.</summary>
+        /// <summary>Every entry `CatalogueEffective`'s own re-parse refused, in words. In practice always
+        /// empty: `CatalogueEffective` is `Apply`'s already-validated output, so a bad row can only ever
+        /// come from a corrupted broadcast. `CatalogueProblemCount`/`FirstCatalogueProblem` are what
+        /// `cargo status` and `cargo catalogue list` actually read.</summary>
         public static List<string> CatalogueProblems { get; private set; } = new List<string>();
+
+        /// <summary>Every problem `Apply` reported while building `CatalogueEffective` from `CatalogueOverrides`
+        /// (a bad token, a removal naming a prefab that is neither shipped nor overridden) - the ones a
+        /// broken override actually produces. Refreshed by every `RecomputeCatalogue`.</summary>
+        public static List<string> OverrideProblems { get; private set; } = new List<string>();
+
+        /// <summary>`OverrideProblems.Count + CatalogueProblems.Count`: what `cargo status` and `cargo catalogue list` name as "N problem(s)".</summary>
+        public static int CatalogueProblemCount => OverrideProblems.Count + CatalogueProblems.Count;
+
+        /// <summary>The first of `OverrideProblems` then `CatalogueProblems`, or null when there is none.</summary>
+        public static string FirstCatalogueProblem =>
+            OverrideProblems.Count > 0 ? OverrideProblems[0] : (CatalogueProblems.Count > 0 ? CatalogueProblems[0] : null);
 
         /// <summary>
         /// Counts up on every re-parse of the synced line (2026-09-07): the director compares it against
@@ -323,6 +338,7 @@ namespace RavenIron.ValkyriesCargo.Config
             Catalogue shipped = Catalogue.Parse(Catalogue.DefaultLine, null);
             Catalogue effective = OverridesCore.Apply(shipped, CatalogueOverrides.Value, problems);
             CatalogueEffective.Value = effective.ToLine();
+            OverrideProblems = problems;
             if (problems.Count > 0)
                 ValkyriesCargo.Log.LogWarning("catalogue overrides: " + problems.Count + " problem(s), first: " + problems[0]);
         }

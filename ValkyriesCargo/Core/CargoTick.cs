@@ -1,3 +1,4 @@
+using System;
 using RavenIron.ValkyriesCargo.Client;
 using RavenIron.ValkyriesCargo.Client.Terminal;
 using RavenIron.ValkyriesCargo.Config;
@@ -273,7 +274,7 @@ namespace RavenIron.ValkyriesCargo.Core
                         return "catalogue add refused: '" + prefab + "' carries the same item token as '" + holder + "', already in the catalogue (" +
                                VisitDirector.ItemToken(prefab) + "); the inventory counts goods by that token, so only one of the two can be traded - remove " +
                                holder + " first if this is the one you mean";
-                    next = CatalogueOverrides.Upsert(ModConfig.CatalogueOverrides.Value, rest, out report);
+                    next = CatalogueOverrides.Upsert(ModConfig.CatalogueOverrides.Value, rest, shipped, out report);
                     break;
                 }
                 case "remove":
@@ -288,7 +289,10 @@ namespace RavenIron.ValkyriesCargo.Core
                     return "catalogue: add <Prefab:Base:Target:Max:Kind> | remove <Prefab> | reset (list needs no admin)";
             }
             if (next == null) return "catalogue " + sub + " refused: " + report;
-            if (next == ModConfig.CatalogueOverrides.Value) return "catalogue " + report + "; the overrides are already exactly that, nothing changed";
+            // Upsert already says "nothing changed" itself when the entry is a no-op against the shipped
+            // row; do not say it twice.
+            if (next == ModConfig.CatalogueOverrides.Value)
+                return "catalogue " + report + (report.IndexOf("nothing changed", StringComparison.Ordinal) >= 0 ? "" : "; the overrides are already exactly that, nothing changed");
             ModConfig.CatalogueOverrides.Value = next;   // SettingChanged: recomputed, sent to every client, the cfg file rewritten
             return "catalogue " + report + "; " + d.SwapCatalogue(znet.GetTimeSeconds());
         }

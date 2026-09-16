@@ -34,8 +34,10 @@ line ever shadowing it again. `Core/CatalogueOverrides.cs` (pure) is `Apply` (sh
 catalogue that actually trades) and `Derive` (an old stored `Catalogue` line -> the overrides that reproduce
 it, for the migration). `cargo catalogue add|remove|reset` now edit `CatalogueOverrides`, not the whole line;
 `cargo status`'s catalogue line reads `catalogue: 101 shipped + <overrides in words>; N entries (...)`. The
-retired `Catalogue` line is dropped from the cfg file once the migration has read it (a plain line filter,
-after the backup exists) so BepInEx does not keep rewriting an orphaned key forever.
+retired `Catalogue` key is consumed from the cfg file once the migration has read it - bound under a
+throwaway default and removed again, both public `ConfigFile` API, after the backup exists - so BepInEx
+does not keep rewriting it forever (BepInEx's own orphan-tracking, `ConfigFile.OrphanedEntries`, is a
+private property; nothing here touches it directly).
 
 Tests: `ConfigLedgerTests` and `CatalogueOverridesTests` in `tests/CoreTests/Program.cs`, including the
 round-trip invariant (`Apply(Parse(DefaultLine), Derive(stored, HistoricalDefaults, DefaultLine))` reproduces
