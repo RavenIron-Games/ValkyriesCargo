@@ -12,18 +12,20 @@ namespace RavenIron.ValkyriesCargo.Client
     /// you") instead of our terminal, because <c>Player.Interact</c> takes the first Interactable in
     /// component order and a prefab component always precedes one added at runtime; the hover gained
     /// "(Female)" and "Hungry", painted onto the HUD by the genetics component's LateUpdate; and for the
-    /// length of the visit he was a hungry, commandable, breedable pet that eats coins off the ground.
-    /// The shipped Dverger carries none of this, so anything of the kind on OUR clone came from a mod
-    /// that meant it for wild Dvergr, not for him.
+    /// length of the visit he was a commandable, breedable pet. The shipped Dverger carries none of this,
+    /// so anything of the kind on OUR clone came from a mod that meant it for wild Dvergr, not for him.
     ///
     /// Runs once, on the client, from the <c>Humanoid.Awake</c> postfix that makes the clone Ingvar, and
-    /// BEFORE <c>CargoMerchant</c> is added: the removed components are gone before our own
-    /// <c>SetTamed</c> fires, so a taming mod's SetTamed patches (they key on their genetics component)
-    /// never count him as a tame. Everything here touches our own spawned object and nothing else: not
-    /// the prefab, not anyone's creature. <c>Object.Destroy</c> is deferred to the end of the frame, which
-    /// is fine - Unity's null semantics make a destroyed component read as missing to every
-    /// <c>GetComponent</c> and every cached reference after that, and a component's InvokeRepeating and
-    /// coroutines die with it.
+    /// BEFORE <c>CargoMerchant</c> is added. The order and the call are both deliberate:
+    /// <c>CargoMerchant.Awake</c> calls <c>SetTamed(true)</c> in this same frame, and a taming mod's
+    /// <c>SetTamed</c> postfixes key on <c>GetComponent</c> of their genetics component (DvergrAllies counts
+    /// a tame that way); a deferred <c>Object.Destroy</c> leaves a component findable until the end of the
+    /// frame, so it is <c>DestroyImmediate</c>, the same call the taming mod used to put them there. And
+    /// because a runtime-added component sits after <c>Humanoid</c> in component order, its own Awake has
+    /// not run yet when this does, and never will: no "Command" RPC registered on his ZNetView, no
+    /// TamingUpdate, no Procreate timer. Everything here touches our own spawned object and nothing else:
+    /// not the prefab, not anyone's creature. His consume list (the prefab's own, or the taming mod's)
+    /// is <c>CargoMerchant</c>'s business, swapped on the owner where the only reader runs.
     /// </summary>
     public static class MerchantGuard
     {
@@ -49,8 +51,8 @@ namespace RavenIron.ValkyriesCargo.Client
         private static int _throws;
 
         /// <summary>
-        /// Strip what other mods put on the clone for their Dvergr, empty his consume list, and stamp the
-        /// SoM opt-out if this machine owns the ZDO. <paramref name="zdo"/> may be the ZNetView's or the
+        /// Strip what other mods put on the clone for their Dvergr, and stamp the SoM opt-out if this
+        /// machine owns the ZDO. <paramref name="zdo"/> may be the ZNetView's or the
         /// <c>ZNetView.m_initZDO</c> fallback the caller already resolved; both are this object's.
         /// </summary>
         public static void Apply(GameObject go, ZDO zdo)
@@ -67,16 +69,6 @@ namespace RavenIron.ValkyriesCargo.Client
                     if (Array.IndexOf(KnownPetComponents, mb.GetType().FullName) >= 0) Remove(mb, removed);
                 }
 
-                // A taming mod feeds its Dvergr from the ground (coins, meat) through MonsterAI's consume
-                // list on the prefab. The vanilla Dverger eats nothing, and neither does Ingvar.
-                bool fed = false;
-                MonsterAI ai = go.GetComponent<MonsterAI>();
-                if (ai != null && ai.m_consumeItems != null && ai.m_consumeItems.Count > 0)
-                {
-                    ai.m_consumeItems = new List<ItemDrop>();
-                    fed = true;
-                }
-
                 // The pilot owns the ZDO from the spawn (Spawner hands it over last), so this lands on the
                 // pilot's machine and rides with the ZDO through saves; a watcher's machine skips it.
                 bool stamped = false;
@@ -86,10 +78,9 @@ namespace RavenIron.ValkyriesCargo.Client
                     stamped = true;
                 }
 
-                if (removed.Count > 0 || fed || stamped)
+                if (removed.Count > 0 || stamped)
                     ValkyriesCargo.Log.LogInfo("merchant guard: " +
                         (removed.Count > 0 ? "removed " + string.Join(", ", removed.ToArray()) + " from Ingvar's clone" : "nothing foreign on Ingvar's clone") +
-                        (fed ? "; his consume list emptied" : "") +
                         (stamped ? "; " + SoMExemptKey + " stamped" : ""));
             }
             catch (Exception ex)
@@ -103,7 +94,7 @@ namespace RavenIron.ValkyriesCargo.Client
             if (c == null) return;
             string name = c.GetType().FullName;
             if (!removed.Contains(name)) removed.Add(name);
-            UnityEngine.Object.Destroy(c);
+            UnityEngine.Object.DestroyImmediate(c);
         }
     }
 }
