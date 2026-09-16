@@ -3618,6 +3618,49 @@ namespace ValkyriesCargo.Tests
                 Check(expectedPrefabs.SetEquals(actualPrefabs),
                       "regression: the exact prefab set matches - nothing the admin removed comes back, nothing the admin kept goes missing");
             }
+
+            // ---- Regression (should-fix, review round 2): PickBase's eligibility gate used to require
+            //      at least HALF of what a candidate introduced to survive in the stored line
+            //      (introducedPresent * 2 >= introduced). The 101-row default introduces 29 food rows over
+            //      the 72-row legacy default, so that gate held fine against a handful of deletions - but
+            //      the next default only has to add a few rows for the same admin habit (prune the ones you
+            //      do not want) to trip it on the very next update: delete more than half of what a small
+            //      default introduced and the gate falls back to the OLDER default, which carries none of
+            //      them, and every one of those deletions is silently undone. Fixed to introducedPresent >=
+            //      1: one surviving row is proof the file has been through this default at all. ----
+            {
+                // Fifteen of the 29 food rows removed by hand - comfortably past "half of 29" (15), which
+                // the round-1 gate treated as evidence the file was never on the 101-row default at all and
+                // handed it back to the 72-row legacy default (which carries none of the food rows), so
+                // none of the fifteen ever showed up as a removal - the admin's pruning silently reverted.
+                string report;
+                string fifteenFoodRowsRemoved = Catalogue.DefaultLine;
+                string[] toRemove =
+                {
+                    "BoarJerky", "Bread", "MinceMeatSauce", "SerpentStew", "CookedLoxMeat",
+                    "MeadHealthMedium", "MeadStaminaMedium", "MeadFrostResist", "MeadPoisonResist",
+                    "Raspberry", "Blueberries", "Cloudberry", "Mushroom", "MushroomYellow", "Carrot",
+                };
+                foreach (string prefab in toRemove)
+                    fifteenFoodRowsRemoved = Catalogue.Remove(fifteenFoodRowsRemoved, prefab, out report);
+
+                string overrides = CatalogueOverrides.Derive(fifteenFoodRowsRemoved, Catalogue.HistoricalDefaults, Catalogue.DefaultLine);
+                string expected = string.Join(", ", Array.ConvertAll(toRemove, p => "-" + p));
+                Equal(expected, overrides,
+                      "regression (review round 2): removing 15 of the 29 food rows (more than half) must derive all 15 removals, not '' - the 101-row default stays eligible on ONE surviving food row, let alone the fourteen this leaves");
+            }
+            {
+                // The general shape, with a default that grows by only three rows: an admin who deletes
+                // two of the three trips the OLD "half" gate on the very next update (1 * 2 < 3), which is
+                // exactly the routine case the fix has to cover, not just the 29-row outlier.
+                string oldDefault = "A:1:1:1:Ware, B:1:1:1:Ware, C:1:1:1:Ware";
+                string newDefault = "A:1:1:1:Ware, B:1:1:1:Ware, C:1:1:1:Ware, D:1:1:1:Ware, E:1:1:1:Ware, F:1:1:1:Ware";
+                string stored = "A:1:1:1:Ware, B:1:1:1:Ware, C:1:1:1:Ware, D:1:1:1:Ware"; // E and F deleted, D kept
+                string overrides = CatalogueOverrides.Derive(stored, new[] { oldDefault, newDefault }, newDefault);
+                Equal("-E, -F", overrides,
+                      "regression (review round 2): a synthetic three-row growth with two of the three deleted derives '-E, -F' - one surviving introduced row (D) is enough to stay eligible for the newer default");
+            }
+
             RoundTrip(BuildCustomised101(), "a customised 0.1.4 default (one row changed, two removed, one added)");
             {
                 string customised = BuildCustomised72();
@@ -3761,6 +3804,18 @@ namespace ValkyriesCargo.Tests
                 var plan = ConfigLedger.Plan(snap, 0, shippedTest, new[] { shippedTest });
                 Equal("config: version 0 -> 2: Catalogue was customised, kept as 3 override(s): Ruby changed, FlametalNew added, Honey removed",
                       ConfigLedger.Describe(plan), "Describe: the customised case, exact boot line");
+            }
+            {
+                // Nit (review round 2): a version-0 file with no Server.Catalogue key at all (just some
+                // other setting) has nothing to compare against a shipped default. It used to read as
+                // "Catalogue matches the shipped default" - a match that was never attempted, because
+                // t.StoredLine is null, not equal-to-anything.
+                var snap = ConfigLedger.ParseIni(new[] { "[Server]", "PurseCoins = 1500" });
+                var plan = ConfigLedger.Plan(snap, 0, Catalogue.DefaultLine, Catalogue.HistoricalDefaults);
+                Check(plan.CatalogueTransform != null && plan.CatalogueTransform.StoredLine == null,
+                      "Plan: a file with no Catalogue key at all has a null StoredLine, not an empty one");
+                Equal("config: version 0 -> 2: the file carried no Catalogue line; the shipped catalogue applies",
+                      ConfigLedger.Describe(plan), "Describe: a missing Catalogue key is distinct from one that matches the shipped default");
             }
         }
 

@@ -289,10 +289,11 @@ namespace RavenIron.ValkyriesCargo.Core
                     return "catalogue: add <Prefab:Base:Target:Max:Kind> | remove <Prefab> | reset (list needs no admin)";
             }
             if (next == null) return "catalogue " + sub + " refused: " + report;
-            // Upsert already says "nothing changed" itself when the entry is a no-op against the shipped
-            // row; do not say it twice.
+            // Upsert/Remove already say why nothing changed when the entry is a no-op (against the shipped
+            // row, or already removed); "catalogue unchanged: " carries the verb the bare "catalogue "
+            // prefix lost (nit, review round 2), and their own wording is never repeated.
             if (next == ModConfig.CatalogueOverrides.Value)
-                return "catalogue " + report + (report.IndexOf("nothing changed", StringComparison.Ordinal) >= 0 ? "" : "; the overrides are already exactly that, nothing changed");
+                return "catalogue unchanged: " + report;
             ModConfig.CatalogueOverrides.Value = next;   // SettingChanged: recomputed, sent to every client, the cfg file rewritten
             return "catalogue " + report + "; " + d.SwapCatalogue(znet.GetTimeSeconds());
         }

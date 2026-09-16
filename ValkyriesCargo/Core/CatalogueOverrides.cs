@@ -127,11 +127,17 @@ namespace RavenIron.ValkyriesCargo.Core
         /// deletions on every migration (found live: a 0.1.3 file with four food rows removed by hand
         /// scored the 72-row 0.1.0 default 1.000 against 97/101, so the admin's deletions silently came
         /// back). Gate on EVIDENCE instead, then score: a candidate is eligible only if the stored line
-        /// still carries at least half of the rows THAT CANDIDATE introduced over the previous one in the
-        /// list (the 101-row default introduces the 29 food rows; a Wonderland 72-row line carries zero
-        /// of them and is ineligible for it; a 0.1.3 line with four of the 29 removed carries 25 and is
-        /// eligible). Among eligible candidates, pick the most raw matches; ties go to the LAST (newest).
-        /// If nothing is eligible (a stored line unrelated to either default), fall back to the newest.
+        /// still carries AT LEAST ONE of the rows THAT CANDIDATE introduced over the previous one in the
+        /// list, unchanged (the 101-row default introduces the 29 food rows; a Wonderland 72-row line
+        /// carries zero of them and is ineligible for it; any line that has ever seen so much as one food
+        /// row is eligible for it, however many of the rest an admin later deleted). A "half of what was
+        /// introduced" gate (round 1 of this fix) still reverts routine deletions: a small default that
+        /// adds three rows is undone by deleting two of them, which an admin trying to prune a bloated
+        /// shelf does on the very next update - the review that caught it walked exactly that case. One
+        /// surviving row of a candidate's own is proof the admin's file has been through that default at
+        /// least once; zero is the only signal that a candidate was never reached at all. Among eligible
+        /// candidates, pick the most raw matches; ties go to the LAST (newest). If nothing is eligible (a
+        /// stored line unrelated to either default), fall back to the newest.
         /// </summary>
         private static string PickBase(Catalogue stored, IList<string> historicalDefaults)
         {
@@ -156,7 +162,7 @@ namespace RavenIron.ValkyriesCargo.Core
                     CatalogueEntry s = FindCI(stored, e.Prefab);
                     if (s != null && RowsIdentical(s, e)) introducedPresent++;
                 }
-                bool eligible = introduced == 0 || introducedPresent * 2 >= introduced;
+                bool eligible = introduced == 0 || introducedPresent >= 1;
 
                 if (eligible)
                 {

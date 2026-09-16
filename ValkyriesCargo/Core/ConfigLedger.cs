@@ -209,6 +209,13 @@ namespace RavenIron.ValkyriesCargo.Core
             {
                 clause = "nothing to migrate";
             }
+            else if (t.StoredLine == null)
+            {
+                // Nit (review round 2): a file with no Server.Catalogue key at all has nothing to compare
+                // against a shipped default - "matches the shipped default" implies a match that was never
+                // attempted. This is distinct from AlreadyCurrentShippedLine, which DOES have a stored line.
+                clause = "the file carried no Catalogue line; the shipped catalogue applies";
+            }
             else
             {
                 bool wasReset = plan.ResetToDefault.Contains(CatalogueSlot);

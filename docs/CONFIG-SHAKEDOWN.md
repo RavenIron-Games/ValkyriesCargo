@@ -192,8 +192,9 @@ changes a mechanism. Four items from the audit are worth naming, two of them now
 1. ~~**`docs/DESIGN.md` section 6** is missing `FlightSpeed` and `FlightTurnRate`~~ — **done on this branch**:
    both rows added with their ranges and the side that reads them; `FlightStartDistance` / `FlightStartAltitude`
    / `FlightDescentDistance` now name their ranges and clamps; `PurseCoins` 1500, `EnableBarter`'s side,
-   `BarrkBotExport` added, `PriceChangePolicy`'s line replaced by a note. (`Catalogue` is still listed under
-   that name; `ModConfig`'s field is `CatalogueLine` — a reader grepping should know.)
+   `BarrkBotExport` added, `PriceChangePolicy`'s line replaced by a note. (Renamed 2026-09-16, docs/CATALOGUE.md
+   section 9: the cfg key is `Server.CatalogueOverrides` and `ModConfig`'s field is `CatalogueOverrides`, not
+   `Catalogue`/`CatalogueLine` as this 2026-09-07 paragraph still says.)
 
 2. **`README.md`** repeats the same wrong descriptions in its config table, because it was written from them,
    and now also still lists the deleted `PriceChangePolicy` row. **README is Wu'barrk's for the truth pass**

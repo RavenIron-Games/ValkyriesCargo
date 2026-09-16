@@ -13,9 +13,13 @@ the file itself, before any BepInEx bind, and decides what to do with every valu
 
 - A value still equal to one of the mod's own OLD defaults belongs to the mod and moves to the new default.
 - Anything else is real admin work and is kept, unchanged.
-- The whole file is backed up beside itself first, `<file>.v<N>.bak` (`N` the version it was migrating FROM),
-  overwritten if a later migration runs again.
-- A failed migration never stops the mod loading - worst case the config binds exactly as it always did.
+- The whole file is backed up beside itself first, `<file>.v<N>.bak` (`N` the version it was migrating FROM) -
+  never overwritten: a second migration of the same file writes `<file>.v<N>.<timestamp>.bak` instead, so a
+  half-finished earlier run cannot destroy the only clean copy. A backup that could not be written at all
+  leaves the retired key in the file and the version unstamped, so the migration retries next boot rather
+  than losing the admin's line with no copy anywhere.
+- A failed migration never stops the mod loading - worst case the config binds exactly as it always did, and
+  `ConfigVersion` is left unstamped so the next boot retries rather than treating the failure as done.
 - One boot line says what happened, e.g. `config: version 0 -> 2: Catalogue was the 0.1.0 default, moved to
   the shipped 101 rows; overrides: none` or `config: version 0 -> 2: Catalogue was customised, kept as 3
   override(s): Ruby changed, FlametalNew added, Honey removed`. `cargo status` carries the short form; the new

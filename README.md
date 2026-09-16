@@ -252,9 +252,11 @@ catalogue alone. A client's copy can stay: every `Server.*` value on it is overr
 **Updating a server that already has the mod, from 0.1.4 on: nothing to do.** The mod migrates the file
 itself, before it binds anything: a value still at an old default moves to the new one, a value you set on
 purpose stays exactly as you set it, and a backup of the old file lands beside it (`<file>.v<N>.bak`) before
-anything is touched. The catalogue in particular moves to `Server.CatalogueOverrides` - the shipped catalogue
-plus your changes, so a new default (the next set of rows, whatever they are) can never be shadowed by an old
-stored line again. The boot log names what it did, and `cargo config` says it again on request.
+anything is touched - never overwritten: a second migration of the same file writes a timestamped `.bak`
+instead, so a half-finished earlier run cannot destroy the only clean copy. The catalogue in particular moves
+to `Server.CatalogueOverrides` - the shipped catalogue plus your changes, so a new default (the next set of
+rows, whatever they are) can never be shadowed by an old stored line again. The boot log names what it did,
+and `cargo config` says it again on request.
 
 Requires [BepInExPack Valheim](https://thunderstore.io/c/valheim/p/denikson/BepInExPack_Valheim/)
 and nothing else: no Jotunn, no JSON library (the BarrkBOT export writes its files through the mod's
