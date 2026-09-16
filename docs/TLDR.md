@@ -34,9 +34,10 @@ next login, never twice.
 on a Dverger clone whose renderers are switched off (`Server.CustomBody` puts the stand-in back). **Later:** the horn,
 a barter basket, rare rotating stock, localisation.
 
-**Where it is, 2026-09-15.** `main` builds clean at 2093 off-game checks and **`v0.1.1` is tagged** — the
-first cut with its own version number, a GitHub pre-release; the store copy is still `v0.1.0-rc5` until the owner
-uploads. It is the **Valheim 1.0.12** build and runs on nothing else. 0.1.1 carries issue #79's fix (Ingvar insists on
+**Where it is, 2026-09-15 evening.** `main` builds clean at 2093 off-game checks and **`v0.1.2` is tagged** — a
+GitHub pre-release; the store upload is the owner's. It is the **Valheim 1.0.12** build and runs on nothing else.
+0.1.2 adds the merchant guard: Ingvar trades and hovers as himself on a server whose taming mod made the Dvergr a
+pet (DvergrAllies; found on Wonderland, proven on Storm10 with the mod on both sides). 0.1.1 carried issue #79's fix (Ingvar insists on
 ground somebody built and refuses merchants' camps, dungeon doors and landmarks, proven live), food and drink in
 the catalogue (72 → 101), one row per item token, and the console lines in the client log. **Twenty-seven live
 visits** stood behind rc5 and four more ran on 2026-09-15, all on dedicated servers: the flight, the drop, Ingvar in his own baked body, the walk-up, the

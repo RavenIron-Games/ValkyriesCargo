@@ -1,5 +1,49 @@
 # Changelog
 
+## 0.1.2
+
+### 0.1.2 — cut 2026-09-15 evening, the merchant guard; a pre-release on GitHub, the store upload is the owner's
+
+**Why a number and not a second 0.1.1 zip.** The store takes one upload per version number (the owner,
+2026-09-15: "we can't upload another 0.1.1"), and the gate follows the number: **a 0.1.1 client is refused
+by a 0.1.2 server** with the mod's own message naming both. Nothing about the gate changed, and that direction
+has still not been watched on a machine (rc5's proof ran the mirror pair, the other branch of the same gate).
+
+- **The merchant guard (PR #94; 2093 checks, nothing off-game reaches it).** On Wonderland the same afternoon
+  (Valkyrie's Cargo 0.1.0 on both sides, Wu'barrk's DvergrAllies 1.0.7 in the set) the owner's screen gave
+  vanilla's tame-follow on the use key ("Ingvar the Far-Travelled follows you") and no terminal, with
+  "(Female)" and "Hungry" on his hover; his client's log carries the visit reaching `trading` and no
+  `terminal opened` line under it. DvergrAllies puts a `Tameable` subclass, a `Procreation` and a genetics component on
+  every Dvergr prefab, on every process that loads it; Ingvar is a clone of that prefab; `Player.Interact` takes
+  the FIRST `Interactable` in component order, and a prefab component always precedes ours, which is added at
+  runtime. Two pieces, both in our files. `Client/MerchantGuard.cs` runs on the client the moment our clone
+  wakes, before `CargoMerchant` is added: it removes every `Tameable` and `Procreation` of any subclass and the
+  three DvergrAllies components by type name (no reference to that mod), with `DestroyImmediate` because our own
+  `SetTamed` fires in the same frame and a taming mod's `SetTamed` patches key on its genetics component; and it
+  writes Shadows of Midgard's frozen opt-out key (`SoMStealthExempt = 1`) on the owner's machine, inert without
+  SoM. `Patches/Patch_Player_Interact.cs` is the general case: a use on anything carrying `CargoMerchant` goes
+  to `CargoMerchant` (`Priority.Low`, `__runOriginal` honoured, vanilla's gates and the hold throttle kept), so
+  no `Interactable` another mod puts ahead of ours ever takes the key. The two string-named engine members it
+  reaches are in the `merchant` probe, and the boot line counts `patches 19/19` (was 18). **One change for every
+  player, taming mod or not:** the interact animation and the snap-turn are not played on Ingvar any more, the
+  way the game's own traders behave. **Seen on Storm10, 2026-09-15 18:51–18:55, visit #18, with DvergrAllies,
+  Jötunn and JsonDotNET on both the server and the client:** both boots printed DvergrAllies' `injected
+  Taming/Breeding components into 8 wild Dvergr prefabs`; on Ingvar's wake, `merchant guard: removed
+  DvergrAllies.DvergrTameable, DvergrAllies.DvergrProcreation, DvergrAllies.DvergrGenetics from Ingvar's clone;
+  SoMStealthExempt stamped`; then `terminal opened: visit #18 on Dverger(Clone)` twice, two deals through it, the
+  visit sent off from the terminal, the vanish and the reclaim; nothing from DvergrAllies about him afterwards;
+  and the owner's word on the hover: "text is fine". Not covered, and said so in the code: a merchant adopted
+  across a server restart gets no SoM stamp (no instantiating client owns him then; SoM tests "not tamed" first,
+  and he is tamed by us), and the one-line authoring-time stamp is proposed for `Spawner.cs`. The record is
+  `docs/proofs/2026-09-15-storm10-session.md`, the last section, with the excerpt from both logs beside it.
+
+**Which build ran.** The guard's live run was on `0.1.1+3285704`, the branch's own build; no `.cs` file changed
+between that commit and this cut (the version number, the manifest and the documents did), so the shipped
+build differs from the tested one by its version string and nothing else. A 0.1.2 build of it booted on Storm10 at the cut (`Loading [Valkyrie's Cargo 0.1.2]`, `v0.1.2 loaded …
+patches 19/19 applied, catalogue=101 entries … probes 19/19 ok`), the taming mods taken off both sides first; the zip's
+DLL is the same code rebuilt from the tagged commit, and the two differ only in the commit id a build embeds
+(`0.1.2+<sha>`) and the header ids derived from it.
+
 ## 0.1.1
 
 ### 0.1.1 — cut 2026-09-15, the first cut with its own version number; a pre-release on GitHub, the store upload is the owner's

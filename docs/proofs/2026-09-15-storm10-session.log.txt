@@ -258,7 +258,7 @@ purseStart	100000
 coined	1638
 visit	15
 
-=== SERVER, the PR #94 DLL (0.1.1+3285704, md5 9FFEB463..., unmerged) with DvergrAllies 1.0.7 + Jotunn 2.30.0 + JsonDotNET 13.0.4 beside it, boot 18:51 and visit #18 ===
+=== SERVER, the PR #94 DLL (0.1.1+3285704, md5 9FFEB463..., merged as 81ef199) with DvergrAllies 1.0.7 + Jotunn 2.30.0 + JsonDotNET 13.0.4 beside it, boot 18:51 and visit #18 ===
 14587: [Info   :   BepInEx] Loading [Jotunn 2.30.0]
 14599: [Info   :Valkyrie's Cargo] built against Valheim 1.0.12 (network 40, player 46, world 41; Steam build 25253764 client / 25253791 server; bodies read 2026-09-11); running same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable.
 14600: [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.1 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
