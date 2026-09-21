@@ -9,8 +9,8 @@ five minutes at prices that move with what the world sells him, then vanishes li
 > **Status: `v0.1.4`, a first playable; a pre-release on GitHub, the store upload is the owner's.** Cut
 > 2026-09-16 from `main`, the day's second. **For Valheim 1.0.12 only**: 1.0.12 moved the network version to 40,
 > so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The store carries whichever
-> cut the owner last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first); 0.1.4 reaches it when he uploads
-> it, and **a 0.1.3 client is refused by a 0.1.4 server** by the version gate — on purpose: the store takes
+> cut the owner last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first; 0.1.4 since 2026-09-16), and
+> **a 0.1.3 client is refused by a 0.1.4 server** by the version gate — on purpose: the store takes
 > one upload per number, and both sides move together. **Updating a server: nothing to delete any more** —
 > from 0.1.4 the mod migrates its own config file (Installing, below).
 > The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
@@ -418,3 +418,16 @@ the answer comes back on `VCargo_reply` and prints in the caller's console.
 **ServerSync** is blaxxun's `ConfigSync.cs`, MIT-0, compiled in as shared source.
 
 Item data checked against Wu'barrk's TheEye dump of 2026-07-31.
+
+---
+
+## Support Raven Iron
+
+Every Raven Iron mod is free, and stays free — all of it, always. Nothing is held
+back for patrons, and nothing ever will be.
+
+If you'd like to help cover server hosting and test hardware:
+
+- **Patreon** — <https://www.patreon.com/cw/RavenIronGames>
+- **Discord** — <https://discord.gg/AGKDEurAVa> — a channel per mod, and where the
+  testing happens
