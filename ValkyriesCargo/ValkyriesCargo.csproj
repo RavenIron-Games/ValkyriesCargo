@@ -16,7 +16,24 @@
     <!-- Libs\ServerSync.cs is blaxxun's file with nullable annotations; it compiles clean under
          these warnings turned down. Our own files carry no nullable syntax. -->
     <NoWarn>$(NoWarn);CS8632;CS0618</NoWarn>
+    <Deterministic>true</Deterministic>
+    <!-- Keep the build machine's folders out of the shipped DLL. Without
+         this the PE debug directory carries the absolute PDB path
+         (C:\Users\<name>\...\obj\Release\ValkyriesCargo.pdb), which exposes
+         the Windows user name and makes the md5 depend on where the repo
+         is checked out. The SDK maps each source root to /_/, /_1/, ... in the
+         DLL, the PDB and the PDB's Source Link table alike. -->
+    <DeterministicSourcePaths>true</DeterministicSourcePaths>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Always name the repo root as a source root for the mapping above.
+         In a git checkout git adds the same root with its Source Link data
+         and the two merge into one; without it (a source zip, a broken
+         .git, git queries switched off) the folder would stay unmapped and
+         its absolute path would go back into the DLL with no warning. -->
+    <SourceRoot Include="$([MSBuild]::NormalizeDirectory('$(MSBuildThisFileDirectory)..'))" />
+  </ItemGroup>
 
   <!--
     Shared libs folder at the repo root, populated by tools\fetch-libs.ps1.

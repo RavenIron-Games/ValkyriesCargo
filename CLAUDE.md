@@ -24,6 +24,13 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ## Status
 
+**Unreleased on main (2026-09-23): the build no longer embeds the build machine's folders.** Every shipped DLL
+through `v0.1.4` carried the absolute PDB path (`C:\Users\<name>\…`) in its PE debug directory. The csproj now
+sets `DeterministicSourcePaths` and always names the repo root as a `SourceRoot`, so the DLL carries
+`/_/…/ValkyriesCargo.pdb` and neither the DLL nor the PDB names a local path; the IL is unchanged. At the next
+cut, say in the changelog that the DLL no longer carries an absolute build path that included the build
+machine's user name (quote no path), and name the commit the DLL was built from: the md5 follows the commit and no longer the checkout folder (the PDB's Source Link URL carries the commit).
+
 **CUT 2026-09-16, the day's second: `v0.1.4` — the config migration** (the owner: "merge 99 and cut 0.1.4"). A
 GitHub pre-release with the store zip and the kit attached; the upload is the owner's. The code change since 0.1.3:
 PR #99 — `Config/ConfigMigration.cs` (Wu'barrk's Wings machinery, credited), `Core/ConfigLedger.cs` and
