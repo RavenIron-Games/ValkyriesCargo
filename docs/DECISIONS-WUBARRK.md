@@ -67,7 +67,7 @@ private server can have it; nobody gets it by accident.
 **PROPOSED addendum, 2026-09-24 — awaiting Wu'barrk's confirmation; NOT a decision yet.** The owner approved fixing
 the bugs the 2026-09-24 review found; these two rule changes are how the fix branch (`release/0.1.5-prep`) does it
 for findings 3 and N1, and each extends this section's rule, so each needs Wu'barrk's word (and the owner's) before
-it ships. The CLAUDE.md locked-decisions row is not edited until then.
+it is settled; both shipped in 0.1.5 ahead of his word (see the note at the end of this section). The CLAUDE.md locked-decisions row is not edited until then.
 
 *(a) Across a shelf roll (review finding 3).* The rotating shelf
 (2026-09-08) came after this decision and reopened the pump across a roll: buy a row out while it is on the shelf,
@@ -103,6 +103,9 @@ that takes a row from near target to past about 2.77 x target. Both are Wu'barrk
   and about -35% with `CatalogueOverrides` where Max/Target is above 3 (the flooded charge falls toward
   `MinMultiplier`). The stock-tied cap has no such surface and would also close G1, so it is worth weighing
   against (b) side by side.
+
+Shipped in 0.1.5 (2026-09-24) on Nomad's go. Wu'barrk's confirmation is still open; either rule can be reverted in
+a later version if he says no.
 
 ## 3. Newtonsoft.Json is adopted as a declared dependency
 
@@ -154,15 +157,15 @@ bought what, when, at what price — because that is what makes Ingvar answerabl
 Three reasons, in order of weight: the wire format is PR #1's contract *between the two tracks* and
 changing it is not one track's call; it is a hot path and JSON is fatter; and deserialising
 client-supplied JSON is fresh attack surface opened in the same week we closed an unbounded-trust
-hole on the drop point (decision 6). If it is wanted later it goes to Don as its own proposal.
+hole on the drop point (decision 6). If it is wanted later it goes to Nomad as its own proposal.
 
 ## 6. The drop point is bounded, and the bound refuses NaN
 
-**2026-09-07. PR #18. Implements P11's finding, with one deliberate departure from the diff Don wrote.**
+**2026-09-07. PR #18. Implements P11's finding, with one deliberate departure from the diff Nomad wrote.**
 
 `docs/TRUST-BOUNDARY.md` found the one place a client's ZDO write moved server state unbounded — the
 pilot owns the bird, so `VCargo_target` is a value a client writes, and `Spawner.Tick` handed it
-straight to the visit. Don wrote the fix out as a diff and marked it Track B's file. It is
+straight to the visit. Nomad wrote the fix out as a diff and marked it Track B's file. It is
 implemented as written, with two changes:
 
 - **The decision moved into `Core/FlightPlan.DropAccepted`** so the off-game harness can prove it.

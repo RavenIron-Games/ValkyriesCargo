@@ -4,7 +4,7 @@
 
 ![Valheim Mod](https://img.shields.io/badge/Valheim-Merchant_Encounter-orange.svg)
 [![Multiplayer Compatible](https://img.shields.io/badge/Multiplayer-Server--Synced-blue.svg)]()
-[![Valheim](https://img.shields.io/badge/Valheim-1.0.12-critical.svg)]()
+[![Valheim](https://img.shields.io/badge/Valheim-1.0.12_%7C_1.0.15-critical.svg)]()
 [![Framework](https://img.shields.io/badge/Requires-BepInEx-red.svg)]()
 [![Economy](https://img.shields.io/badge/Economy-Supply_%26_Demand-green.svg)]()
 [![Custom Character](https://img.shields.io/badge/Ingvar-Custom_Character-purple.svg)]()
@@ -16,8 +16,9 @@
 
 *A Valkyrie air-drops a merchant at your door. You have five minutes.*
 
-**Requires Valheim 1.0.12**, on the server **and on every client**. Valheim 1.0.12 moved the network
-version, so a build made for 1.0.7 or 0.221.12 cannot connect at all — that wall is the game's, not ours.
+**Requires Valheim 1.0.12 or 1.0.15**, on the server **and on every client**. Valheim 1.0.12 moved the network
+version, so a build made for 1.0.7 or 0.221.12 cannot connect at all — that wall is the game's, not ours. 1.0.15
+kept the same network version, so 1.0.12 and 1.0.15 play together.
 
 </div>
 
@@ -43,7 +44,7 @@ Then he vanishes into the mist the way Odin does.
 - [🛠️ Compatibility](#️-compatibility)
 - [📦 Dependencies](#-dependencies)
 - [📥 Installation](#-installation)
-- [📖 Status — 0.1.1](#-status--011)
+- [📖 Status — 0.1.5](#-status--015)
 - [🐦‍⬛ Credits](#-credits)
 
 </details>
@@ -72,12 +73,12 @@ same on every visit and on every player's screen.
 | :--- | :--- |
 | 📈 **Supply & demand** | Buy him out and the price climbs. Flood him with iron and he pays less for the next load. Every number you see was computed from stock that real players moved. |
 | 🌊 **Price drift** | Prices ease back toward their resting value over in-game days — a market you wrecked on Tuesday is worth visiting again by Friday. |
-| 💰 **A purse, not a printer** | He arrives with **1500 coins** and no more. When it is dry he is done buying; barter, or come back next visit. |
-| ⚖️ **The Fair Market Act** | He will **never** pay you more for a thing than he charges for it. No buy-low-sell-high loop against your own merchant. |
-| 🔄 **A rotating shelf** | He carries **20 of a 72-entry catalogue**, re-rolled every **2 in-game days**. What he has this week is not what he had last week. |
+| 💰 **A purse, not a printer** | He arrives with **1500 coins**, plus half of what players paid him on his last visit (`PurseCarryPercent`), and no more. When it is dry he is done buying; barter, or come back next visit. |
+| ⚖️ **The Fair Market Act** | He will **never** pay you more for a thing than he charges for it. Within a visit, no buy-low-sell-high loop against your own merchant. |
+| 🔄 **A rotating shelf** | He carries **20 of a 101-entry catalogue**, re-rolled every **2 in-game days**. What he has this week is not what he had last week. |
 | 🤝 **Barter is first-class** | Pay with what you are carrying. The terminal covers the balance from your goods at his live rates — one button. |
 | 💾 **It survives a restart** | Stock, purse and prices are written beside your world save. A visit interrupted by a server restart picks up where it stopped. |
-| 📬 **Nothing is lost** | A deal settled but not delivered — you crashed, you dropped — is held on the server and redelivered when you come back. Built and tested off-game against the ledger; it is the one path in this mod we have never managed to catch happening in a live session, so we would especially like to hear if it ever bites you. |
+| 📬 **Nothing is lost** | A deal settled but not delivered — you crashed, you dropped — is held on the server and redelivered when you come back. A full pack counts too: the server keeps the deal until it fits (`cargo claim`), which was watched in game on 2026-09-24, held through a server restart and landed in the pack exactly once. A crash or a dropped connection in that window has never been caught in a live session, so we would especially like to hear if it ever bites you. |
 
 > 💡 **Admins:** the catalogue is editable **live**, between visits, with `cargo catalogue add/remove/reset`.
 > No restart, and the change reaches every client within a second.
@@ -104,7 +105,6 @@ Ingvar notices.
 
 | | |
 | :--- | :--- |
-| 🎒 **He wears one** | The real pack, on his back — the same one your players wear. |
 | 📦 **He carries more** | The shelf **doubles** (`20 → 40` of the catalogue). A world that hauls more gets a bigger caravan. |
 
 Entirely optional and auto-detected. Without it, he simply travels light and nothing changes.
@@ -136,7 +136,8 @@ and a non-admin cannot.
 | :--- | :--- |
 | `cargo status` | Everything at a glance: the visit, the market, the schedule, the engine check |
 | `cargo stock [item]` | His shelf and its live prices |
-| `cargo catalogue list` | The full 72-entry catalogue |
+| `cargo claim` | Ask the server for any delivery it still owes you (a deal your pack had no room for) |
+| `cargo catalogue list` | The full 101-entry catalogue |
 | `cargo body` | Ingvar's model, clips and bones — the first thing to ask for if he looks wrong |
 | `cargo engine` | The Valheim build this was written against, versus the one you are running |
 | `cargo visit [player]` | *(admin)* Send a visit now |
@@ -185,15 +186,15 @@ server-synced and admin-controlled**; only cosmetics are local.
 
 ## 🛠️ Compatibility
 
-Built against **Valheim 1.0.12**. At boot the mod checks the game it is actually running on,
+Built against **Valheim 1.0.12** and tested on **1.0.15**. At boot the mod checks the game it is actually running on,
 prints what it found, and any feature depending on something that has **moved** switches *itself*
 off and says so — rather than taking your session down with it. `cargo engine` shows you that check.
 
 - ✅ Dedicated servers, listen hosts and single-player
-- ⚠️ **Valheim 1.0.12 only.** The game refuses a peer on another network version before this mod is
+- ⚠️ **Valheim 1.0.12 or 1.0.15 only** (network version 40). The game refuses a peer on another network version before this mod is
   consulted, so every copy has to be replaced by hand when the engine moves
-- ✅ Run alongside a **117-plugin** modpack — on 0.221.12, where that pack existed. The 1.0 testing so
-  far has been on a clean server, because most of the family has not moved to 1.0 yet
+- ✅ Run alongside a **117-plugin** modpack — on 0.221.12, where that pack existed. On 1.0 it has not
+  yet been run with a pack that size
 - ✅ Built to sit beside the family — Cairn, Undertow, FireFront, Ragnarok's Wrath, RavenEye and
   Yggdrasil's Reckoning — and proven beside them on 0.221.12
 - ❌ Does **not** patch `StoreGui`, `EnvMan`, or any vanilla trader
@@ -208,7 +209,7 @@ off and says so — rather than taking your session down with it. `cargo engine`
 | :--- | :--- |
 | **BepInExPack Valheim** (denikson) | The mod loader (also provides HarmonyX) |
 
-*Optional:* **Backpacks** (Smoothbrain) — unlocks the pack on his back and the doubled shelf.
+*Optional:* **Backpacks** (Smoothbrain) — unlocks the doubled shelf.
 
 ## 📥 Installation
 
@@ -221,11 +222,9 @@ Thunderstore-compatible manager — the dependency above is pulled in for you.
 3. On a dedicated server, install it on the **server and every client**.
 4. Go and get comfortable.
 
-**Updating from 0.1.3 or earlier:** with the server down, delete
-`BepInEx/config/com.raveniron.valkyriescargo.cfg` on the **server** before starting it on the new version, so
-the config is written fresh with the new defaults — a stored line beats a new default (0.1.3 adds
-`PauseVisitWhenEmpty`; 0.1.1 grew the catalogue to 101 rows, and an old file hides them). Set your own values
-again afterwards. A client's copy can stay.
+**Updating from 0.1.3 or earlier:** nothing to delete. The first boot on 0.1.4 or later migrates a file
+from any earlier version, as below. (Up to 0.1.3, each update meant deleting the server's config file first;
+that step has retired.)
 
 **Updating from 0.1.4 on:** nothing to delete. The mod migrates the config file itself before it binds
 anything — a value still at an old default moves to the new one, a value you set stays, a backup lands beside
@@ -235,10 +234,12 @@ the file, and the boot log says what it did.
 
 ## 📖 Status — 0.1.5
 
-**0.1.5 (date TBD).** Deal and market fixes: a deal lands in your pack whole or not at all, a deal must be made
-within 96 m of the visit, and the Fair Market Act covers every row while the shelf rotates. The DLL no longer
-carries the build machine's folder path. Update the server and every client together: a 0.1.4 client is refused
-by a 0.1.5 server. Nothing to delete when updating.
+**0.1.5 (2026-09-24).** Deal and market fixes: a deal lands in your pack whole or not at all, a deal must be made
+within 96 m of the visit, and the Fair Market Act covers every row while the shelf rotates; within a visit he
+never pays more for an item than the lowest price he sold it at (a server restart mid-visit clears that
+record). The DLL no longer carries the build machine's
+folder path. Update the server and every client together: a 0.1.4 client is refused by a 0.1.5 server. Nothing
+to delete when updating.
 
 **0.1.4 (2026-09-16).** The mod migrates its own config file: a value still at an old default moves to the
 new one, a value you set stays, a backup lands beside the file, and the boot log says what it did — no more
@@ -248,28 +249,29 @@ server and every client together: a 0.1.3 client is refused by a 0.1.4 server.
 
 **0.1.3 (2026-09-16).** The visit clock runs whoever is near Ingvar: a visit ends on time with nobody online
 (before, it never ended without a player within 96 m of him, and held every raid with it). The new server
-option `PauseVisitWhenEmpty` holds it on an empty server instead, off by default. **Updating a server on 0.1.3
-or earlier: delete the old config file first** (Installation, above); **0.1.4 on: nothing to do, the mod
-migrates it.**
+option `PauseVisitWhenEmpty` holds it on an empty server instead, off by default. **Updating a server, from
+0.1.3 or any earlier version: nothing to delete any more** (Installation, above) — the first boot on 0.1.4 or
+later migrates the file itself.
 
 **0.1.2 (2026-09-15).** The merchant guard: Ingvar trades and hovers as himself on a server whose taming mod
 made the Dvergr a pet.
 
 **0.1.1 (2026-09-15).** Ingvar now insists on ground somebody built and keeps away from other merchants'
 camps, dungeon doors and the game's landmarks (a player's report from the Bog Witch's camp); he buys and
-sells food and drink — 101 catalogue rows, and a server that already had the mod takes them with
-`cargo catalogue reset`; and the version number moves with each release, so a server and its players
+sells food and drink — 101 catalogue rows (from 0.1.4 on, an updating server takes them by itself; see
+Installation); and the version number moves with each release, so a server and its players
 must run the same one.
 
 **A first playable, and honest about it.** The loop has been run end to end on a dedicated server
-with real players — twenty-seven visits so far: the roll, the flight, the drop, the walk-up, the
+with real players — more than thirty visits so far: the roll, the flight, the drop, the walk-up, the
 terminal, deals across the wire, the price curve, the persistence and the departure have all been
 watched on a screen. Some corners are proven only in the log, and a few only off-game.
 
 **The one we will name outright:** redelivery after a lost connection is built, and tested off-game,
 and has **never** been caught happening in a live session — the window between a deal being answered
 and acknowledged is too small to stand in front of. Two-player trading at one merchant is also thinly
-tested. Everything else on this page has been watched.
+tested, and two 0.1.5 points rest on the code rather than a screen: the 96 m rule on a listen host, and a
+0.1.4 client being refused by a 0.1.5 server. Everything else on this page has been watched.
 
 If something reads wrong, `cargo status` and your `BepInEx/LogOutput.log` will usually say why —
 and we would genuinely like to hear about it.

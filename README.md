@@ -6,16 +6,27 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.4`, a first playable; a pre-release on GitHub, the store upload is the owner's.** Cut
-> 2026-09-16 from `main`, the day's second. **For Valheim 1.0.12 only**: 1.0.12 moved the network version to 40,
-> so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The store carries whichever
-> cut the owner last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first; 0.1.4 since 2026-09-16), and
-> **a 0.1.3 client is refused by a 0.1.4 server** by the version gate — on purpose: the store takes
-> one upload per number, and both sides move together. **Updating a server: nothing to delete any more** —
-> from 0.1.4 the mod migrates its own config file (Installing, below).
+> **Status: `v0.1.5`, a first playable; a pre-release on GitHub; the store upload is a separate step.** Cut
+> 2026-09-24 from `main`. **For Valheim 1.0.12 and 1.0.15** (both network version 40; built against 1.0.12,
+> tested on 1.0.15): 1.0.12 moved the network version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12)
+> cannot connect to it at all. The store carries whichever
+> cut was last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first; 0.1.4 since 2026-09-16), and
+> **a 0.1.4 client is refused by a 0.1.5 server** by the version gate — on purpose: the store takes
+> one upload per number, and both sides move together. **Updating a server: nothing to delete** —
+> from 0.1.4 the mod migrates its own config file, and 0.1.5 does not change its layout (Installing, below).
 > The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
 > because 0.1.x is a first playable and says so.
-> What 0.1.4 adds: the mod migrates its own config file (a value still at an old default moves, a value you set
+> What 0.1.5 adds: a deal lands in your pack whole or not at all; a deal made more than 96 m from the visit is
+> refused; the Fair Market Act covers every row while the shelf rotates, and within a visit he never pays more for
+> an item than the lowest price he sold it at (two rule changes, set out in `docs/DECISIONS-WUBARRK.md` §2, where
+> they are still marked PROPOSED for Wu'barrk's confirmation); a `ShelfSize`
+> change waits for the visit to end; a visit resumed during the flight moves on to the ground phase; and the DLL no
+> longer carries the build machine's folder path. Checked in game on 2026-09-24 (Storm10, Valheim 1.0.15,
+> dedicated, visits #23 to #30, on the same code as this release): each of the six gameplay fixes behaved as
+> described (`docs/proofs/2026-09-24-storm10-session.md`); not tried in game: the distance check on a listen
+> host, a trade between two players, and a sale at the capped price after a shelf roll (the price was read, not
+> sold at).
+> What 0.1.4 added: the mod migrates its own config file (a value still at an old default moves, a value you set
 > stays, a backup lands beside the file, the boot line says what it did) and the catalogue becomes the shipped rows
 > plus your `CatalogueOverrides`, so a stored line never hides a new default again.
 > What 0.1.3 added: the visit clock runs whoever is near him, so a visit ends on time with nobody online
@@ -31,7 +42,7 @@ five minutes at prices that move with what the world sells him, then vanishes li
 > Twenty-seven visits across five sessions stood behind rc5; the 2026-09-15 session on Storm10 added
 > visits #10 to #13 — three refusals named by place, a flight to a base on a ruin set down beside the
 > house (a second was authored and dismissed before the drop), and seven deals on the new catalogue settled
-> line for line. Proven off-game across 2093 checks and an eleven-scenario economy
+> line for line. Proven off-game across 2589 checks at 0.1.5 and an eleven-scenario economy
 > simulation. **Never seen in a game: redelivery** — a player paying and the goods arriving after a lost
 > connection — which is proven off-game only; nor the two-client items.
 > `docs/PROOF-CLIENT.md` is the runbook and CLAUDE.md lists what remains. This file is the developer's
@@ -50,8 +61,8 @@ now, and have flown nine live visits on 2026-09-07: Ingvar arrives in his own bo
 you, though never yet on his first attempt (see Status).
 
 **The trade.** Press E on him for the Cargo Terminal: his wares on one side, the goods he wants on
-the other, a staging tray in between. He carries a live stock of 72 catalogue entries — 18 he sells
-and buys back, 54 he only buys — that persists per world. Buy him out and the price climbs; flood
+the other, a staging tray in between. He carries a live stock of 101 catalogue entries — 27 he sells
+and buys back, 74 he only buys — that persists per world. Buy him out and the price climbs; flood
 him and he pays less; a game day later it has drifted back. He pays coins, or takes your goods in
 barter at his live buy price, and he arrives with a purse of 1500 coins, so nobody can dump a
 warehouse on him. If a price moves while you are staging, the line turns amber and you confirm once
@@ -71,9 +82,13 @@ from our own interact handler. Nothing happens on command except an admin's `car
 
 ## Status
 
-**Truth pass against `main` at the `v0.1.4` cut, 2026-09-16 (the day's second).** This mod runs on **Valheim 1.0.12**
-and on nothing else: 1.0.12 moved the network version to 40, so a build for 1.0.7 or 0.221.12 cannot
-connect at all. `v0.1.0-rc4` is a 1.0.7 build and is superseded; `v0.1.0-rc3` remains the last 0.221.12
+**Truth pass against `main` at the `v0.1.5` cut, 2026-09-24.** This mod runs on **Valheim 1.0.12 and 1.0.15**
+(network version 40; tested on 1.0.15 at this cut) and on nothing older: 1.0.12 moved the network version to 40,
+so a build for 1.0.7 or 0.221.12 cannot connect at all. Before this cut, on PR #104's head `253f732` (only
+documents changed after it), visits #23 to #30 on Storm10 (Valheim 1.0.15, dedicated) checked each of the six
+gameplay fixes in game (`docs/proofs/2026-09-24-storm10-session.md`); not run in game: the distance check on a
+listen host, a two-player trade, and a sale at the capped price after a shelf roll (the price was read, not sold
+at). `v0.1.0-rc4` is a 1.0.7 build and is superseded; `v0.1.0-rc3` remains the last 0.221.12
 build.
 
 **What has been seen on a machine.** Twenty-seven visits across five sessions on dedicated servers with a
@@ -107,19 +122,36 @@ log, a `.vN.bak` lands beside the file first, and the catalogue becomes the ship
 headless boots (a Wonderland-style 0.1.0 file kept its admin's four changes and gained all 29 food rows; a second boot was
 a no-op; Storm10's own 0.1.3 file migrated clean; `docs/proofs/2026-09-16-storm10-session.md`). 2540 checks, 0
 warnings. A 0.1.4 build booted on Storm10 at the cut: `Loading [Valkyrie's Cargo 0.1.4]`, `v0.1.4 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: same build 1.0.12 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` (10:58, no client, no migration line because the file was already at version 2, director up at visit #23).
+**0.1.5 adds the deal and market fixes on top (PR #104)** — a deal lands whole or not at all (`Core/PackTransaction.cs`),
+a deal made more than 96 m from the visit is refused and a far `cargo terminal open` no longer holds him in place
+for the players who are with him (`DealWire.Near`),
+the Fair Market Act covers every row while the shelf rotates and caps the in-visit buy-back (both PROPOSED in
+`docs/DECISIONS-WUBARRK.md` §2), a `ShelfSize` change waits for the visit, and a visit resumed mid-flight moves on
+to the ground; PR #103 keeps the build machine's folders out of the DLL. Checked on Storm10 2026-09-24 (Valheim
+1.0.15, crossplay, visits #23 to #30) on PR #104's head `253f732`: `v0.1.5 loaded - renderer=False, patches 19/19
+applied, catalogue=101 entries, engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable` on
+the server (the client's line reads `renderer=True`); `refused VCargo_deal from TestNomad: 218.628662 m from the visit…`; after a shelf roll `Silver (Want):
+1/12 max 36, he pays 28`; `visit #30 RESUMED after a restart: pilot TestNomad, 04:57 left by the saved clock`; a
+deal owed to a full pack kept across a server restart and applied once (`delivery …24-1 applied: +1 Resin, -1
+coins`); `docs/proofs/2026-09-24-storm10-session.md`. Not run in game: the listen-host range check, a two-player
+trade, a sale at the capped price after the roll (visit #29 read the price and sold nothing), and the undo inside
+the whole-deal apply (off-game only). 2589 checks, 0 failed. The cut changes only documents after `253f732`; no build of the cut commit was booted
+at the cut.
 
 **What is proven and what is not, at this cut** (`docs/proofs/2026-09-11-release-session.md`,
-`docs/proofs/2026-09-15-storm10-session.md`). The
+`docs/proofs/2026-09-15-storm10-session.md`, `docs/proofs/2026-09-24-storm10-session.md`). The
 release bar is the three items `docs/RELEASE.md` §4 names. The **version wall** and the **non-admin
 refusal** are proven with their lines. **Redelivery — a player paying and the goods arriving after a lost
 connection — is proven off-game only and has never been seen in a game**, because the window between a
 deal's answer and its acknowledgement cannot be hit from outside the client process. Also never watched
 with two clients: the merchant walking off while two players trade, and the "on every machine" halves of
-the deal items. **Not re-run for 0.1.1:** the version wall and the non-admin refusal — the gate and the admin
-path are untouched since rc5. The wall proof was a 0.1.1 client refused by a 0.1.0 server: the same two
-numbers as this cut with the builds swapped, the other branch of the same gate, so the direction this cut
-creates (an rc5 client at a 0.1.1 server) is a code reading, not an observation. #86 rewrote the apply step
-redelivery runs through; the seven live deals proved that step, not redelivery itself.
+the deal items. **Not re-run since 0.1.1:** the version wall and the non-admin refusal — the gate and the admin
+path are untouched since rc5. The wall proof was a 0.1.1 client refused by a 0.1.0 server, the other branch of
+the same gate, so the direction this cut creates (a 0.1.4 client at a 0.1.5 server) is a code reading, not an
+observation; the 2026-09-24 test saw only the 0.1.5/0.1.5 handshake. 0.1.5 rewrote the apply step redelivery
+runs through (`Core/PackTransaction.cs`); on 2026-09-24 a deal owed to a full pack survived a server restart
+and `cargo claim` delivered it once (`VCargo_claim from TestNomad: redelivered 1 owed deal(s)`), which exercises
+the owed-delivery store but not the lost-acknowledgement window.
 
 **Still a first playable, not a settled one.** The log lines below are the ones recorded in `CLAUDE.md`
 "Status" by whoever saw them.
@@ -214,10 +246,11 @@ The full numbered list is `CLAUDE.md`, "What to verify in-game"; `docs/PROOF-CLI
 runbook, and each proof gets pasted back into `CLAUDE.md` as it happens.
 
 So today a visit puts Ingvar in the yard, walks him up and trades through the terminal, proven on a
-screen against a dedicated server across twenty-seven visits. The first approach reaching the player,
+screen against a dedicated server across twenty-seven visits behind rc5 and more since, the last eight
+(#23 to #30) on 2026-09-24. The first approach reaching the player,
 the vanish and the carry holding its owner were all open questions at the rc2 cut and have since been
 watched and fixed. What has still never been seen is **redelivery after a lost connection**, and no
-two-client item has run. The tag is `v0.1.4`; the store carries whichever cut the owner last uploaded;
+two-client item has run. The tag is `v0.1.5`; the store carries whichever cut was last uploaded;
 `docs/RELEASE.md` §4 records the three-item bar that was met and the one item skipped, with the reason.
 ---
 
@@ -251,15 +284,15 @@ client code.
 On a Gale-managed client the plugin folder is
 `%APPDATA%\com.kesomannen.gale\valheim\profiles\<profile>\BepInEx\plugins\`, not the Steam folder.
 
-**Updating a server that already has the mod (0.1.3 and earlier): delete the old config file first.** Take
-the server down, remove `BepInEx\config\com.raveniron.valkyriescargo.cfg`, put the new DLL in, start it: the
-file is written fresh with the shipped defaults (0.1.3 adds `Server.PauseVisitWhenEmpty`; 0.1.1 grew the
-catalogue to 101 rows). A stored line beats the shipped default, so an old file hides new rows and new knobs
+**Before 0.1.4 (history): updating meant deleting the old config file first.** The server was taken down,
+`BepInEx\config\com.raveniron.valkyriescargo.cfg` was removed, the new DLL went in, and on start the
+file was written fresh with the shipped defaults (0.1.3 added `Server.PauseVisitWhenEmpty`; 0.1.1 grew the
+catalogue to 101 rows). A stored line beat the shipped default, so an old file hid new rows and new knobs
 — on Wonderland the 72-row catalogue from 0.1.0 outlived two updates. Anything set on purpose (`PurseCoins`,
-the roll, the flight) wants setting again afterwards; `cargo catalogue reset` as an admin takes the shipped
-catalogue alone. A client's copy can stay: every `Server.*` value on it is overruled by the server.
+the roll, the flight) needed setting again afterwards; `cargo catalogue reset` as an admin took the shipped
+catalogue alone. A client's copy could stay: every `Server.*` value on it is overruled by the server.
 
-**Updating a server that already has the mod, from 0.1.4 on: nothing to do.** The mod migrates the file
+**Updating a server to 0.1.4 or later, from any earlier version: nothing to do.** The mod migrates the file
 itself, before it binds anything: a value still at an old default moves to the new one, a value you set on
 purpose stays exactly as you set it, and a backup of the old file lands beside it (`<file>.v<N>.bak`) before
 anything is touched - never overwritten: a second migration of the same file writes a timestamped `.bak`
@@ -281,9 +314,9 @@ keeps it; `v0.1.0-rc3` was the last build for it).
 
 ## Configuration
 
-`BepInEx\config\com.raveniron.valkyriescargo.cfg`. **0.1.3 and earlier: after an update, delete the server's
-copy** so it is written fresh with the shipped defaults — a stored line beats a new default (Installing,
-above). **From 0.1.4 the mod migrates the file itself** on boot (a stamped `Meta.ConfigVersion`, a backup
+`BepInEx\config\com.raveniron.valkyriescargo.cfg`. **Up to 0.1.3, an update meant deleting the server's
+copy** so it was written fresh with the shipped defaults — a stored line beat a new default (Installing,
+above, now history). **From 0.1.4 the mod migrates the file itself**, from any earlier version, on boot (a stamped `Meta.ConfigVersion`, a backup
 beside the file, a boot line saying what moved and what was kept) — nothing to delete any more.
 
 **Every `Server.*` value is synced from the server and locked**: on a connected client the local

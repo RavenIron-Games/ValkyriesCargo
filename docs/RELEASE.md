@@ -100,6 +100,12 @@ wrong.
 > are his, and no agent logs into the store, creates an account, uploads, or accepts terms. The next
 > upload is his too.
 >
+> **`v0.1.5` cut 2026-09-24** (deal and market fixes: a deal lands whole or not at all, deals within 96 m of the
+> visit, the Fair Market Act across the shelf roll and within a visit, `ShelfSize` waits for the visit, a resumed
+> flight moves on to the ground; the DLL no longer carries the build machine's folder path; a 0.1.4 client is
+> refused; nothing to delete when updating). Tagged, with the zip and the kit attached on GitHub; **not uploaded at
+> the time of the cut** — the owner's step.
+>
 > **`v0.1.4` cut 2026-09-16, the day's second** (the config migration: the mod migrates its own file, a value
 > still at an old default moves and a value you set stays, with a backup beside it; the catalogue becomes shipped
 > rows plus `CatalogueOverrides`; a 0.1.3 client is refused; nothing to delete when updating). Tagged, with the zip
