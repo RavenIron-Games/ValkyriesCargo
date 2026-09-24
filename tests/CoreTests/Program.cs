@@ -6028,7 +6028,7 @@ namespace ValkyriesCargo.Tests
             probe.UpdateShelf(2 * 1800 + 450);
             string row = null;
             foreach (MarketItem it in probe.Items)
-                if (period0.Contains(it.Prefab) && !probe.OnShelf(it.Prefab) && it.Entry.BasePrice >= 10) { row = it.Prefab; break; }
+                if (period0.Contains(it.Prefab) && !probe.OnShelf(it.Prefab) && it.Entry.BasePrice >= 10 && it.Entry.TargetStock >= 20) { row = it.Prefab; break; }
             Check(row != null, "a row on the shelf in period 0 and off it in period 1 (" + row + ")");
             if (row != null)
             {
@@ -6057,6 +6057,24 @@ namespace ValkyriesCargo.Tests
                   "with the shelf fixed a Want is still never clamped (the locked row, unchanged)");
             Check(fixedShelf.Pays(want) > (int)Math.Round(want.Entry.BasePrice * fixedShelf.Rules.Spread, MidpointRounding.AwayFromZero),
                   "so a scarce Want still pays above par there (" + fixedShelf.Pays(want) + ")");
+
+            Section("Review 2026-09-24 #4: ShelfSize changed mid-visit waits for the next roll");
+            MarketRules r4 = MarketRules.Default; r4.ShelfSize = 20; r4.ShelfRotationGameDays = 2;
+            var m4 = new Market(cat, r4, 100, "w4790ce");
+            string shelved = m4.ShelfNames()[0];
+            m4.Rules.ShelfSize = 0;                         // what FillMarketRules does once a second, live
+            Check(m4.Rotating, "switched off live, the shelf still rotates until it is rolled");
+            Equal(EntryKind.Ware, m4.KindOf(m4.Find(shelved)), "and a shelf row is still a Ware");
+            Check(m4.ShelfDue(100), "the switch is due");
+            m4.UpdateShelf(100);
+            Check(!m4.Rotating && m4.ShelfCount == 0, "the idle-tick roll switches it off");
+            Check(!m4.ShelfDue(100), "and nothing more is due");
+            m4.Rules.ShelfSize = 20;                        // and back on, live
+            Check(!m4.Rotating, "switched on live, the catalogue's kinds hold until the roll");
+            Equal(EntryKind.Ware, m4.KindOf(m4.Find("Iron")), "Iron is still the catalogue's Ware, not refused not_on_shelf");
+            Check(m4.ShelfDue(100), "the switch is due");
+            m4.UpdateShelf(100);
+            Check(m4.Rotating && m4.ShelfCount == 20, "the roll brings the twenty back");
         }
     }
 

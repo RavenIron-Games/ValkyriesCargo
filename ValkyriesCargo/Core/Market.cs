@@ -217,8 +217,14 @@ namespace RavenIron.ValkyriesCargo.Core
 
         // ---- the rotating shelf (2026-09-08, issue #56) ----------------------------------------------
 
-        /// <summary>True while `ShelfSize` is above 0: the roll decides what he sells, not the catalogue's kinds.</summary>
-        public bool Rotating => Rules.ShelfSize > 0;
+        /// <summary>
+        /// True while the shelf ROLLED last is a rotating one: the roll decides what he sells, not the catalogue's
+        /// kinds. It reads the rolled state, not the live `ShelfSize` (review 2026-09-24, finding 4): an admin
+        /// switching the shelf on or off mid-visit takes effect through <see cref="UpdateShelf"/>, which the
+        /// director runs only on an idle tick, exactly as the key's description says.
+        /// </summary>
+        public bool Rotating => _shelfSize > 0;
+        private bool RotatingByRule => Rules.ShelfSize > 0;
         /// <summary>The period the current shelf was rolled for; -1 before the first roll or while the shelf is fixed.</summary>
         public long ShelfPeriod => _shelfPeriod;
         public int ShelfCount => _shelf.Count;
@@ -247,16 +253,16 @@ namespace RavenIron.ValkyriesCargo.Core
         /// </summary>
         public bool ShelfDue(double worldTime)
         {
-            if (!Rotating) return _shelf.Count > 0;
+            if (!RotatingByRule) return _shelf.Count > 0 || _shelfSize > 0;
             return PeriodAt(worldTime) != _shelfPeriod || Rules.ShelfSize != _shelfSize;
         }
 
         /// <summary>Roll the shelf for this world time if it is due. True when the set of names changed.</summary>
         public bool UpdateShelf(double worldTime)
         {
-            if (!Rotating)
+            if (!RotatingByRule)
             {
-                if (_shelf.Count == 0) { _shelfPeriod = -1; _shelfSize = 0; return false; }
+                if (_shelf.Count == 0 && _shelfSize == 0) { _shelfPeriod = -1; return false; }
                 _shelf.Clear(); _shelfPeriod = -1; _shelfSize = 0;
                 return true;
             }
