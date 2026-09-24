@@ -64,6 +64,16 @@ their coins back at the ordinary rate. Only the pump dies.
 It is a config knob, synced and locked, defaulting on. An owner who wants the old behaviour on a
 private server can have it; nobody gets it by accident.
 
+**Addendum, 2026-09-24 (the bug review before 0.1.5, finding 3; the owner approved the fix).** The rotating shelf
+(2026-09-08) came after this decision and reopened the pump across a roll: buy a row out while it is on the shelf,
+wait for the roll, and it is a Want, bought back unclamped at up to 2.1x with its stock still near 0 (Want drift acts
+only at the next visit). The clause is unchanged in words: "something he himself sells". With the shelf rotating,
+every row is something he sells in some period, so `Market.Pays` now reads every row as a Ware for the clamp while
+the shelf rotates (`Market.BuyBackKind`). A row he never sold stays at or above target, where the clamp does nothing,
+so an honest seller sees no change; only a row sold below target is held at par. What he charges, the panes, the
+refusals and the drift all still read `KindOf`. With `ShelfSize = 0` (the fixed shelf) Wants are untouched, exactly
+as above.
+
 ## 3. Newtonsoft.Json is adopted as a declared dependency
 
 **2026-09-07. Overrides this mod's implicit "BepInEx and Harmony only" posture.**

@@ -235,9 +235,10 @@ the file, and the boot log says what it did.
 
 ## 📖 Status — 0.1.5
 
-**0.1.5 (date TBD).** A cleanup release: no gameplay change. The DLL no longer carries the build machine's
-folder path. Update the server and every client together: a 0.1.4 client is refused by a 0.1.5 server.
-Nothing to delete when updating.
+**0.1.5 (date TBD).** Deal and market fixes: a deal lands in your pack whole or not at all, a deal must be made
+within 96 m of the visit, and the Fair Market Act covers every row while the shelf rotates. The DLL no longer
+carries the build machine's folder path. Update the server and every client together: a 0.1.4 client is refused
+by a 0.1.5 server. Nothing to delete when updating.
 
 **0.1.4 (2026-09-16).** The mod migrates its own config file: a value still at an old default moves to the
 new one, a value you set stays, a backup lands beside the file, and the boot log says what it did — no more

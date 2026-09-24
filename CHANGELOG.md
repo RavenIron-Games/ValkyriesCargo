@@ -2,12 +2,33 @@
 
 ## 0.1.5
 
-### 0.1.5 — NAME TBD, date TBD; a cleanup release, prepared and not cut yet
+### 0.1.5 — NAME TBD, date TBD; deal and market fixes, prepared and not cut yet
 
 **Why a number.** The store takes one upload per version number, and the version gate moves with it: **a 0.1.4
-client is refused by a 0.1.5 server**, so the server and every player update together. No gameplay code changed
-since 0.1.4, and the config file's layout did not change either (`ConfigVersion` stays `2`), so updating a server
-from 0.1.4 needs nothing deleted and migrates nothing.
+client is refused by a 0.1.5 server**, so the server and every player update together. The config file's layout did not change
+(`ConfigVersion` stays `2`), so updating a server from 0.1.4 needs nothing deleted and migrates nothing.
+
+### Fixes
+
+- **A deal now lands in your pack whole or not at all.** With more than one ware in YOU GET and room for only
+  some of them, the pack used to take the first ware, give the coins back and keep the ware anyway, and
+  `cargo claim` could then hand out that ware again for free. Every line of a deal is now checked against your
+  pack together before it is sent, and if the pack still cannot take all of it, nothing changes: the server keeps
+  the whole delivery for you until it fits (`cargo claim`).
+- **You trade with Ingvar where he is.** A deal (the terminal, or `cargo deal`) from more than 96 m from the visit
+  is refused with his own line, the same distance that already applied to sending him off. `cargo terminal open`
+  from far away no longer holds him in place for the players who are with him.
+- **No round trip across a shelf roll.** With the rotating shelf (the default), a row bought out while it was on
+  his shelf could be sold back to him after the shelf rolled at up to 2.1 × its base price. The Fair Market Act
+  now covers every row while the shelf rotates, since every row is on his shelf in some period: he pays at most
+  `base × SpreadBuy` for a row he is short of. An emptied row off the shelf still drifts back and is still shown
+  among the goods he wants; what he charges does not change. With `ShelfSize = 0` nothing changes.
+- **Changing `ShelfSize` during a visit waits for the visit to end**, as its description always said. Switching
+  the shelf on or off mid-visit used to change every row's kind at once.
+- **A visit resumed after a restart during Ingvar's flight** now moves on to the ground phase, so the visit's
+  event area follows him again.
+
+### Build and docs
 
 - **The DLL no longer carries the build machine's folder path (PR #103).** Every DLL through 0.1.4 had the
   absolute path of its debug-symbol file written into it, and that path included the build machine's user name.
