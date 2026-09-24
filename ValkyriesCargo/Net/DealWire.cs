@@ -79,7 +79,18 @@ namespace RavenIron.ValkyriesCargo.Net
         private static void OnOpen(ZRpc rpc, int visitId)
         {
             ZNetPeer peer = PeerFor(rpc);
-            if (peer != null) _open.Add(peer.m_uid);
+            if (peer == null) return;
+            // An open terminal holds the merchant's leash (issue #59), so only a visitor's counts (review
+            // 2026-09-24, finding 2): `cargo terminal open` from across the map no longer holds him.
+            float distance;
+            if (!Near(CargoTick.Director, peer.GetRefPos(), out distance))
+            {
+                if (_farDeals++ < 3)
+                    ValkyriesCargo.Log.LogWarning("not counting " + Open + " from " + Who(peer) + ": " + Wire.Float(distance) + " m from the visit, and a visitor is within " +
+                                                  Wire.Float(VisitorRange) + " m" + (_farDeals == 3 ? "; further far opens and deals are silent" : ""));
+                return;
+            }
+            _open.Add(peer.m_uid);
         }
 
         private static void OnClose(ZRpc rpc, int visitId)
@@ -106,6 +117,17 @@ namespace RavenIron.ValkyriesCargo.Net
                     return;
                 }
                 if (d == null || peer == null) { Answer(rpc, DealResult.Refuse(deal.Nonce, DealReason.VisitOver)); return; }
+                // The dismiss's rule, now the deal's too (review 2026-09-24, finding 2): trading with him is
+                // something a visitor does, not anyone online. Refused before Settle, so the nonce is not spent.
+                float distance;
+                if (!Near(d, peer.GetRefPos(), out distance))
+                {
+                    if (_farDeals++ < 3)
+                        ValkyriesCargo.Log.LogWarning("refused " + DealName + " from " + Who(peer) + ": " + Wire.Float(distance) + " m from the visit, and a visitor is within " +
+                                                      Wire.Float(VisitorRange) + " m" + (_farDeals == 3 ? "; further far opens and deals are silent" : ""));
+                    Answer(rpc, DealResult.Refuse(deal.Nonce, DealReason.TooFarToTrade));
+                    return;
+                }
                 DealResult r = d.Settle(deal, KeyFor(peer), Who(peer));
                 Deals++;
                 Answer(rpc, r);
@@ -207,11 +229,30 @@ namespace RavenIron.ValkyriesCargo.Net
         /// </summary>
         public const float VisitorRange = 96f;
 
-        private static float DistanceXZ(ZNetPeer peer, UnityEngine.Vector3 anchor)
+        private static float DistanceXZ(ZNetPeer peer, UnityEngine.Vector3 anchor) => DistanceXZ(peer.GetRefPos(), anchor);
+
+        private static float DistanceXZ(UnityEngine.Vector3 at, UnityEngine.Vector3 anchor)
         {
-            UnityEngine.Vector3 at = peer.GetRefPos();
             float dx = at.x - anchor.x, dz = at.z - anchor.z;
             return (float)Math.Sqrt(dx * dx + dz * dz);
+        }
+
+        private static int _farDeals;
+
+        /// <summary>
+        /// The dismiss's visitor test for a deal or an open terminal (review 2026-09-24, finding 2): within
+        /// <see cref="VisitorRange"/> of <see cref="VisitAnchor"/>, on the flat. With no visit running it answers
+        /// yes and leaves the refusal to `Settle` (`visit_over` / `stale_visit`), which already says why. The same
+        /// trust class as the dismiss: the position is the client's own claim, so this binds honest clients.
+        /// `LocalTransport` asks it with the host player's own position.
+        /// </summary>
+        public static bool Near(VisitDirector d, UnityEngine.Vector3 at, out float distance)
+        {
+            distance = 0f;
+            if (d == null || !d.Session.Active) return true;
+            bool live;
+            distance = DistanceXZ(at, VisitAnchor.Of(d.Session, out live));
+            return distance <= VisitorRange;
         }
 
         /// <summary>The one answer to a dismiss, on the caller's own socket; the client's terminal waits on it.</summary>

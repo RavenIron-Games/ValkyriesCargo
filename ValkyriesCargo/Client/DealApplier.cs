@@ -19,7 +19,7 @@ namespace RavenIron.ValkyriesCargo.Client
     /// </summary>
     public static class DealApplier
     {
-        public const string CoinsPrefab = "Coins";
+        public const string CoinsPrefab = PackTransaction.CoinsPrefab;
 
         /// <summary>
         /// The DeliveryId of the last result this applier wrote into a pack IN FULL. The transport acks on
@@ -56,13 +56,45 @@ namespace RavenIron.ValkyriesCargo.Client
                 GameObject coins = Prefab(CoinsPrefab);
                 if (coins == null || !inv.CanAddItem(coins, r.CoinsDelta)) return DealReason.InventoryFull;
             }
+            // Each line above was asked alone, against the same free slots: two wares that each fit alone
+            // passed with one slot free (review 2026-09-24, finding 1). The whole deal, run in order on a
+            // throwaway copy of the pack, answers for all of them together.
+            if (!FitsTogether(inv, r)) return DealReason.InventoryFull;
             return null;
         }
 
+        private static int _copyThrows;
+
         /// <summary>
-        /// Apply: removals first (goods, then coins), then additions (goods, then coins). Call CanApply first;
-        /// a failure mid-way is logged and returns false, but what was removed stays removed, which is why
-        /// the check exists. Returns true when every line landed.
+        /// Run the whole result on a copy of the pack (the same width and height, loaded from the pack's own
+        /// `Save`), exactly the way <see cref="Apply"/> will run it on the real one. A copy that cannot be made
+        /// answers yes: Apply is all or nothing by itself, so the worst case is a refusal after the server said yes.
+        /// </summary>
+        private static bool FitsTogether(Inventory inv, DealResult r)
+        {
+            Inventory copy;
+            try
+            {
+                var pkg = new ZPackage();
+                inv.Save(pkg);
+                copy = new Inventory("VCargo_dryrun", null, inv.GetWidth(), inv.GetHeight());
+                copy.Load(new ZPackage(pkg.GetArray()));
+            }
+            catch (Exception ex)
+            {
+                if (_copyThrows++ < 3) ValkyriesCargo.Log.LogWarning("deal pre-check: copying the pack threw, so the lines were checked one by one: " + ex.Message);
+                return true;
+            }
+            int undoShort;
+            Exception error;
+            return PackTransaction.Apply(new InventoryPack(copy), r, out undoShort, out error);
+        }
+
+        /// <summary>
+        /// Apply: removals first (goods, then coins), then additions (goods, then coins), ALL OR NOTHING
+        /// (<see cref="PackTransaction"/>): a failure part-way takes back out whatever went in and puts back
+        /// whatever came out, so a result that did not land leaves the pack as it was, and its redelivery
+        /// (`cargo claim`) is the only copy. Call CanApply first. Returns true when every line landed.
         /// </summary>
         public static bool Apply(DealResult r)
         {
@@ -73,41 +105,29 @@ namespace RavenIron.ValkyriesCargo.Client
             Inventory inv = p != null ? p.GetInventory() : null;
             if (inv == null) { ValkyriesCargo.Log.LogWarning("deal apply refused: no_player"); return false; }
 
-            // Removals first, remembered by what actually came out, so a failure on the way in can put them back.
-            var removed = new System.Collections.Generic.List<DealLine>();
-            bool ok = true;
-            try
-            {
-                foreach (DealLine line in r.ItemsToRemove)
-                {
-                    int got = Remove(inv, line.Prefab, line.Count);
-                    if (got > 0) removed.Add(new DealLine { Prefab = line.Prefab, Count = got });
-                    if (got < line.Count) { ok = false; break; }
-                }
-                if (ok && r.CoinsDelta < 0)
-                {
-                    int got = Remove(inv, CoinsPrefab, -r.CoinsDelta);
-                    if (got > 0) removed.Add(new DealLine { Prefab = CoinsPrefab, Count = got });
-                    if (got < -r.CoinsDelta) ok = false;
-                }
-                if (ok) foreach (DealLine line in r.ItemsToAdd) ok &= AddStacks(inv, Prefab(line.Prefab), line.Count);
-                if (ok && r.CoinsDelta > 0) ok &= AddStacks(inv, Prefab(CoinsPrefab), r.CoinsDelta);
-            }
-            catch (Exception ex)
-            {
-                ValkyriesCargo.Log.LogError("deal apply threw: " + ex);
-                ok = false;
-            }
+            int undoShort;
+            Exception error;
+            bool ok = PackTransaction.Apply(new InventoryPack(inv), r, out undoShort, out error);
+            if (error != null) ValkyriesCargo.Log.LogError("deal apply threw: " + error);
             if (!ok)
             {
                 // The pre-check makes this rare; when it happens, the pack goes back to what it was, and the
                 // server still owes the delivery (it is not acked without an applied result).
-                int restored = 0;
-                try { foreach (DealLine line in removed) if (AddStacks(inv, Prefab(line.Prefab), line.Count)) restored++; } catch { }
-                ValkyriesCargo.Log.LogWarning("deal apply: not every line landed (delivery " + r.DeliveryId + "); " + restored + " of " + removed.Count + " removal(s) put back");
+                ValkyriesCargo.Log.LogWarning("deal apply: not every line landed (delivery " + r.DeliveryId + "); the pack was put back as it was" +
+                                              (undoShort > 0 ? ", except " + undoShort + " unit(s) the undo could not move" : ""));
             }
             if (ok) LastApplied = r.DeliveryId;
             return ok;
+        }
+
+        /// <summary>A real inventory as the pure transaction sees it, by this class's own prefab rules.</summary>
+        private sealed class InventoryPack : IPack
+        {
+            private readonly Inventory _inv;
+            public InventoryPack(Inventory inv) { _inv = inv; }
+            public int Count(string prefab) => DealApplier.Count(_inv, prefab);
+            public int Remove(string prefab, int count) => DealApplier.Remove(_inv, prefab, count);
+            public bool Add(string prefab, int count) => AddStacks(_inv, Prefab(prefab), count);
         }
 
         /// <summary>One line of words for the console or the HUD: "+2 Iron, -38 coins".</summary>
@@ -172,7 +192,7 @@ namespace RavenIron.ValkyriesCargo.Client
         /// <summary>
         /// Take up to `count` of that prefab out, stack by stack, and say how many came out. Less than
         /// `count` means the pack was short (CanApply counted, so only a race gets here) and Apply puts
-        /// back what it took.
+        /// back what it took (and, since 0.1.5, takes back out what it added).
         /// </summary>
         private static int Remove(Inventory inv, string prefabName, int count)
         {

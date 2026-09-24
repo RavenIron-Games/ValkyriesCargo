@@ -27,6 +27,8 @@
     <Compile Include="..\..\ValkyriesCargo\Core\MarketSnapshot.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\VisitSnapshot.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Deal.cs" />
+    <!-- 2026-09-24 review, finding 1: the all-or-nothing apply the client runs on its pack. -->
+    <Compile Include="..\..\ValkyriesCargo\Core\PackTransaction.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\PatchLedger.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\Ghost.cs" />
     <Compile Include="..\..\ValkyriesCargo\Core\VisitPause.cs" />

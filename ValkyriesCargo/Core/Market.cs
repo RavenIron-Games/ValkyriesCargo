@@ -317,7 +317,8 @@ namespace RavenIron.ValkyriesCargo.Core
         /// the spread is applied, so he never pays more than base × spread — the target-stock rate — for
         /// something he also sells. <see cref="MultiplierFor"/> and <see cref="PriceFor"/> (what he CHARGES)
         /// are untouched either way: an empty shelf still charges the full 3.0× going out. A Want is never
-        /// clamped; he does not sell it back, so there is no round trip to protect it from.
+        /// clamped; he does not sell it back, so there is no round trip to protect it from. (With the shelf
+        /// rotating, <see cref="Pays(MarketItem)"/> passes every row as a Ware: each one is sold in some period.)
         /// </summary>
         public static int PaysFor(int basePrice, int target, int stock, EntryKind kind, MarketRules r) =>
             PaysForCore(basePrice, target, stock, kind == EntryKind.Ware && r.FairMarketAct, r);
@@ -340,7 +341,18 @@ namespace RavenIron.ValkyriesCargo.Core
         }
 
         public int Charge(MarketItem it) => PriceFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, Rules);
-        public int Pays(MarketItem it) => PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, KindOf(it), Rules);
+        public int Pays(MarketItem it) => PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, BuyBackKind(it), Rules);
+
+        /// <summary>
+        /// The kind the Fair Market Act reads for what he PAYS. With the shelf fixed, the row's own kind. With the
+        /// shelf rotating, always Ware: every row is on his shelf in some period, so every row is "something he
+        /// also sells" (review 2026-09-24, finding 3). Without this, a row bought out while it was on the shelf
+        /// was off it one roll later, a Want, and bought back unclamped at up to 2.1 x base with its stock still
+        /// near 0 - the round trip §2 closed, reopened across a roll. It costs an honest seller nothing: the
+        /// clamp only bites below target stock, and an off-shelf row gets below target only by being sold off
+        /// the shelf. What he charges, and every other use of the kind, still reads <see cref="KindOf"/>.
+        /// </summary>
+        private EntryKind BuyBackKind(MarketItem it) => Rotating ? EntryKind.Ware : KindOf(it);
         /// <summary>Derived from the charge against base for both kinds; monotone with Pays, so the arrow is right for a Want too.</summary>
         public int Trend(MarketItem it) { int c = Charge(it); return c > it.Entry.BasePrice ? 1 : c < it.Entry.BasePrice ? -1 : 0; }
 

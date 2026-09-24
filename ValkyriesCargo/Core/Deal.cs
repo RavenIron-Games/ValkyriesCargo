@@ -150,6 +150,7 @@ namespace RavenIron.ValkyriesCargo.Core
         public const string NotConnected  = "not_connected";
         public const string Malformed     = "malformed";
         public const string TooFar        = "too_far";       // a dismiss from more than VisitorRange from him
+        public const string TooFarToTrade = "too_far_to_trade"; // a deal from more than VisitorRange from him (review 2026-09-24)
         public const string NoAnswer      = "no_answer";     // the client waited and nothing came back
     }
 
