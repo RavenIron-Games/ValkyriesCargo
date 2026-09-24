@@ -316,7 +316,7 @@ price changed); coins short; purse empty. Each row below is one deal against a f
 | a refused deal moves no stock and no purse | unchanged | unchanged | PASS |
 | a refused deal does not spend its nonce | reusable | reusable | PASS |
 | an accepted deal always carries a delivery id | always | always | PASS |
-| every answer above is one of the 18 DealReason tokens | always | always | PASS |
+| every answer above is one of the 19 DealReason tokens | always | always | PASS |
 
 All 29 checks **pass**, and no input threw. Two answers are worth a second look:
 
@@ -519,10 +519,10 @@ refuse `not_on_shelf` rather than sell. `UpdateShelf` runs before each visit, wh
 | 3 | 1 | RawMeat x40, WolfPelt x40 for 320 | Iron x20, YggdrasilWood x20 for 440 |  | 1630 |
 | 4 | 2 (rolled) | Stone x200, Ruby x15 for 635 | Carrot x20, TurnipSeeds x20 for 100 | Eitr → `not_on_shelf` | 2195 |
 | 5 | 2 | CopperOre x40, TrophyBoar x10 for 280 | BlackCore x4, SilverOre x20 for 1340 |  | 758 |
-| 6 | 3 (rolled) | Blueberries x58, AmberPearl x20 for 454 | RoundLog x20, WolfPelt x20 for 140 | BlackMetal → `not_on_shelf` | 1954 |
+| 6 | 3 (rolled) | Blueberries x58, AmberPearl x20 for 454 | RoundLog x20, WolfPelt x20 for 120 | BlackMetal → `not_on_shelf` | 1974 |
 | 7 | 3 | Sap x40, Entrails x40 for 360 | LeatherScraps x20, TrophyNeck x20 for 120 |  | 1967 |
 | 8 | 4 (rolled) | MushroomYellow x50 for 150 | MeadFrostResist x20, Chain x20 for 300 | Silver → `not_on_shelf` | 1530 |
-| 9 | 4 | YggdrasilWood x68, SilverNecklace x8 for 684 | Blueberries x20, FlametalOreNew x20 for 1320 |  | 939 |
+| 9 | 4 | YggdrasilWood x68, SilverNecklace x8 for 684 | Blueberries x20, FlametalOreNew x20 for 1300 |  | 959 |
 | 10 | 5 (rolled) | Bread x10, Coal x100 for 500 | Resin x20, LoxPelt x20 for 140 | Bronze → `not_on_shelf` | 2202 |
 | 11 | 5 | Guck x40 for 160 | BlackMetalScrap x20, MeadStaminaMinor x20 for 860 |  | 1050 |
 | 12 | 6 (rolled) | DeerHide x60, BjornHide x40 for 580 | Crystal x20, SerpentStew x20 for 380 | Amber → `not_on_shelf` | 1780 |
@@ -530,22 +530,22 @@ refuse `not_on_shelf` rather than sell. `UpdateShelf` runs before each visit, wh
 | 14 | 7 (rolled) | MeadHealthMinor x10, CopperOre x34 for 290 | LeatherScraps x20, BlackMetal x19 for 819 | BoltIron → `not_on_shelf` | 1096 |
 | 15 | 7 | YggdrasilWood x36, BoarJerky x20 for 276 | LoxMeat x20, FishRaw x20 for 100 |  | 1821 |
 | 16 | 8 (rolled) | Iron x21, CarrotSeeds x50 for 625 | Entrails x20, BoltIron x20 for 80 | MeadHealthMinor → `not_on_shelf` | 2183 |
-| 17 | 8 | Wood x200, Chitin x40 for 400 | NeckTail x20, MeadHealthMedium x20 for 200 |  | 2013 |
+| 17 | 8 | Wood x200, Chitin x40 for 400 | NeckTail x20, MeadHealthMedium x20 for 180 |  | 2033 |
 | 18 | 9 (rolled) | JuteBlue x40, Bread x8 for 664 | WolfPelt x20, MeadStaminaMedium x20 for 240 | Iron → `not_on_shelf` | 2124 |
 | 19 | 9 | FlametalOreNew x13 for 1066 | Cloudberry x20, WolfMeat x20 for 160 |  | 2738 |
-| 20 | 10 (rolled) | CopperOre x27, Stone x194 for 356 | MeadPoisonResist x20, FishRaw x20 for 180 | Bronze → `not_on_shelf` | 2209 |
+| 20 | 10 (rolled) | CopperOre x27, Stone x194 for 356 | MeadPoisonResist x20, FishRaw x20 for 160 | Bronze → `not_on_shelf` | 2229 |
 | 21 | 10 | TrollHide x20 for 120 | Blackwood x20, BlackMetalScrap x20 for 740 |  | 1058 |
-| 22 | 11 (rolled) | Needle x40, Chitin x24 for 384 | FlametalOreNew x20, TrophyGreydwarf x20 for 1720 | MeadTasty → `not_on_shelf` | 224 |
-| 23 | 11 | FlametalNew x6, LoxPelt x42 for 996 | MushroomYellow x20, Bread x20 for 680 |  | 2008 |
-| 24 | 12 (rolled) | Bloodbag x40, Cloudberry x70 for 470 | LeatherScraps x20, TrollHide x20 for 140 | Silver → `not_on_shelf` | 2328 |
+| 22 | 11 (rolled) | Needle x40, Chitin x24 for 384 | FlametalOreNew x20, TrophyGreydwarf x20 for 1380 | MeadTasty → `not_on_shelf` | 564 |
+| 23 | 11 | FlametalNew x6, LoxPelt x42 for 996 | MushroomYellow x20, Bread x20 for 600 |  | 2088 |
+| 24 | 12 (rolled) | Bloodbag x40, Cloudberry x70 for 470 | LeatherScraps x20, TrollHide x20 for 120 | Silver → `not_on_shelf` | 2348 |
 | 25 | 12 | Ooze x40, TurnipSeeds x50 for 370 | ScaleHide x20, ChickenMeat x20 for 100 |  | 2005 |
 | 26 | 13 (rolled) | TinOre x40, Carapace x40 for 600 | Crystal x20, OnionSeeds x20 for 180 | Eitr → `not_on_shelf` | 2105 |
 | 27 | 13 | TrophyGoblin x10 for 150 | TrophyGreydwarf x14, MushroomYellow x20 for 110 |  | 1840 |
-| 28 | 14 (rolled) | JuteRed x40, Onion x50 for 340 | Coal x20, Bloodbag x20 for 80 | FlametalNew → `not_on_shelf` | 1835 |
+| 28 | 14 (rolled) | JuteRed x40, Onion x50 for 340 | Coal x20, Bloodbag x20 for 60 | FlametalNew → `not_on_shelf` | 1855 |
 | 29 | 14 | Softtissue x30, SerpentMeat x40 for 440 | Chitin x20, Guck x20 for 140 |  | 1970 |
-| 30 | 15 (rolled) | TrophyGoblin x4, Carapace x20 for 344 | Flax x20, FlametalNew x13 for 1106 | Bronze → `not_on_shelf` | 958 |
+| 30 | 15 (rolled) | TrophyGoblin x4, Carapace x20 for 344 | Flax x20, FlametalNew x13 for 1041 | Bronze → `not_on_shelf` | 1023 |
 
-Rolls seen across the thirty visits: 15 (one every second visit, as the two-day clock says). Stale-pane buys tried 15, refused `not_on_shelf` 15 — **every one**. Other refusals 0. Bought 2378 units for 12944 coins; sold him 1170 units for 13255 coins; purse at the end 958.
+Rolls seen across the thirty visits: 15 (one every second visit, as the two-day clock says). Stale-pane buys tried 15, refused `not_on_shelf` 15 — **every one**. Other refusals 0. Bought 2378 units for 12944 coins; sold him 1170 units for 12650 coins; purse at the end 1023.
 
 **What this says.** The shelf is a pure function of salt, clock and catalogue (the first table is the same on every machine
 and after every restart), the pane the client draws follows the snapshot's kind so no client code moved, and a player

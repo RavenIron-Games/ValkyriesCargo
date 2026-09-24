@@ -112,6 +112,7 @@ namespace RavenIron.ValkyriesCargo.Core
                 case DealReason.StaleVisit: return "That was another visit, friend.";
                 case DealReason.NotConnected: return "No word reaches him from here.";
                 case DealReason.TooFar: return "Stand beside me if you would send me off, friend.";
+                case DealReason.TooFarToTrade: return "Come to my side if you would trade, friend. I do not shout prices across the hills.";
                 case DealReason.NoAnswer: return "No word came back on that. Ask me again.";
                 default: return reason ?? "";
             }

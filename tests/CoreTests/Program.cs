@@ -81,6 +81,7 @@ namespace ValkyriesCargo.Tests
             VisitPauseTests();
             CatalogueOverridesTests();
             ConfigLedgerTests();
+            ReviewFix20260924Tests();
 
             Console.WriteLine($"\n{_passed} passed, {_failed} failed.");
             return _failed == 0 ? 0 : 1;
@@ -1882,7 +1883,11 @@ namespace ValkyriesCargo.Tests
             res = m.Settle(new Deal { VisitId = 1, Nonce = 23, Wanted = new DealLine { Prefab = "Nonsense", Count = 1, UnitPriceSeen = 1 } }, 100000, 100);
             Equal(DealReason.UnknownItem, res.Reason, "a stranger is still unknown_item, not not_on_shelf");
             off.Stock = 0;
-            Equal(Market.PaysFor(off.Entry.BasePrice, off.Entry.TargetStock, 0, EntryKind.Want, m.Rules), m.Pays(off), "what he pays for an off-shelf entry follows the Want rule (no par clamp)");
+            // Review 2026-09-24, finding 3: with the shelf rotating every row is a Ware in some period, so the Fair
+            // Market Act clamps what he pays for an off-shelf row too. Before 0.1.5 this row paid the unclamped Want price.
+            Equal(Market.PaysFor(off.Entry.BasePrice, off.Entry.TargetStock, 0, EntryKind.Ware, m.Rules), m.Pays(off), "what he pays for an emptied off-shelf entry is clamped at par too (the shelf rotates, so he sells it in some period)");
+            Check(m.Pays(off) < Market.PaysFor(off.Entry.BasePrice, off.Entry.TargetStock, 0, EntryKind.Want, m.Rules), "and that is less than the unclamped Want price it used to pay (" + m.Pays(off) + ")");
+            Equal(EntryKind.Want, m.KindOf(off), "the row still trades as a Want (the pane, the refusal, the drift): only the buy-back price changed");
             on.Stock = 0;
             Equal(Market.PaysFor(on.Entry.BasePrice, on.Entry.TargetStock, 0, EntryKind.Ware, m.Rules), m.Pays(on), "and for an on-shelf entry the Ware rule (the Fair Market Act clamps at par)");
             Check(m.Pays(on) <= (int)Math.Round(on.Entry.BasePrice * m.Rules.Spread) + 1, "so an emptied on-shelf entry is bought back at par at most");
@@ -5892,6 +5897,254 @@ namespace ValkyriesCargo.Tests
             Sidecar now = Sidecar.Split("format\t1\n", probs);
             Check(!now.FormatIsNewer && !now.FormatIsOlder && now.FormatMatches, "and ours is neither");
         }
+        // ---- the 2026-09-24 review's fixes (0.1.5) ---------------------------------------------
+
+        /// <summary>
+        /// A pack of slots for PackTransaction: stacks fill before a new slot opens, and an add that does not
+        /// fit puts in what it can and says false - the shape of vanilla's AddItem(GameObject, n).
+        /// </summary>
+        private sealed class FakePack : IPack
+        {
+            private readonly int _slots;
+            private readonly Dictionary<string, int> _max;
+            public readonly List<KeyValuePair<string, int>> Stacks = new List<KeyValuePair<string, int>>();
+            public string ThrowOnAdd;
+            // What Add put where, newest last: (stack index at the time, units). Removals only ever shrink or drop
+            // stacks, and TakeBack runs before any, so the indexes stay good for the undo.
+            private readonly List<int[]> _journal = new List<int[]>();
+            public FakePack(int slots, Dictionary<string, int> max) { _slots = slots; _max = max; }
+            private int Max(string p) { int m; return _max != null && _max.TryGetValue(p, out m) ? m : 1; }
+            public void Put(string p, int n) { Stacks.Add(new KeyValuePair<string, int>(p, n)); }
+            public int Count(string p) { int n = 0; foreach (var s in Stacks) if (s.Key == p) n += s.Value; return n; }
+            public int Remove(string p, int count)
+            {
+                int left = count;
+                for (int i = 0; i < Stacks.Count && left > 0; i++)
+                {
+                    if (Stacks[i].Key != p) continue;
+                    int take = Math.Min(left, Stacks[i].Value);
+                    left -= take;
+                    Stacks[i] = new KeyValuePair<string, int>(p, Stacks[i].Value - take);
+                }
+                Stacks.RemoveAll(s => s.Value <= 0);
+                return count - left;
+            }
+            public bool Add(string p, int count)
+            {
+                if (p == ThrowOnAdd) throw new InvalidOperationException("the pack threw on " + p);
+                int left = count;
+                for (int i = 0; i < Stacks.Count && left > 0; i++)
+                {
+                    if (Stacks[i].Key != p) continue;
+                    int room = Math.Min(left, Max(p) - Stacks[i].Value);
+                    if (room <= 0) continue;
+                    Stacks[i] = new KeyValuePair<string, int>(p, Stacks[i].Value + room);
+                    _journal.Add(new[] { i, room });
+                    left -= room;
+                }
+                while (left > 0 && Stacks.Count < _slots)
+                {
+                    int n = Math.Min(left, Max(p));
+                    Stacks.Add(new KeyValuePair<string, int>(p, n));
+                    _journal.Add(new[] { Stacks.Count - 1, n });
+                    left -= n;
+                }
+                return left == 0;
+            }
+            public int TakeBack(string p, int count)
+            {
+                int left = count;
+                for (int j = _journal.Count - 1; j >= 0 && left > 0; j--)
+                {
+                    int i = _journal[j][0];
+                    if (i >= Stacks.Count || Stacks[i].Key != p || _journal[j][1] <= 0) continue;
+                    int take = Math.Min(left, Math.Min(_journal[j][1], Stacks[i].Value));
+                    Stacks[i] = new KeyValuePair<string, int>(p, Stacks[i].Value - take);
+                    _journal[j][1] -= take;
+                    left -= take;
+                }
+                // Drop emptied stacks and keep the journal's indexes pointing at the same stacks.
+                for (int i = Stacks.Count - 1; i >= 0; i--)
+                {
+                    if (Stacks[i].Value > 0) continue;
+                    Stacks.RemoveAt(i);
+                    foreach (int[] e in _journal) if (e[0] > i) e[0]--; else if (e[0] == i) e[1] = 0;
+                }
+                return count - left;
+            }
+            public string Describe() => string.Join(", ", Stacks.Select(s => s.Key + " " + s.Value));
+        }
+
+        private static FakePack OneFreeSlot()
+        {
+            var max = new Dictionary<string, int> { { "Coins", 999 }, { "Iron", 30 }, { "Wood", 50 }, { "Resin", 100 } };
+            var pack = new FakePack(3, max);
+            pack.Put("Coins", 100);     // a coin stack the deal does not use up
+            pack.Put("Resin", 100);     // a full stack of something else
+            return pack;                // one slot free
+        }
+
+        private static void ReviewFix20260924Tests()
+        {
+            Section("Review 2026-09-24 #1: a deal lands whole or not at all (PackTransaction)");
+            int undoShort; Exception error;
+
+            // The review's scenario: one free slot, a coin stack not used up, two different wares in YOU GET.
+            FakePack pack = OneFreeSlot();
+            var twoWares = new DealResult { Ok = true, DeliveryId = "w-1-1", CoinsDelta = -10 };
+            twoWares.ItemsToAdd.Add(new DealLine { Prefab = "Iron", Count = 1 });
+            twoWares.ItemsToAdd.Add(new DealLine { Prefab = "Wood", Count = 1 });
+            Check(!PackTransaction.Apply(pack, twoWares, out undoShort, out error), "two wares with one free slot do not land");
+            Equal("Coins 100, Resin 100", pack.Describe(), "and the pack is exactly as it was: no Iron kept, the coins back");
+            Equal(0, undoShort, "the undo moved everything it had to");
+            Check(error == null, "nothing threw");
+            // The redelivery (`cargo claim`) runs the same result again: still nothing lands, and nothing accumulates.
+            for (int i = 0; i < 5; i++) PackTransaction.Apply(pack, twoWares, out undoShort, out error);
+            Equal(0, pack.Count("Iron"), "five redeliveries later there is still no free Iron");
+            Equal(100, pack.Count("Coins"), "and still 100 coins");
+
+            // The same pair with room for both lands whole.
+            var roomy = new FakePack(4, new Dictionary<string, int> { { "Coins", 999 }, { "Iron", 30 }, { "Wood", 50 } });
+            roomy.Put("Coins", 100);
+            Check(PackTransaction.Apply(roomy, twoWares, out undoShort, out error), "with two free slots the same deal lands");
+            Equal("Coins 90, Iron 1, Wood 1", roomy.Describe(), "every line, once");
+
+            // One big line that fits only in part (the m_worldLevel case: CanAddItem counted room AddItem did not use).
+            pack = OneFreeSlot();
+            var big = new DealResult { Ok = true, DeliveryId = "w-1-2", CoinsDelta = -40 };
+            big.ItemsToAdd.Add(new DealLine { Prefab = "Iron", Count = 45 });   // 30 fit in the one slot, 15 do not
+            Check(!PackTransaction.Apply(pack, big, out undoShort, out error), "a line that lands in part fails");
+            Equal("Coins 100, Resin 100", pack.Describe(), "and the part that went in comes back out");
+
+            // A sale whose coins do not fit: the goods go back.
+            pack = new FakePack(1, new Dictionary<string, int> { { "Coins", 999 }, { "Wood", 50 } });
+            pack.Put("Wood", 10);
+            var sale = new DealResult { Ok = true, DeliveryId = "w-1-3", CoinsDelta = 2000 };
+            sale.ItemsToRemove.Add(new DealLine { Prefab = "Wood", Count = 10 });
+            Check(!PackTransaction.Apply(pack, sale, out undoShort, out error), "2000 coins do not fit in one slot");
+            Equal("Wood 10", pack.Describe(), "the wood is back and the 999 coins that did go in are gone again");
+
+            // A throw part-way is the same as a refusal, and the error reaches the caller for the log.
+            pack = OneFreeSlot();
+            pack.ThrowOnAdd = "Wood";
+            Check(!PackTransaction.Apply(pack, twoWares, out undoShort, out error), "a throw on the second line fails the deal");
+            Check(error != null && error.Message.Contains("Wood"), "and hands the exception back (" + (error != null ? error.Message : "null") + ")");
+            Equal("Coins 100, Resin 100", pack.Describe(), "with the first line taken back out");
+
+            // Removals short: whatever came out goes back.
+            pack = OneFreeSlot();
+            var short1 = new DealResult { Ok = true, DeliveryId = "w-1-4", CoinsDelta = 5 };
+            short1.ItemsToRemove.Add(new DealLine { Prefab = "Resin", Count = 60 });
+            short1.ItemsToRemove.Add(new DealLine { Prefab = "Iron", Count = 1 });
+            Check(!PackTransaction.Apply(pack, short1, out undoShort, out error), "a removal the pack cannot cover fails");
+            Equal(100, pack.Count("Resin"), "and the resin that came out first is back");
+            // The fix review's case: the whole coin stack paid (its slot frees), 10 Iron onto a 25/30 stack (5 merge,
+            // 5 open the freed slot), then Wood finds no slot. An undo from the OLDEST stacks shrinks the 30 and
+            // leaves the new 5, and the 100 coins have nowhere to go back to. The undo takes back from the stacks
+            // the add used.
+            pack = new FakePack(3, new Dictionary<string, int> { { "Coins", 999 }, { "Iron", 30 }, { "Wood", 50 }, { "Resin", 100 } });
+            pack.Put("Coins", 100); pack.Put("Iron", 25); pack.Put("Resin", 100);
+            var allCoins = new DealResult { Ok = true, DeliveryId = "w-1-5", CoinsDelta = -100 };
+            allCoins.ItemsToAdd.Add(new DealLine { Prefab = "Iron", Count = 10 });
+            allCoins.ItemsToAdd.Add(new DealLine { Prefab = "Wood", Count = 1 });
+            Check(!PackTransaction.Apply(pack, allCoins, out undoShort, out error), "Wood finds no slot, so the deal fails");
+            Equal(100, pack.Count("Coins"), "and all 100 coins are back: the undo freed the slot the Iron opened");
+            Equal(25, pack.Count("Iron"), "Iron is back at 25");
+            Equal(0, undoShort, "nothing left over");
+            Check(!PackTransaction.Apply(null, twoWares, out undoShort, out error) && !PackTransaction.Apply(pack, null, out undoShort, out error)
+                  && !PackTransaction.Apply(pack, DealResult.Refuse(1, DealReason.SoldOut), out undoShort, out error), "no pack, no result or a refusal: false, never a throw");
+
+            Section("Review 2026-09-24 #2: a deal from too far away has its own words");
+            Check(DealReason.TooFarToTrade != DealReason.TooFar, "not the dismiss's token");
+            Check(Lines.Refusal(DealReason.TooFarToTrade) != DealReason.TooFarToTrade && Lines.Refusal(DealReason.TooFarToTrade).Length > 0,
+                  "he has a line for it: " + Lines.Refusal(DealReason.TooFarToTrade));
+
+            Section("Review 2026-09-24 #3: no round trip across a shelf roll (the Fair Market Act, rotating)");
+            var cat = Catalogue.Parse(Catalogue.DefaultLine, null);
+            MarketRules rr = MarketRules.Default; rr.ShelfSize = 20; rr.ShelfRotationGameDays = 2; rr.PurseCoins = 100000;
+            var probe = new Market(cat, rr, 0, "w4790ce");
+            var period0 = new HashSet<string>(probe.ShelfNames());
+            probe.UpdateShelf(2 * 1800 + 450);
+            string row = null;
+            foreach (MarketItem it in probe.Items)
+                if (period0.Contains(it.Prefab) && !probe.OnShelf(it.Prefab) && it.Entry.BasePrice >= 10 && it.Entry.TargetStock >= 20) { row = it.Prefab; break; }
+            Check(row != null, "a row on the shelf in period 0 and off it in period 1 (" + row + ")");
+            if (row != null)
+            {
+                var rt = new Market(cat, rr, 0, "w4790ce");
+                rt.StartVisit(1, 2 * 1800 - 100, 0);
+                MarketItem it = rt.Find(row);
+                int n = it.Stock;
+                DealResult bought = rt.Settle(new Deal { VisitId = 1, Nonce = 1, Wanted = new DealLine { Prefab = row, Count = n, UnitPriceSeen = rt.Charge(it) } }, 10000000, 2 * 1800 - 100);
+                Check(bought.Ok, "late in period 0 the whole row is bought in one deal (" + bought.Reason + ")");
+                int spent = -bought.CoinsDelta;
+                rt.UpdateShelf(2 * 1800 + 450);
+                Check(!rt.OnShelf(row), "the shelf rolls and the row is off it");
+                rt.StartVisit(2, 2 * 1800 + 450, 0);
+                Check(it.Stock < it.Entry.TargetStock, "a quarter day later its stock is still below target (" + it.Stock + " of " + it.Entry.TargetStock + ")");
+                int unit = rt.Pays(it);
+                Check(unit <= (int)Math.Round(it.Entry.BasePrice * rr.Spread, MidpointRounding.AwayFromZero), "he pays at most par for it (" + unit + " a unit, base " + it.Entry.BasePrice + ")");
+                DealResult sold = rt.Settle(new Deal { VisitId = 2, Nonce = 2, Offered = new List<DealLine> { new DealLine { Prefab = row, Count = n, UnitPriceSeen = unit } } }, 0, 2 * 1800 + 450);
+                Check(sold.Ok, "selling the same " + n + " back goes through (" + sold.Reason + ")");
+                Check(sold.CoinsDelta < spent, "and the round trip LOSES coins: spent " + spent + ", got back " + sold.CoinsDelta);
+            }
+            var fixedShelf = new Market(cat, MarketRules.Default, 0, "w4790ce");
+            MarketItem want = null;
+            foreach (MarketItem it in fixedShelf.Items) if (it.Entry.Kind == EntryKind.Want) { want = it; break; }
+            want.Stock = 1;
+            Equal(Market.PaysFor(want.Entry.BasePrice, want.Entry.TargetStock, 1, EntryKind.Want, fixedShelf.Rules), fixedShelf.Pays(want),
+                  "with the shelf fixed a Want is still never clamped (the locked row, unchanged)");
+            Check(fixedShelf.Pays(want) > (int)Math.Round(want.Entry.BasePrice * fixedShelf.Rules.Spread, MidpointRounding.AwayFromZero),
+                  "so a scarce Want still pays above par there (" + fixedShelf.Pays(want) + ")");
+
+            Section("Fix review 2026-09-24 N1 (PROPOSED): no pump off a flooded shelf");
+            var pm = new Market(cat, MarketRules.Default, 0, "w4790ce");
+            pm.StartVisit(1, 0, 0);
+            long nonce = 100;
+            int pumped = 0, wareRows = 0;
+            foreach (MarketItem it in pm.Items)
+            {
+                if (pm.KindOf(it) != EntryKind.Ware) continue;
+                wareRows++;
+                it.Stock = it.Entry.MaxStock;                        // flooded by earlier sellers
+                int n = it.Stock;
+                DealResult b = pm.Settle(new Deal { VisitId = 1, Nonce = ++nonce, Wanted = new DealLine { Prefab = it.Prefab, Count = n, UnitPriceSeen = pm.Charge(it) } }, int.MaxValue, 0);
+                if (!b.Ok) continue;
+                DealResult back = pm.Settle(new Deal { VisitId = 1, Nonce = ++nonce, Offered = new List<DealLine> { new DealLine { Prefab = it.Prefab, Count = n, UnitPriceSeen = pm.Pays(it) } } }, 0, 0);
+                if (back.Ok && back.CoinsDelta > -b.CoinsDelta) { pumped++; Console.WriteLine("    pump on " + it.Prefab + ": spent " + (-b.CoinsDelta) + ", got back " + back.CoinsDelta); }
+            }
+            Check(wareRows > 20, "every Ware of the shipped catalogue tried (" + wareRows + ")");
+            Equal(0, pumped, "no Ware bought whole off a flooded shelf sells straight back at a profit (Iron was 60 at 17, back at 18: +60)");
+            var fresh = new Market(cat, MarketRules.Default, 0, "w4790ce");
+            fresh.StartVisit(1, 0, 0);
+            MarketItem ironFresh = fresh.Find("Iron");
+            ironFresh.Stock = 0;
+            Equal(Market.PaysFor(25, 20, 0, EntryKind.Ware, fresh.Rules), fresh.Pays(ironFresh), "an emptied row nobody bought cheap this visit still pays par: ordinary prices do not move");
+            ironFresh.Stock = 60;
+            fresh.Settle(new Deal { VisitId = 1, Nonce = 1, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = fresh.Charge(ironFresh) } }, 1000, 0);
+            ironFresh.Stock = 0;
+            Check(fresh.Pays(ironFresh) <= 17, "after he sold Iron at 17 this visit he pays at most 17 for it (" + fresh.Pays(ironFresh) + ")");
+            fresh.StartVisit(2, 0, 0);
+            Equal(Market.PaysFor(25, 20, 0, EntryKind.Ware, fresh.Rules), fresh.Pays(ironFresh), "and the next visit forgets it");
+
+            Section("Review 2026-09-24 #4: ShelfSize changed mid-visit waits for the next roll");
+            MarketRules r4 = MarketRules.Default; r4.ShelfSize = 20; r4.ShelfRotationGameDays = 2;
+            var m4 = new Market(cat, r4, 100, "w4790ce");
+            string shelved = m4.ShelfNames()[0];
+            m4.Rules.ShelfSize = 0;                         // what FillMarketRules does once a second, live
+            Check(m4.Rotating, "switched off live, the shelf still rotates until it is rolled");
+            Equal(EntryKind.Ware, m4.KindOf(m4.Find(shelved)), "and a shelf row is still a Ware");
+            Check(m4.ShelfDue(100), "the switch is due");
+            m4.UpdateShelf(100);
+            Check(!m4.Rotating && m4.ShelfCount == 0, "the idle-tick roll switches it off");
+            Check(!m4.ShelfDue(100), "and nothing more is due");
+            m4.Rules.ShelfSize = 20;                        // and back on, live
+            Check(!m4.Rotating, "switched on live, the catalogue's kinds hold until the roll");
+            Equal(EntryKind.Ware, m4.KindOf(m4.Find("Iron")), "Iron is still the catalogue's Ware, not refused not_on_shelf");
+            Check(m4.ShelfDue(100), "the switch is due");
+            m4.UpdateShelf(100);
+            Check(m4.Rotating && m4.ShelfCount == 20, "the roll brings the twenty back");
+        }
     }
 
     /// <summary>Fake transport for testing duplicate delivery handling.</summary>
@@ -5911,5 +6164,5 @@ namespace ValkyriesCargo.Tests
 
 
 
-    }
+        }
 }

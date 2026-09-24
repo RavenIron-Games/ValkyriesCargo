@@ -1,5 +1,51 @@
 # Changelog
 
+## 0.1.5
+
+### 0.1.5 — NAME TBD, date TBD; deal and market fixes, prepared and not cut yet
+
+**Why a number.** The store takes one upload per version number, and the version gate moves with it: **a 0.1.4
+client is refused by a 0.1.5 server**, so the server and every player update together. The config file's layout did not change
+(`ConfigVersion` stays `2`), so updating a server from 0.1.4 needs nothing deleted and migrates nothing.
+
+### Fixes
+
+- **A deal now lands in your pack whole or not at all.** With more than one ware in YOU GET and room for only
+  some of them, the pack used to take the first ware, give the coins back and keep the ware anyway, and
+  `cargo claim` could then hand out that ware again for free. In the terminal, every line of a deal is now checked
+  against your pack together before it is sent. Whichever way a deal arrives (the terminal, `cargo deal` or
+  `cargo claim`), if the pack cannot take all of it, nothing changes: the server keeps the whole delivery for you
+  until it fits (`cargo claim`).
+- **You trade with Ingvar where he is.** A deal (the terminal, or `cargo deal`) from more than 96 m from the visit
+  is refused (in the terminal with his own line, in the console as `too_far_to_trade`), the same distance that
+  already applied to sending him off. `cargo terminal open`
+  from far away no longer holds him in place for the players who are with him.
+- **No round trip across a shelf roll.** With the rotating shelf (the default), a row bought out while it was on
+  his shelf could be sold back to him after the shelf rolled at up to 2.1 × its base price. The Fair Market Act
+  now covers every row while the shelf rotates, since every row is on his shelf in some period: he pays at most
+  `base × SpreadBuy` for a row he is short of. An emptied row off the shelf still drifts back and is still shown
+  among the goods he wants; what he charges does not change. With `ShelfSize = 0` nothing changes.
+- **No quick profit off a flooded shelf.** A shelf row stocked to its maximum sells at about 0.68 × base, a little
+  under what he pays for an emptied row (0.70 × base), so buying the whole row and selling it straight back made
+  a few coins every time. Within a visit, he now never pays more for an item than the lowest price he sold it at
+  that visit. Prices for anything he did not just sell cheaply are unchanged.
+- **Changing `ShelfSize` during a visit waits for the visit to end**, as its description always said. Switching
+  the shelf on or off mid-visit used to change every row's kind at once.
+- **A visit resumed after a restart during Ingvar's flight** now moves on to the ground phase, so the visit's
+  event area follows him again.
+
+### Build and docs
+
+- **The DLL no longer carries the build machine's folder path (PR #103).** Every DLL through 0.1.4 had the
+  absolute path of its debug-symbol file written into it, and that path included the build machine's user name.
+  The build now maps the repo's folder to a neutral `/_/` in the DLL and its PDB alike, so neither names a local
+  path. That change by itself does not change the compiled code; the fixes above do. A build still embeds the commit
+  it was built from, so the DLL's md5 follows the commit, no longer the folder it was built in. This DLL was built
+  from commit `COMMIT TBD`.
+- **The GitHub README has a "Support Raven Iron" section (PRs #101 and #102):** the mods are free and stay free, and the
+  section links the Raven Iron website, Patreon and the Discord. The README's line on what the store carries is
+  brought up to date.
+
 ## 0.1.4
 
 ### 0.1.4 — cut 2026-09-16 (the day's second), the config migration; a pre-release on GitHub, the store upload is the owner's

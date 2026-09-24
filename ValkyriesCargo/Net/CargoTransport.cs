@@ -161,6 +161,14 @@ namespace RavenIron.ValkyriesCargo.Net
             if (deal == null || onAnswer == null) return;
             VisitDirector d = CargoTick.Director;
             if (d == null) { onAnswer(DealResult.Refuse(deal.Nonce, DealReason.NotConnected)); return; }
+            // The wire's visitor test, with the host's own position (review 2026-09-24, finding 2).
+            float distance;
+            if (Player.m_localPlayer != null && !DealWire.Near(d, Player.m_localPlayer.transform.position, out distance))
+            {
+                ValkyriesCargo.Log.LogInfo("deal refused for the host: " + Wire.Float(distance) + " m from the visit, and a visitor is within " + Wire.Float(DealWire.VisitorRange) + " m");
+                onAnswer(DealResult.Refuse(deal.Nonce, DealReason.TooFarToTrade));
+                return;
+            }
             DealResult r = d.Settle(deal, _key, Player.m_localPlayer != null ? Player.m_localPlayer.GetPlayerName() : "host");
             onAnswer(r);
             // Same rule as the remote path: the ledger keeps what the pack refused.

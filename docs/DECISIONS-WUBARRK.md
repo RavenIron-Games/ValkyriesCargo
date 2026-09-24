@@ -64,6 +64,46 @@ their coins back at the ordinary rate. Only the pump dies.
 It is a config knob, synced and locked, defaulting on. An owner who wants the old behaviour on a
 private server can have it; nobody gets it by accident.
 
+**PROPOSED addendum, 2026-09-24 — awaiting Wu'barrk's confirmation; NOT a decision yet.** The owner approved fixing
+the bugs the 2026-09-24 review found; these two rule changes are how the fix branch (`release/0.1.5-prep`) does it
+for findings 3 and N1, and each extends this section's rule, so each needs Wu'barrk's word (and the owner's) before
+it ships. The CLAUDE.md locked-decisions row is not edited until then.
+
+*(a) Across a shelf roll (review finding 3).* The rotating shelf
+(2026-09-08) came after this decision and reopened the pump across a roll: buy a row out while it is on the shelf,
+wait for the roll, and it is a Want, bought back unclamped at up to 2.1x with its stock still near 0 (Want drift acts
+only at the next visit). The clause is unchanged in words: "something he himself sells". With the shelf rotating,
+every row is something he sells in some period, so `Market.Pays` now reads every row as a Ware for the clamp while
+the shelf rotates (`Market.BuyBackKind`). This does change what honest sellers get: a row other players bought below
+target, which then rolled off the shelf, pays par instead of a scarcity premium until Want drift refills it.
+ECONOMY-SIM scenario 11 (thirty visits of ordinary trading) shows him paying 12,650 coins instead of 13,255, about
+4.6% less, on 9 of the 30 visits. A row nobody bought down is at or above target, where the clamp does nothing.
+What he charges, the panes, the refusals and the drift all still read `KindOf`. With `ShelfSize = 0` (the fixed
+shelf) Wants are untouched, exactly as above.
+
+*(b) The flooded-shelf pump (fix review N1, older than the shelf).* A Ware at `MaxStock` is charged
+`(Target/Max)^0.35` = 0.68 x base, under the 0.70 x base par this section allows him to pay, and a whole line is
+priced at the pre-deal stock. So: buy a flooded row whole, sell it straight back at par. Iron gains 60 coins a loop
+(60 at 17, back at 18), and nine of the shipped Wares gain something. The proposed fix is in the words of the
+store page, "never pays more for a thing than he charges for it": within a visit, `Market.Pays` never goes above
+the lowest unit price he SOLD that prefab at this visit (in memory, cleared at `StartVisit`). ECONOMY-SIM does not
+move by a single coin. **Not closed by it:** the same loop across two visits, because with `WareHalfLifeGameDays`
+0 the emptied row is still empty at the next visit. Closing that needs either a per-row memory in the sidecar, or
+a cap tied to stock such as "never above the charge at the post-sale stock", which binds only on a single sale
+that takes a row from near target to past about 2.77 x target. Both are Wu'barrk's call.
+
+*Open for Wu'barrk, found by the fix branch's second review (behaviour NOT changed):*
+- **G1, the cross-visit loop.** Measured with the shipped 1,500 purse and Iron flooded at 60: buy 60 at 17 late in
+  one visit, sell 60 back at 18 in the next and buy them again: **+60 coins a visit, every visit.** The in-visit cap
+  cuts the pump to one step per visit; it does not close it. Options: the stock-tied cap above, a per-row low in
+  the sidecar, or a Ware drift above 0.
+- **G2, the in-visit cap can be gamed the other way.** One player buying ONE unit of a flooded row caps what every
+  later seller of that prefab gets for the rest of the visit, once the row is bought back down. On the shipped
+  catalogue that is at most 1 coin a unit on Iron (18 to 17), up to -25% on cheap rows by rounding (base 5: 4 to 3),
+  and about -35% with `CatalogueOverrides` where Max/Target is above 3 (the flooded charge falls toward
+  `MinMultiplier`). The stock-tied cap has no such surface and would also close G1, so it is worth weighing
+  against (b) side by side.
+
 ## 3. Newtonsoft.Json is adopted as a declared dependency
 
 **2026-09-07. Overrides this mod's implicit "BepInEx and Harmony only" posture.**

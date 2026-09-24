@@ -382,8 +382,9 @@ are the reasons for what is NOT here:
 - **The cooked twins** (`CookedMeat`, `CookedWolfMeat`, `SerpentMeatCooked`) pay exactly what their raw pays, so
   cooking for Ingvar would earn nothing; the Mistlands and Ashlands cookfire meats had no raw side in the set.
 - **Four meads** (`MeadHealthMajor`, `MeadHealthLingering`, `MeadStaminaLingering`, `MeadEitrMinor`): a brew is six
-  meads off ten honey and forage, and a mead row is bought back UNCLAMPED whenever it is off the shelf (the Fair
-  Market Act clamps only a shelf row); the eight proposed could absorb the whole 1,500 purse in one visit. Four
+  meads off ten honey and forage, and through 0.1.4 a mead row was bought back UNCLAMPED whenever it was off the shelf
+  (the Fair Market Act clamped only a shelf row). The 0.1.5 fix branch proposes clamping every row while the shelf
+  rotates, which matters only for a row below its target (PROPOSED, docs/DECISIONS-WUBARRK.md §2); the eight proposed could absorb the whole 1,500 purse in one visit. Four
   staples ship, 472 coins to fill.
 - Feasts (rare crafts, 63-536), the Bog Witch's own trader goods, every mead base, Bukeperries and rotten meat:
   never proposed.

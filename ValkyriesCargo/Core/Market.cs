@@ -171,6 +171,10 @@ namespace RavenIron.ValkyriesCargo.Core
         private int _deliverySeq;
         private int _purseAtVisitStart;
         private int _coinedThisVisit;
+        // PROPOSED, awaiting Wu'barrk (review 2026-09-24, N1): the lowest unit price he SOLD each prefab at this
+        // visit. Pays never goes above it, so a row bought out at its flooded price cannot be sold straight back
+        // at par. In memory only, cleared at StartVisit, like the nonce ring.
+        private readonly Dictionary<string, int> _soldAtThisVisit = new Dictionary<string, int>(StringComparer.Ordinal);
         // The rotating shelf (2026-09-08): what is on sale THIS period, the period it was rolled for, and the
         // size it was rolled at, so a live change of either re-rolls on the next idle tick.
         private readonly HashSet<string> _shelf = new HashSet<string>(StringComparer.Ordinal);
@@ -217,8 +221,14 @@ namespace RavenIron.ValkyriesCargo.Core
 
         // ---- the rotating shelf (2026-09-08, issue #56) ----------------------------------------------
 
-        /// <summary>True while `ShelfSize` is above 0: the roll decides what he sells, not the catalogue's kinds.</summary>
-        public bool Rotating => Rules.ShelfSize > 0;
+        /// <summary>
+        /// True while the shelf ROLLED last is a rotating one: the roll decides what he sells, not the catalogue's
+        /// kinds. It reads the rolled state, not the live `ShelfSize` (review 2026-09-24, finding 4): an admin
+        /// switching the shelf on or off mid-visit takes effect through <see cref="UpdateShelf"/>, which the
+        /// director runs only on an idle tick, exactly as the key's description says.
+        /// </summary>
+        public bool Rotating => _shelfSize > 0;
+        private bool RotatingByRule => Rules.ShelfSize > 0;
         /// <summary>The period the current shelf was rolled for; -1 before the first roll or while the shelf is fixed.</summary>
         public long ShelfPeriod => _shelfPeriod;
         public int ShelfCount => _shelf.Count;
@@ -247,16 +257,16 @@ namespace RavenIron.ValkyriesCargo.Core
         /// </summary>
         public bool ShelfDue(double worldTime)
         {
-            if (!Rotating) return _shelf.Count > 0;
+            if (!RotatingByRule) return _shelf.Count > 0 || _shelfSize > 0;
             return PeriodAt(worldTime) != _shelfPeriod || Rules.ShelfSize != _shelfSize;
         }
 
         /// <summary>Roll the shelf for this world time if it is due. True when the set of names changed.</summary>
         public bool UpdateShelf(double worldTime)
         {
-            if (!Rotating)
+            if (!RotatingByRule)
             {
-                if (_shelf.Count == 0) { _shelfPeriod = -1; _shelfSize = 0; return false; }
+                if (_shelf.Count == 0 && _shelfSize == 0) { _shelfPeriod = -1; return false; }
                 _shelf.Clear(); _shelfPeriod = -1; _shelfSize = 0;
                 return true;
             }
@@ -317,7 +327,8 @@ namespace RavenIron.ValkyriesCargo.Core
         /// the spread is applied, so he never pays more than base × spread — the target-stock rate — for
         /// something he also sells. <see cref="MultiplierFor"/> and <see cref="PriceFor"/> (what he CHARGES)
         /// are untouched either way: an empty shelf still charges the full 3.0× going out. A Want is never
-        /// clamped; he does not sell it back, so there is no round trip to protect it from.
+        /// clamped; he does not sell it back, so there is no round trip to protect it from. (With the shelf
+        /// rotating, <see cref="Pays(MarketItem)"/> passes every row as a Ware: each one is sold in some period.)
         /// </summary>
         public static int PaysFor(int basePrice, int target, int stock, EntryKind kind, MarketRules r) =>
             PaysForCore(basePrice, target, stock, kind == EntryKind.Ware && r.FairMarketAct, r);
@@ -340,8 +351,30 @@ namespace RavenIron.ValkyriesCargo.Core
         }
 
         public int Charge(MarketItem it) => PriceFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, Rules);
-        public int Pays(MarketItem it) => PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, KindOf(it), Rules);
-        /// <summary>Derived from the charge against base for both kinds; monotone with Pays, so the arrow is right for a Want too.</summary>
+        public int Pays(MarketItem it)
+        {
+            int pays = PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, BuyBackKind(it), Rules);
+            // PROPOSED, awaiting Wu'barrk (review 2026-09-24, N1, the flooded-shelf pump): a Ware at MaxStock is
+            // charged (Target/Max)^0.35 = 0.68 x base, under the 0.70 x base par the Fair Market Act allows, so
+            // buying a flooded row whole and selling it straight back gained ~2% a unit. He never pays more for a
+            // thing than he sold it for this visit. Binds only after a sale below par, so ordinary prices do not move.
+            int sold;
+            if (Rules.FairMarketAct && it != null && _soldAtThisVisit.TryGetValue(it.Prefab, out sold) && sold < pays) pays = sold;
+            return pays;
+        }
+
+        /// <summary>
+        /// The kind the Fair Market Act reads for what he PAYS. With the shelf fixed, the row's own kind. With the
+        /// shelf rotating, always Ware: every row is on his shelf in some period, so every row is "something he
+        /// also sells" (review 2026-09-24, finding 3). Without this, a row bought out while it was on the shelf
+        /// was off it one roll later, a Want, and bought back unclamped at up to 2.1 x base with its stock still
+        /// near 0 - the round trip §2 closed, reopened across a roll. It does cost honest sellers something: a row
+        /// other players bought below target pays par, not a premium, until Want drift refills it (ECONOMY-SIM
+        /// scenario 11: about 4.6% less paid; PROPOSED, docs/DECISIONS-WUBARRK.md §2). What he charges, and every other use of the kind, still reads <see cref="KindOf"/>.
+        /// </summary>
+        private EntryKind BuyBackKind(MarketItem it) => Rotating ? EntryKind.Ware : KindOf(it);
+        /// <summary>Derived from the charge against base for both kinds. It follows what he CHARGES; what he pays can sit flat at par
+        /// (the Fair Market Act, a rotating row bought down, the in-visit cap) while the arrow still points up.</summary>
         public int Trend(MarketItem it) { int c = Charge(it); return c > it.Entry.BasePrice ? 1 : c < it.Entry.BasePrice ? -1 : 0; }
 
         // ---- the visit ------------------------------------------------------------------
@@ -360,6 +393,7 @@ namespace RavenIron.ValkyriesCargo.Core
             _purseAtVisitStart = Purse;
             _coinedThisVisit = 0;
             _nonces.Clear();
+            _soldAtThisVisit.Clear();
             _deliverySeq = 0;
         }
 
@@ -494,7 +528,12 @@ namespace RavenIron.ValkyriesCargo.Core
             if (net > 0 && playerCoins < net) return Refuse(d, DealReason.CoinsShort);
             if (net < 0 && Purse < -net) return Refuse(d, DealReason.PurseEmpty);
 
-            for (int i = 0; i < wants.Count; i++) { wants[i].Stock -= d.Wants[i].Count; wants[i].UpdatedWorldTime = worldTime; }
+            for (int i = 0; i < wants.Count; i++)
+            {
+                wants[i].Stock -= d.Wants[i].Count; wants[i].UpdatedWorldTime = worldTime;
+                int low;
+                if (!_soldAtThisVisit.TryGetValue(wants[i].Prefab, out low) || wantCharges[i] < low) _soldAtThisVisit[wants[i].Prefab] = wantCharges[i];
+            }
             for (int i = 0; i < offered.Count; i++) { offered[i].Stock += d.Offered[i].Count; offered[i].UpdatedWorldTime = worldTime; }
             Purse += (int)net;
             if (net > 0) _coinedThisVisit += (int)net;   // GROSS in; see Coined

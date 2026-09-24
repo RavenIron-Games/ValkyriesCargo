@@ -392,7 +392,20 @@ namespace RavenIron.ValkyriesCargo.Server
                 // visit authoring a second one beside him. The boot sweep already spared his ZDO under
                 // this same visit id; find it again and bind Spawner to it.
                 string rebound = Spawner.Rebind(_session.VisitId);
-                if (rebound != null) ValkyriesCargo.Log.LogInfo(rebound);
+                if (rebound != null)
+                {
+                    ValkyriesCargo.Log.LogInfo(rebound);
+                    // Review 2026-09-24, finding 5: a row saved during the flight comes back `Flying`, and
+                    // Rebind marks him already down, so nothing would ever publish the drop. He is on the
+                    // ground: say so, at where he stands, or the event area never follows him.
+                    if (_session.Phase == VisitPhase.Flying)
+                    {
+                        Vector3 at = Spawner.AuthoredDrop;
+                        _session.SetDrop(at.x, at.y, at.z);
+                        string dropped = _session.SetPhase(VisitPhase.Dropped);
+                        if (dropped != null) Publish(dropped);
+                    }
+                }
                 else ValkyriesCargo.Log.LogWarning("visit #" + _session.VisitId + " resumed: no merchant ZDO found to rebind " +
                                                    "(looked for VCargo_ingvar=" + _session.VisitId + "); Clear() will have nothing " +
                                                    "of its own to reclaim when this visit ends (the restart sweep is still the backstop)");
