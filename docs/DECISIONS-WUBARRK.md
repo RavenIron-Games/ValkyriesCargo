@@ -92,6 +92,18 @@ move by a single coin. **Not closed by it:** the same loop across two visits, be
 a cap tied to stock such as "never above the charge at the post-sale stock", which binds only on a single sale
 that takes a row from near target to past about 2.77 x target. Both are Wu'barrk's call.
 
+*Open for Wu'barrk, found by the fix branch's second review (behaviour NOT changed):*
+- **G1, the cross-visit loop.** Measured with the shipped 1,500 purse and Iron flooded at 60: buy 60 at 17 late in
+  one visit, sell 60 back at 18 in the next and buy them again: **+60 coins a visit, every visit.** The in-visit cap
+  cuts the pump to one step per visit; it does not close it. Options: the stock-tied cap above, a per-row low in
+  the sidecar, or a Ware drift above 0.
+- **G2, the in-visit cap can be gamed the other way.** One player buying ONE unit of a flooded row caps what every
+  later seller of that prefab gets for the rest of the visit, once the row is bought back down. On the shipped
+  catalogue that is at most 1 coin a unit on Iron (18 to 17), up to -25% on cheap rows by rounding (base 5: 4 to 3),
+  and about -35% with `CatalogueOverrides` where Max/Target is above 3 (the flooded charge falls toward
+  `MinMultiplier`). The stock-tied cap has no such surface and would also close G1, so it is worth weighing
+  against (b) side by side.
+
 ## 3. Newtonsoft.Json is adopted as a declared dependency
 
 **2026-09-07. Overrides this mod's implicit "BepInEx and Harmony only" posture.**

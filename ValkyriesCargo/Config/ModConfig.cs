@@ -244,7 +244,7 @@ namespace RavenIron.ValkyriesCargo.Config
                 "What he pays as a fraction of what he charges for the same item. Read on the SERVER.",
                 new AcceptableValueRange<float>(0.1f, 1f));
             FairMarketAct = S(cfg, "Server", "FairMarketAct", true,
-                "Caps what he pays to buy back a Ware at par (base x SpreadBuy) - with the shelf rotating, any row, since every row is on his shelf in some period - so MaxPriceMultiplier x SpreadBuy > 1 can never turn buying a shelf out and selling it straight back into free coins. Read on the SERVER.");
+                "Caps what he pays to buy back a Ware at par (base x SpreadBuy) - with the shelf rotating, any row, since every row is on his shelf in some period - so MaxPriceMultiplier x SpreadBuy > 1 can never turn buying a shelf out and selling it straight back into free coins; and within a visit he never pays more for an item than the lowest price he sold it at that visit (0.1.5). Read on the SERVER.");
             WareHalfLifeGameDays = S(cfg, "Server", "WareHalfLifeGameDays", 0f,
                 "Between visits a WARE's stock (what he sells) drifts back toward its target with this half-life, in game days; a game day is 30 real minutes of server uptime. 0 = never: the shelf keeps exactly what trading left, so what he has to sell is what players sold him plus what an admin's target says (cargo catalogue add Prefab:Base:Target:Max:Ware raises the level that holds). The shipped 0 is the owner's 2026-09-07 decision; the sweep behind it is docs/ECONOMY-SIM.md section 10. Read on the SERVER.",
                 new AcceptableValueRange<float>(0f, 365f));

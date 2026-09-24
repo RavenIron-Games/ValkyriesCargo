@@ -368,12 +368,13 @@ namespace RavenIron.ValkyriesCargo.Core
         /// shelf rotating, always Ware: every row is on his shelf in some period, so every row is "something he
         /// also sells" (review 2026-09-24, finding 3). Without this, a row bought out while it was on the shelf
         /// was off it one roll later, a Want, and bought back unclamped at up to 2.1 x base with its stock still
-        /// near 0 - the round trip §2 closed, reopened across a roll. It costs an honest seller nothing: the
-        /// clamp only bites below target stock, and an off-shelf row gets below target only by being sold off
-        /// the shelf. What he charges, and every other use of the kind, still reads <see cref="KindOf"/>.
+        /// near 0 - the round trip §2 closed, reopened across a roll. It does cost honest sellers something: a row
+        /// other players bought below target pays par, not a premium, until Want drift refills it (ECONOMY-SIM
+        /// scenario 11: about 4.6% less paid; PROPOSED, docs/DECISIONS-WUBARRK.md §2). What he charges, and every other use of the kind, still reads <see cref="KindOf"/>.
         /// </summary>
         private EntryKind BuyBackKind(MarketItem it) => Rotating ? EntryKind.Ware : KindOf(it);
-        /// <summary>Derived from the charge against base for both kinds; monotone with Pays, so the arrow is right for a Want too.</summary>
+        /// <summary>Derived from the charge against base for both kinds. It follows what he CHARGES; what he pays can sit flat at par
+        /// (the Fair Market Act, a rotating row bought down, the in-visit cap) while the arrow still points up.</summary>
         public int Trend(MarketItem it) { int c = Charge(it); return c > it.Entry.BasePrice ? 1 : c < it.Entry.BasePrice ? -1 : 0; }
 
         // ---- the visit ------------------------------------------------------------------
