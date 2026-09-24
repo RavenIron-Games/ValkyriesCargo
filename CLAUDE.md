@@ -29,21 +29,26 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 change since 0.1.4 is PR #104, from a code review of 0.1.4: all-or-nothing deal apply (`Core/PackTransaction.cs`,
 pure; `DealApplier.CanApply` runs it on a throwaway copy of the pack), the 96 m visitor range on `VCargo_deal` and
 `VCargo_open` (`DealWire.Near`), the Fair Market Act across the shelf roll (`Market.BuyBackKind`) and the in-visit
-buy-back cap (both PROPOSED in `docs/DECISIONS-WUBARRK.md` §2 and merged on the owner's go), `Market.Rotating`
+buy-back cap (both PROPOSED in `docs/DECISIONS-WUBARRK.md` §2, merged and shipped on the owner's go; PR #104 asked
+for Wu'barrk's sign-off first and none is recorded, so the §2 addendum still reads PROPOSED, the locked-decisions
+row is unedited, and G1 and G2 stay open for him), `Market.Rotating`
 reading the rolled shelf, and `VisitDirector.Adopt` publishing `Dropped` for a visit resumed mid-flight. 2589 checks,
 0 warnings. Also shipping: PR #103, the build no longer embeds the build machine's folders (the DLL carries
 `/_/…/ValkyriesCargo.pdb`; the md5 follows the commit, not the checkout folder), and PRs #101/#102 (the README's
 Support section). The changelog names the commit the DLL was built from as the tag; the GitHub release gives its
-sha and md5. A 0.1.4 client is refused by a 0.1.5 server. **Checked in game before the cut on Storm10 (Valheim
+sha and md5. A 0.1.4 client is refused by a 0.1.5 server (the ServerSync gate, minimum 0.1.5; not tried with a
+0.1.4 client). **Checked in game before the cut on Storm10 (Valheim
 1.0.15, crossplay), visits #23 to #30, on the PR's head `253f732` (DLL md5 `a405d7bb`):** all seven checklist steps
 passed, plus an owed delivery across a restart. The lines:
 `Valkyrie's Cargo v0.1.5 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable, ServerSync version gate armed`;
-far deal `cargo: refused: too_far_to_trade` with the server's `refused VCargo_deal from TestNomad: 218.628662 m from the visit…`;
-full pack `deal apply refused: inventory_full`, then after a restart `deferred: inventory_full (the server keeps it until it fits)` and `delivery …24-1 applied: +1 Resin, -1 coins` once;
+far deal refused (the client's `too_far_to_trade` is not in the extract; its log was replaced when the game restarted after 09:44) with the server's `refused VCargo_deal from TestNomad: 218.628662 m from the visit…`;
+full pack: deal 24-1 left owed (`visit #24 ended: timer; … 1 owed delivery`; the client's `deal apply refused: inventory_full` went with the replaced log), then after a restart `deferred: inventory_full (the server keeps it until it fits)` and `delivery …24-1 applied: +1 Resin, -1 coins` once;
 the shelf round trip `Silver (Want): 1/12 max 36, he pays 28` (the pre-fix code works out to 67);
 `ShelfSize` live `shelf rolled: shelf fixed (ShelfSize 0 …)` only after the visit ended;
 the resumed flight `visit #30 RESUMED after a restart … 04:57 left` and `merchant ZDO 1:38568 rebound`, the client reading `visit Dropped #30`.
-Not run in game: the listen-host range check and a two-player trade. The cut commit changes only documents after
+Not run in game: the listen-host range check, a two-player trade, a sale at the clamped price after the roll
+(visit #29 read the price on the client and sold nothing), and the undo inside the whole-deal apply (it runs only
+when the pre-check copy and the pack disagree, so it is proven off-game only). The cut commit changes only documents after
 `253f732`, and it was not booted at the cut (Storm10 is the owner's to start). The record:
 `docs/proofs/2026-09-24-storm10-session.md` and its log extract. Cosmetic, open: the range log lines say "and a
 visitor is within 96 m" where they mean "must be within".
@@ -121,7 +126,7 @@ RUN" below for what it did and did not prove. The glide, the drop, the walk-up c
 visit, a trade and the vanish have never been watched; no two-client item has run at all. **A build on any
 machine carries the body only if `Assets/valkyriescargo_kit` is on it**: `Assets/` is gitignored, the bake is
 Wu'barrk's machine's, and every bake reaches the other side as a release asset (attached to `v0.1.0-rc1` on
-2026-09-07, and on Don's machine since). The built DLL is NOT tracked in git (owner, 2026-09-07):
+2026-09-07, and on Nomad's machine since). The built DLL is NOT tracked in git (owner, 2026-09-07):
 `HexiumDist/plugins/` is ignored and a payload is a release asset, never a commit.
 
 The paragraphs below are the history, each with the lines seen.
@@ -378,7 +383,7 @@ Read the body; do not infer it from the shape. Do not `head`-truncate a member g
 
 To test in-game: copy `ValkyriesCargo\bin\Debug\ValkyriesCargo.dll` into `<install>\BepInEx\plugins\`.
 The owner's client runs through Gale (`%APPDATA%\com.kesomannen.gale\valheim\profiles\<profile>\BepInEx\plugins\`);
-dedicated test servers live under `C:\Users\donfr\ValheimServers\` (CairnTest on port 2466 is the
+dedicated test servers live under `%USERPROFILE%\ValheimServers\` (CairnTest on port 2466 is the
 minimal one; the runbook is `RagnaroksWrath\docs\HANDOFF.md`). Valheim locks the DLL while running.
 
 Console today: `cargo status | version | engine | config | prefab <name> | body [preview|walk|clip <name>|clear] | stock [prefab] |
@@ -848,7 +853,7 @@ Still not seen end to end: the glide itself, the drop, the walk-up completing (h
 from where he stood, which is the designed fallback, not a success), the terminal on a real visit, a trade, and the
 vanish. The two-client items cannot be run here at all.
 
-## STORMTEST SESSION, 2026-09-07 10:39–11:38 (Don's Windows client on the dedicated server, six visits)
+## STORMTEST SESSION, 2026-09-07 10:39–11:38 (Nomad's Windows client on the dedicated server, six visits)
 
 **The first session with the owner's client on a dedicated server, on PR #46's build. Six visits, 20 deals over the
 wire, no exception from the mod on either side.** The record, with every line, is `docs/proofs/2026-09-07-stormtest-session.md`
@@ -883,7 +888,7 @@ next visit must print `carried -> approaching via the ZDO, N s after waking; car
 reach the player on the FIRST approach, and end with `merchant and bird reclaimed …` and no sweep line.
 
 **THE EVENING SESSION, 15:33–15:53 the same day (main d55ce90 with D2/D4, visits 7 and 8, the server started
-from Don's Claude's shell; `docs/proofs/2026-09-07-stormtest-evening.log.txt`).** D4a seen: `admin wire registered
+from Nomad's shell; `docs/proofs/2026-09-07-stormtest-evening.log.txt`).** D4a seen: `admin wire registered
 for Nomadtest (-618124001)` and the deal wire's twin on connect (was `? (0)`). D2 seen in its shape: the natural
 roll refused `1 near a base on cooldown` — the morning's `coolbase` rows came back with their remaining time, and
 the old `cool` rows keyed on dead session uids no longer matched anyone. Item 12 again (`comfort < 4`, echoed).
@@ -925,7 +930,7 @@ boot sweep destroys the stranded merchant.
 **VISITS 10 TO 15, 20:18–21:10 the same night — rc2 on a screen, then D5 built by Track B and SEEN.** On rc2's
 code (84de90a): visit 10 kept ownership (`ours`, from the west, 90 m) and its first approach gave up at the scaled
 budget (31.7 s, 242 m moved, 10 m short; the leash reached +29 s); visits 11 and 12 lost him (`watching`, 95.7 m
-and 116.8 m frozen, from the east and the south, 78 m starts) — Don STOOD STILL on 12, so movement is out and the
+and 116.8 m frozen, from the east and the south, 78 m starts) — Nomad STOOD STILL on 12, so movement is out and the
 direction is the variable. Wu'barrk's PR #54 (D5: `HoldTheCarry` claims him back every physics step while Pinned,
 on the pilot's client only; `owner N` and a reclaim count in the lines) was reviewed, merged on the word (main
 `2694d3b`, 1718 checks), deployed both sides, the server restarted 20:44 with the visit 12 row cleared. Visits
@@ -935,12 +940,12 @@ and D5 seen.** Also seen: D3's clean end (reclaim line, no sweep line) on every 
 the identity arrived, the boot sweep destroying one stranded merchant on each boot after a cleared row. Open from
 the night: the trigger of the loss (all starts inside the pilot's 3x3 by `ZoneOwnership`'s own maths, the
 reclaim counts by direction; a first-reclaim line asked for on #54), F3's grace (end to reclaim 6 / 0 / 0 / 0 s,
-his file), the walk direction and the vanish (Don's eyes; not in the log). His PR #55 (docs, the 1.0 head start)
+his file), the walk direction and the vanish (Nomad's eyes; not in the log). His PR #55 (docs, the 1.0 head start)
 is OPEN and not merged at the owner's word. The record: `docs/proofs/2026-09-07-stormtest-night.md`. Server
 DOWN with visit 15 open in the sidecar (purse 100000, a test value) — the next boot adopts it unless the row is
 cleared first.
 
-**THE MORNING OF 2026-09-08 — #55 merged, the 1.0 playtest verified from Don's machine, and the owner's two holds.**
+**THE MORNING OF 2026-09-08 — #55 merged, the 1.0 playtest verified from Nomad's machine, and the owner's two holds.**
 Wu'barrk's PR #55 grew overnight into code: `Server/WorldSavePath.cs` resolves the world save directory by name
 (`World.GetWorldSavePath` on 0.221.12, `SaveSystem.GetWorldsSaveRootPath` on 1.0, `FileSource.Local` by name because
 the enum's values moved) with a new probe `save_path` (rank 8; 19 probes now; 1722 checks), plus the P10a sweep run
@@ -972,7 +977,7 @@ has been seen on a machine**. The owner's second ask in the same message — Ing
 and an uncatalogued sale forces a persistent common-or-rare entry — is DESIGNED in that PR's body and NOT built
 (six decisions listed there). Thorium and Wu'barrk are the same person.
 
-**2026-09-09/10 — VALHEIM 1.0.7 IS OUT, AND `a/valheim-1.0` IS BUILT ON IT.** Steam moved Don's client (build 25185596)
+**2026-09-09/10 — VALHEIM 1.0.7 IS OUT, AND `a/valheim-1.0` IS BUILT ON IT.** Steam moved Nomad's client (build 25185596)
 and the Steam dedicated-server folder (25185644) to 1.0.7 on 2026-09-09 at 05:58 / 05:57 (network 39,
 `Version.Player.DeepNorth` 46, `Version.World.DeepNorth` 41, Unity 6000.0.75, still Mono). Swept the same day from
 here, both axes, the P10a tools unmodified against the installed builds (junctions `~/valheim-shadows/{server,client}-1.0.7`):
@@ -993,7 +998,7 @@ holdout). Off-game: 0 warnings, 1956 checks; the offline probe tool on both 1.0.
 player 46, world 41); probes 19/19 ok, 8 not probeable`. Bodies read (the eight a visit rides on: the 2 s event
 broadcast, `ZDO.IsValid` = `m_prefab != -1`, `ZNetView.Awake`, `CreateNewZDO`, `RPC_Damage` (gate reordered, our
 prefix still first), `OwnerSync`'s velocity path, `Valkyrie.UpdateValkyrie`'s maths, `DropPlayer` +`WaitForRespawn`)
-hold; the other 25 (and the client axis's 2) read 2026-09-10, ALL HOLDING (`docs/engine-sweeps/2026-09-10-1.0.7-bodies-read.md`; one ops fact: an invite secret key bypasses the server password in `RPC_PeerInfo`); `Splatform.dll` is the fourth assembly in the decompile tools since #71. **PR #70 MERGED at the word, main 04f4156; `v0.1.0-rc4` cut the same morning, the 1.0.7 build, a pre-release, no store.** **SEEN ON A MACHINE 2026-09-10, 07:11 to 07:48, on Storm10 (a fresh 1.0.7 dedicated server, a new world, our DLL and ServerDevcommands 1.110 only) with Don's 1.0.7 client: both boot lines `running same build 1.0.7 (net 39, player 46, world 41); probes 19/19 ok, 8 not probeable`, `patches 18/18 applied`; a forced visit (`forced visit: Nomadtest … 1 eligible, 1 ticket(s)`), the flight authored 54 m out and dropped after 14.8 s, `2 reclaim(s) during the carry` (D5 against the rebuilt area maths), the walk-up to trading, the terminal open with the leash holding and re-arming, two deals settled line for line (`bought 75 Resin at 1`; `sold 5 SurtlingCore at 15, bought 7 Flint at 1, bought 2 Wood at 1`), the admin dismiss answered (`visit #1 dismissed (admin Nomadtest)`, `0 clock republish(es)`), the vanish (`into the mist: 1 renderer(s) off with the smoke`) and the reclaim. Not one line from the mod above Info on either side. ONE 1.0 FINDING on the way: `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want the DISPLAY id, `V_<steamid>` (Splatform.dll's `PlatformUserID.FilterPlatformUserID`: Steam→V, Xbox→X, PlayStation→S, Nintendo→N, GameCenter→A; `ZNet.ListContainsId` on 1.0.7 lets that filtered match OVERRIDE the bare and `Steam_` forms, which is why vanilla's devcommands and our AdminGate refused Don in the same breath until the `V_` line was added; the list reloads on change).** StormTest stays 0.221.12 and is unjoinable from the 1.0.7 client; Storm10 is the testbed now (`C:\Users\donfr\ValheimServers\Storm10`, port 2477, a robocopy of the Steam dedicated-server install without the other servers' mods; no Yggdrasil's Reckoning by the owner's word).
+hold; the other 25 (and the client axis's 2) read 2026-09-10, ALL HOLDING (`docs/engine-sweeps/2026-09-10-1.0.7-bodies-read.md`; one ops fact: an invite secret key bypasses the server password in `RPC_PeerInfo`); `Splatform.dll` is the fourth assembly in the decompile tools since #71. **PR #70 MERGED at the word, main 04f4156; `v0.1.0-rc4` cut the same morning, the 1.0.7 build, a pre-release, no store.** **SEEN ON A MACHINE 2026-09-10, 07:11 to 07:48, on Storm10 (a fresh 1.0.7 dedicated server, a new world, our DLL and ServerDevcommands 1.110 only) with Nomad's 1.0.7 client: both boot lines `running same build 1.0.7 (net 39, player 46, world 41); probes 19/19 ok, 8 not probeable`, `patches 18/18 applied`; a forced visit (`forced visit: Nomadtest … 1 eligible, 1 ticket(s)`), the flight authored 54 m out and dropped after 14.8 s, `2 reclaim(s) during the carry` (D5 against the rebuilt area maths), the walk-up to trading, the terminal open with the leash holding and re-arming, two deals settled line for line (`bought 75 Resin at 1`; `sold 5 SurtlingCore at 15, bought 7 Flint at 1, bought 2 Wood at 1`), the admin dismiss answered (`visit #1 dismissed (admin Nomadtest)`, `0 clock republish(es)`), the vanish (`into the mist: 1 renderer(s) off with the smoke`) and the reclaim. Not one line from the mod above Info on either side. ONE 1.0 FINDING on the way: `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want the DISPLAY id, `V_<steamid>` (Splatform.dll's `PlatformUserID.FilterPlatformUserID`: Steam→V, Xbox→X, PlayStation→S, Nintendo→N, GameCenter→A; `ZNet.ListContainsId` on 1.0.7 lets that filtered match OVERRIDE the bare and `Steam_` forms, which is why vanilla's devcommands and our AdminGate refused Nomad in the same breath until the `V_` line was added; the list reloads on change).** StormTest stays 0.221.12 and is unjoinable from the 1.0.7 client; Storm10 is the testbed now (`%USERPROFILE%\ValheimServers\Storm10`, port 2477, a robocopy of the Steam dedicated-server install without the other servers' mods; no Yggdrasil's Reckoning by the owner's word).
 
 **THE SAME MORNING, LATER — the shelf seen, the first two-client playtest, and the terminal reshaped.** The shelf
 PR's build ran on StormTest: `director up: … shelf 20 of 72, period 13/14`, `shelf roll waits: visit #17 is running`,
@@ -1010,12 +1015,12 @@ two on a branch"): `a/merchant-busy`, 1862 checks** — `VisitState` carries the
 terminals as an optional 13th field, the director republishes when it moves, the wire forgets a dropped peer and
 clears at the end, and on the merchant's owner `MerchantPlan.Next(..., busy)` holds the trading leash while any
 terminal is open on him (the local one at once, the server's count for the rest); the hover passes through
-`Localization.instance.Localize`. Backpacks 1.3.8 is installed on StormTest and Don's client for the backpack
+`Localization.instance.Localize`. Backpacks 1.3.8 is installed on StormTest and Nomad's client for the backpack
 test. The owner's item spectrum ask is PR #58 (`docs/ITEM-VALUES.md`, 776 rows).
 
 **The backpack add-on's shelf half, the same day (branch `a/backpack-shelf`, off the shelf branch; the owner:
 "take the shelf multiplier on a branch").** Smoothbrain's Backpacks 1.3.8 (GUID `org.bepinex.plugins.backpacks`,
-confirmed off the DLL) is installed on StormTest and Don's client. `Server/BackpackMod.cs` looks the GUID
+confirmed off the DLL) is installed on StormTest and Nomad's client. `Server/BackpackMod.cs` looks the GUID
 (`Server.BackpackModGuid`) up in BepInEx's chainloader on the server — at director up, BEFORE the market is
 sized, and once a second after — and `FillMarketRules` ships `Shelf.Scaled(ShelfSize, Server.BackpackShelfMultiplier
 (2, 1–4), present)`: 0 stays the fixed shelf, the product is capped at 200, and the scaled shelf for a period is a
@@ -1237,7 +1242,7 @@ P8, the body (a client with the baked bundle embedded; **the bundle exists as of
 Wu'barrk's Linux box in Unity 6000.0.61f1, 3,826,415 bytes, and the Debug DLL grows 273,408 -> 4,100,096
 when it is embedded. Note it is a `StandaloneWindows64` bundle, which is right for the ship and means a
 LINUX client needs a Linux bake through `BodyLoader`'s loose-file path to run these two items):
-19. **`cargo body`** — **DONE 2026-09-07 15:36 (Don's client on StormTest)**: `body: source embedded, prefab 'ingvar', 6
+19. **`cargo body`** — **DONE 2026-09-07 15:36 (Nomad's client on StormTest)**: `body: source embedded, prefab 'ingvar', 6
     clip(s) [Hello 3.75s, Idle 10.00s, Nod 1.25s, Shrug 1.96s, Talk 5.13s, Walk 4.17s], SkinnedMeshRenderer=True,
     bones=24, tris=31112, mesh bounds y -0.244 to 0.244 (0.94 x 0.49 x 1.37 m)` and the bind-pose note beneath it.
     As written: says `source embedded ('ValkyriesCargo.valkyriescargo_kit')`, `bundle open`, `prefab 'ingvar'
@@ -1249,7 +1254,7 @@ LINUX client needs a Linux bake through `BodyLoader`'s loose-file path to run th
     near 0 is `cargo body preview`'s `lifted N m ... measured on the posed mesh` (the console prints it as two
     lines: `body: source embedded - ...` then `resource: 'ValkyriesCargo.valkyriescargo_kit' inside this DLL ...`). On a dedicated server the
     same verb answers `source none - client only; not loaded here` and says nothing about appearance.
-20. **The body on screen** — **FOUND 2026-09-07 15:50 on a live merchant (visit 8, Don's client): Ingvar WALKS
+20. **The body on screen** — **FOUND 2026-09-07 15:50 on a live merchant (visit 8, Nomad's client): Ingvar WALKS
     BACKWARD.** The bundle's forward axis is the Dverger's back, and the loader attached him with identity
     rotation. Fixed the same evening: `Client.BodyYawDegrees` (default 180) applied at the attach and in the
     preview, the attach line now reads `turned 180 deg (Client.BodyYawDegrees)`. **Not yet seen after the fix**:
@@ -1269,7 +1274,7 @@ LINUX client needs a Linux bake through `BodyLoader`'s loose-file path to run th
 P4, the flight (Wu'barrk's two-client proof; a visit on a server, the pilot's client watching the sky):
 21. **The bird**: at `cargo visit` the server log shows `visit #N: flight authored: start (...) at ..., descent (...)
     at ... (N m short), drop (...) at ..., straight in 90 m out; bird <id>, Dverger <id>, both owned by the pilot`
-    (that line HAS been seen, in the integrated run above); **log half DONE 2026-09-07 (six flights on Don's
+    (that line HAS been seen, in the integrated run above); **log half DONE 2026-09-07 (six flights on Nomad's
     client)**: `cargo flight #1: flying from (8.9, 198.0, -9.0) via (-8.1, 161.2, 9.5) to (-41.9, 78.0, 46.4),
     75.186 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)` then `cargo flight #1: dropped at (-41.89201,
     80.3773346, 46.3858681) after 16.60019 s`, the five surviving flight times 16.60 / 16.96 / 16.02 / 16.02 /

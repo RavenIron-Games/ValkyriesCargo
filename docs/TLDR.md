@@ -35,20 +35,20 @@ on a Dverger clone whose renderers are switched off (`Server.CustomBody` puts th
 a barter basket, rare rotating stock, localisation.
 
 **Where it is, 2026-09-24.** `main` builds clean at 2589 off-game checks and **`v0.1.5` is tagged** — a GitHub
-pre-release; the store upload is the owner's. It is built against **Valheim 1.0.12** and was tested on **1.0.15**
+pre-release; the store upload is a separate step. It is built against **Valheim 1.0.12** and was tested on **1.0.15**
 (both network version 40). 0.1.5 fixes deals and the market: a deal lands whole or not at all, a deal must be made
 within 96 m of the visit, the Fair Market Act covers every row while the shelf rotates and caps the in-visit
 buy-back, a `ShelfSize` change waits for the visit to end, a visit resumed during the flight moves on to the ground,
-and the DLL no longer carries the build machine's folder path; all checked in game on Storm10 on 2026-09-24
-(visits #23 to #30). 0.1.4 makes the mod migrate its own config file (a value still at an old default moves, a value you set
-stays, a backup lands beside the file) and turns the catalogue into the shipped rows plus `CatalogueOverrides`; the
+and the DLL no longer carries the build machine's folder path. Each gameplay fix was checked in game on Storm10
+on 2026-09-24 (visits #23 to #30); the listen-host range check, a two-player trade and a sale at the capped price after a shelf roll were not. 0.1.4 made the mod migrate its own config file (a value still at an old default moves, a value you set
+stays, a backup lands beside the file) and turned the catalogue into the shipped rows plus `CatalogueOverrides`; the
 delete-the-file step is history. 0.1.3 made the visit clock run whoever is near him (a visit ends on time with nobody online; the new
-`Server.PauseVisitWhenEmpty` holds it on an empty server; a server updating from an earlier version deletes its old
+`Server.PauseVisitWhenEmpty` holds it on an empty server; up to 0.1.3 a server updating from an earlier version deleted its old
 config file first). 0.1.2 added the merchant guard: Ingvar trades and hovers as himself on a server whose taming mod made the Dvergr a
 pet (DvergrAllies; found on Wonderland, proven on Storm10 with the mod on both sides). 0.1.1 carried issue #79's fix (Ingvar insists on
 ground somebody built and refuses merchants' camps, dungeon doors and landmarks, proven live), food and drink in
 the catalogue (72 → 101), one row per item token, and the console lines in the client log. **Twenty-seven live
-visits** stood behind rc5 and more have run since on Storm10, the last two on 2026-09-16 behind this cut's clock, all on dedicated servers: the flight, the drop, Ingvar in his own baked body, the walk-up, the
+visits** stood behind rc5 and more have run since on Storm10, the last eight (#23 to #30) on 2026-09-24 behind this cut's fixes, all on dedicated servers: the flight, the drop, Ingvar in his own baked body, the walk-up, the
 terminal on a real visit, deals at the price curve, the vanish, a relog mid-visit, a visit resumed across a
 restart, the carry offset tuned live while the bird was in the air, and on 2026-09-15 the location refusals and
 seven deals on the new catalogue. Never seen in a game: **redelivery after a lost connection**, proven off-game
@@ -62,7 +62,7 @@ walking: six clips, 24 bones, played by name through a `PlayableGraph` with no A
 **Still open.** Reconfirm versus tear-down on a price tick — only Reconfirm is built and the `PriceChangePolicy` knob
 is deleted, so the owner either closes it as final or asks for Teardown. Three more on the owner's desk (`TODO.md` §1):
 the JSON dependency the BarrkBOT export added, the built DLL tracked in git, and the client asserting its own
-rested/comfort numbers. Not open any more: where bundles get built — Wu'barrk's machine, and every bake reaches Don
+rested/comfort numbers. Not open any more: where bundles get built — Wu'barrk's machine, and every bake reaches Nomad
 as a release asset.
 
 Full text: `DESIGN.md`. Decisions table: its section 8. What to verify in-game: section 10.
@@ -75,14 +75,14 @@ Full text: `DESIGN.md`. Decisions table: its section 8. What to verify in-game: 
 At target stock he pays Haldor's flat rate for the four vanilla valuables (amber 5, pearl 10, ruby 20, necklace 30);
 when he is short he pays more, when flooded less. Haldor never moves; that spread is why you walk to Ingvar.
 
-**He sells and buys back (18 wares).** Bronze 15, iron 25, silver 40, black metal 60, flametal 110, refined eitr 45,
-black core 300; amber 7, amber pearl 14, ruby 29, silver necklace 43; iron and frost arrows, iron bolts; three meads;
-honey.
+**He sells and buys back (27 wares).** Bronze 15, iron 25, silver 40, black metal 60, flametal 110, refined eitr 45,
+black core 300; amber 7, amber pearl 14, ruby 29, silver necklace 43; iron and frost arrows, iron bolts; seven meads;
+honey; five dishes (boar jerky, bread, mince meat sauce, serpent stew, cooked lox meat).
 
-**He only buys (54 wants).** Wood family (wood 1 → yggdrasil wood 5), resin, coal, stone, flint, feathers; hides
+**He only buys (74 wants).** Wood family (wood 1 → yggdrasil wood 5), resin, coal, stone, flint, feathers; hides
 (leather scraps 2 → ask and bjorn hide 10); flax, linen thread 10, barley, jute; **ores and scrap** (copper and tin ore 5,
 scrap iron 22, silver ore 36, black metal scrap 50, flametal ore 90), none of which teleport, which is the point; swamp
-and mistlands parts; eight common trophies.
+and mistlands parts; eight common trophies; forage, crops, seeds, raw meat and fish.
 
 **Stock.** Targets are two to four stacks for commons, half a stack for metals, a handful for rare goods; he refuses
 above three times target ("I've all the linen a man can carry"). A Want's stock drifts back to target with a three-game-day

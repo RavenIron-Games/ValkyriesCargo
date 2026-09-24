@@ -1,20 +1,166 @@
 # Valkyrie's Cargo 0.1.5 (PR #104 head 253f732, DLL md5 a405d7bb) - Storm10 (Valheim 1.0.15) and a Gale test client, 2026-09-24
-## SERVER (Storm10 BepInEx/LogOutput.log, VC lines + claim/deal/refusal/resume)
+## SERVER (Storm10 BepInEx/LogOutput.log, the VC lines for the run: deals, refusals, owed deliveries, shelf rolls and the resume, with the join and restart lines)
+[Info   :Valkyrie's Cargo] built against Valheim 1.0.12 (network 40, player 46, world 41; Steam build 25253764 client / 25253791 server; bodies read 2026-09-11); running newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable.
 [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.5 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (21 events now); duration 300 s, runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.
 [Info   : Unity Log] 09/24/2026 09:31:24: ZRpc timeout set to 30s 
+[Info   :Valkyrie's Cargo] role: dedicated server
+[Info   :Valkyrie's Cargo] admin wire up for this session: VCargo_admin is registered on each peer's OWN socket as it connects and VCargo_reply answers on the same socket; the caller's identity is that socket, never a field in the packet
+[Info   :Valkyrie's Cargo] backpack mod: none (org.bepinex.plugins.backpacks is not loaded here); shelf x1
+[Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 101 entries, purse 100000, next visit #23, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (106 rows loaded); shelf 32 of 101, period 10, rolls every 2 game day(s), next in 0.16 game day(s)
+[Info   :Valkyrie's Cargo] shelf now: FlametalNew, Eitr, SilverNecklace, ArrowIron, BoltIron, MeadStaminaMinor, Bread, SerpentStew, MeadStaminaMedium, MeadFrostResist, RoundLog, YggdrasilWood, Resin, Coal, LeatherScraps, Flax, JuteBlue, CopperOre, IronScrap, Entrails, SurtlingCore, Carapace, TrophyDeer, TrophyNeck, TrophyGreydwarf, TrophyDraugr, TrophyWolf, Carrot, OnionSeeds, RawMeat, LoxMeat, SerpentMeat
+[Info   :Valkyrie's Cargo] landmarks in this world (Server.AvoidLandmarks refuses these): StartTemple x1; pinned on the map but a merchant's camp (Server.AvoidMerchantCamps): Hildir_camp x1; pinned but a dungeon's door (Server.AvoidDungeonEntrances): bosslocation x1; pinned once their zone generates, not yet placed in this world: AncientUpgradeStation x10, BogWitch_Camp x10, Hildir_cave x3, Hildir_crypt x3, Vendor_BlackForest x10, bosslocation x2
 [Info   : Unity Log] 09/24/2026 09:32:28: ZRpc timeout set to 90s 
 [Info   : Unity Log] Received Valkyrie's Cargo version 0.1.5 and minimum version 0.1.5 from the client.
+[Info   :Valkyrie's Cargo] admin wire registered for TestNomad (300494645)
+[Info   :Valkyrie's Cargo] deal wire registered for TestNomad (300494645)
+[Info   :Valkyrie's Cargo] roll: no eligible player: nobody online
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 not rested
+[Info   :Valkyrie's Cargo] roll: rolled 0.83 >= 0.25: no visit (1 eligible, 1 ticket(s))
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+[Info   :Valkyrie's Cargo] roll: visit: TestNomad at (-62.9357567, -18.3846722); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] visit #23 begins: pilot TestNomad (uid 300494645) at (-62.9357567, -18.3846722), 300 s, purse 100000, seed 436316509
+[Info   :Valkyrie's Cargo] visit #23: flight authored: start (-45.9171677, 69.99161) at 184.443832, descent (-51.09895, 43.0829964) at 145.500519 (50 m short), drop (-60.5537224, -6.01493835) at 64.44383, straight in 90 m out; bird -139363341:315022, Dverger -139363341:315023, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #23: dropped at (-60.5537224, 63.6033, -6.01493835)
+[Info   :Valkyrie's Cargo] shelf roll waits: visit #23 is running; it rolls as soon as no visit is running
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-23-1 with TestNomad: sold 1 Resin at 1, coins -1 to the player; purse 100001
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-23-2 with TestNomad: bought 1 Resin at 1, coins +1 to the player; purse 100000
+[Info   :Valkyrie's Cargo] visit #23: one minute left
+[Warning:Valkyrie's Cargo] refused VCargo_deal from TestNomad: 218.628662 m from the visit, and a visitor is within 96 m
+[Warning:Valkyrie's Cargo] not counting VCargo_open from TestNomad: 218.628662 m from the visit, and a visitor is within 96 m
+[Warning:Valkyrie's Cargo] refused VCargo_deal from TestNomad: 218.628662 m from the visit, and a visitor is within 96 m; further far opens and deals are silent
+[Info   :Valkyrie's Cargo] visit #23 ended: timer; takings 0 coins, purse 100000, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+[Info   :Valkyrie's Cargo] visit #23: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   :Valkyrie's Cargo] shelf rolled: shelf 32 of 101, period 11, rolls every 2 game day(s), next in 1.85 game day(s): Silver, FlametalNew, Amber, SilverNecklace, ArrowFrost, BoltIron, Honey, ElderBark, Blackwood, Resin, Flint, DeerHide, LinenThread, IronScrap, Bloodbag, Entrails, Chitin, Obsidian, Softtissue, WitheredBone, TrophyDeer, TrophyWolf, Raspberry, Mushroom, Carrot, Onion, CarrotSeeds, OnionSeeds, RawMeat, NeckTail, WolfMeat, ChickenMeat
+[Info   :Valkyrie's Cargo] admin TestNomad (300494645): cargo visit 
+[Info   :Valkyrie's Cargo] forced TestNomad: engine: registry 12195 location(s); Dolmen01[r=8 d=65.7580261 trader=n interior=n icon=n] WoodHouse3[r=10 d=79.7855759 trader=n interior=n icon=n] WoodHouse10[r=8 d=0.9427605 trader=n interior=n icon=n] Runestone_Boars[r=8 d=81.00054 trader=n interior=n icon=n] ShipSetting01[r=24 d=81.29758 trader=n interior=n icon=n] StartTemple[r=25 d=63.7838364 trader=n interior=n icon=y] Dolmen02[r=8 d=89.48288 trader=n interior=n icon=n]; instances: GetLocation=none
+[Info   :Valkyrie's Cargo] roll: forced visit: TestNomad at (-63.6808624, -17.7609482); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] visit #24 begins: pilot TestNomad (uid 300494645) at (-63.6808624, -17.7609482), 300 s, purse 100001, seed 888319340
+[Info   :Valkyrie's Cargo] visit #24: flight authored: start (1.05971849, -80.2802048) at 184.595367, descent (-17.45249, -62.40317) at 147.217 (50 m short), drop (-53.41948, -27.67025) at 64.59536, straight in 90 m out; bird -139363341:315024, Dverger -139363341:315025, both owned by the pilot
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-24-1 with TestNomad: sold 1 Resin at 1, coins -1 to the player; purse 100002
+[Info   :Valkyrie's Cargo] visit #24: dropped at (-53.41948, 64.88578, -27.67025)
 [Warning: Unity Log] 09/24/2026 09:43:11: Game server disconnected
 [Warning: Unity Log] 09/24/2026 09:43:48: Game server disconnected
 [Warning: Unity Log] 09/24/2026 09:44:15: ZRpc timeout detected
+[Info   :Valkyrie's Cargo] visit #24 ended: timer; takings 1 coins, purse 100002, 0 clock republish(es), 1 owed delivery
+[Info   :Valkyrie's Cargo] roll: no eligible player: nobody online
+[Info   :Valkyrie's Cargo] visit #24: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   :Valkyrie's Cargo] built against Valheim 1.0.12 (network 40, player 46, world 41; Steam build 25253764 client / 25253791 server; bodies read 2026-09-11); running newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable.
 [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.5 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (21 events now); duration 300 s, runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.
 [Info   : Unity Log] 09/24/2026 09:48:26: ZRpc timeout set to 30s 
+[Info   :Valkyrie's Cargo] role: dedicated server
+[Info   :Valkyrie's Cargo] admin wire up for this session: VCargo_admin is registered on each peer's OWN socket as it connects and VCargo_reply answers on the same socket; the caller's identity is that socket, never a field in the packet
+[Info   :Valkyrie's Cargo] backpack mod: none (org.bepinex.plugins.backpacks is not loaded here); shelf x1
+[Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 101 entries, purse 100002, next visit #25, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (110 rows loaded); shelf 32 of 101, period 11, rolls every 2 game day(s), next in 1.77 game day(s)
+[Info   :Valkyrie's Cargo] shelf now: Silver, FlametalNew, Amber, SilverNecklace, ArrowFrost, BoltIron, Honey, ElderBark, Blackwood, Resin, Flint, DeerHide, LinenThread, IronScrap, Bloodbag, Entrails, Chitin, Obsidian, Softtissue, WitheredBone, TrophyDeer, TrophyWolf, Raspberry, Mushroom, Carrot, Onion, CarrotSeeds, OnionSeeds, RawMeat, NeckTail, WolfMeat, ChickenMeat
+[Info   :Valkyrie's Cargo] landmarks in this world (Server.AvoidLandmarks refuses these): StartTemple x1; pinned on the map but a merchant's camp (Server.AvoidMerchantCamps): Hildir_camp x1; pinned but a dungeon's door (Server.AvoidDungeonEntrances): bosslocation x1; pinned once their zone generates, not yet placed in this world: AncientUpgradeStation x10, BogWitch_Camp x10, Hildir_cave x3, Hildir_crypt x3, Vendor_BlackForest x10, bosslocation x2
 [Info   : Unity Log] 09/24/2026 09:49:25: ZRpc timeout set to 90s 
 [Info   : Unity Log] Received Valkyrie's Cargo version 0.1.5 and minimum version 0.1.5 from the client.
+[Info   :Valkyrie's Cargo] admin wire registered for TestNomad (-975808589)
+[Info   :Valkyrie's Cargo] deal wire registered for TestNomad (-975808589)
+[Info   :Valkyrie's Cargo] roll: no eligible player: nobody online
+[Info   :Valkyrie's Cargo] VCargo_claim from TestNomad: redelivered 1 owed deal(s)
+[Info   :Valkyrie's Cargo] VCargo_claim from TestNomad: redelivered 1 owed deal(s)
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 not rested
+[Info   :Valkyrie's Cargo] admin TestNomad (-975808589): cargo visit 
+[Info   :Valkyrie's Cargo] forced TestNomad: engine: registry 12195 location(s); Dolmen01[r=8 d=65.63862 trader=n interior=n icon=n] WoodHouse3[r=10 d=81.1677 trader=n interior=n icon=n] WoodHouse10[r=8 d=2.497523 trader=n interior=n icon=n] Runestone_Boars[r=8 d=82.20967 trader=n interior=n icon=n] ShipSetting01[r=24 d=79.7965 trader=n interior=n icon=n] StartTemple[r=25 d=63.1704 trader=n interior=n icon=y] Dolmen02[r=8 d=89.78116 trader=n interior=n icon=n]; instances: GetLocation=none
+[Info   :Valkyrie's Cargo] roll: forced visit: TestNomad at (-62.7833366, -19.114296); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] visit #25 begins: pilot TestNomad (uid -975808589) at (-62.7833366, -19.114296), 300 s, purse 100001, seed 1784102722
+[Info   :Valkyrie's Cargo] visit #25: flight authored: start (-14.8244743, 57.04309) at 184.5309, descent (-28.811409, 34.83221) at 146.66394 (50 m short), drop (-55.4552231, -7.47744751) at 64.5309, straight in 90 m out; bird -25232938:315026, Dverger -25232938:315027, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #25: dropped at (-55.4552231, 65.76786, -7.47744751)
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-25-1 with TestNomad: sold 1 Resin at 1, coins -1 to the player; purse 100002
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-25-2 with TestNomad: sold 12 Silver at 40, coins -480 to the player; purse 100482
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-25-3 with TestNomad: bought 36 Silver at 28, coins +1008 to the player; purse 99474
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-25-4 with TestNomad: sold 36 Silver at 27, coins -972 to the player; purse 100446
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-25-5 with TestNomad: bought 36 Silver at 27, coins +972 to the player; purse 99474
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-25-6 with TestNomad: sold 1 Silver at 27, coins -27 to the player; purse 99501
+[Info   :Valkyrie's Cargo] visit #25: one minute left
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-25-7 with TestNomad: sold 35 Silver at 28, coins -980 to the player; purse 100481
+[Info   :Valkyrie's Cargo] visit #25 ended: timer; takings 480 coins, purse 100481, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+[Info   :Valkyrie's Cargo] visit #25: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   :Valkyrie's Cargo] admin TestNomad (-975808589): cargo visit 
+[Info   :Valkyrie's Cargo] forced TestNomad: engine: registry 12195 location(s); Dolmen01[r=8 d=65.7891846 trader=n interior=n icon=n] WoodHouse3[r=10 d=80.08401 trader=n interior=n icon=n] WoodHouse10[r=8 d=1.25277686 trader=n interior=n icon=n] Runestone_Boars[r=8 d=81.1958 trader=n interior=n icon=n] ShipSetting01[r=24 d=80.98353 trader=n interior=n icon=n] StartTemple[r=25 d=63.60856 trader=n interior=n icon=y] Dolmen02[r=8 d=89.48188 trader=n interior=n icon=n]; instances: GetLocation=none
+[Info   :Valkyrie's Cargo] roll: forced visit: TestNomad at (-63.458313, -17.9921589); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] visit #26 begins: pilot TestNomad (uid -975808589) at (-63.458313, -17.9921589), 300 s, purse 101230, seed 856641296
+[Info   :Valkyrie's Cargo] visit #26: flight authored: start (-109.00135, 59.63407) at 184.438446, descent (-96.282196, 37.95479) at 147.640015 (50 m short), drop (-70.98051, -5.17089367) at 64.43844, straight in 90 m out; bird -25232938:315028, Dverger -25232938:315029, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #26: dropped at (-70.98051, 60.918602, -5.17089367)
+[Info   :Valkyrie's Cargo] shelf roll waits: visit #26 is running; it rolls as soon as no visit is running
+[Info   :Valkyrie's Cargo] VCargo_dismiss from TestNomad: visit #26 dismissed (dismissed by TestNomad)
+[Info   :Valkyrie's Cargo] visit #26 ended: dismissed by TestNomad; takings 0 coins, purse 101230, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+[Info   :Valkyrie's Cargo] visit #26: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   :Valkyrie's Cargo] shelf rolled: shelf fixed (ShelfSize 0: the catalogue's own kinds): 
+[Info   :Valkyrie's Cargo] admin TestNomad (-975808589): cargo visit 
+[Info   :Valkyrie's Cargo] forced TestNomad: engine: registry 12195 location(s); Dolmen01[r=8 d=65.9668961 trader=n interior=n icon=n] WoodHouse3[r=10 d=80.63469 trader=n interior=n icon=n] WoodHouse10[r=8 d=1.81008232 trader=n interior=n icon=n] Runestone_Boars[r=8 d=81.43211 trader=n interior=n icon=n] ShipSetting01[r=24 d=80.42627 trader=n interior=n icon=n] StartTemple[r=25 d=63.2113075 trader=n interior=n icon=y] Dolmen02[r=8 d=89.36072 trader=n interior=n icon=n]; instances: GetLocation=none
+[Info   :Valkyrie's Cargo] roll: forced visit: TestNomad at (-62.993248, -18.2992573); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] visit #27 begins: pilot TestNomad (uid -975808589) at (-62.993248, -18.2992573), 300 s, purse 100000, seed 1101836336
+[Info   :Valkyrie's Cargo] visit #27: flight authored: start (-135.433685, -71.706955) at 184.442245, descent (-113.053619, -55.2069435) at 145.13179 (50 m short), drop (-72.80893, -25.5360012) at 64.4422455, straight in 90 m out; bird -25232938:315030, Dverger -25232938:315031, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #27: dropped at (-72.80893, 62.7177734, -25.5360012)
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-27-1 with TestNomad: sold 1 Bronze at 15, bought 2 Resin at 1, coins -13 to the player; purse 100013
+[Info   :Valkyrie's Cargo] shelf roll waits: visit #27 is running; it rolls as soon as no visit is running
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-27-2 with TestNomad: sold 1 Bronze at 15, coins -15 to the player; purse 100028
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-27-3 with TestNomad: sold 10 SerpentStew at 18, coins -180 to the player; purse 100208
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-27-4 with TestNomad: bought 10 SerpentStew at 13, coins +130 to the player; purse 100078
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-27-5 with TestNomad: sold 7 SerpentStew at 18, coins -126 to the player; purse 100204
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-27-6 with TestNomad: bought 7 SerpentStew at 13, coins +91 to the player; purse 100113
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-27-7 with TestNomad: sold 5 SerpentStew at 18, coins -90 to the player; purse 100203
+[Info   :Valkyrie's Cargo] deal wffffffffa3c7dd22-27-8 with TestNomad: bought 5 SerpentStew at 13, coins +65 to the player; purse 100138
+[Info   :Valkyrie's Cargo] visit #27: one minute left
+[Info   :Valkyrie's Cargo] VCargo_dismiss from TestNomad: visit #27 dismissed (dismissed by TestNomad)
+[Info   :Valkyrie's Cargo] visit #27 ended: dismissed by TestNomad; takings 138 coins, purse 100138, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+[Info   :Valkyrie's Cargo] visit #27: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   :Valkyrie's Cargo] shelf rolled: shelf 32 of 101, period 11, rolls every 2 game day(s), next in 1.33 game day(s): Silver, FlametalNew, Amber, SilverNecklace, ArrowFrost, BoltIron, Honey, ElderBark, Blackwood, Resin, Flint, DeerHide, LinenThread, IronScrap, Bloodbag, Entrails, Chitin, Obsidian, Softtissue, WitheredBone, TrophyDeer, TrophyWolf, Raspberry, Mushroom, Carrot, Onion, CarrotSeeds, OnionSeeds, RawMeat, NeckTail, WolfMeat, ChickenMeat
+[Info   :Valkyrie's Cargo] admin TestNomad (-975808589): cargo visit 
+[Info   :Valkyrie's Cargo] forced TestNomad: engine: registry 12195 location(s); Dolmen01[r=8 d=65.94237 trader=n interior=n icon=n] WoodHouse3[r=10 d=80.43523 trader=n interior=n icon=n] WoodHouse10[r=8 d=1.602039 trader=n interior=n icon=n] Runestone_Boars[r=8 d=81.30252 trader=n interior=n icon=n] ShipSetting01[r=24 d=80.635704 trader=n interior=n icon=n] StartTemple[r=25 d=63.32837 trader=n interior=n icon=y] Dolmen02[r=8 d=89.36188 trader=n interior=n icon=n]; instances: GetLocation=none
+[Info   :Valkyrie's Cargo] roll: forced visit: TestNomad at (-63.1427765, -18.1466846); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] visit #28 begins: pilot TestNomad (uid -975808589) at (-63.1427765, -18.1466846), 300 s, purse 100212, seed 1346179923
+[Info   :Valkyrie's Cargo] visit #28: flight authored: start (-129.709579, 42.42444) at 184.440887, descent (-111.08123, 25.4739475) at 147.5928 (50 m short), drop (-74.09967, -8.176678) at 64.44089, straight in 90 m out; bird -25232938:315032, Dverger -25232938:315033, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #28: dropped at (-74.09967, 61.4035873, -8.176678)
+[Info   :Valkyrie's Cargo] shelf roll waits: visit #28 is running; it rolls as soon as no visit is running
+[Info   :Valkyrie's Cargo] admin TestNomad (-975808589): cargo dismiss 
+[Info   :Valkyrie's Cargo] visit #28 ended: admin TestNomad; takings 0 coins, purse 100212, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] visit #28: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 comfort < 4
+[Info   :Valkyrie's Cargo] admin TestNomad (-975808589): cargo dismiss 
+[Info   :Valkyrie's Cargo] shelf rolled: shelf 8 of 101, period 11, rolls every 2 game day(s), next in 1.3 game day(s): SilverNecklace, Honey, Blackwood, Resin, DeerHide, Softtissue, CarrotSeeds, NeckTail
+[Info   :Valkyrie's Cargo] admin TestNomad (-975808589): cargo visit 
+[Info   :Valkyrie's Cargo] forced TestNomad: engine: registry 12195 location(s); Dolmen01[r=8 d=68.68429 trader=n interior=n icon=n] WoodHouse3[r=10 d=85.3258 trader=n interior=n icon=n] WoodHouse10[r=8 d=6.48289156 trader=n interior=n icon=n] Runestone_Boars[r=8 d=82.4259644 trader=n interior=n icon=n] ShipSetting01[r=24 d=75.89289 trader=n interior=n icon=n] StartTemple[r=25 d=59.17523 trader=n interior=n icon=y] Dolmen02[r=8 d=87.31415 trader=n interior=n icon=n]; instances: GetLocation=none
+[Info   :Valkyrie's Cargo] roll: forced: TestNomad not eligible: comfort < 4; online: 1 comfort < 4
+[Info   :Valkyrie's Cargo] admin TestNomad (-975808589): cargo visit 
+[Info   :Valkyrie's Cargo] forced TestNomad: engine: registry 12195 location(s); Dolmen01[r=8 d=65.76486 trader=n interior=n icon=n] WoodHouse3[r=10 d=79.88999 trader=n interior=n icon=n] WoodHouse10[r=8 d=1.05097926 trader=n interior=n icon=n] Runestone_Boars[r=8 d=81.07299 trader=n interior=n icon=n] ShipSetting01[r=24 d=81.18693 trader=n interior=n icon=n] StartTemple[r=25 d=63.7248955 trader=n interior=n icon=y] Dolmen02[r=8 d=89.4864655 trader=n interior=n icon=n]; instances: GetLocation=none
+[Info   :Valkyrie's Cargo] roll: forced visit: TestNomad at (-63.6047974, -17.8458424); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] visit #29 begins: pilot TestNomad (uid -975808589) at (-63.6047974, -17.8458424), 300 s, purse 100000, seed 869649851
+[Info   :Valkyrie's Cargo] visit #29: flight authored: start (-18.9774189, -81.81769) at 184.437256, descent (-28.1736622, -68.63518) at 156.937256 (48.21975 m short), drop (-55.762394, -29.0876637) at 64.4372559, straight in 78 m out; bird -25232938:315034, Dverger -25232938:315035, both owned by the pilot
+[Info   :Valkyrie's Cargo] visit #29: dropped at (-55.762394, 64.45248, -29.0876637)
+[Info   :Valkyrie's Cargo] admin TestNomad (-975808589): cargo dismiss 
+[Info   :Valkyrie's Cargo] visit #29 ended: admin TestNomad; takings 0 coins, purse 100000, 0 clock republish(es), 0 owed deliveries
+[Info   :Valkyrie's Cargo] roll: no eligible player: 1 on cooldown
+[Info   :Valkyrie's Cargo] visit #29: merchant and bird reclaimed and their destroy queued (it lands on the next ZDOMan.Update)
+[Info   :Valkyrie's Cargo] admin TestNomad (-975808589): cargo visit 
+[Info   :Valkyrie's Cargo] forced TestNomad: engine: registry 12195 location(s); Dolmen01[r=8 d=65.76486 trader=n interior=n icon=n] WoodHouse3[r=10 d=79.88999 trader=n interior=n icon=n] WoodHouse10[r=8 d=1.05097926 trader=n interior=n icon=n] Runestone_Boars[r=8 d=81.07299 trader=n interior=n icon=n] ShipSetting01[r=24 d=81.18693 trader=n interior=n icon=n] StartTemple[r=25 d=63.7248955 trader=n interior=n icon=y] Dolmen02[r=8 d=89.4864655 trader=n interior=n icon=n]; instances: GetLocation=none
+[Info   :Valkyrie's Cargo] roll: forced visit: TestNomad at (-63.6047974, -17.8458424); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] visit #30 begins: pilot TestNomad (uid -975808589) at (-63.6047974, -17.8458424), 300 s, purse 100000, seed 430685253
+[Info   :Valkyrie's Cargo] visit #30: flight authored: start (-150.414963, 5.90273142) at 184.437256, descent (-125.241943, -0.9838272) at 146.712479 (50 m short), drop (-77.01408, -14.1774788) at 64.4372559, straight in 90 m out; bird -25232938:315036, Dverger -25232938:315037, both owned by the pilot
+[Info   :Valkyrie's Cargo] built against Valheim 1.0.12 (network 40, player 46, world 41; Steam build 25253764 client / 25253791 server; bodies read 2026-09-11); running newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable.
 [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.5 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (21 events now); duration 300 s, runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.
 [Info   : Unity Log] 09/24/2026 10:06:17: ZRpc timeout set to 30s 
+[Info   :Valkyrie's Cargo] role: dedicated server
+[Info   :Valkyrie's Cargo] admin wire up for this session: VCargo_admin is registered on each peer's OWN socket as it connects and VCargo_reply answers on the same socket; the caller's identity is that socket, never a field in the packet
+[Info   :Valkyrie's Cargo] backpack mod: none (org.bepinex.plugins.backpacks is not loaded here); shelf x1
+[Info   :Valkyrie's Cargo] boot sweep: 0 stranded merchant(s) destroyed, 1 carry link(s) cleared (a restored ZDOID means nothing); prefab 'Dverger' hash 1283200037
+[Info   :Valkyrie's Cargo] director up: salt wffffffffa3c7dd22, day 1800 s (EnvMan.m_dayLengthSec), catalogue 101 entries, purse 100000, next visit #31, roll every 60 s at 25%, first roll one interval from now; sidecar valkyriescargo_-1547182814.dat (116 rows loaded, a saved visit waits for its event); shelf 8 of 101, period 11, rolls every 2 game day(s), next in 1.22 game day(s)
+[Info   :Valkyrie's Cargo] shelf now: SilverNecklace, Honey, Blackwood, Resin, DeerHide, Softtissue, CarrotSeeds, NeckTail
+[Info   :Valkyrie's Cargo] visit #30 RESUMED after a restart: pilot TestNomad, 04:57 left by the saved clock (the event's own timer corrects it next tick)
+[Info   :Valkyrie's Cargo] visit #30 resumed: merchant ZDO 1:38568 rebound (the bird did not survive the restart - non-persistent by design)
 [Info   : Unity Log] 09/24/2026 10:06:37: ZRpc timeout set to 90s 
 [Info   : Unity Log] Received Valkyrie's Cargo version 0.1.5 and minimum version 0.1.5 from the client.
+[Info   :Valkyrie's Cargo] admin wire registered for TestNomad (-537217303)
+[Info   :Valkyrie's Cargo] deal wire registered for TestNomad (-537217303)
 
 ## CLIENT (testing profile LogOutput.log, VC lines)
 [Info   :Valkyrie's Cargo] built against Valheim 1.0.12 (network 40, player 46, world 41; Steam build 25253764 client / 25253791 server; bodies read 2026-09-11); running newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable.

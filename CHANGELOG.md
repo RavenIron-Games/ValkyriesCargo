@@ -14,12 +14,15 @@ probeable`.
 
 **Tested in game on 2026-09-24**, on a Valheim 1.0.15 dedicated server (crossplay) with one client, on the same
 code as this release (commit `253f732`; only documents changed after it). A deal that did not fit changed nothing;
-a deal made 218 m from the visit was refused; after the shelf rolled, the price he offered for a bought-out row
-read 28, which is par, where the old rule works out to 67 at that stock; a
+a deal made 218.6 m from the visit was refused; after the shelf rolled, the price he offered for a bought-out row
+read 28, which is `base × SpreadBuy` (40 × 0.7), where the old rule works out to 67 at that stock; a
 `ShelfSize` change made during a visit waited for the visit to end; a visit whose server stopped during the flight
-resumed after the restart; the in-visit cap held; and the terminal, buying, selling and barter worked as before. A
-delivery owed to a full pack survived a server restart and landed exactly once. Not tried in game: the distance
-check on a listen host, and a trade between two players. 2589 off-game checks, 0 failed.
+resumed after the restart and moved on to the ground phase (the client read `visit Dropped #30`); the in-visit cap
+held; and the terminal, buying, selling and barter worked as before. A delivery owed to a full pack survived a
+server restart and landed exactly once. Not tried in game: the distance check on a listen host, a trade between
+two players, a sale at the capped price after a shelf roll (the price was read, not sold at), the undo of a deal
+that fails part-way (only the off-game checks reach it), and a 0.1.4 client at a 0.1.5 server (that refusal is
+the version gate's, read from the code). 2589 off-game checks, 0 failed.
 
 ### Fixes
 
@@ -38,10 +41,12 @@ check on a listen host, and a trade between two players. 2589 off-game checks, 0
   now covers every row while the shelf rotates, since every row is on his shelf in some period: he pays at most
   `base × SpreadBuy` for a row he is short of. An emptied row off the shelf still drifts back and is still shown
   among the goods he wants; what he charges does not change. With `ShelfSize = 0` nothing changes.
-- **No quick profit off a flooded shelf.** A shelf row stocked to its maximum sells at about 0.68 × base, a little
+- **No quick profit off a flooded shelf within a visit.** A shelf row stocked to its maximum sells at about 0.68 × base, a little
   under what he pays for an emptied row (0.70 × base), so buying the whole row and selling it straight back made
   a few coins every time. Within a visit, he now never pays more for an item than the lowest price he sold it at
-  that visit. Prices for anything he did not just sell cheaply are unchanged.
+  that visit (the record is kept in memory, so a server restart mid-visit clears it). Prices for anything he did
+  not just sell cheaply are unchanged. This rule and the shelf-roll rule above are both marked PROPOSED in
+  `docs/DECISIONS-WUBARRK.md` §2, awaiting Wu'barrk's confirmation.
 - **Changing `ShelfSize` during a visit waits for the visit to end**, as its description always said. Switching
   the shelf on or off mid-visit used to change every row's kind at once.
 - **A visit resumed after a restart during Ingvar's flight** now moves on to the ground phase, so the visit's
@@ -61,14 +66,14 @@ check on a listen host, and a trade between two players. 2589 off-game checks, 0
 
 ## 0.1.4
 
-### 0.1.4 — cut 2026-09-16 (the day's second), the config migration; a pre-release on GitHub, the store upload is the owner's
+### 0.1.4 — cut 2026-09-16 (the day's second), the config migration; a pre-release on GitHub
 
 **Why a number.** The store takes one upload per version number, and this changes what the config file holds and
 how the catalogue is stored. **A 0.1.3 client is refused by a 0.1.4 server** by the version gate, so both sides move
 together. **Updating a server from 0.1.3 or earlier: nothing to delete any more** — the first boot on 0.1.4 migrates
 the file itself, as below; 0.1.3's delete-the-file note is history.
 
-### The config migration (PR #99, merged 2026-09-16 at the owner's word)
+### The config migration (PR #99, merged 2026-09-16)
 
 **From 0.1.4 the mod migrates its own config file; the "delete the old config file first" step retires.**
 0.1.3 and earlier told a server owner to delete `com.raveniron.valkyriescargo.cfg` on every update, because
@@ -128,14 +133,14 @@ only, and no `.cs` file changed from there to this cut. A 0.1.4 build booted on 
 
 ## 0.1.3
 
-### 0.1.3 — cut 2026-09-16, the visit clock; a pre-release on GitHub, the store upload is the owner's
+### 0.1.3 — cut 2026-09-16, the visit clock; a pre-release on GitHub
 
-**Updating a server from 0.1.2 or earlier: delete the mod's old config file first** (the owner, 2026-09-16).
+**Updating a server from 0.1.2 or earlier: delete the mod's old config file first** (2026-09-16).
 That is `BepInEx\config\com.raveniron.valkyriescargo.cfg` on the SERVER, removed while the server is down, so
 the first boot on 0.1.3 writes it fresh with this cut's defaults: the new `Server.PauseVisitWhenEmpty` line and
 the 101-row `Catalogue`. A stored config file keeps its own values across an update, and a stored line beats the
 shipped default: on Wonderland the 72-row `Catalogue` line from 0.1.0 outlived two updates and hid the 29 food
-rows until the owner found them missing (2026-09-16). Anything set on purpose in that file (`PurseCoins`, the
+rows until they were found missing (2026-09-16). Anything set on purpose in that file (`PurseCoins`, the
 roll, the flight, the shelf) goes with it and wants setting again afterwards; `cargo catalogue reset` as an admin
 takes the shipped catalogue alone, if that is all a server needs. A client's copy holds nothing the server does
 not overrule, and can stay.
@@ -143,7 +148,7 @@ not overrule, and can stay.
 **Why a number.** The store takes one upload per version number, and this changes a behaviour that shipped: when
 a visit ends. **A 0.1.2 client is refused by a 0.1.3 server** by the version gate, so both sides move together.
 
-- **The visit clock runs whoever is near him (PR #97; 2100 checks, 7 new).** The owner's finding, 2026-09-16: a
+- **The visit clock runs whoever is near him (PR #97; 2100 checks, 7 new).** Found 2026-09-16: a
   visit whose pilot walked off or logged out never ended. The vanilla random event a visit rides was registered
   with `m_pauseIfNoPlayerInArea` on, and the engine adds no time to such an event while nobody is within 96 m of
   it; Valheim runs one random event at a time, so an open visit also held every raid and every later visit
@@ -173,15 +178,15 @@ there to this cut. A 0.1.3 build booted on Storm10 at the cut: `Loading [Valkyri
 
 ## 0.1.2
 
-### 0.1.2 — cut 2026-09-15 evening, the merchant guard; a pre-release on GitHub, the store upload is the owner's
+### 0.1.2 — cut 2026-09-15 evening, the merchant guard; a pre-release on GitHub
 
-**Why a number and not a second 0.1.1 zip.** The store takes one upload per version number (the owner,
-2026-09-15: "we can't upload another 0.1.1"), and the gate follows the number: **a 0.1.1 client is refused
+**Why a number and not a second 0.1.1 zip.** The store takes one upload per version number, and the gate
+follows the number: **a 0.1.1 client is refused
 by a 0.1.2 server** with the mod's own message naming both. Nothing about the gate changed, and that direction
 has still not been watched on a machine (rc5's proof ran the mirror pair, the other branch of the same gate).
 
 - **The merchant guard (PR #94; 2093 checks, nothing off-game reaches it).** On Wonderland the same afternoon
-  (Valkyrie's Cargo 0.1.0 on both sides, Wu'barrk's DvergrAllies 1.0.7 in the set) the owner's screen gave
+  (Valkyrie's Cargo 0.1.0 on both sides, Wu'barrk's DvergrAllies 1.0.7 in the set) the screen gave
   vanilla's tame-follow on the use key ("Ingvar the Far-Travelled follows you") and no terminal, with
   "(Female)" and "Hungry" on his hover; his client's log carries the visit reaching `trading` and no
   `terminal opened` line under it. DvergrAllies puts a `Tameable` subclass, a `Procreation` and a genetics component on
@@ -191,7 +196,7 @@ has still not been watched on a machine (rc5's proof ran the mirror pair, the ot
   wakes, before `CargoMerchant` is added: it removes every `Tameable` and `Procreation` of any subclass and the
   three DvergrAllies components by type name (no reference to that mod), with `DestroyImmediate` because our own
   `SetTamed` fires in the same frame and a taming mod's `SetTamed` patches key on its genetics component; and it
-  writes Shadows of Midgard's frozen opt-out key (`SoMStealthExempt = 1`) on the owner's machine, inert without
+  writes Shadows of Midgard's frozen opt-out key (`SoMStealthExempt = 1`) on the client that owns him, inert without
   SoM. `Patches/Patch_Player_Interact.cs` is the general case: a use on anything carrying `CargoMerchant` goes
   to `CargoMerchant` (`Priority.Low`, `__runOriginal` honoured, vanilla's gates and the hold throttle kept), so
   no `Interactable` another mod puts ahead of ours ever takes the key. The two string-named engine members it
@@ -203,7 +208,7 @@ has still not been watched on a machine (rc5's proof ran the mirror pair, the ot
   DvergrAllies.DvergrTameable, DvergrAllies.DvergrProcreation, DvergrAllies.DvergrGenetics from Ingvar's clone;
   SoMStealthExempt stamped`; then `terminal opened: visit #18 on Dverger(Clone)` twice, two deals through it, the
   visit sent off from the terminal, the vanish and the reclaim; nothing from DvergrAllies about him afterwards;
-  and the owner's word on the hover: "text is fine". Not covered, and said so in the code: a merchant adopted
+  and the hover text was confirmed fine. Not covered, and said so in the code: a merchant adopted
   across a server restart gets no SoM stamp (no instantiating client owns him then; SoM tests "not tamed" first,
   and he is tamed by us), and the one-line authoring-time stamp is proposed for `Spawner.cs`. The record is
   `docs/proofs/2026-09-15-storm10-session.md`, the last section, with the excerpt from both logs beside it.
@@ -217,12 +222,12 @@ DLL is the same code rebuilt from the tagged commit, and the two differ only in 
 
 ## 0.1.1
 
-### 0.1.1 — cut 2026-09-15, the first cut with its own version number; a pre-release on GitHub, the store upload is the owner's
+### 0.1.1 — cut 2026-09-15, the first cut with its own version number; a pre-release on GitHub
 
 **Why the number moved.** Every cut through rc5 was `0.1.0`, so the ServerSync gate
 (`MinimumRequiredVersion == CurrentVersion`) could not tell one from another and a client on an older
-cut joined a server whose config it did not know. From this cut on the version moves with the cut (the
-owner, 2026-09-15: "we need to start updating versions as well"): an rc5 client is refused by a 0.1.1
+cut joined a server whose config it did not know. From this cut on the version moves with the cut
+(2026-09-15): an rc5 client is refused by a 0.1.1
 server with the mod's own message naming both numbers. That direction has not been watched on a
 machine: rc5's version-wall proof ran the mirror of it, a 0.1.1 client refused by a 0.1.0 server — the
 same two numbers with the builds swapped, the other branch of the same gate. Nothing about the gate
@@ -239,7 +244,7 @@ changed.
   proven where the previous one broke: **(1) somebody built here** — at least one player-placed piece
   (`Piece.IsPlacedByPlayer`, anyone's build, not only yours) within `Server.BuiltBaseRadius` (20), reported
   by the client on its own ZDO the way comfort is; **(2) not at one of the game's locations** — as first
-  written this refused every location the game owns, and the first live test refused the owner's own base
+  written this refused every location the game owns, and the first live test refused a player's own base
   on a Meadows `WoodHouse3` ruin, so it was re-cut to name its reasons; **(3) one kind per location, in
   order** — a `Trader` anywhere in it makes it a merchant's camp (Haldor, Hildir, the Bog Witch, any modded
   one; no name list), else an interior makes it a dungeon's door, else the game's own map-icon flag
@@ -329,7 +334,7 @@ comfortable. He walks up, calls out, buys and sells from a live persistent stock
 prices for five minutes, and vanishes the way Odin does. Every player sees the same visit; only the
 server owns the market.
 
-**What has been seen on a screen, and what has not.** On 2026-09-07 the owner's Windows client ran six
+**What has been seen on a screen, and what has not.** On 2026-09-07 a Windows client ran six
 visits against a dedicated server, then three more that evening on the audit's fixes: the flight and
 the drop within a second of the simulation every time,
 Ingvar in his own body, the walk-up (finishing on every visit, but never on the first attempt -- the
@@ -340,10 +345,11 @@ Proven off-game across 1701 checks and a ten-scenario economy simulation. Never 
 merged since the audit (its six, then D1 to D4 and the half-turn; `docs/AUDIT-STORMTEST-2026-09-07.md`
 §5 says what would exercise each), the
 two-client items, and the screen questions (the release over the drop point, the callout bubble, the
-hover prompt). On 2026-09-08 the owner watched two of them: **the arrival banner works, and the vanish plays
+hover prompt). On 2026-09-08 two of them were checked: **the arrival banner works, and the vanish plays
 but is not timed perfectly** (`Spawner.VanishGraceSeconds`, Track B's). The runbook is `docs/PROOF-CLIENT.md`
 and what remains is listed in CLAUDE.md's "what to verify in-game". Treat 0.1.0 as a first playable, not as
-a settled one; **the owner's word on 2026-09-08 after the day's five merges: no release yet.**
+a settled one; **on 2026-09-08, after the day's five merges, there was still no store release** (rc5, below, was the
+first to reach a store).
 
 Entries are in build order, except the five sections directly below: 0.1.0's newest work, added
 after the rest of this log was written.
@@ -381,10 +387,10 @@ after the rest of this log was written.
   past 5 m, is refused with one log line and the prefab's offset used - never a fail-closed `(0, 0, 0)`, which
   would stand him inside the bird's foot on every screen. `cargo status` names the offset and where it came from,
   and `cargo prefab Valkyrie` now prints `attachOffset` beside the attach point, which it never did.
-  **Two lines in Track B's files, at Don's word and flagged here**: `CargoFlight.AttachOffset` and the no-flight
+  **Two lines in Track B's files, flagged here**: `CargoFlight.AttachOffset` and the no-flight
   fallback in `CargoMerchant.ResolveCarrier` both call `CarryPinLive.Read` instead of naming the constant.
 - **And the number it ships with: `0, 0, 0`, his feet on the talon. SEEN ON A MACHINE 2026-09-11** (Storm10,
-  Valheim 1.0.12, visits 2 to 4). The owner joined, forced a visit and walked the offset down from
+  Valheim 1.0.12, visits 2 to 4). An admin joined, forced a visit and walked the offset down from
   Configuration Manager **while the bird was in the air** - sixteen config pushes across three visits, each one
   landing on the merchant within a physics step, none refused: the prefab's `(0, 0.3, 0.4)`, then
   `(0, 0.2, 0.25)`, then this. So the whole designed path is proven on a machine as well as off it: an admin
@@ -411,9 +417,9 @@ after the rest of this log was written.
   6000.0.75). Swept from here the same day, both axes, the P10a tools unmodified
   (`docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md`): the two playtest stop-ships
   did not ship (`GetStableHashCode` is one-argument again, `GetAllCharacterZDOS` has no early return); the
-  0.221.12 build of the mod broke in six places on the release, all fixed here at the owner's word (the
+  0.221.12 build of the mod broke in six places on the release, all fixed here (the
   1.0.7 publicized assemblies handed over): `Hoverable` gained `GetHoverOffset()` (CargoMerchant could not
-  load at all — the `interfaces` probe's quiet failure, exactly as written; one method in his file, his
+  load at all — the `interfaces` probe's quiet failure, exactly as written; one method in Wu'barrk's file, his
   character's value); `ZoneSystem.m_activeArea` / `m_activeDistantArea` are gone and the active area is
   the synced simulation distance with a metre test behind `InActiveArea` (`Core/ActiveArea.cs`,
   `ActiveAreaLive.cs`; `ZoneOwnership` and `FlightPlan` rebuilt on it, the same 3x3 block on a stock
@@ -447,9 +453,8 @@ after the rest of this log was written.
   `FileSource.Local` by name, because the method moved and the enum's values did; the new `save_path` probe reports
   it (19 probes). The sweep against the 1.0 playtest is `docs/engine-sweeps/2026-09-08-server-0.221.12-vs-0.221.13.md`:
   two stop-ships, neither fixed (the one-argument `GetStableHashCode` is gone; `GetAllCharacterZDOS` returns empty on
-  a dedicated server). Verified from Track A's machine against the fetched playtest build. **1.0 work is held by the
-  owner.**
-- **The rotating shelf (branch `a/rotating-shelf`, Track A, 1818 checks; issue #56, the owner's 2026-09-08 change,
+  a dedicated server). Verified from Track A's machine against the fetched playtest build. **1.0 work is on hold.**
+- **The rotating shelf (branch `a/rotating-shelf`, Track A, 1818 checks; issue #56, a 2026-09-08 change,
   Wu'barrk's two-day default).** The fixed Ware list goes away: `Server.ShelfSize` (20) entries of the whole 72 are
   on sale at a time, chosen by the pure `Core/Shelf.cs` from the world's salt and a period index that moves every
   `Server.ShelfRotationGameDays` (2) game days, returned in catalogue order. On the shelf an entry trades as a Ware
@@ -462,7 +467,7 @@ after the rest of this log was written.
   `docs/ECONOMY-SIM.md` §11. **Seen on StormTest 2026-09-08**: `shelf roll waits: visit #17 is running`, then
   `shelf rolled: … period 14 …` naming the twenty, `shelf now: …` after a restart, visit 18 resumed across it.
 - **The terminal after the first playtest (branch `a/terminal-ux`, Track A, 1841 checks; Wu'barrk's report of
-  2026-09-08, items 4, 5 and 7; the owner: "build 4, 5 and 7 on a branch").** Click-per-unit staging was unusable
+  2026-09-08, items 4, 5 and 7; built on a branch).** Click-per-unit staging was unusable
   and the Coins/Barter switch unreadable, so: every staged line carries a **count box** (digits only; a number
   above his stock, your carry or the room on his shelf is written back clamped), an **all** button (a ware: as many
   as he has and you can pay for; goods: everything you carry that fits) and **x**; Shift 5 / Ctrl 20 stay. The
@@ -475,7 +480,7 @@ after the rest of this log was written.
   text-focus token is raised (from Tick) and Use/Tab/M do not close the window; Enter or a click elsewhere hands
   it back. `TrayModel.SetCount` / `AllOf` / `Remove` are pure and checked. **Not seen on a screen.**
 - **He never walks while a terminal is open on him, and the hover localises (branch `a/merchant-busy`, 1862 checks;
-  issue #59 items 2 and 3, taken from Track B at the owner's word 2026-09-08).** The playtest saw him walk off with
+  issue #59 items 2 and 3, taken from Track B 2026-09-08).** The playtest saw him walk off with
   two players trading. The server already counted open terminals on the deal wire; now `VisitState` carries the
   count as an OPTIONAL 13th field (a 12-field string from a side that is behind still parses, the format version
   does not move; never in the sidecar row), the director copies the wire's count every tick and republishes when it
@@ -488,7 +493,7 @@ after the rest of this log was written.
   transition walked him — the log lines from the walk-off are still asked for on #59; vanilla's idle shuffle is
   bounded to 1.5 m by `ReassertLocal` and would show no state change at all. **Not seen on a screen.**
 - **The backpack add-on, the shelf half (branch `a/backpack-shelf`, Track A, 1831 checks; Wu'barrk's design of
-  2026-09-08, the owner's "take the shelf multiplier on a branch").** A server running Smoothbrain's Backpacks
+  2026-09-08, the shelf multiplier taken on a branch).** A server running Smoothbrain's Backpacks
   (`Server.BackpackModGuid`, shipped `org.bepinex.plugins.backpacks`, changeable live) sells from a shelf of
   `ShelfSize × Server.BackpackShelfMultiplier` (shipped 2, range 1–4; capped at 200 and at the catalogue): players
   who can carry more get more to buy. `Server/BackpackMod.cs` reads BepInEx's chainloader on the server at
@@ -497,15 +502,15 @@ after the rest of this log was written.
   one, so the mod arriving swaps nothing out). One log line at director up says what was found and what it does
   to the shelf, and `cargo status` repeats it. The backpack on his body is the other half, and Wu'barrk's.
   **Not seen on a machine.**
-- **The body goes with the smoke (branch `a/vanish-hide`; the owner's eyes 2026-09-08: the vanish was LATE, taken
-  from Track B at his word).** He stood in his own despawn smoke until the server's `Clear` landed,
+- **The body goes with the smoke (branch `a/vanish-hide`; seen 2026-09-08: the vanish was LATE, taken
+  from Track B).** He stood in his own despawn smoke until the server's `Clear` landed,
   `Spawner.VanishGraceSeconds` (2 s) after the RPC; vanilla `Odin.Update` creates the effect and destroys in the
   same frame. The grace stays (it is what lets the RPC land before the ZDO goes): `CargoMerchant.RPC_Vanish` now
   calls `HideForGood` on every screen it reaches — every renderer under him off, every LOD group off, the collider
-  off, the AI stood down on the owner — and logs `cargo merchant #N: into the mist: K renderer(s) off with the
+  off, the AI stood down on the owning client — and logs `cargo merchant #N: into the mist: K renderer(s) off with the
   smoke; the Clear follows in 2 s`. Nothing of ours enables a renderer, so he stays gone. **Seen on visit 20,
-  2026-09-08, on the owner's dismiss: `into the mist: 1 renderer(s) off with the smoke`, and his word for the
-  screen: "vanish looked great."**
+  2026-09-08, on a dismiss: `into the mist: 1 renderer(s) off with the smoke`, confirmed looking right on
+  screen.**
 - **The dismiss follows him (branch `a/dismiss-at-merchant`, 1885 checks).** Visit 21 (2026-09-08): after the leash
   walk he stood 134 m from his drop point, and the server measured "Send him off" against the DROP POINT: refused
   three times while the client's terminal closed on "sent him off" and said the farewell on trust. Now the event's
@@ -521,7 +526,7 @@ after the rest of this log was written.
   visit 21) and the ServerSync line 8 times over the visit instead of every 2 s. The terminal button path itself is
   not yet seen on a screen.
 - **More than one ware per deal, and Confirm lit only when the deal can go (branch `a/multi-wanted`, 1924 checks).**
-  The owner's ask after the two-client session (visits 23 and 24). The deal's wanted side is a list on the wire like
+  Asked for after the two-client session (visits 23 and 24). The deal's wanted side is a list on the wire like
   the offered side (a single line encodes as before, so a one-ware deal still parses on a side that is behind; a
   two-ware deal fails that side's parse loudly; the same ware twice is refused at parse); `Deal.Wants` beside
   `Offered`, `Wanted` the first line for the code that had one; `Market.Settle` checks every wanted line in the
@@ -529,13 +534,13 @@ after the rest of this log was written.
   8) with the count box, "all" (which pays for the other lines first) and x on every line, both wells drawn the same
   way. The Confirm button is enabled only when the tray's own Validate passes, run on every draw, and his reason
   for a no shows dim beside the balance line before anything is pressed; its lit face is the theme's bright gold
-  (the owner on the first screen: "confirm has to be brighter"). SEEN on visits 25 and 26 (2026-09-08, PR #68
+  (brightened after the first screen). SEEN on visits 25 and 26 (2026-09-08, PR #68
   merged): one deal of five wares taken and three kinds given, `w4790ce-25-1 … coins +572 to the player`,
-  settled and applied line for line; the owner: "love it."
-- **The walk-off inside Trading (branch `a/follow-assert`, Wu'barrk's diagnosis on issue #59, his file at the
-  owner's word).** His visit-16 client log has no leash transition at all: Ingvar entered Trading at 25 s and was
+  settled and applied line for line.
+- **The walk-off inside Trading (branch `a/follow-assert`, Wu'barrk's diagnosis on issue #59, his file).**
+  His visit-16 client log has no leash transition at all: Ingvar entered Trading at 25 s and was
   still in it 185 s later, so #61's busy hold (which holds the LEASH) never covered the walk-off he saw. His read:
-  a stale `MonsterAI.m_follow` — set only while Approaching, cleared only on a Trading entry the owner's own
+  a stale `MonsterAI.m_follow` — set only while Approaching, cleared only on a Trading entry the owning client's own
   Decide drove, a plain non-replicated field that beats the patrol point in `UpdateAI` — on a machine that
   re-acquires him mid-Trading. Built: the follow target asserted every tick including the null, the patrol point
   set on EVERY Trading entry in `EnterState` (the ZDO path included; owner-gated, it writes the ZDO; `GetPatrolPoint`
@@ -629,7 +634,7 @@ watched on a screen.
   assert every waypoint is flyable at the shipped speed, because a pure pursuer whose target sits inside
   its own turning circle never closes and orbits for ever.
 - `Server/Spawner.cs` authors the bird and the merchant as ZDOs owned by the pilot; `Client/CargoFlight.cs`
-  flies vanilla's own maths on the owner alone and writes `s_velHash` so every other screen dead-reckons
+  flies vanilla's own maths on the owning client alone and writes `s_velHash` so every other screen dead-reckons
   a glide instead of a stutter.
 - **The drop point the pilot reports is bounded against the one the server authored.** The bird is owned
   by the pilot, so its target key is a value a client writes, and it used to be handed to the visit
@@ -786,7 +791,7 @@ watched on a screen.
 - `Server\Spawner.cs`: the bird's ZDO authored whole and owned by the pilot (`VCargo_cargo`, `VCargo_target`, `VCargo_turn`,
   `VCargo_dropped`); `MerchantEnabled` held the merchant back when this PR merged, until P5 landed -- it
   authors both now, and both are reclaimed on any visit end. `Patches\Patch_Valkyrie_Awake.cs`: vanilla
-  `Awake` skipped for our bird only. `Client\CargoFlight.cs`: the owner flies vanilla's own maths and
+  `Awake` skipped for our bird only. `Client\CargoFlight.cs`: the owning client flies vanilla's own maths and
   writes the velocity key so every other screen sees a glide.
 - New `Server.FlightSpeed` (8) and `Server.FlightTurnRate` (45): ours, synced, not the prefab's 20 and 20, whose
   57 m turning circle is wider than the whole approach.
@@ -804,7 +809,7 @@ watched on a screen.
 - **The proof runbook** (`docs\PROOF-CLIENT.md`): CLAUDE.md items 2 to 20 in one sitting, each with the line the
   code writes; `tools\deploy-test.ps1`, `tools\tail-log.ps1`, `tools\set-test-config.ps1`.
 - **The economy simulation** (`tests\EconSim`, `docs\ECONOMY-SIM.md`, `tools\run-econsim.ps1`): nine seeded
-  scenarios against the real market. Finding for the owners: the buy-out-and-sell-back round trip is profitable
+  scenarios against the real market. Found: the buy-out-and-sell-back round trip is profitable
   (`MaxPriceMultiplier` 3.0 x `SpreadBuy` 0.7 = 2.1) and drains the purse on the first visit; a decision for DESIGN
   section 8 before anyone trades. No default changed.
 
