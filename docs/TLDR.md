@@ -34,9 +34,13 @@ next login, never twice.
 on a Dverger clone whose renderers are switched off (`Server.CustomBody` puts the stand-in back). **Later:** the horn,
 a barter basket, rare rotating stock, localisation.
 
-**Where it is, 2026-09-16, later the same day.** `main` builds clean at 2540 off-game checks and **`v0.1.4` is
-tagged** — a GitHub pre-release; the store upload is the owner's. It is the **Valheim 1.0.12** build and runs on
-nothing else. 0.1.4 makes the mod migrate its own config file (a value still at an old default moves, a value you set
+**Where it is, 2026-09-24.** `main` builds clean at 2589 off-game checks and **`v0.1.5` is tagged** — a GitHub
+pre-release; the store upload is the owner's. It is built against **Valheim 1.0.12** and was tested on **1.0.15**
+(both network version 40). 0.1.5 fixes deals and the market: a deal lands whole or not at all, a deal must be made
+within 96 m of the visit, the Fair Market Act covers every row while the shelf rotates and caps the in-visit
+buy-back, a `ShelfSize` change waits for the visit to end, a visit resumed during the flight moves on to the ground,
+and the DLL no longer carries the build machine's folder path; all checked in game on Storm10 on 2026-09-24
+(visits #23 to #30). 0.1.4 makes the mod migrate its own config file (a value still at an old default moves, a value you set
 stays, a backup lands beside the file) and turns the catalogue into the shipped rows plus `CatalogueOverrides`; the
 delete-the-file step is history. 0.1.3 made the visit clock run whoever is near him (a visit ends on time with nobody online; the new
 `Server.PauseVisitWhenEmpty` holds it on an empty server; a server updating from an earlier version deletes its old

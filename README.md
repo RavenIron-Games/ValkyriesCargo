@@ -6,16 +6,23 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.4`, a first playable; a pre-release on GitHub, the store upload is the owner's.** Cut
-> 2026-09-16 from `main`, the day's second. **For Valheim 1.0.12 only**: 1.0.12 moved the network version to 40,
-> so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12) cannot connect to it at all. The store carries whichever
+> **Status: `v0.1.5`, a first playable; a pre-release on GitHub, the store upload is the owner's.** Cut
+> 2026-09-24 from `main`. **For Valheim 1.0.12 and 1.0.15** (both network version 40; built against 1.0.12,
+> tested on 1.0.15): 1.0.12 moved the network version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12)
+> cannot connect to it at all. The store carries whichever
 > cut the owner last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first; 0.1.4 since 2026-09-16), and
-> **a 0.1.3 client is refused by a 0.1.4 server** by the version gate — on purpose: the store takes
-> one upload per number, and both sides move together. **Updating a server: nothing to delete any more** —
-> from 0.1.4 the mod migrates its own config file (Installing, below).
+> **a 0.1.4 client is refused by a 0.1.5 server** by the version gate — on purpose: the store takes
+> one upload per number, and both sides move together. **Updating a server: nothing to delete** —
+> from 0.1.4 the mod migrates its own config file, and 0.1.5 does not change its layout (Installing, below).
 > The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
 > because 0.1.x is a first playable and says so.
-> What 0.1.4 adds: the mod migrates its own config file (a value still at an old default moves, a value you set
+> What 0.1.5 adds: a deal lands in your pack whole or not at all; a deal made more than 96 m from the visit is
+> refused; the Fair Market Act covers every row while the shelf rotates, and within a visit he never pays more for
+> an item than the lowest price he sold it at (two rule changes, set out in `docs/DECISIONS-WUBARRK.md` §2); a `ShelfSize`
+> change waits for the visit to end; a visit resumed during the flight moves on to the ground phase; and the DLL no
+> longer carries the build machine's folder path. Checked in game on 2026-09-24 (Storm10, Valheim 1.0.15, visits
+> #23 to #30): every fix behaved as described (`docs/proofs/2026-09-24-storm10-session.md`).
+> What 0.1.4 added: the mod migrates its own config file (a value still at an old default moves, a value you set
 > stays, a backup lands beside the file, the boot line says what it did) and the catalogue becomes the shipped rows
 > plus your `CatalogueOverrides`, so a stored line never hides a new default again.
 > What 0.1.3 added: the visit clock runs whoever is near him, so a visit ends on time with nobody online
@@ -71,9 +78,10 @@ from our own interact handler. Nothing happens on command except an admin's `car
 
 ## Status
 
-**Truth pass against `main` at the `v0.1.4` cut, 2026-09-16 (the day's second).** This mod runs on **Valheim 1.0.12**
-and on nothing else: 1.0.12 moved the network version to 40, so a build for 1.0.7 or 0.221.12 cannot
-connect at all. `v0.1.0-rc4` is a 1.0.7 build and is superseded; `v0.1.0-rc3` remains the last 0.221.12
+**Truth pass against `main` at the `v0.1.5` cut, 2026-09-24.** This mod runs on **Valheim 1.0.12 and 1.0.15**
+(network version 40; tested on 1.0.15 at this cut) and on nothing older: 1.0.12 moved the network version to 40,
+so a build for 1.0.7 or 0.221.12 cannot connect at all. At this cut, visits #23 to #30 on Storm10 checked every
+0.1.5 fix in game (`docs/proofs/2026-09-24-storm10-session.md`). `v0.1.0-rc4` is a 1.0.7 build and is superseded; `v0.1.0-rc3` remains the last 0.221.12
 build.
 
 **What has been seen on a machine.** Twenty-seven visits across five sessions on dedicated servers with a

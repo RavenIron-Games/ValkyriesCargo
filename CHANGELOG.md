@@ -2,11 +2,24 @@
 
 ## 0.1.5
 
-### 0.1.5 — NAME TBD, date TBD; deal and market fixes, prepared and not cut yet
+### 0.1.5 — cut 2026-09-24, deal and market fixes; a pre-release on GitHub
 
 **Why a number.** The store takes one upload per version number, and the version gate moves with it: **a 0.1.4
 client is refused by a 0.1.5 server**, so the server and every player update together. The config file's layout did not change
 (`ConfigVersion` stays `2`), so updating a server from 0.1.4 needs nothing deleted and migrates nothing.
+
+**Valheim 1.0.15.** The mod is built against 1.0.12 and was tested on 1.0.15. Both use network version 40, so
+they play together; at boot the engine line reads `newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not
+probeable`.
+
+**Tested in game on 2026-09-24**, on a Valheim 1.0.15 dedicated server (crossplay) with one client, on the same
+code as this release (commit `253f732`; only documents changed after it). A deal that did not fit changed nothing;
+a deal made 218 m from the visit was refused; after the shelf rolled, the price he offered for a bought-out row
+read 28, which is par, where the old rule works out to 67 at that stock; a
+`ShelfSize` change made during a visit waited for the visit to end; a visit whose server stopped during the flight
+resumed after the restart; the in-visit cap held; and the terminal, buying, selling and barter worked as before. A
+delivery owed to a full pack survived a server restart and landed exactly once. Not tried in game: the distance
+check on a listen host, and a trade between two players. 2589 off-game checks, 0 failed.
 
 ### Fixes
 
@@ -41,7 +54,7 @@ client is refused by a 0.1.5 server**, so the server and every player update tog
   The build now maps the repo's folder to a neutral `/_/` in the DLL and its PDB alike, so neither names a local
   path. That change by itself does not change the compiled code; the fixes above do. A build still embeds the commit
   it was built from, so the DLL's md5 follows the commit, no longer the folder it was built in. This DLL was built
-  from commit `COMMIT TBD`.
+  from the commit tagged `v0.1.5`; the GitHub release names that commit and gives the DLL's md5.
 - **The GitHub README has a "Support Raven Iron" section (PRs #101 and #102):** the mods are free and stay free, and the
   section links the Raven Iron website, Patreon and the Discord. The README's line on what the store carries is
   brought up to date.

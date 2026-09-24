@@ -1,0 +1,214 @@
+# Valkyrie's Cargo 0.1.5 (PR #104 head 253f732, DLL md5 a405d7bb) - Storm10 (Valheim 1.0.15) and a Gale test client, 2026-09-24
+## SERVER (Storm10 BepInEx/LogOutput.log, VC lines + claim/deal/refusal/resume)
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.5 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   : Unity Log] 09/24/2026 09:31:24: ZRpc timeout set to 30s 
+[Info   : Unity Log] 09/24/2026 09:32:28: ZRpc timeout set to 90s 
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.5 and minimum version 0.1.5 from the client.
+[Warning: Unity Log] 09/24/2026 09:43:11: Game server disconnected
+[Warning: Unity Log] 09/24/2026 09:43:48: Game server disconnected
+[Warning: Unity Log] 09/24/2026 09:44:15: ZRpc timeout detected
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.5 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   : Unity Log] 09/24/2026 09:48:26: ZRpc timeout set to 30s 
+[Info   : Unity Log] 09/24/2026 09:49:25: ZRpc timeout set to 90s 
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.5 and minimum version 0.1.5 from the client.
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.5 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   : Unity Log] 09/24/2026 10:06:17: ZRpc timeout set to 30s 
+[Info   : Unity Log] 09/24/2026 10:06:37: ZRpc timeout set to 90s 
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.5 and minimum version 0.1.5 from the client.
+
+## CLIENT (testing profile LogOutput.log, VC lines)
+[Info   :Valkyrie's Cargo] built against Valheim 1.0.12 (network 40, player 46, world 41; Steam build 25253764 client / 25253791 server; bodies read 2026-09-11); running newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable.
+[Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.5 loaded - renderer=True, patches 19/19 applied, catalogue=101 entries, engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable, ServerSync version gate armed; role is decided when a world loads.
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (21 events now); duration 300 s, runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.
+[Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.5 and minimum version 0.1.5 to the server.
+[Info   :Valkyrie's Cargo] role: client
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.5 and minimum version 0.1.5 from the server.
+[Info   :Valkyrie's Cargo] admin wire: registered VCargo_reply on the server socket
+[Info   :Valkyrie's Cargo] deal wire: registered VCargo_dealt on the server socket
+[Info   :Valkyrie's Cargo] delivery wffffffffa3c7dd22-24-1 deferred: inventory_full (the server keeps it until it fits)
+[Info   :Valkyrie's Cargo] console: cargo: asked the server for anything it still owes you; deliveries print in the log and the HUD
+[Info   :Valkyrie's Cargo] delivery wffffffffa3c7dd22-24-1 applied: +1 Resin, -1 coins
+[Info   :Valkyrie's Cargo] console: cargo: asked the server to visit; its answer prints here
+[Info   :Valkyrie's Cargo] server answered: cargo visit TestNomad: forced visit: TestNomad at (-62.7833366, -19.114296); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] cargo flight #25: flying from (-14.8244743, 184.5309, 57.04309) via (-28.811409, 146.66394, 34.83221) to (-55.4552231, 64.5309, -7.47744751), 76.248 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+[Info   :Valkyrie's Cargo] cargo merchant #25: awake as carried, ours (owner -975808589), body=Ingvar
+[Info   :Valkyrie's Cargo] cargo flight #25: dropped at (-55.4552231, 65.76786, -7.47744751) after 20.6402817 s
+[Info   :Valkyrie's Cargo] cargo merchant #25: carried -> approaching via the ZDO, 20.6402817 s after waking; carrier none, 18.2739449 m from the player, ours (owner -975808589), 0 reclaim(s) during the carry, grounded no; walk-up budget 20 s
+[Info   :Valkyrie's Cargo] cargo merchant #25: trading (entered: stuck: no ground closed in 3 s (a pathing failure), 13.4485865 m out) [callout]
+[Warning:Valkyrie's Cargo] cargo merchant #25: the walk-up did not finish. walked 5.09999561 s of a 20 s budget (scaled from 18.2739449 m at entry), moved 10.8418627 m; stuck 3.0599978 s of the last window, and stopped 13.4485865 m away; follow target NONE, tamed yes, alerted no, AI target none, grounded yes.
+[Info   :Valkyrie's Cargo] cargo merchant #25: approaching (entered: the player left: 13.4036245 m for 5.01999569 s) [following]
+[Info   :Valkyrie's Cargo] console: cargo: sending buy 1 Resin at 1 each (nonce 1070695123018116525)
+[Info   :Valkyrie's Cargo] console: cargo: DONE wffffffffa3c7dd22-25-1: +1 Resin, -1 coins
+[Info   :Valkyrie's Cargo] cargo merchant #25: trading (entered: reached the player) [callout]
+[Info   :Valkyrie's Cargo] cargo flight #25: ground unknown at (51.11499, 187.266342, 160.103943) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+[Info   :Valkyrie's Cargo] terminal opened: visit #25 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] cargo merchant #25: a terminal is open on him (0 on the wire): the leash holds
+[Info   :Valkyrie's Cargo] console: market for visit #25, purse 100002 coins; 101 rows
+[Info   :Valkyrie's Cargo] console:   Silver (Ware): 12/12 max 36, you pay 40, he pays 28, trend flat
+[Info   :Valkyrie's Cargo] terminal closed: escape
+[Info   :Valkyrie's Cargo] cargo merchant #25: no terminal open on him: the leash is armed again
+[Info   :Valkyrie's Cargo] terminal opened: visit #25 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] cargo merchant #25: a terminal is open on him (0 on the wire): the leash holds
+[Info   :Valkyrie's Cargo] terminal deal on visit #25: ok wffffffffa3c7dd22-25-2 +12 Silver, -480 coins
+[Info   :Valkyrie's Cargo] terminal deal on visit #25: ok wffffffffa3c7dd22-25-3 -36 Silver, +1008 coins
+[Info   :Valkyrie's Cargo] terminal deal on visit #25: ok wffffffffa3c7dd22-25-4 +36 Silver, -972 coins
+[Info   :Valkyrie's Cargo] terminal deal on visit #25: ok wffffffffa3c7dd22-25-5 -36 Silver, +972 coins
+[Info   :Valkyrie's Cargo] console: market for visit #25, purse 99474 coins; 101 rows
+[Info   :Valkyrie's Cargo] console:   Silver (Ware): 36/12 max 36, you pay 27, he pays 19, trend down
+[Info   :Valkyrie's Cargo] terminal deal on visit #25: ok wffffffffa3c7dd22-25-6 +1 Silver, -27 coins
+[Info   :Valkyrie's Cargo] console: market for visit #25, purse 99501 coins; 101 rows
+[Info   :Valkyrie's Cargo] console:   Silver (Ware): 35/12 max 36, you pay 28, he pays 19, trend down
+[Info   :Valkyrie's Cargo] terminal deal on visit #25: ok wffffffffa3c7dd22-25-7 +35 Silver, -980 coins
+[Info   :Valkyrie's Cargo] console: market for visit #25, purse 100481 coins; 101 rows
+[Info   :Valkyrie's Cargo] console:   Silver (Ware): 0/12 max 36 SOLD, you pay 95, he pays 27, trend up
+[Info   :Valkyrie's Cargo] cargo merchant #25: into the mist: 1 renderer(s) off with the smoke; the Clear follows in 2 s
+[Info   :Valkyrie's Cargo] terminal closed: visit over
+[Info   :Valkyrie's Cargo] console: cargo: asked the server to visit; its answer prints here
+[Info   :Valkyrie's Cargo] server answered: cargo visit TestNomad: forced visit: TestNomad at (-63.458313, -17.9921589); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] cargo flight #26: flying from (-109.00135, 184.438446, 59.63407) via (-96.282196, 147.640015, 37.95479) to (-70.98051, 64.43844, -5.17089367), 75.1349945 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+[Info   :Valkyrie's Cargo] cargo merchant #26: awake as carried, ours (owner -975808589), body=Ingvar
+[Info   :Valkyrie's Cargo] cargo flight #26: dropped at (-70.98051, 60.918602, -5.17089367) after 18.7202377 s
+[Info   :Valkyrie's Cargo] cargo merchant #26: carried -> approaching via the ZDO, 18.7202377 s after waking; carrier none, 16.003521 m from the player, ours (owner -975808589), 0 reclaim(s) during the carry, grounded no; walk-up budget 20 s
+[Info   :Valkyrie's Cargo] cargo merchant #26: trading (entered: reached the player) [callout]
+[Info   :Valkyrie's Cargo] cargo flight #26: ground unknown at (-167.919067, 185.2362, 160.083038) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+[Info   :Valkyrie's Cargo] terminal opened: visit #26 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] cargo merchant #26: a terminal is open on him (0 on the wire): the leash holds
+[Info   :Valkyrie's Cargo] VCargo_dismissed: ok
+[Info   :Valkyrie's Cargo] terminal closed: sent him off
+[Info   :Valkyrie's Cargo] cargo merchant #26: into the mist: 1 renderer(s) off with the smoke; the Clear follows in 2 s
+[Info   :Valkyrie's Cargo] console: cargo: asked the server to visit; its answer prints here
+[Info   :Valkyrie's Cargo] server answered: cargo visit TestNomad: forced visit: TestNomad at (-62.993248, -18.2992573); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] cargo flight #27: flying from (-135.433685, 184.442245, -71.706955) via (-113.053619, 145.13179, -55.2069435) to (-72.80893, 64.4422455, -25.5360012), 77.80499 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+[Info   :Valkyrie's Cargo] cargo merchant #27: awake as carried, ours (owner -975808589), body=Ingvar
+[Info   :Valkyrie's Cargo] cargo flight #27: dropped at (-72.80893, 62.7177734, -25.5360012) after 17.0602 s
+[Info   :Valkyrie's Cargo] cargo merchant #27: carried -> approaching via the ZDO, 17.0602 s after waking; carrier none, 15.9670267 m from the player, ours (owner -975808589), 0 reclaim(s) during the carry, grounded no; walk-up budget 20 s
+[Info   :Valkyrie's Cargo] cargo merchant #27: trading (entered: stuck: no ground closed in 3 s (a pathing failure), 12.0480032 m out) [callout]
+[Warning:Valkyrie's Cargo] cargo merchant #27: the walk-up did not finish. walked 5.09999561 s of a 20 s budget (scaled from 15.9670267 m at entry), moved 12.4301424 m; stuck 3.0599978 s of the last window, and stopped 12.0480032 m away; follow target NONE, tamed yes, alerted no, AI target none, grounded yes.
+[Info   :Valkyrie's Cargo] terminal opened: visit #27 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] cargo merchant #27: a terminal is open on him (0 on the wire): the leash holds
+[Info   :Valkyrie's Cargo] terminal deal on visit #27: ok wffffffffa3c7dd22-27-1 +1 Bronze, -2 Resin, -13 coins
+[Info   :Valkyrie's Cargo] cargo flight #27: ground unknown at (-224.05397, 179.988022, -136.881042) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+[Info   :Valkyrie's Cargo] terminal closed: escape
+[Info   :Valkyrie's Cargo] cargo merchant #27: no terminal open on him: the leash is armed again
+[Info   :Valkyrie's Cargo] console: cargo: sending buy 1 Bronze at 15 each (nonce 173451793081981156)
+[Info   :Valkyrie's Cargo] console: cargo: DONE wffffffffa3c7dd22-27-2: +1 Bronze, -15 coins
+[Info   :Valkyrie's Cargo] terminal opened: visit #27 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] cargo merchant #27: a terminal is open on him (0 on the wire): the leash holds
+[Info   :Valkyrie's Cargo] terminal deal on visit #27: ok wffffffffa3c7dd22-27-3 +10 SerpentStew, -180 coins
+[Info   :Valkyrie's Cargo] terminal deal on visit #27: ok wffffffffa3c7dd22-27-4 -10 SerpentStew, +130 coins
+[Info   :Valkyrie's Cargo] terminal deal on visit #27: ok wffffffffa3c7dd22-27-5 +7 SerpentStew, -126 coins
+[Info   :Valkyrie's Cargo] terminal deal on visit #27: ok wffffffffa3c7dd22-27-6 -7 SerpentStew, +91 coins
+[Info   :Valkyrie's Cargo] terminal deal on visit #27: ok wffffffffa3c7dd22-27-7 +5 SerpentStew, -90 coins
+[Info   :Valkyrie's Cargo] terminal deal on visit #27: ok wffffffffa3c7dd22-27-8 -5 SerpentStew, +65 coins
+[Info   :Valkyrie's Cargo] terminal closed: close button
+[Info   :Valkyrie's Cargo] cargo merchant #27: no terminal open on him: the leash is armed again
+[Info   :Valkyrie's Cargo] terminal opened: visit #27 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] cargo merchant #27: a terminal is open on him (0 on the wire): the leash holds
+[Info   :Valkyrie's Cargo] terminal closed: use
+[Info   :Valkyrie's Cargo] cargo merchant #27: no terminal open on him: the leash is armed again
+[Info   :Valkyrie's Cargo] terminal opened: visit #27 on Dverger(Clone)
+[Info   :Valkyrie's Cargo] cargo merchant #27: a terminal is open on him (0 on the wire): the leash holds
+[Info   :Valkyrie's Cargo] terminal closed: use
+[Info   :Valkyrie's Cargo] cargo merchant #27: no terminal open on him: the leash is armed again
+[Info   :Valkyrie's Cargo] VCargo_dismissed: ok
+[Info   :Valkyrie's Cargo] cargo merchant #27: into the mist: 1 renderer(s) off with the smoke; the Clear follows in 2 s
+[Info   :Valkyrie's Cargo] console: cargo: asked the server to visit; its answer prints here
+[Info   :Valkyrie's Cargo] server answered: cargo visit TestNomad: forced visit: TestNomad at (-63.1427765, -18.1466846); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] cargo flight #28: flying from (-129.709579, 184.440887, 42.42444) via (-111.08123, 147.5928, 25.4739475) to (-74.09967, 64.44089, -8.176678), 75.1860046 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+[Info   :Valkyrie's Cargo] cargo merchant #28: awake as carried, ours (owner -975808589), body=Ingvar
+[Info   :Valkyrie's Cargo] cargo flight #28: dropped at (-74.09967, 61.4035873, -8.176678) after 20.0802689 s
+[Info   :Valkyrie's Cargo] cargo merchant #28: carried -> approaching via the ZDO, 20.0802689 s after waking; carrier none, 20.71219 m from the player, ours (owner -975808589), 0 reclaim(s) during the carry, grounded no; walk-up budget 20 s
+[Info   :Valkyrie's Cargo] cargo merchant #28: trading (entered: reached the player) [callout]
+[Info   :Valkyrie's Cargo] console: cargo: asked the server to dismiss; its answer prints here
+[Info   :Valkyrie's Cargo] server answered: cargo: visit #28 dismissed (admin TestNomad)
+[Info   :Valkyrie's Cargo] cargo merchant #28: into the mist: 1 renderer(s) off with the smoke; the Clear follows in 2 s
+[Info   :Valkyrie's Cargo] console: cargo: asked the server to dismiss; its answer prints here
+[Info   :Valkyrie's Cargo] server answered: cargo: no visit to dismiss
+[Info   :Valkyrie's Cargo] console: cargo: asked the server to visit; its answer prints here
+[Info   :Valkyrie's Cargo] server answered: cargo visit TestNomad: forced: TestNomad not eligible: comfort < 4; online: 1 comfort < 4
+[Info   :Valkyrie's Cargo] console: cargo: asked the server to visit; its answer prints here
+[Info   :Valkyrie's Cargo] server answered: cargo visit TestNomad: forced visit: TestNomad at (-63.6047974, -17.8458424); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] cargo flight #29: flying from (-18.9774189, 184.437256, -81.81769) via (-28.1736622, 156.937256, -68.63518) to (-55.762394, 64.4372559, -29.0876637), 64.293 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+[Info   :Valkyrie's Cargo] cargo merchant #29: awake as carried, ours (owner -975808589), body=Ingvar
+[Info   :Valkyrie's Cargo] console: cargo: he only buys Bronze, he does not sell it
+[Info   :Valkyrie's Cargo] cargo flight #29: dropped at (-55.762394, 64.45248, -29.0876637) after 16.0801773 s
+[Info   :Valkyrie's Cargo] cargo merchant #29: carried -> approaching via the ZDO, 16.0801773 s after waking; carrier none, 18.6053619 m from the player, ours (owner -975808589), 0 reclaim(s) during the carry, grounded no; walk-up budget 20 s
+[Info   :Valkyrie's Cargo] cargo merchant #29: trading (entered: reached the player) [callout]
+[Info   :Valkyrie's Cargo] console: market for visit #29, purse 100000 coins; 101 rows
+[Info   :Valkyrie's Cargo] console:   Silver (Want): 1/12 max 36, he pays 28, trend up
+[Info   :Valkyrie's Cargo] cargo flight #29: ground unknown at (35.9460258, 178.629532, -160.041779) (the zone has likely not finished generating); the altitude is left alone until a later step's raycast succeeds
+[Info   :Valkyrie's Cargo] console: cargo: asked the server to dismiss; its answer prints here
+[Info   :Valkyrie's Cargo] server answered: cargo: visit #29 dismissed (admin TestNomad)
+[Info   :Valkyrie's Cargo] cargo merchant #29: into the mist: 1 renderer(s) off with the smoke; the Clear follows in 2 s
+[Info   :Valkyrie's Cargo] console: cargo: asked the server to visit; its answer prints here
+[Info   :Valkyrie's Cargo] server answered: cargo visit TestNomad: forced visit: TestNomad at (-63.6047974, -17.8458424); 1 eligible, 1 ticket(s)
+[Info   :Valkyrie's Cargo] cargo flight #30: flying from (-150.414963, 184.437256, 5.90273142) via (-125.241943, 146.712479, -0.9838272) to (-77.01408, 64.4372559, -14.1774788), 76.098 m out at 8 m/s, turning 45 deg/s (radius 10.1859159 m)
+[Info   :Valkyrie's Cargo] cargo merchant #30: awake as carried, ours (owner -975808589), body=Ingvar
+[Info   :Valkyrie's Cargo] session ended: no director on this machine (a client keeps no sidecar); wire, reporter, routed RPCs and the terminal surface dropped
+[Info   :Valkyrie's Cargo] event 'valkyries_cargo' registered (21 events now); duration 300 s, runs whoever is near him (Server.PauseVisitWhenEmpty holds it on an empty server), no spawns, no music, no weather.
+[Info   : Unity Log] Sending Valkyrie's Cargo version 0.1.5 and minimum version 0.1.5 to the server.
+[Info   :Valkyrie's Cargo] role: client
+[Info   : Unity Log] Received Valkyrie's Cargo version 0.1.5 and minimum version 0.1.5 from the server.
+[Info   :Valkyrie's Cargo] admin wire: registered VCargo_reply on the server socket
+[Info   :Valkyrie's Cargo] deal wire: registered VCargo_dealt on the server socket
+[Info   :Valkyrie's Cargo] cargo merchant #30: awake as approaching, ours (owner -537217303), body=Ingvar
+[Info   :Valkyrie's Cargo] cargo merchant #30: trading (entered: stuck: no ground closed in 3 s (a pathing failure), 79.5089 m out) [callout]
+[Warning:Valkyrie's Cargo] cargo merchant #30: the walk-up did not finish. walked 7.13999367 s of a 20 s budget (scaled from 0 m at entry), moved 129.113586 m; stuck 3.0599978 s of the last window, and stopped 79.5089 m away; follow target NONE, tamed yes, alerted no, AI target none, grounded yes.
+[Info   :Valkyrie's Cargo] console: Valkyrie's Cargo v0.1.5 - role=client, renderer=yes
+[Info   :Valkyrie's Cargo] console:   engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable
+[Info   :Valkyrie's Cargo] console:   patches 19/19 applied
+[Info   :Valkyrie's Cargo] console:   config: following the server, locked=False, admin here=True, Enabled=True, roll every 1 min at 25%, rested=True, comfort>=4, baseValue>=1, daytimeOnly=False, lifespan 300 s
+[Info   :Valkyrie's Cargo] console:   config: version 2 (file), migration: none
+[Info   :Valkyrie's Cargo] console:   catalogue: 101 shipped + none; 101 entries (27 wares, 74 wants), 0 problem(s)
+[Info   :Valkyrie's Cargo] console:   channels: VisitState=98 chars, MarketState=3173 chars -> parsed: visit Dropped #30, market 101 rows, purse 100000
+[Info   :Valkyrie's Cargo] console:   transport: server socket, sent 0, answered 0, pending 0, unsolicited 0, claimed, inbox 81 applied deliveries, terminal closed (last: use), admin wire up (direct peer ZRpc)
+[Info   :Valkyrie's Cargo] console:   simulation distance near 2 classic: a claim is kept within 96 m of the reference zone's centre on both axes (ZNet.GetSyncedSimulationDistance; 1.0 replaced ZoneSystem.m_activeArea); water level=30
+[Info   :Valkyrie's Cargo] console:   carry: he hangs at the talon less (0, 0, 0) in the talon's own space, set (Server.CarryOffset)
+[Info   :Valkyrie's Cargo] console:   own ground: player-built yes (52 piece(s) within 20 m); the gate is ON (Server.RequireBuiltBase)
+[Info   :Valkyrie's Cargo] console:   locations: clear here (refusing merchant camps + dungeon entrances; clearance 8 m; landmarks are the server's read and not visible from a client)
+[Info   :Valkyrie's Cargo] console:   engine: registry 0 location(s); none in the 3x3; instances: GetLocation=WoodHouse10[r=8 d=1.05034876 trader=n interior=n]
+[Info   :Valkyrie's Cargo] console:   random event: valkyries_cargo (44 of 300 s); 34 events registered, ours=yes ('valkyries_cargo')
+[Info   :Valkyrie's Cargo] console:   time: world 41025 s, day, day length 1800 s (EnvMan.m_dayLengthSec, public; the drift half-life counts these; compiled default 1200, scene expected 1800)
+[Info   :Valkyrie's Cargo] console:   my report: rested=no, comfort=4, written 1.5 s ago (483 writes to my character ZDO as VCargo_rested/VCargo_comfort)
+[Info   :Valkyrie's Cargo] cargo merchant #30: approaching (entered: the player left: 79.51971 m for 5.01999569 s) [following]
+[Info   :Valkyrie's Cargo] console: cargo status          - role, config authority, catalogue, the director, the engine numbers the design depends on
+[Info   :Valkyrie's Cargo] console: cargo version         - this build and the ServerSync gate
+[Info   :Valkyrie's Cargo] console: cargo engine          - the Valheim build this DLL was written on against the one running, and every engine probe with its rank
+[Info   :Valkyrie's Cargo] console: cargo config          - the config file's layout version against the current one, the catalogue overrides, and the last migration
+[Info   :Valkyrie's Cargo] console: cargo prefab <name>   - components, children and effect lists of a game prefab (Valkyrie, Dverger, odin, Haldor)
+[Info   :Valkyrie's Cargo] console: cargo body preview    - stand him 2.5 m in front of you, facing you: no ZDO, nothing networked, nobody else sees him
+[Info   :Valkyrie's Cargo] console: cargo body walk       - make the preview walk on the spot (a simulated speed; toggles off again)
+[Info   :Valkyrie's Cargo] console: cargo body clip <Hello|Talk|Shrug|Nod>  - fire that one-shot on the preview
+[Info   :Valkyrie's Cargo] console: cargo body clear      - take the preview away
+[Info   :Valkyrie's Cargo] console: cargo stock [prefab]  - his shelf as this machine last heard it: stock/target, what you pay, what he pays, trend
+[Info   :Valkyrie's Cargo] console: cargo deal buy <prefab> [count]   - buy from him at the price on the shelf (a plain deal, no terminal)
+[Info   :Valkyrie's Cargo] console: cargo deal sell <prefab> [count]  - sell to him at what he pays
+[Info   :Valkyrie's Cargo] console: cargo claim           - ask the server for deliveries it still owes you
+[Info   :Valkyrie's Cargo] console: cargo terminal demo   - open the Cargo Terminal on the in-process demo market (no server, no merchant)
+[Info   :Valkyrie's Cargo] console: cargo terminal open   - open it on the running visit without a merchant (before P5); close closes it
+[Info   :Valkyrie's Cargo] console: cargo visit [player]  - ADMIN: force a visit for yourself (or the named player), cooldowns ignored, the other gates kept
+[Info   :Valkyrie's Cargo] console: cargo dismiss         - ADMIN: end the running visit now
+[Info   :Valkyrie's Cargo] console: cargo reset           - ADMIN: forget every cooldown
+[Info   :Valkyrie's Cargo] console: cargo save            - ADMIN: write the world sidecar now
+[Info   :Valkyrie's Cargo] console: cargo catalogue list  - what he sells and buys, as this machine last heard it (Prefab base target/max)
+[Info   :Valkyrie's Cargo] console: cargo catalogue add <Prefab:Base:Target:Max:Kind>  - ADMIN: add an item, or change one already there (Kind: Ware = sells and buys back, Want = only buys)
+[Info   :Valkyrie's Cargo] console: cargo catalogue remove <Prefab>  - ADMIN: take an item off the shelf
+[Info   :Valkyrie's Cargo] console: cargo catalogue reset - ADMIN: back to the shipped catalogue. Every change applies as soon as no visit is running, and lands in the cfg file
+[Info   :Valkyrie's Cargo] console: Valkyrie's Cargo v0.1.5 - role=client, renderer=yes
+[Info   :Valkyrie's Cargo] console:   engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable
+[Info   :Valkyrie's Cargo] console:   patches 19/19 applied
+[Info   :Valkyrie's Cargo] console:   config: following the server, locked=False, admin here=True, Enabled=True, roll every 1 min at 25%, rested=True, comfort>=4, baseValue>=1, daytimeOnly=False, lifespan 300 s
+[Info   :Valkyrie's Cargo] console:   config: version 2 (file), migration: none
+[Info   :Valkyrie's Cargo] console:   catalogue: 101 shipped + none; 101 entries (27 wares, 74 wants), 0 problem(s)
+[Info   :Valkyrie's Cargo] console:   channels: VisitState=98 chars, MarketState=3173 chars -> parsed: visit Dropped #30, market 101 rows, purse 100000
+[Info   :Valkyrie's Cargo] console:   transport: server socket, sent 0, answered 0, pending 0, unsolicited 0, claimed, inbox 81 applied deliveries, terminal closed (last: use), admin wire up (direct peer ZRpc)
+[Info   :Valkyrie's Cargo] console:   simulation distance near 2 classic: a claim is kept within 96 m of the reference zone's centre on both axes (ZNet.GetSyncedSimulationDistance; 1.0 replaced ZoneSystem.m_activeArea); water level=30
+[Info   :Valkyrie's Cargo] console:   carry: he hangs at the talon less (0, 0, 0) in the talon's own space, set (Server.CarryOffset)
+[Info   :Valkyrie's Cargo] console:   own ground: player-built yes (52 piece(s) within 20 m); the gate is ON (Server.RequireBuiltBase)
+[Info   :Valkyrie's Cargo] console:   locations: clear here (refusing merchant camps + dungeon entrances; clearance 8 m; landmarks are the server's read and not visible from a client)
+[Info   :Valkyrie's Cargo] console:   engine: registry 0 location(s); none in the 3x3; instances: GetLocation=WoodHouse10[r=8 d=1.05034876 trader=n interior=n]
+[Info   :Valkyrie's Cargo] console:   random event: valkyries_cargo (50 of 300 s); 34 events registered, ours=yes ('valkyries_cargo')
+[Info   :Valkyrie's Cargo] console:   time: world 41033 s, day, day length 1800 s (EnvMan.m_dayLengthSec, public; the drift half-life counts these; compiled default 1200, scene expected 1800)
+[Info   :Valkyrie's Cargo] console:   my report: rested=no, comfort=4, written 1.1 s ago (487 writes to my character ZDO as VCargo_rested/VCargo_comfort)
+[Info   :Valkyrie's Cargo] console: cargo: asked the server for anything it still owes you; deliveries print in the log and the HUD
+[Info   :Valkyrie's Cargo] cargo merchant #30: trading (entered: reached the player) [callout]

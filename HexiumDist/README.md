@@ -4,7 +4,7 @@
 
 ![Valheim Mod](https://img.shields.io/badge/Valheim-Merchant_Encounter-orange.svg)
 [![Multiplayer Compatible](https://img.shields.io/badge/Multiplayer-Server--Synced-blue.svg)]()
-[![Valheim](https://img.shields.io/badge/Valheim-1.0.12-critical.svg)]()
+[![Valheim](https://img.shields.io/badge/Valheim-1.0.12_%7C_1.0.15-critical.svg)]()
 [![Framework](https://img.shields.io/badge/Requires-BepInEx-red.svg)]()
 [![Economy](https://img.shields.io/badge/Economy-Supply_%26_Demand-green.svg)]()
 [![Custom Character](https://img.shields.io/badge/Ingvar-Custom_Character-purple.svg)]()
@@ -16,8 +16,9 @@
 
 *A Valkyrie air-drops a merchant at your door. You have five minutes.*
 
-**Requires Valheim 1.0.12**, on the server **and on every client**. Valheim 1.0.12 moved the network
-version, so a build made for 1.0.7 or 0.221.12 cannot connect at all — that wall is the game's, not ours.
+**Requires Valheim 1.0.12 or 1.0.15**, on the server **and on every client**. Valheim 1.0.12 moved the network
+version, so a build made for 1.0.7 or 0.221.12 cannot connect at all — that wall is the game's, not ours. 1.0.15
+kept the same network version, so 1.0.12 and 1.0.15 play together.
 
 </div>
 
@@ -43,7 +44,7 @@ Then he vanishes into the mist the way Odin does.
 - [🛠️ Compatibility](#️-compatibility)
 - [📦 Dependencies](#-dependencies)
 - [📥 Installation](#-installation)
-- [📖 Status — 0.1.1](#-status--011)
+- [📖 Status — 0.1.5](#-status--015)
 - [🐦‍⬛ Credits](#-credits)
 
 </details>
@@ -185,12 +186,12 @@ server-synced and admin-controlled**; only cosmetics are local.
 
 ## 🛠️ Compatibility
 
-Built against **Valheim 1.0.12**. At boot the mod checks the game it is actually running on,
+Built against **Valheim 1.0.12** and tested on **1.0.15**. At boot the mod checks the game it is actually running on,
 prints what it found, and any feature depending on something that has **moved** switches *itself*
 off and says so — rather than taking your session down with it. `cargo engine` shows you that check.
 
 - ✅ Dedicated servers, listen hosts and single-player
-- ⚠️ **Valheim 1.0.12 only.** The game refuses a peer on another network version before this mod is
+- ⚠️ **Valheim 1.0.12 or 1.0.15 only** (network version 40). The game refuses a peer on another network version before this mod is
   consulted, so every copy has to be replaced by hand when the engine moves
 - ✅ Run alongside a **117-plugin** modpack — on 0.221.12, where that pack existed. The 1.0 testing so
   far has been on a clean server, because most of the family has not moved to 1.0 yet
@@ -235,7 +236,7 @@ the file, and the boot log says what it did.
 
 ## 📖 Status — 0.1.5
 
-**0.1.5 (date TBD).** Deal and market fixes: a deal lands in your pack whole or not at all, a deal must be made
+**0.1.5 (2026-09-24).** Deal and market fixes: a deal lands in your pack whole or not at all, a deal must be made
 within 96 m of the visit, and the Fair Market Act covers every row while the shelf rotates. The DLL no longer
 carries the build machine's folder path. Update the server and every client together: a 0.1.4 client is refused
 by a 0.1.5 server. Nothing to delete when updating.

@@ -24,12 +24,29 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ## Status
 
-**Unreleased on main (2026-09-23): the build no longer embeds the build machine's folders.** Every shipped DLL
-through `v0.1.4` carried the absolute PDB path (`C:\Users\<name>\…`) in its PE debug directory. The csproj now
-sets `DeterministicSourcePaths` and always names the repo root as a `SourceRoot`, so the DLL carries
-`/_/…/ValkyriesCargo.pdb` and neither the DLL nor the PDB names a local path; the IL is unchanged. At the next
-cut, say in the changelog that the DLL no longer carries an absolute build path that included the build
-machine's user name (quote no path), and name the commit the DLL was built from: the md5 follows the commit and no longer the checkout folder (the PDB's Source Link URL carries the commit).
+**CUT 2026-09-24: `v0.1.5` — deal and market fixes** (the owner: "valkyries cargo is good to go", "merge 104",
+"cut vc 0.1.5"). A GitHub pre-release with the store zip and the kit attached; the upload is the owner's. The code
+change since 0.1.4 is PR #104, from a code review of 0.1.4: all-or-nothing deal apply (`Core/PackTransaction.cs`,
+pure; `DealApplier.CanApply` runs it on a throwaway copy of the pack), the 96 m visitor range on `VCargo_deal` and
+`VCargo_open` (`DealWire.Near`), the Fair Market Act across the shelf roll (`Market.BuyBackKind`) and the in-visit
+buy-back cap (both PROPOSED in `docs/DECISIONS-WUBARRK.md` §2 and merged on the owner's go), `Market.Rotating`
+reading the rolled shelf, and `VisitDirector.Adopt` publishing `Dropped` for a visit resumed mid-flight. 2589 checks,
+0 warnings. Also shipping: PR #103, the build no longer embeds the build machine's folders (the DLL carries
+`/_/…/ValkyriesCargo.pdb`; the md5 follows the commit, not the checkout folder), and PRs #101/#102 (the README's
+Support section). The changelog names the commit the DLL was built from as the tag; the GitHub release gives its
+sha and md5. A 0.1.4 client is refused by a 0.1.5 server. **Checked in game before the cut on Storm10 (Valheim
+1.0.15, crossplay), visits #23 to #30, on the PR's head `253f732` (DLL md5 `a405d7bb`):** all seven checklist steps
+passed, plus an owed delivery across a restart. The lines:
+`Valkyrie's Cargo v0.1.5 loaded - renderer=False, patches 19/19 applied, catalogue=101 entries, engine: newer game version (1.0.15 vs 1.0.12); probes 19/19 ok, 8 not probeable, ServerSync version gate armed`;
+far deal `cargo: refused: too_far_to_trade` with the server's `refused VCargo_deal from TestNomad: 218.628662 m from the visit…`;
+full pack `deal apply refused: inventory_full`, then after a restart `deferred: inventory_full (the server keeps it until it fits)` and `delivery …24-1 applied: +1 Resin, -1 coins` once;
+the shelf round trip `Silver (Want): 1/12 max 36, he pays 28` (the pre-fix code works out to 67);
+`ShelfSize` live `shelf rolled: shelf fixed (ShelfSize 0 …)` only after the visit ended;
+the resumed flight `visit #30 RESUMED after a restart … 04:57 left` and `merchant ZDO 1:38568 rebound`, the client reading `visit Dropped #30`.
+Not run in game: the listen-host range check and a two-player trade. The cut commit changes only documents after
+`253f732`, and it was not booted at the cut (Storm10 is the owner's to start). The record:
+`docs/proofs/2026-09-24-storm10-session.md` and its log extract. Cosmetic, open: the range log lines say "and a
+visitor is within 96 m" where they mean "must be within".
 
 **CUT 2026-09-16, the day's second: `v0.1.4` — the config migration** (the owner: "merge 99 and cut 0.1.4"). A
 GitHub pre-release with the store zip and the kit attached; the upload is the owner's. The code change since 0.1.3:
