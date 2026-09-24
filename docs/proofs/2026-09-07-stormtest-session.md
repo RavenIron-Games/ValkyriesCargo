@@ -1,4 +1,4 @@
-# StormTest session, 2026-09-07 10:39–11:38 — Don's Windows client, six visits
+# StormTest session, 2026-09-07 10:39–11:38 — Nomad's Windows client, six visits
 
 The first session with the owner's own client on a dedicated server, on PR #46's build (main `af10fcf` plus the
 probe rows). Every line the mod wrote is in `2026-09-07-stormtest-session.log.txt` beside this file (server first,

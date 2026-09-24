@@ -1,4 +1,4 @@
-# StormTest session, 2026-09-07 20:18–21:10 — Don's Windows client, visits 10 to 15: rc2 on a screen, then D5
+# StormTest session, 2026-09-07 20:18–21:10 — Nomad's Windows client, visits 10 to 15: rc2 on a screen, then D5
 
 The night session after the rc2 cut. Visits 10 to 12 ran on rc2's code (main `84de90a`); the server was then
 stopped, Wu'barrk's PR #54 (D5) reviewed, merged (main `2694d3b`) and deployed to both sides, and visits 13 to 15
@@ -20,7 +20,7 @@ vanilla's `ShieldDomeImageEffect` making a material with no shader on a headless
 |---|---|---|---|---|---|---|
 | 10 | rc2 | west | 90 m | `ours`, 47.5 m from the player, budget 31.7 s | gave up at 31.7 s: moved 242 m, stopped 10.1 m away; the leash's second approach reached +29 s | dismiss 20:23:55; reclaim +6 s; no sweep line |
 | 11 | rc2 | east | 78 m | `watching`, 95.7 m (frozen mid-descent) | never — nobody owned him | timer 20:31:46; reclaim +0 s; a `leaving -> approaching via the ZDO` line on the watcher +1 s |
-| 12 | rc2 | south | 78 m | `watching`, 116.8 m (frozen); **Don standing still** | never | open at the disconnect 20:37:06; row cleared before the 20:44 boot (backup beside the file) |
+| 12 | rc2 | south | 78 m | `watching`, 116.8 m (frozen); **Nomad standing still** | never | open at the disconnect 20:37:06; row cleared before the 20:44 boot (backup beside the file) |
 | 13 | D5 | south | 78 m | `ours (owner -677746031), 2 reclaim(s) during the carry`, 44.2 m, budget 29.4 s | **reached in 11 s** | timer 20:57:16; reclaim +0 s; no sweep line |
 | 14 | D5 | east | 78 m | `ours (owner -677746031), 2 reclaim(s)`, 48.5 m, budget 32.3 s | **reached in 12 s** | dismiss 21:04:21; reclaim +0 s; no sweep line |
 | 15 | D5 | north-east | 90 m | `ours (owner -677746031), 0 reclaim(s)`, 46.3 m, budget 30.9 s | **reached in 13 s** | open when the server was stopped from the desktop (~21:10); its row is in the sidecar with `purse` 100000, a test value |
@@ -39,7 +39,7 @@ The "N m from the player" at the drop is a 3D distance: the release is about 47 
 - **D4a (PR #48).** Both wires registered for Nomadtest once the identity had arrived (20:20:05, 20:51:25), and
   the client's own registration lines followed.
 - **The half-turn (PR #53).** `turned 180 deg (Client.BodyYawDegrees)` printed on every attach. Whether he walks
-  facing forward is Don's to say; it is not in the log.
+  facing forward is Nomad's to say; it is not in the log.
 - **The boot sweep on a cleared row**, twice, exactly one stranded merchant each time.
 - **Clean boot lines** on both sides on both builds: `patches 18/18 applied`, `probes 18/18 ok, 7 not probeable`,
   the version handshake `0.1.0` both ways.
@@ -60,14 +60,14 @@ The "N m from the player" at the drop is a 3D distance: the release is about 47 
    the client (visit 11 logged `leaving` a second after the end), so he does not blink out unannounced, but the
    beat between the farewell and Odin's effect is not there. Track B's file; noted on #54.
 3. **Visit 10's first approach on rc2**: ownership held, the budget scaled, and he still gave up — 242 m moved in
-   31.7 s (running the whole budget) and 10 m short of the 3.5 m arrival radius. Don may have been moving. Not
+   31.7 s (running the whole budget) and 10 m short of the 3.5 m arrival radius. Nomad may have been moving. Not
    seen again: on D5 every first approach reached.
 4. **A cosmetic line on a watcher**: visit 11's `leaving -> approaching via the ZDO` at the end — the local state
    went `Leaving` on the RPC while the ZDO still said `approaching`, because nobody owned him to write it.
 
 ## Not seen tonight
 
-The walk direction and the vanish (Don was outside the base at both timer ends; the roll after each said
+The walk direction and the vanish (Nomad was outside the base at both timer ends; the roll after each said
 `comfort < 4`), the release over the drop point, any deal, and two clients.
 
 ## What the rc2 cut is missing

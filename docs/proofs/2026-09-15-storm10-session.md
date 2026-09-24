@@ -6,8 +6,8 @@ extract is `2026-09-15-storm10-session.log.txt` beside this file: the server's l
 Storm10's log (which is appended across boots, `AppendLog=true`), then the client's. The comments on PR #82,
 PR #84 and PR #86 quoted the same lines at the time.
 
-**The server.** Storm10, `C:\Users\donfr\ValheimServers\Storm10`, port 2477, world Storm10, crossplay,
-Valheim **1.0.12**. Don's client on the Gale **testing** profile, in-game `Nomadtest`, an admin. The cfg's
+**The server.** Storm10, `%USERPROFILE%\ValheimServers\Storm10`, port 2477, world Storm10, crossplay,
+Valheim **1.0.12**. Nomad's client on the Gale **testing** profile, in-game `Nomadtest`, an admin. The cfg's
 stored `LocationClearance` was 25 (not the shipped 8) for the first refusals — found at the 09:36 deploy and
 corrected while the server was down (PR #84's correction comment); both refusals hold at 8 (Hildir at 30.9 m
 is inside 24 + 8, the stones at 32.2 m inside 25 + 8).

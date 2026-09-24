@@ -7,8 +7,8 @@ the two builds in anything this mod touches**, and the whole authored-ZDO design
 
 ```
 node tools/diff-engine.js --surface docs/ENGINE-SURFACE.md ^
-     --from C:\Users\donfr\valheim-shadows\src\baseline-client ^
-     --to   C:\Users\donfr\valheim-shadows\src\baseline-server ^
+     --from %USERPROFILE%\valheim-shadows\src\baseline-client ^
+     --to   %USERPROFILE%\valheim-shadows\src\baseline-server ^
      --out  %TEMP%\client-vs-server.md --all-types
 ```
 

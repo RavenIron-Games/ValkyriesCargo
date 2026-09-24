@@ -2,7 +2,7 @@
 
 For Track B (Wu'barrk). Read-only: nothing in your files changed; every fix below is a proposed diff against
 main `161743b`. The evidence is `docs/proofs/2026-09-07-stormtest-session.md` and the log excerpt beside it;
-the full server log of the session (560 KB) and the client's second boot are on Don's machine.
+the full server log of the session (560 KB) and the client's second boot are on Nomad's machine.
 
 **How this was made.** Three Opus auditors, one per section, read the code, the decompiled 0.221.12 game and
 the logs; one Opus refuter per finding then tried to knock each one down, reading the same lines itself. Four

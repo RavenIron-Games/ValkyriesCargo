@@ -1,7 +1,7 @@
 # Work split — Valkyrie's Cargo, from 2026-09-06
 
 > **Status: DECIDED by the owners, the night of 2026-09-06.** Wu'barrk takes the creature pipeline
-> (P4 flight, P5 merchant, the bake half of P8); Don takes the terminal (P7), the loader half of P8 and
+> (P4 flight, P5 merchant, the bake half of P8); Nomad takes the terminal (P7), the loader half of P8 and
 > the release (P9). P1, P2, P3 and P6 are merged. Section 2, the contract, is code and is the seam.
 >
 > **Where it stands 2026-09-07:** **every package P1 to P12 is merged.** `main` builds clean at 1301 checks
@@ -9,10 +9,10 @@
 > loop has to be seen end to end first (`docs/RELEASE.md` step 5). What is left is proof, not code, and the
 > live list is **`docs/TODO.md`**, which supersedes section 3's order of work below.
 >
-> **The bake is Wu'barrk's machine's** (owner, 2026-09-07). Don's side installs no Unity, so the bundle is
+> **The bake is Wu'barrk's machine's** (owner, 2026-09-07). Nomad's side installs no Unity, so the bundle is
 > not a build input on his machine at all: **every bake reaches him as a release asset** on the tag it belongs
 > to. Until one is attached, the only copy of the baked bundle in git is inside the tracked
-> `HexiumDist/plugins/ValkyriesCargo.dll`, and any rebuild on Don's side ships without a body.
+> `HexiumDist/plugins/ValkyriesCargo.dll`, and any rebuild on Nomad's side ships without a body.
 
 ## 0. The work packages, with what each needs
 
@@ -24,22 +24,22 @@
 | P4 | Authored flight: server creates the bird, pilot flies it; two-client proof | **Wu'barrk** (owner, 2026-09-06 night) | P3 (merged) | design 3.2; reconcile the event start: P3 starts it at dispatch, 3.2 says at the drop (`VCargo_placed`); the clock follows whichever is chosen |
 | P5 | Merchant: carry pin, `InIntro`, follow, callout, immortal, dismissal, Odin vanish, restart sweep | **Wu'barrk** (with P4: the carry straddles both) | P4 | design 3.3, 3.6, 3.7; the Animator is his own (DESIGN §8) |
 | P6 | Deal wire server side: direct ZRpc, owed ledger, persistence (Cairn pattern) | code done, headless-proven (sidecar round trip); client proof pending | P1, P2 | — |
-| P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | **Don**: code done, off-game proven; screen proof pending | P1, P6 (merged), SharedUI (vendored, PR #2) | design 3.4; §2 below is the whole contract |
-| P8 | Body: rig, clips, bundle on Unity 6000.0.61f1 (**Wu'barrk**, PR #4 merged; the BAKE is still to do); `Client/BodyLoader.cs` + the clip driver (**Don**: code done, off-game proven; screen proof pending) | split | model (in) | design §11; `models/SETUP-FOR-CLAUDE.md` for the bake. The bundle needs NO AnimatorController: the loader plays the clips by name |
-| P9 | Release: README truth pass, package, Hexium name check, store upload | **Don** | all | the RavenIronStudios store account |
-| P10 | Version resilience: (a) steamcmd shadow copies of the live and playtest builds, client and server, decompiled and diffed against our baseline; (b) boot-time version detect, per-fact probes, degrade-don't-throw | (a) **Wu'barrk**, after P5 (owner, 2026-09-07: the tooling and the first sweeps came from Don's side the same night; the client fetches and every recurring sweep are his, on his rig with his login); (b) **Don** | — (P10a is independent; 11d waits on P5) | `docs/P10-P11-FOR-DON.md`; baseline is 0.221.12 / net 36 / player 43 / world 37 |
-| P11 | Pre-1.0 shakedown: full default-config pass, the server-authority and ServerSync audit, embedded assets end to end, and an Opus audit of every game call P4 and P5 introduced | **Don**, end to end (owner, 2026-09-07) | P5 (for 11d only) | same doc; house rule 5 — a clean build proves nothing about member access |
+| P7 | Cargo Terminal: IMGUI window on the gilt theme, panes, tray, deal builder, `cargo terminal demo` | **Nomad**: code done, off-game proven; screen proof pending | P1, P6 (merged), SharedUI (vendored, PR #2) | design 3.4; §2 below is the whole contract |
+| P8 | Body: rig, clips, bundle on Unity 6000.0.61f1 (**Wu'barrk**, PR #4 merged; the BAKE is still to do); `Client/BodyLoader.cs` + the clip driver (**Nomad**: code done, off-game proven; screen proof pending) | split | model (in) | design §11; `models/SETUP-FOR-CLAUDE.md` for the bake. The bundle needs NO AnimatorController: the loader plays the clips by name |
+| P9 | Release: README truth pass, package, Hexium name check, store upload | **Nomad** | all | the RavenIronStudios store account |
+| P10 | Version resilience: (a) steamcmd shadow copies of the live and playtest builds, client and server, decompiled and diffed against our baseline; (b) boot-time version detect, per-fact probes, degrade-don't-throw | (a) **Wu'barrk**, after P5 (owner, 2026-09-07: the tooling and the first sweeps came from Nomad's side the same night; the client fetches and every recurring sweep are his, on his rig with his login); (b) **Nomad** | — (P10a is independent; 11d waits on P5) | `docs/P10-P11-FOR-DON.md`; baseline is 0.221.12 / net 36 / player 43 / world 37 |
+| P11 | Pre-1.0 shakedown: full default-config pass, the server-authority and ServerSync audit, embedded assets end to end, and an Opus audit of every game call P4 and P5 introduced | **Nomad**, end to end (owner, 2026-09-07) | P5 (for 11d only) | same doc; house rule 5 — a clean build proves nothing about member access |
 | P12 | BarrkBOT JSON export: three files under `BepInEx/config/ValkyriesCargo/` on a 60 s cadence, the v4 rollover and leaderboards, the sidecar-then-mirror ordering | **Wu'barrk** (PR #21, merged inside PR #22) | P6 | `BARRKBOT_CONTRACT.md`; it added the `ValheimModding-JsonDotNET` dependency, which is an OPEN owner decision (`docs/TODO.md` §1). Live proof is item 23, his |
 
-P4 → P5 is a chain on Wu'barrk's side; P7 and the loader run in parallel on Don's; the bake is independent.
-P10b and P11 are Don's; P10a is Wu'barrk's after P5 (decided 2026-09-07), built on the tooling and the first sweeps
-from Don's side. Neither package blocks 0.1.0. The baseline was captured before 1.0 (2026-09-09), which was the point.
+P4 → P5 is a chain on Wu'barrk's side; P7 and the loader run in parallel on Nomad's; the bake is independent.
+P10b and P11 are Nomad's; P10a is Wu'barrk's after P5 (decided 2026-09-07), built on the tooling and the first sweeps
+from Nomad's side. Neither package blocks 0.1.0. The baseline was captured before 1.0 (2026-09-09), which was the point.
 The client-side proofs of what is merged (CLAUDE.md "What to verify in-game", items 2–16) belong to whoever
 boots a client first, and go into CLAUDE.md Status with the exact lines.
 
 ## 1. The split (decided 2026-09-06)
 
-| | **Track A — Don** | **Track B — Wu'barrk** |
+| | **Track A — Nomad** | **Track B — Wu'barrk** |
 |---|---|---|
 | Owns | the Cargo Terminal (P7: IMGUI on the gilt theme, panes, tray, the deal builder on `CargoRpc`), the body loader and its Animator driver (P8, mod side), the market, persistence, the deal wire, the scheduler and the event (merged), release packaging (P9), the store account | the creature pipeline: the authored flight (P4), the merchant (P5: carry pin, `InIntro`, follow, callout, immortal, dismissal, the Odin vanish, the restart sweep), the body's rig, clips and bundle (P8, Unity side), the two-client proof of all three |
 | Folders | `Client/Terminal/**` `Client/BodyLoader.cs` `Client/DealApplier.cs` `Core/` `Server/VisitDirector.cs` `Server/MarketStore.cs` `Net/` `tests/` `tools/*.ps1` | `Client/CargoFlight.cs` `Client/CargoMerchant.cs` `Server/Spawner.cs` `Patches/Patch_Valkyrie_Awake.cs` `Patch_Humanoid_Awake.cs` `Patch_Character_InIntro.cs` `Patch_Character_Damage.cs` `models/` `tools/unity/**` `tools/*_ingvar.py` the Unity project (a sibling folder) |
@@ -164,7 +164,7 @@ What the market-core review (2026-09-06) says the terminal must know:
 
 ## 3. Order of work
 
-**Track A (Don)**
+**Track A (Nomad)**
 1. ~~Contract~~, ~~market core~~, ~~eligibility and event~~, ~~deal wire and persistence~~: merged (PRs #1, #3, #5, #6).
 2. ~~P7: vendor check, `cargo terminal demo` opens and closes~~ built (a/p7-terminal); screen proof pending.
 3. ~~P7: panes, rows, glyphs, tray, payment mode, countdown, dismiss~~ built.
@@ -205,8 +205,8 @@ a shared session on a server both can reach.
   baked bundle, and the two blobs already in history stay. Everything else stays out — the built bundle ships
   beside the DLL in the package, and Meshy's raw per-clip output (343 MB, six files each carrying a
   duplicate mesh and 22 MB of the same textures) is gitignored.
-  **Decided by Wu'barrk, 2026-09-06**, answering the question Don raised on PR #4. The reasoning: the
-  body is a hand-made asset with no other home, Don is away, and a build input nobody can fetch is worse
+  **Decided by Wu'barrk, 2026-09-06**, answering the question Nomad raised on PR #4. The reasoning: the
+  body is a hand-made asset with no other home, Nomad is away, and a build input nobody can fetch is worse
   than 11 MB in git. If the second owner disagrees, the fallback is a GitHub release asset — the two
   files move, `tools/setup-ingvar-unity.ps1` gains a download step, and nothing else changes.
 - Verified facts go into `CLAUDE.md` "Status" with the date and the exact log line, by whoever saw it.

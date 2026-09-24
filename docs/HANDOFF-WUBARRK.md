@@ -10,12 +10,12 @@ subsections below this one are the earlier states, kept as history. The full sto
 (0.1.0 → 0.1.1 → 0.1.2) and `CLAUDE.md`'s Status.
 
 **What shipped.** `v0.1.0-rc5` (2026-09-11) was the first cut to reach the store — the Valheim 1.0.12 build, uploaded
-by Don. `v0.1.1` (2026-09-15) carried issue #79's fix (Ingvar insists on ground somebody built and refuses a drop at a
+by Nomad. `v0.1.1` (2026-09-15) carried issue #79's fix (Ingvar insists on ground somebody built and refuses a drop at a
 merchant's camp, a dungeon door or a landmark — three `Server.*` switches, proven live), food and drink in the
 catalogue (72 → 101), one row per item token with deals keyed by prefab, every `cargo` line mirrored into the client
 log, the BarrkBOT contract-v4 fix (`market_not_achievements`), and the purse carry surviving a restart (PR #91).
 **`v0.1.2` (tonight, main `52c83f5`) carries the merchant guard**, PR #94; a GitHub pre-release, the store upload is
-Don's. **Every existing server keeps its stored `Catalogue` line across an update**: `cargo catalogue reset` as an
+Nomad's. **Every existing server keeps its stored `Catalogue` line across an update**: `cargo catalogue reset` as an
 admin takes the 101 rows.
 
 **Wonderland and Tartarus are both on `0.1.0+2731b8c`, the pre-#79 build**, and the gate now moves with the number
@@ -45,7 +45,7 @@ comes back from its PR's head sha); `b/backpack-body`, `b/store-readme`, `b/d5-c
 remain. Nothing of yours in the tree was edited this week except through your own PRs; the one seam we touched near
 your code is the guard's call in `Patches/Patch_Humanoid_Awake.cs`, ours.
 
-**Storm10 is down** (the 1.0.12 testbed, join code 608444 when it is up; the shipped 0.1.2 DLL on it and on Don's
+**Storm10 is down** (the 1.0.12 testbed, join code 608444 when it is up; the shipped 0.1.2 DLL on it and on Nomad's
 `testing` profile). The purse there is the 100000 test value, not the shipped 1500.
 
 ### The night of 2026-09-08 (history)
@@ -59,7 +59,7 @@ player 46, world 41, Unity 6000.0.75). The P10a sweep is DONE from this side on 
 `docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md` — and the two playtest stop-ships in your #55
 report did not ship: `GetStableHashCode` is one-argument again and `GetAllCharacterZDOS` has no early return. The
 release broke six other things and `a/valheim-1.0` fixes them (its PR body is the list). Two of them touched your
-files at Don's word, the smallest edits that build: `CargoMerchant.GetHoverOffset()` (1.0's third `Hoverable` member;
+files at Nomad's word, the smallest edits that build: `CargoMerchant.GetHoverOffset()` (1.0's third `Hoverable` member;
 returns his character's value) and the D5 strip-band read in `EnterState`, which now takes the live simulation
 distance through `ActiveAreaLive.Read()` instead of `ZoneSystem.m_activeArea` (the field is gone). **Your D5 survives
 in mechanism**: `ReleaseNearbyZDOS` was rewritten on 1.0 but a stock server's keep-window is the same 3x3 block, now
@@ -69,8 +69,8 @@ measured in metres from the zone centre (`Core/ActiveArea.cs` is the rule; `Acti
 / `InventoryGui` / `Player.TakeInput` are UIFocus, `ZNetScene.CreateObject` / `CreateObjectsSorted`, `Heightmap.Biome`,
 `NpcTalk.Start`, `Character.Awake`, `ZSyncAnimation.Awake`, `Terminal.*`), and the flight on 1.0.7 once a server is up.
 Your box: `libs/` wants the 1.0.7 publicized assemblies (0.221.12 is no longer a build target); the manifest names
-BepInExPack 5.4.2350. No Yggdrasil's Reckoning on the 1.0 test server, Don's word. **The branch was SEEN on 1.0.7 the
-same morning** (Storm10, a fresh 1.0.7 dedicated server; Don's client): the boot lines, a forced visit, the flight and the
+BepInExPack 5.4.2350. No Yggdrasil's Reckoning on the 1.0 test server, Nomad's word. **The branch was SEEN on 1.0.7 the
+same morning** (Storm10, a fresh 1.0.7 dedicated server; Nomad's client): the boot lines, a forced visit, the flight and the
 drop, `2 reclaim(s) during the carry`, the walk-up, two deals, the dismiss, the vanish — nothing thrown. **For your own
 servers: 1.0's `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want `V_<steamid>`** (a display-prefix filter
 in `Splatform.dll`; the old bare and `Steam_` forms refuse everyone on 1.0.7). `Splatform.dll` — on 0.221.12 too,
@@ -79,19 +79,19 @@ were read from this side, all holding — `docs/engine-sweeps/2026-09-10-1.0.7-b
 `GameCamera.UpdateMouseCapture` now goes through `ZCursor`, which UIFocus's cursor handling should be re-read against
 (it worked on Storm10). `v0.1.0-rc4` is the 1.0.7 cut; rc3 stays the last 0.221.12 build.
 
-**Two lines in your files, 2026-09-11, at Don's word and flagged rather than assumed.** He asked on the screen to
+**Two lines in your files, 2026-09-11, at Nomad's word and flagged rather than assumed.** He asked on the screen to
 bring Ingvar closer to the talons; the number was the `Valkyrie` prefab's own `m_attachOffset` and nothing of ours
 could reach it. `Server.CarryOffset` is the knob (synced and locked - the pin runs on every machine that has him
 instanced), the rule is pure in `Core/CarryOffset.cs` and the read is `CarryPinLive.Read`, both mine. Yours changed
 only where the number comes from: `CargoFlight.AttachOffset` and the no-flight fallback in
 `CargoMerchant.ResolveCarrier` call `CarryPinLive.Read(...)` instead of naming `(0, 0.3, 0.4)`. Empty config = the
-prefab's own = exactly what your code did before, so nothing moves until Don sets a value. Say the word if you want
+prefab's own = exactly what your code did before, so nothing moves until Nomad sets a value. Say the word if you want
 it shaped differently in your files - it is one line each to move. **Seen the same day** on Storm10 (1.0.12,
-visits 2 to 4): Don tuned it live from Configuration Manager while the bird was in the air and settled on
+visits 2 to 4): Nomad tuned it live from Configuration Manager while the bird was in the air and settled on
 `0, 0, 0` - his feet on the talon - which is now the shipped default. Your carry looks different on a fresh
 install because of that one number, and empty still gives you the prefab's framing back.
 
-`main` is at 1dcf3ac (docs) on 55508d6 (code, PR #64): 0 warnings, **1885 checks**. Merged today at Don's word, in
+`main` is at 1dcf3ac (docs) on 55508d6 (code, PR #64): 0 warnings, **1885 checks**. Merged today at Nomad's word, in
 order: #57 the rotating shelf, #58 the item value table, #60 the terminal (count boxes, no pay mode, the 40 % black
 backdrop), #61 the busy hold and the hover localise (your items 2 and 3 from #59, in your files with his word),
 #62 the backpack shelf half, #63 the vanish hide (`HideForGood`, your file with his word), #64 the dismiss. No open
@@ -104,7 +104,7 @@ LOD groups and the collider off, the AI stood down on the owner; seen twice, the
 terminal is open on him (`VisitState` carries the wire's count as an optional 13th field). (c) **#64: the running
 event's `m_pos` now follows the merchant every server tick once he is down** (`CargoEvent.Follow`, from
 `Server/VisitAnchor.cs`, which reads his ZDO through your public `Spawner.Merchant`). Vanilla pauses the clock and
-scopes the banner by `m_pos`, and the deal wire scoped a dismiss by it: on visit 21, after the leash walk, Don stood
+scopes the banner by `m_pos`, and the deal wire scoped a dismiss by it: on visit 21, after the leash walk, Nomad stood
 134 m from the drop point with Ingvar beside him — the clock paused (543 republishes, a ServerSync line on his
 client every 2 s), and his "Send him off" was refused three times while the terminal closed on trust. If anything
 of yours reads `RandomEvent.m_pos` as the drop point, it moves now; `VisitSession.DropX/Y/Z` is still where he
@@ -131,7 +131,7 @@ unseen here and needing two clients: a second player at the terminal holding the
 the bundle attached, a pre-release, uploaded to no store — **it carries neither D5 nor your save-path resolver**.
 **The rc1 tag is marked superseded and still must not reach a tester**: it carries F1, and the ServerSync gate does
 not tell the cuts apart (all are 0.1.0), so every copy is replaced by hand. Your rc1 note (issue #23) is closed.
-`Assets/valkyriescargo_kit` is attached to both releases, so Don's builds carry Ingvar. **The owner's conditions
+`Assets/valkyriescargo_kit` is attached to both releases, so Nomad's builds carry Ingvar. **The owner's conditions
 for the next cut (2026-09-08 00:40) are met but for the vanish being watched**; the cut is on his word, rc3 or
 0.1.0 proper. **Watched by him on 2026-09-08: the arrival banner works; the vanish plays but LATE** — the smoke
 plays and Ingvar stands in it until your `Clear` lands, `VanishGraceSeconds` (2 s) after `SendVanish`. Vanilla
@@ -145,12 +145,12 @@ great."** The same boot proved your backpack add-on's shelf half (`backpack mod:
 loaded; shelf x2`, `shelf 40 of 72`, a Flametal bought off the widened shelf). **His word after the day's merges:
 no release yet.**
 
-**Valheim 1.0: your sweep verified from Don's machine, and HELD by the owner.** The `public-test` branch is
+**Valheim 1.0: your sweep verified from Nomad's machine, and HELD by the owner.** The `public-test` branch is
 password-protected and hidden from the branch list — that is why it read as absent last night, not because it
 was; it is fetched here now (build 23105022, 0.221.13, server only). Our probe tool on it: the version line
 unreadable (renamed constants), `zone_maths` FAILED on the `Vector2s` overloads, three probes THREW on the
 one-argument `GetStableHashCode`, your `save_path` PASSED; the decompile shows the `GetAllCharacterZDOS` early
-return word for word. Fix designs exist on Don's side (a pure hash rebinding all 13 of our sites through the
+return word for word. Fix designs exist on Nomad's side (a pure hash rebinding all 13 of our sites through the
 namespace, a peer-list gather, both version names, the zone type at runtime; a ServerSync-namespace shim for its
 three sites, flagged as the owner's call). **The owner said "dont change anything for 1.0": nothing is built, and
 neither side starts without his word.** The client axis is unswept everywhere.
@@ -166,16 +166,16 @@ open on him" — `VisitState` carries the wire's count of open terminals (an opt
 open, the local one at once — and the `Localization.instance.Localize` in `GetHoverText`. Still yours: the
 flight's feel (say which screen and which part; try `Server.FlightSpeed` 12 / `Server.FlightTurnRate` 30 first,
 no build) and **the walk-off's own log lines** (`cargo merchant #N: … (entered: …)` from your client), because the
-hold assumes it was the leash and the log is what says so. Backpacks 1.3.8 is installed on StormTest and Don's
+hold assumes it was the leash and the log is what says so. Backpacks 1.3.8 is installed on StormTest and Nomad's
 client now, so the backpack test can run from either side.
 
 **Your backpack add-on: the shelf half is built** (`a/backpack-shelf`, at the owner's word the same morning). A
 server with Backpacks loaded (`Server.BackpackModGuid`, your GUID `org.bepinex.plugins.backpacks` confirmed off
 the 1.3.8 DLL) sells from `ShelfSize × Server.BackpackShelfMultiplier` (2, range 1–4), looked up in the
 chainloader at director up and every tick, scaled by the pure `Shelf.Scaled`. Backpacks 1.3.8 is on StormTest
-and Don's client. **The backpack on his body is yours**: a bake, nothing of the model is touched here.
+and Nomad's client. **The backpack on his body is yours**: a bake, nothing of the model is touched here.
 
-**The rotating shelf, issue #56, is BUILT on `a/rotating-shelf`; the PR waits for Don's word.** Your read came the
+**The rotating shelf, issue #56, is BUILT on `a/rotating-shelf`; the PR waits for Nomad's word.** Your read came the
 same morning (two game days by default; the backpack add-on) and the owner said build. Ingvar's selling side stops
 being a fixed list — 20 of the 72 catalogue entries on the shelf at a time, re-rolled every two game days, seeded
 from the world's salt and the period (nothing persisted, nothing sent: a restart shows the same shelf), the fixed
@@ -188,7 +188,7 @@ a flooded Want lands on the shelf with all of it for sale at the flooded price (
 and whether a roll should be announced to players. The backpack add-on needs the plugin GUID(s) to detect and your
 bake for the body; the owner's buy-anything ask is designed in the PR and not built.
 
-**Fifteen visits flew today on Don's Windows client against StormTest**: six in the morning, twenty deals, no
+**Fifteen visits flew today on Nomad's Windows client against StormTest**: six in the morning, twenty deals, no
 exception; three in the evening on the audit's fixes; six at night on rc2 and then on your D5 (item 1 below and
 the record). Ingvar landed in his own body every time, within a second
 of the simulation; the terminal opened on him; the prices, the Fair Market Act, the drift and the purse carry all
@@ -201,7 +201,7 @@ point, the vanish, the callout bubble, the hover prompt, and every fix merged si
 D4 and the half-turn; `docs/AUDIT-STORMTEST-2026-09-07.md` §5 says what would exercise each, one line each).
 
 **The walk-up, and what the audit found (`docs/AUDIT-STORMTEST-2026-09-07.md`, read §0):**
-1. **He reached Don on every visit — but never on the first attempt.** The first approach after the drop gives
+1. **He reached Nomad on every visit — but never on the first attempt.** The first approach after the drop gives
    up with `budget scaled from 0 m at entry`, 6/6: the drop writes his state onto the ZDO, `ResolveCarrier` copies
    it straight into `_state`, and that path skips the reset `Decide` does, so F5's scaled budget has never run on
    a machine. On visits 4–6 the give-up came a minute or two late with him far from the pilot, which the code
@@ -213,14 +213,14 @@ D4 and the half-turn; `docs/AUDIT-STORMTEST-2026-09-07.md` §5 says what would e
    never woke. **The fix is yours and is not in rc2:** keep the pilot as owner through the carry
    (`ClaimOwnership` in `Reassert` while `Pinned`, or refuse the release until owned) and print the owner uid in
    the line. **Built by you as PR #54, merged and deployed the same night, and SEEN: visits 13, 14 and 15 read
-   `ours (owner -677746031), 2 / 2 / 0 reclaim(s)` at the drop and the first approach reached Don every time —
+   `ours (owner -677746031), 2 / 2 / 0 reclaim(s)` at the drop and the first approach reached Nomad every time —
    the first times in fifteen visits.** Who takes ownership, and when, is still not known: all of tonight's starts
    are inside the pilot's 3x3 by your own `ZoneOwnership` arithmetic, so the reclaim counts by direction do not
    fit the sector strip around a standing pilot. The ask on #54 is one line, once per carry, at the first reclaim.
 2. **The visit-end sweep reports a stranded merchant at every end.** The reclaim works; `DestroyZDO` only queues,
    and the sweep runs in the same call. §2: sweep one tick later. **Built by you as PR #51 and merged**; a clean
    end now prints `merchant and bird reclaimed …` and no sweep line at all.
-3. **The cooldown key and two wording lines** were Don's and are built (PR #48).
+3. **The cooldown key and two wording lines** were Nomad's and are built (PR #48).
 4. **Your merged fixes against the logs (§5):** F7 and N1 confirmed on a machine; F5 and F4 contradicted (items 1
    and 2); F1, F2, F6, F8, F9, F11 never exercised. `docs/TODO.md` §2 still says F5 fixed the walk-up cause.
 
@@ -228,7 +228,7 @@ D4 and the half-turn; `docs/AUDIT-STORMTEST-2026-09-07.md` §5 says what would e
 before 1.0", today's builds), so the 0.221.12 baseline stays fetchable after 1.0 lands and a server can pin
 itself there if the mod needs a day. No 1.0 build is downloadable yet. The probe registry was run tonight
 against the previous stable build (0.221.4) and reported every version number as moved with all 18 probes
-still resolving (`docs/ENGINE-PROBES.md` §8 item 4). **When 1.0 lands, Don's side fetches it and runs the
+still resolving (`docs/ENGINE-PROBES.md` §8 item 4). **When 1.0 lands, Nomad's side fetches it and runs the
 probe tool against it within the hour** and tells you which probes moved; the comparative decompile against the
 244-row surface is still yours.
 
@@ -243,7 +243,7 @@ on #54); ~~the ownership fix~~ done (#54); ~~the walk-up, the sweep, your TODO �
 animator parameter names and item 23 on your server; ~~the three rc1 things in issue #23~~ closed with rc2; and
 one author name on your commits (today's came as `t`, `trial` and one merge authored as the model).
 
-**Don's rig at this close-out:** StormTest is down (stopped cleanly 06:50, 2026-09-08) with **visit 15 still open
+**Nomad's rig at this close-out:** StormTest is down (stopped cleanly 06:50, 2026-09-08) with **visit 15 still open
 in the sidecar** and `purse` 100000, a test value he set. The morning boot on main a08e8c4 resumed that visit and
 rebound the merchant (`visit #15 RESUMED after a restart … merchant ZDO 1:60469 rebound`: item 15's server half and
 F4's rebind, seen), and the next boot does it again unless the row is removed first. StormTest and his Gale
@@ -268,13 +268,13 @@ and another ended on its timer — and he **gave up walking after 20 s** and cal
 which is the designed fallback and not a success. The glide, the drop, the walk-up completing, the terminal
 on a real visit, a trade and the vanish have never been watched, and no two-client item has run.
 
-**Three things TODO §2 needs from you first**, and the first one blocks Don's whole screen-proof track:
+**Three things TODO §2 needs from you first**, and the first one blocks Nomad's whole screen-proof track:
 1. **Attach `Assets/valkyriescargo_kit` to the v0.1.0-rc1 release**, and to every release after a re-bake.
-   The bake is your machine's (the owner decided that on 2026-09-07: Don installs no Unity), so a bake that
+   The bake is your machine's (the owner decided that on 2026-09-07: Nomad installs no Unity), so a bake that
    never leaves your box means every build on his side loses the body — today the only copy in git is inside
    the tracked `HexiumDist/plugins/ValkyriesCargo.dll`.
 2. **The walk-up**, the 20-second timeout above. Your client, your P5, and cheaper for you to find than for
-   Don to burn screen time on the same wall.
+   Nomad to burn screen time on the same wall.
 3. **P10a against Valheim 1.0 on 2026-09-09.** Any change in the 244-row surface is a stop-ship.
 
 Also on your list there: the client-only proofs (the animator parameter names cannot be read on a dedicated
@@ -292,9 +292,9 @@ dependency P12 added, and the tracked DLL. Neither is yours to act on before the
 Where main was: P1, P2, P3, P6 and P7 merged; the P8 loader and the P9 release pass being reviewed
 and landing that night; three more branches following them (a client proof runbook with deploy scripts, an
 economy simulation, a decompile audit of the never-run client paths). PR #8 had a review on it.
-Don merged everything; nothing below asked you to merge.
+Nomad merged everything; nothing below asked you to merge.
 
-1. ~~**PR #8: answer the review and push the fix.**~~ DONE 2026-09-07: answered 05:09, verified on Don's side
+1. ~~**PR #8: answer the review and push the fix.**~~ DONE 2026-09-07: answered 05:09, verified on Nomad's side
    (1078 checks with main merged; the flight table reproduced), merged as 1884fcd. The rest of this item is history.
    Originally: Four findings, all on the flight, all from simulating
    `Fly` with the prefab's real speed 20 and turn rate 20 (a 57 m turning circle):
@@ -327,7 +327,7 @@ Don merged everything; nothing below asked you to merge.
      the 64 KB rule in `models/SETUP-FOR-CLAUDE.md`.
    Then `tools/setup-ingvar-unity.ps1`, the Editor menu or the CLI line in SETUP section 5, and `-Embed`
    copies it to `Assets\valkyriescargo_kit` (gitignored; the csproj embeds it when the file exists). Get
-   the file to Don outside git: a release asset on the repo, or a direct transfer. `cargo body preview`
+   the file to Nomad outside git: a release asset on the repo, or a direct transfer. `cargo body preview`
    on any client then stands him up with no merchant and no server.
 
 3. **P5: the seams exist now.**
@@ -347,7 +347,7 @@ Don merged everything; nothing below asked you to merge.
    your client's `BepInEx\plugins\`, and from the main menu run `cargo terminal demo`. Nobody has seen
    the window yet and you have the client. Paste `terminal opened: visit #1 (demo)`,
    `terminal closed: escape` and what you saw into `CLAUDE.md` Status. If it draws wrong, that is the
-   first bug of the evening and it is Don's. In a world, `cargo prefab odin` settles `m_ttl` (your 60
+   first bug of the evening and it is Nomad's. In a world, `cargo prefab odin` settles `m_ttl` (your 60
    against the compiled 300); paste that line too.
 
 5. **Incoming tonight, to read and not act on:** the P8+P9 PR (the loader's `Attach` and `IngvarBody`
@@ -363,15 +363,15 @@ Don merged everything; nothing below asked you to merge.
    clause in `Market.Pays`: a Ware he sells is bought back at par at most. The config fix is the multiplier down to
    1.4, which flattens the scarcity signal. Say which; it goes into DESIGN section 8 and one of us builds it.
 
-7. **Night close, 2026-09-07 (Don asleep; his Claude carries the merges):** PR #15 is under an Opus
-   adversarial review and merges when its findings are answered on the PR; issue #16's rename is Don's,
+7. **Night close, 2026-09-07 (Nomad asleep; his Claude carries the merges):** PR #15 is under an Opus
+   adversarial review and merges when its findings are answered on the PR; issue #16's rename is Nomad's,
    after #15 and P11 land; P10a is yours after P5; the knowledge base is at `docs/knowledge-base/` (add
-   `VALHEIM-API-REFERENCE`); three PRs of Don's (P10a tooling, P10b, P11) arrive overnight, read them in the
+   `VALHEIM-API-REFERENCE`); three PRs of Nomad's (P10a tooling, P10b, P11) arrive overnight, read them in the
    morning. `docs/HANDOFF-CLAUDE.md` section 0 is the full state.
    **What actually happened:** the agents were stopped at the owner's word before any of those three PRs was
    opened, and PR #15 was never merged as itself — you carried it, and everything else, into **PR #22**. The
    three branches (`a/p10a-sweep`, `a/p10b-probes`, `a/p11-shakedown`) are still unmerged; `a/p10a-sweep` holds
-   nothing main lacks, and the other two are being rebased on Don's side now.
+   nothing main lacks, and the other two are being rebased on Nomad's side now.
 
 ## 1. Where things are
 
@@ -505,5 +505,5 @@ Drop the result in `docs/data/items-valheim-<date>.tsv`, point the test harness 
 
 1. Shared-source files: vendored copies with headers, or a submodule?
 2. Tear-down versus reconfirm on a price tick (§5).
-3. Where bundles get built: your Linux box (has 6000.0.61f1) or Don's (has 6000.5.4f1 only)?
+3. Where bundles get built: your Linux box (has 6000.0.61f1) or Nomad's (has 6000.5.4f1 only)?
 4. Will the rigged body come with its own clips, or should we plan on Mixamo?

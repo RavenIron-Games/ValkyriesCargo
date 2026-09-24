@@ -6,9 +6,9 @@ extract is `2026-09-16-storm10-session.log.txt` beside this file: the mod's own 
 leave, keep-socket and timeout lines, in order, for the two boots; the `Poll tick`, flight-authoring and
 shelf-roll noise is left out. PR #97's body quotes the same lines.
 
-**The server.** Storm10, `C:\Users\donfr\ValheimServers\Storm10`, port 2477, world Storm10, crossplay,
+**The server.** Storm10, `%USERPROFILE%\ValheimServers\Storm10`, port 2477, world Storm10, crossplay,
 Valheim **1.0.12**, dedicated (so the engine freezes the world clock with nobody online, `ZNet.UpdateNetTime`,
-and counts no host of its own). Don's client on the Gale **testing** profile, in-game `Nomadtest`, an admin.
+and counts no host of its own). Nomad's client on the Gale **testing** profile, in-game `Nomadtest`, an admin.
 The cfg's `PurseCoins` is the 100000 test value.
 
 **The builds.** Both boots log `Valkyrie's Cargo v0.1.2 loaded`, because the version bump comes with the

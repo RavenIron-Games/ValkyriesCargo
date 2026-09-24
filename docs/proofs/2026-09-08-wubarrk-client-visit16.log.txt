@@ -1,10 +1,10 @@
 # Wu'barrk's client, 2026-09-08 11:39-11:45 — every line the mod wrote on THIS machine during the
-# two-player playtest with Don. Gale profile "TestywithDon"; main's DLL (patches 18/18, probes 19/19,
+# two-player playtest with Nomad. Gale profile "TestywithDon"; main's DLL (patches 18/18, probes 19/19,
 # so it carries D1/#50, D3/#51, D5/#54 and the half-turn/#53, and NOT #61's busy hold or #63's HideForGood).
 # Read-time stamps are the nearest preceding Unity Log stamp in the same file, so a line's stamp is when
 # it was read, not exactly when it was written. Only visit #16 appears; the two earlier world sessions
 # (11:27:35 and 11:28:55) joined and left with no visit running. Filed against issue #59 item 2, the walk-off.
-# CLIENT here = platform 2602964759; the merchant's owner throughout was 109725011 (Don).
+# CLIENT here = platform 2602964759; the merchant's owner throughout was 109725011 (Nomad).
 
 --:--:-- CLIENT [Info   :Valkyrie's Cargo] built against Valheim 0.221.12 (network 36, player 43, world 37; Steam build 21981559 client / 21981590 server; bodies read 2026-09-06); running same build 0.221.12 (net 36, player 43, world 37); probes 19/19 ok, 7 not probeable.
 --:--:-- CLIENT [Info   :Valkyrie's Cargo] Valkyrie's Cargo v0.1.0 loaded - renderer=True, patches 18/18 applied, catalogue=72 entries, engine: same build 0.221.12 (net 36, player 43, world 37); probes 19/19 ok, 7 not probeable, ServerSync version gate armed; role is decided when a world loads.
