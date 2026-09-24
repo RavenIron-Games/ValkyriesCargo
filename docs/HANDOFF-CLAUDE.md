@@ -1,6 +1,6 @@
 # Handoff to Wu'barrk's Claude — Valkyrie's Cargo, 2026-09-06; section 0 re-cut 2026-09-15 night: v0.1.2 published, the merchant guard in, Wonderland and Tartarus still on 0.1.0
 
-You are the second engineering session on this mod. Don's session (me) built what is here; you and
+You are the second engineering session on this mod. Nomad's session (me) built what is here; you and
 Wu'barrk take part of what is left. This file tells you everything you need to act, in the order to
 read it, and ends with the one job to do first: **divide the work packages with your owner, write the
 split down, and say so on PR #1.**
@@ -18,7 +18,7 @@ file and that one disagree, that one wins. The subsections below this one are th
 **Where main is.** `52c83f5` = tag **`v0.1.2`** (PR #95), 0 warnings, **2093/2093 off-game checks**. Published tonight as
 a GitHub pre-release (<https://github.com/RavenIron-Games/ValkyriesCargo/releases/tag/v0.1.2>): the store zip
 (`RavenIronStudios-ValkyriesCargo-0.1.2.zip`, DLL `0.1.2+52c83f5`, md5 `5C445D285EDA04CED93F99AEE1653A1B`) and the
-kit. **The store upload is Don's**; the store takes one upload per version number, which is why the guard is 0.1.2 and
+kit. **The store upload is Nomad's**; the store takes one upload per version number, which is why the guard is 0.1.2 and
 not a second 0.1.1 zip (his words: "we can't upload another 0.1.1"). The version gate follows the number: a 0.1.1
 client is refused by a 0.1.2 server. **Open PRs: Wu'barrk's #69 (the store page) and #65 (the empty bird, the
 invisible pack, the fly-in), both untouched.** Issue #59 is his list. No branch of ours is open. Every remote branch
@@ -27,7 +27,7 @@ PR's head sha if he wants one back); `b/backpack-body` (#65), `b/store-readme` (
 `b/truth-pass` remain.
 
 **Since the 2026-09-08 state below, in order.** 2026-09-10: `v0.1.0-rc4`, the Valheim 1.0.7 build. 2026-09-11:
-Valheim 1.0.12 (network 40) and **`v0.1.0-rc5`, the first cut to reach the store** (Hexium, uploaded by Don);
+Valheim 1.0.12 (network 40) and **`v0.1.0-rc5`, the first cut to reach the store** (Hexium, uploaded by Nomad);
 `docs/proofs/2026-09-11-release-session.md`. 2026-09-14/15: issue #79 (Ingvar at the Bog Witch) — PRs #80, #82, #84:
 built ground plus three location switches, one kind per location, proven live; #81 (every `cargo` line to the client
 log); #83 (BarrkBOT contract v4, `market_not_achievements`); #85 (food and drink, 72 → 101 rows — an existing server
@@ -66,12 +66,12 @@ Blackwood in one deal across two stacks, visit #14). And from the #79 work: **a 
 location root** — the registry is on the server, the instances on a client, and what is INSIDE a location is read off
 the prefab asset (`LocationsLive.cs`).
 
-**Machine state tonight.** Storm10 (the 1.0.12 testbed: `C:\Users\donfr\ValheimServers\Storm10`, port 2477, world
+**Machine state tonight.** Storm10 (the 1.0.12 testbed: `%USERPROFILE%\ValheimServers\Storm10`, port 2477, world
 Storm10, pw stormhold, `-public 0 -crossplay`, join code 608444) is **DOWN** since 19:19, stopped gracefully, nobody
-online, the world saved; its DLL is the shipped `v0.1.2` build (md5 above) and so is Don's Gale `testing` profile's;
+online, the world saved; its DLL is the shipped `v0.1.2` build (md5 above) and so is Nomad's Gale `testing` profile's;
 sidecar clean (`purse 100516`, `visit 20`, no open visit; the cfg's `PurseCoins` is the 100000 test value). The three
 taming-test mods were REMOVED from both sides after the proof. **Wonderland** (Wu'barrk's, 73.215.216.195:2456) and
-**Tartarus** and Don's `WonderlandAdmin` / `TartarusClient` / `TartarusServer` profiles are all on **0.1.0+2731b8c,
+**Tartarus** and Nomad's `WonderlandAdmin` / `TartarusClient` / `TartarusServer` profiles are all on **0.1.0+2731b8c,
 the pre-#79 build**: moving them is both sides to 0.1.2 together (the gate), plus `cargo catalogue reset` on each
 server. Launch facts for Storm10 from an agent shell: `Start-Process valheim_server.exe` with `$env:SteamAppId='892970'`
 and the .bat's arguments (the .bat itself does not start it from here); graceful stop `taskkill /PID <pid>` with no
@@ -79,8 +79,8 @@ and the .bat's arguments (the .bat itself does not start it from here); graceful
 new hash per commit with no code change; the boot log is appended across boots.
 
 **Open, needing a word or a hand.** Wu'barrk's #69 and #65; the `Spawner.cs` SoM one-liner and the DvergrAllies skip
-(his); Wonderland/Tartarus to 0.1.2 (Don, both sides); the store upload of 0.1.2 (Don); the adopt-window `Force` hole
-found 2026-09-15 midday around the director's adopt of a saved visit and a forced visit — unfixed, no issue filed, Don
+(his); Wonderland/Tartarus to 0.1.2 (Nomad, both sides); the store upload of 0.1.2 (Nomad); the adopt-window `Force` hole
+found 2026-09-15 midday around the director's adopt of a saved visit and a forced visit — unfixed, no issue filed, Nomad
 has the detail; the "[Forward]" key label on Wonderland (`$KEY_Use` rendered as "Forward" there: some mod in that set
 renames bindings, not ours, left alone). **Rule 2 of the working agreement** (CLAUDE.md): working agents on Sonnet,
 sub-agents on Haiku, reviews on Opus, never the session model; tens not hundreds; say the count first.
@@ -92,7 +92,7 @@ sub-agents on Haiku, reviews on Opus, never the session model; tens not hundreds
 that one disagree, that one wins. The subsections below this one are the day's earlier states, kept as history.
 
 **2026-09-10 — VALHEIM 1.0.7 IS OUT, AND `a/valheim-1.0` IS BUILT ON IT (read this before the rest of §0).** Steam
-moved Don's client (build 25185596) and the Steam dedicated-server folder (25185644) to 1.0.7 on 2026-09-09 (network
+moved Nomad's client (build 25185596) and the Steam dedicated-server folder (25185644) to 1.0.7 on 2026-09-09 (network
 39, `Version.Player.DeepNorth` 46, `Version.World.DeepNorth` 41, Unity 6000.0.75, still Mono). Swept from here the
 same day on BOTH axes with the P10a tools unmodified (`docs/engine-sweeps/2026-09-09-{server,client}-0.221.12-vs-1.0.7.md`):
 **the two playtest stop-ships did not ship** (`GetStableHashCode` one-argument again, `GetAllCharacterZDOS` with no
@@ -108,7 +108,7 @@ parameter (recompiled, rows re-pinned); `Version.c_*` (EngineCheck, EngineBaseli
 both 1.0.7 assemblies reads `same build 1.0.7 (net 39, player 46, world 41); probes 19/19 ok, 8 not probeable`.
 Bodies read and holding: the 2 s event broadcast, `ZDO.IsValid` (`m_prefab != -1`), `ZNetView.Awake`, `CreateNewZDO`,
 `RPC_Damage` (gate reordered; our prefix still first), `OwnerSync`'s velocity path, `Valkyrie.UpdateValkyrie`'s maths,
-`DropPlayer` (+`WaitForRespawn`, a watch); 25 unread. **SEEN ON A MACHINE 2026-09-10, 07:11 to 07:48, on Storm10 (a fresh 1.0.7 dedicated server, a new world, our DLL and ServerDevcommands 1.110 only) with Don's 1.0.7 client: both boot lines `running same build 1.0.7 (net 39, player 46, world 41); probes 19/19 ok, 8 not probeable`, `patches 18/18 applied`; a forced visit (`forced visit: Nomadtest … 1 eligible, 1 ticket(s)`), the flight authored 54 m out and dropped after 14.8 s, `2 reclaim(s) during the carry` (D5 against the rebuilt area maths), the walk-up to trading, the terminal open with the leash holding and re-arming, two deals settled line for line (`bought 75 Resin at 1`; `sold 5 SurtlingCore at 15, bought 7 Flint at 1, bought 2 Wood at 1`), the admin dismiss answered (`visit #1 dismissed (admin Nomadtest)`, `0 clock republish(es)`), the vanish (`into the mist: 1 renderer(s) off with the smoke`) and the reclaim. Not one line from the mod above Info on either side. ONE 1.0 FINDING on the way: `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want the DISPLAY id, `V_<steamid>` (Splatform.dll's `PlatformUserID.FilterPlatformUserID`: Steam→V, Xbox→X, PlayStation→S, Nintendo→N, GameCenter→A; `ZNet.ListContainsId` on 1.0.7 lets that filtered match OVERRIDE the bare and `Steam_` forms, which is why vanilla's devcommands and our AdminGate refused Don in the same breath until the `V_` line was added; the list reloads on change).** StormTest stays 0.221.12 and Don's client can no longer join it; Storm10 (port 2477) is the testbed. BepInExPack 5.4.2350 shipped 2026-09-09 and Don's Gale profile runs it (BepInEx 5.4.23.5) with ServerDevcommands 1.110.0 (Jere's 1.0 build); Backpacks has no 1.0 build yet; ServerSync upstream has no 1.0 commit. **Then, the same morning at the word ("do it", "get it done"): PR #70 MERGED (main 04f4156); the 25 + 2 unread bodies READ, all holding (`docs/engine-sweeps/2026-09-10-1.0.7-bodies-read.md`; one ops fact: an invite secret key bypasses the server password in `RPC_PeerInfo`); `Splatform.dll` the fourth assembly in the decompile tools with four surface rows (PR #71); StormTest's admin list carries the `V_` lines too (the Steam-folder servers use the default save dir, whose list already had them); **`v0.1.0-rc4` CUT** — the 1.0.7 build, a pre-release, no store, the zip and the bundle attached, rc3 left standing as the last 0.221.12 build.**
+`DropPlayer` (+`WaitForRespawn`, a watch); 25 unread. **SEEN ON A MACHINE 2026-09-10, 07:11 to 07:48, on Storm10 (a fresh 1.0.7 dedicated server, a new world, our DLL and ServerDevcommands 1.110 only) with Nomad's 1.0.7 client: both boot lines `running same build 1.0.7 (net 39, player 46, world 41); probes 19/19 ok, 8 not probeable`, `patches 18/18 applied`; a forced visit (`forced visit: Nomadtest … 1 eligible, 1 ticket(s)`), the flight authored 54 m out and dropped after 14.8 s, `2 reclaim(s) during the carry` (D5 against the rebuilt area maths), the walk-up to trading, the terminal open with the leash holding and re-arming, two deals settled line for line (`bought 75 Resin at 1`; `sold 5 SurtlingCore at 15, bought 7 Flint at 1, bought 2 Wood at 1`), the admin dismiss answered (`visit #1 dismissed (admin Nomadtest)`, `0 clock republish(es)`), the vanish (`into the mist: 1 renderer(s) off with the smoke`) and the reclaim. Not one line from the mod above Info on either side. ONE 1.0 FINDING on the way: `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want the DISPLAY id, `V_<steamid>` (Splatform.dll's `PlatformUserID.FilterPlatformUserID`: Steam→V, Xbox→X, PlayStation→S, Nintendo→N, GameCenter→A; `ZNet.ListContainsId` on 1.0.7 lets that filtered match OVERRIDE the bare and `Steam_` forms, which is why vanilla's devcommands and our AdminGate refused Nomad in the same breath until the `V_` line was added; the list reloads on change).** StormTest stays 0.221.12 and Nomad's client can no longer join it; Storm10 (port 2477) is the testbed. BepInExPack 5.4.2350 shipped 2026-09-09 and Nomad's Gale profile runs it (BepInEx 5.4.23.5) with ServerDevcommands 1.110.0 (Jere's 1.0 build); Backpacks has no 1.0 build yet; ServerSync upstream has no 1.0 commit. **Then, the same morning at the word ("do it", "get it done"): PR #70 MERGED (main 04f4156); the 25 + 2 unread bodies READ, all holding (`docs/engine-sweeps/2026-09-10-1.0.7-bodies-read.md`; one ops fact: an invite secret key bypasses the server password in `RPC_PeerInfo`); `Splatform.dll` the fourth assembly in the decompile tools with four surface rows (PR #71); StormTest's admin list carries the `V_` lines too (the Steam-folder servers use the default save dir, whose list already had them); **`v0.1.0-rc4` CUT** — the 1.0.7 build, a pre-release, no store, the zip and the bundle attached, rc3 left standing as the last 0.221.12 build.**
 
 **Where main is.** `1dcf3ac` (docs) on `55508d6` (code, PR #64): 0 warnings, **1885/1885 off-game checks**. Merged
 today at the owner's word, in build order: #57 the rotating shelf (762df89), #58 the item value table (824f874),
@@ -120,12 +120,12 @@ Lesson of the day, kept in CLAUDE.md: `gh pr merge --delete-branch` on a base br
 retarget them to main first.
 
 **StormTest is DOWN** (11:16, no visit open, the sidecar clean; next visit #23; the purse reads 100000 = the test
-value in the server config, takings are counted apart). The server and Don's Gale `Default` profile both carry
+value in the server config, takings are counted apart). The server and Nomad's Gale `Default` profile both carry
 main's DLL (md5 `a9010be4d119`, built from 55508d6; the docs commit changes no byte). Backpacks 1.3.8 and
 Yggdrasil's Reckoning 0.1.1 are installed both sides; YR's boot errors (`Player.PlacePiece`, the two donors) are
 its issue #1, not ours, and the headless `ShieldDomeImageEffect` null-shader exception is vanilla.
 
-**Seen on a screen today (visits 16–22, one client, Don's Windows box):** the shelf roll and its hold under a
+**Seen on a screen today (visits 16–22, one client, Nomad's Windows box):** the shelf roll and its hold under a
 running visit; the new tray settling deals on the wire (visit 20: a Flametal for five Eitr, +28; visit 21: eight
 Ruby for 280 through the count box); the leash-hold line on every terminal open; the backpack boot line and
 `shelf 40 of 72`; the vanish with the smoke (20 and 22; the owner: "vanish looked great"); the arrival banner; the
@@ -175,7 +175,7 @@ the collider; the AI stood down on the owner) and the grace is untouched. **Merg
 boot proved the backpack shelf (`backpack mod: … 1.3.8 loaded; shelf x2`, `shelf 40 of 72`) and the new tray
 settled a deal on the wire. **And his word after the day's merges: no release yet.**
 
-**Valheim 1.0, verified from Don's machine and HELD by the owner.** Your #55 sweep holds on every point that could
+**Valheim 1.0, verified from Nomad's machine and HELD by the owner.** Your #55 sweep holds on every point that could
 be checked here: Steam's `public-test` branch is password-protected and hidden from the branch list (that is why
 it read as absent last night); fetched to `valheim-shadows/server-public-test` (build 23105022, 0.221.13, server
 only). Our probe tool on that assembly: the version line unreadable (the constants are renamed), `zone_maths`
@@ -201,12 +201,12 @@ wire forgets a dropped peer), `MerchantPlan.Next(..., busy)` and `AccumulateFar(
 owner while any terminal is open on him, and `GetHoverText` localises. Still yours: the flight's feel (which
 screen, which part; the two synced knobs to try) and the walk-off's own log lines (`cargo merchant #N: …
 (entered: …)` from your client), which say whether it was the leash the hold now covers. Backpacks 1.3.8 is
-installed on StormTest and Don's client. `docs/TODO.md` §3 carries both builds' unseen lists.
+installed on StormTest and Nomad's client. `docs/TODO.md` §3 carries both builds' unseen lists.
 
 **The backpack add-on's shelf half is built on `a/backpack-shelf`** (the owner's word, later the same morning):
 `Server.BackpackShelfMultiplier` (2, 1–4) and `Server.BackpackModGuid` (`org.bepinex.plugins.backpacks`),
 `Server/BackpackMod.cs` reading BepInEx's chainloader on the server at director up and every tick, `Shelf.Scaled`
-pure. Backpacks 1.3.8 is installed on StormTest and Don's client. **The body half — a backpack on Ingvar — is
+pure. Backpacks 1.3.8 is installed on StormTest and Nomad's client. **The body half — a backpack on Ingvar — is
 your owner's bake**; nothing here touches the model. Unseen on a machine: the boot line `backpack mod: … loaded;
 shelf x2` and `director up: …; shelf 40 of 72`.
 
@@ -256,7 +256,7 @@ and one refuter per finding; read §0 first):
   `FinishDeparture` sweeps in the same call, so `restart sweep: 1 stranded merchant(s) destroyed` at every clean
   end. §2: run the sweep one director tick later, name the sweep per call site. A `LastReclaimed` skip list was
   refuted twice (a failed reclaim would be skipped by the very sweep that exists to catch it).
-- **D2 and D4, Don's, BUILT (PR #48):** the cooldown keyed on `s_playerID` with two probe rows; the wires register
+- **D2 and D4, Nomad's, BUILT (PR #48):** the cooldown keyed on `s_playerID` with two probe rows; the wires register
   a peer once `IsReady()`; the client's session-end line.
 - **The eleven merged fixes against the logs (§5):** F7 and N1 confirmed on a machine, F5 and F4 contradicted (the
   two above), the rest not exercised. Your `docs/TODO.md` §2 still says F5 fixed the walk-up cause; it did not.
@@ -282,7 +282,7 @@ version line reports all four numbers as moved and **all 18 probes still resolve
 between 0.221.4 and 0.221.12 (§8 item 4, with the steamcmd line). **Steam has a `default_pre1_0` branch on both
 apps as of today** ("Last stable build before 1.0", pinned to 21981559 / 21981590): the 0.221.12 baseline stays
 fetchable after 1.0 lands, and a server can pin itself there. No 1.0 build is downloadable yet. **When 1.0 lands
-on 2026-09-09, Don's side will fetch it and run the probe tool against it within the hour**, no game needed, and
+on 2026-09-09, Nomad's side will fetch it and run the probe tool against it within the hour**, no game needed, and
 say which probes moved; the comparative decompile against the 244-row surface stays yours.
 
 **Rules and facts that changed today, so you do not re-derive them:** no JSON library (`Core/Json.cs` writes the
@@ -309,26 +309,26 @@ F3's two-second vanish grace does not show in the log (end to reclaim 6 / 0 / 0 
 and a dismiss), which is `End` → `FinishDeparture` in your `VisitDirector`. The record of the night's six visits is
 `docs/proofs/2026-09-07-stormtest-night.md`.
 
-**What Don's side wants from yours, in order:** **your read of the shelf PR on `a/rotating-shelf`** (built; the
+**What Nomad's side wants from yours, in order:** **your read of the shelf PR on `a/rotating-shelf`** (built; the
 two new economy questions in its body, and the backpack mod's plugin GUID for the add-on); the first-reclaim line and a look at the grace (above); ~~the ownership fix~~ done (#54); ~~D1 and
 D3; your `docs/TODO.md` §2~~ done (#50, #51, #52); the animator parameter names and item 23 on your server, still
 yours; ~~issue #23 (your rc1 note)~~ closed with rc2; and your commits under one author name — today's arrived as
 `t <t@l>`, `trial <trial@local>` and one merge authored as the model, which is what blame and the release notes
 will show. ~~On #55: the branch could not be seen from here~~ — it is hidden, not absent; verified and merged.
 
-**Don's test rig at this close-out, so the next boot is not misread.** StormTest is down, stopped cleanly at 06:50
+**Nomad's test rig at this close-out, so the next boot is not misread.** StormTest is down, stopped cleanly at 06:50
 on 2026-09-08 with **visit 15 still open in the sidecar** (the clock pauses with nobody near, so the visit the
-morning boot resumed never ended; `purse`/`purseStart` 100000 is a test value Don set, kept by the carry until
+morning boot resumed never ended; `purse`/`purseStart` 100000 is a test value Nomad set, kept by the carry until
 reset). The next boot resumes it again — item 15's server half and F4's rebind, seen this morning as
 `visit #15 RESUMED after a restart … merchant ZDO 1:60469 rebound` — unless the row is removed first (a backup
-beside the file each time that was done). StormTest and Don's Gale `Default` profile carry main `a08e8c4`: D5 and
-the save-path resolver, `probes 19/19 ok` on 0.221.12. Every session on Don's side is on Windows: builds, deploys
+beside the file each time that was done). StormTest and Nomad's Gale `Default` profile carry main `a08e8c4`: D5 and
+the save-path resolver, `probes 19/19 ok` on 0.221.12. Every session on Nomad's side is on Windows: builds, deploys
 and the log watch run from a shell, the game itself needs him at the screen.
 
 ### The morning of 2026-09-07, after the rc1 merge (history)
 
 **The tracker is `docs/TODO.md`**, cut from `main` at 8453b65 and split by owner: your track is its section 2,
-Don's the section 1 decisions and screen proofs, this session's the section 3 list. **Each track edits only its
+Nomad's the section 1 decisions and screen proofs, this session's the section 3 list. **Each track edits only its
 own section.** When this file and that one disagree, that one wins and this one gets fixed. Sections 1–11 below
 are the original 2026-09-06 handover and survive where they do not disagree with this.
 
@@ -337,7 +337,7 @@ checks**, `v0.1.0-rc1` tagged with the store zip attached to the release and **u
 
 | Merged 2026-09-07 | What |
 |---|---|
-| **PR #22** (1289713), yours | The 0.1.0 integration, carrying **#15** (P5 the merchant), **#18** (P4's drop-point bound, from Don's P11 trust-boundary pass), **#19** (the `vc_` → `VCargo_` rename with `Core/Keys.cs`, issue #16), **#20** (your P10a continuation) and **#21** (P12, the BarrkBOT JSON export). With it: Thorium's economy decisions in `docs/DECISIONS-WUBARRK.md` — the Fair Market Act, the purse at 1500, four Wants from base 2 to 3, `PriceChangePolicy` deleted — and house rule 4's written exception for the one runtime material copy |
+| **PR #22** (1289713), yours | The 0.1.0 integration, carrying **#15** (P5 the merchant), **#18** (P4's drop-point bound, from Nomad's P11 trust-boundary pass), **#19** (the `vc_` → `VCargo_` rename with `Core/Keys.cs`, issue #16), **#20** (your P10a continuation) and **#21** (P12, the BarrkBOT JSON export). With it: Thorium's economy decisions in `docs/DECISIONS-WUBARRK.md` — the Fair Market Act, the purse at 1500, four Wants from base 2 to 3, `PriceChangePolicy` deleted — and house rule 4's written exception for the one runtime material copy |
 | **PR #17**, yours | `docs/knowledge-base/VALHEIM-API-REFERENCE/`. **The snapshot is complete now**: 67 files, nothing missing |
 
 Earlier the same week, all merged and all described in `CLAUDE.md` Status: #7 the terminal, #8 P4 the flight,
@@ -353,7 +353,7 @@ It did NOT prove: the glide, the drop, the walk-up completing (he gave up at 20 
 stood — the designed fallback, not a success), the terminal on a real visit, a trade, or the vanish. **No
 two-client item has run at all**, and no deal has ever crossed the wire in a game.
 
-**In flight on Don's side right now**, three Opus sessions, each opening its own PR:
+**In flight on Nomad's side right now**, three Opus sessions, each opening its own PR:
 - `a/p11-shakedown` — being rebased onto main; carries `docs/CONFIG-SHAKEDOWN.md`, `docs/TRUST-BOUNDARY.md` and
   the `VCargo_admin` caller-identity fix.
 - `a/p10b-probes` — being rebased; the boot-time probes, plus the gap `docs/P10B-PROBE-GAP.md` names (it probes
@@ -363,7 +363,7 @@ two-client item has run at all**, and no deal has ever crossed the wire in a gam
 - `a/p10a-sweep` was diffed against main on 2026-09-07 and has **nothing main lacks** — your #20 carried it all
   and your copy is newer. The branch stays; nothing needs cherry-picking out of it.
 
-**Decided by the owner, 2026-09-07: the bake is your machine's.** Don installs no Unity. So **every bake has to
+**Decided by the owner, 2026-09-07: the bake is your machine's.** Nomad installs no Unity. So **every bake has to
 reach him as a release asset** (`docs/TODO.md` §2, first item) — until `Assets/valkyriescargo_kit` is attached to
 the rc1 release, the only copy of the bundle in git is inside the tracked `HexiumDist/plugins/ValkyriesCargo.dll`
 and every rebuild on his machine loses Ingvar's body. Also decided: P10a is yours after P5; the knowledge base
@@ -484,9 +484,9 @@ or DESIGN §0). Do not reason from a member's name.
 
 `docs/WORKSPLIT.md` §0 is the neutral list (P1 done; P2 market core; P3 comfort+event; P4 flight;
 P5 merchant; P6 deal wire+persistence; P7 terminal; P8 body; P9 release). Constraints that are real:
-P3–P5 need a dedicated server and two client accounts on one machine (Don has both); P7 needs the
+P3–P5 need a dedicated server and two client accounts on one machine (Nomad has both); P7 needs the
 SharedUI files (Wu'barrk has them); P8 needs Unity 6000.0.61f1 (Wu'barrk has it); P9 needs the
-RavenIronStudios store account (Don). Everything else is a free choice; P2, P6, P7 can run in parallel
+RavenIronStudios store account (Nomad). Everything else is a free choice; P2, P6, P7 can run in parallel
 from today.
 
 Do this:

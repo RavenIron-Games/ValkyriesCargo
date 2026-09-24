@@ -42,7 +42,7 @@ Every predicted string below is quoted from the code that writes it; where a val
    version**. `-WhatIf` shows the plan and writes nothing. It never starts anything.
 
    Where things are:
-   - server: `C:\Users\donfr\ValheimServers\StormTest\BepInEx\plugins\RavenIronStudios-ValkyriesCargo\`
+   - server: `%USERPROFILE%\ValheimServers\StormTest\BepInEx\plugins\RavenIronStudios-ValkyriesCargo\`
    - Steam client: `C:\Program Files (x86)\Steam\steamapps\common\Valheim\BepInEx\plugins\...` (its
      `plugins` folder is **empty** as of 2026-09-06: our DLL will be the only mod there)
    - Gale: `%APPDATA%\com.kesomannen.gale\valheim\profiles\<profile>\BepInEx\plugins\...`
@@ -61,13 +61,13 @@ Every predicted string below is quoted from the code that writes it; where a val
 
 4. **Become admin.** `cargo visit`, `dismiss`, `reset` and `save` are gated by the SERVER's own list
    (`Server/AdminGate.cs`, vanilla `ZNet.IsAdmin`, fail closed). StormTest's list is
-   `C:\Users\donfr\ValheimServers\StormTest\saves\adminlist.txt` and already holds **two Steam ids**
+   `%USERPROFILE%\ValheimServers\StormTest\saves\adminlist.txt` and already holds **two Steam ids**
    (the owner's). Add an id on its own line and restart the server if a new account needs it.
    `cargo status` prints `admin here=<True|False>` for the machine you type on.
 
 5. **The server.** Start it yourself; no script here starts anything.
    ```
-   C:\Users\donfr\ValheimServers\StormTest\start_stormtest.bat
+   %USERPROFILE%\ValheimServers\StormTest\start_stormtest.bat
    ```
    whose launch line is
    ```
@@ -97,7 +97,7 @@ Every predicted string below is quoted from the code that writes it; where a val
 A visit is rolled once per `EventCheckIntervalMinutes` and only if the roll beats `EventChancePercent`,
 so at defaults you would wait 25 minutes for a 25% chance. `Server.*` is synced and **locked**, so the
 server's own file is the only place to set it:
-`C:\Users\donfr\ValheimServers\StormTest\BepInEx\config\com.raveniron.valkyriescargo.cfg`.
+`%USERPROFILE%\ValheimServers\StormTest\BepInEx\config\com.raveniron.valkyriescargo.cfg`.
 
 ```powershell
 .\tools\set-test-config.ps1 -Show      # what it says now
@@ -615,7 +615,7 @@ What the code fixes:
 **Do:** `cargo visit`, one deal, then stop the server with **CTRL-BREAK** while the visit is running, and
 start it again.
 
-**The file:** `C:\Users\donfr\ValheimServers\StormTest\saves\worlds_local\valkyriescargo_4690126.dat`
+**The file:** `%USERPROFILE%\ValheimServers\StormTest\saves\worlds_local\valkyriescargo_4690126.dat`
 (78 lines on 2026-09-06). Its own header names the rows:
 ```
 format	1
@@ -740,7 +740,7 @@ losing its animator.
 
 **The rule that matters: THIS BOOT is everything after the LAST `Chainloader started`.** StormTest's
 `BepInEx\config\BepInEx.cfg` has `[Logging.Disk] AppendLog = true`, so
-`C:\Users\donfr\ValheimServers\StormTest\BepInEx\LogOutput.log` accumulates across every boot (531 KB,
+`%USERPROFILE%\ValheimServers\StormTest\BepInEx\LogOutput.log` accumulates across every boot (531 KB,
 4406 lines on 2026-09-06). Believing the first `director up:` you scroll to is how you prove yesterday's
 run. The script prints only the current boot and says which line it started at. (The Steam client's
 `AppendLog` is **false**, so its file is one boot already; the rule is applied anyway.)

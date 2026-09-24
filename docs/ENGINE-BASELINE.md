@@ -177,7 +177,7 @@ client build, so a `client-live` shadow would be the same zero-difference result
 
 ## Where the shadows live
 
-    C:\Users\donfr\valheim-shadows\
+    %USERPROFILE%\valheim-shadows\
       steamcmd\          153 MB   Valve's installer, unzipped here
       server-live\       1.52 GB  app 896660, branch public
       src\
@@ -203,8 +203,8 @@ it at all three.
 .\tools\fetch-builds.ps1                       # server, both branches; prints build ids and versions
 .\tools\decompile-builds.ps1 -Baseline -All    # ilspycmd -p over all four assemblies, idempotent
 node tools\diff-engine.js --surface docs\ENGINE-SURFACE.md `
-     --from C:\Users\donfr\valheim-shadows\src\baseline-server `
-     --to   C:\Users\donfr\valheim-shadows\src\server-live `
+     --from $env:USERPROFILE\valheim-shadows\src\baseline-server `
+     --to   $env:USERPROFILE\valheim-shadows\src\server-live `
      --out  docs\engine-sweeps\<date>-<what>.md --all-types
 ```
 
@@ -228,19 +228,19 @@ node tools/diff-engine.js --surface docs/ENGINE-SURFACE.md \
 
 **The installed client and server are the same build on both platforms**, checked directly rather
 than assumed: this box's Steam client build id (`21981559`) and dedicated server build id
-(`21981590`) match Don's Windows numbers exactly, `Version.CurrentVersion` / `m_networkVersion` /
+(`21981590`) match Nomad's Windows numbers exactly, `Version.CurrentVersion` / `m_networkVersion` /
 `m_playerVersion` / `m_worldVersion` read the same 0.221.12 / 36 / 43 / 37 off both assemblies, and
 running `tools/diff-engine.js` against a fresh Linux decompile of both installs reproduces the same
-six body-changed members Don's Windows sweep found, word for word
+six body-changed members Nomad's Windows sweep found, word for word
 (`docs/engine-sweeps/2026-09-07-linux-baseline-client-vs-server.md`). One thing this box's client
 build carries that the Windows one does not — `Version.GetPlatform()` here resolves
 `Platforms.SteamLinux`, and the client's `assembly_valheim` decompiles to one MORE type file
-(603 against Don's 602) because `<PrivateImplementationDetails>`, a compiler scratch type named
+(603 against Nomad's 602) because `<PrivateImplementationDetails>`, a compiler scratch type named
 nowhere in this mod, happens to land in the Linux client build and not the Windows one. Cosmetic;
 see that sweep report for the full accounting.
 
 **The `public-test` branch still does not exist**, confirmed a second way: an anonymous
-`steamcmd +app_info_print 896660` from this box lists the same six branches Don's Windows run found
+`steamcmd +app_info_print 896660` from this box lists the same six branches Nomad's Windows run found
 (`public`, `default_old`, `default_preal`, `default_prebw`, `default_precta`, `default_preml`), no
 `public-test` among them. Not a fetch that quietly failed on one platform — the branch is not there
 today, checked twice, on two different operating systems.

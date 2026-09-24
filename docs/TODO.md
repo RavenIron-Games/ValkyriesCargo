@@ -2,9 +2,9 @@
 
 > **2026-09-15 night.** This file has not been re-cut since rc1; the current state is `CLAUDE.md`'s Status section,
 > `CHANGELOG.md` (0.1.0 → 0.1.1 → 0.1.2, each item with its PR and check count) and the two handoffs' section 0.
-> `v0.1.2` is published (main `52c83f5`); the store upload is Don's. Open: Wu'barrk's PRs #69 and #65 and issue #59;
+> `v0.1.2` is published (main `52c83f5`); the store upload is Nomad's. Open: Wu'barrk's PRs #69 and #65 and issue #59;
 > the `Spawner.cs` SoM one-liner and the DvergrAllies skip (his, proposed in `docs/HANDOFF-WUBARRK.md` §0); Wonderland
-> and Tartarus to 0.1.2, both sides (Don); the adopt-window `Force` hole (unfixed, no issue). Items below that a later PR
+> and Tartarus to 0.1.2, both sides (Nomad); the adopt-window `Force` hole (unfixed, no issue). Items below that a later PR
 > closed are closed whether or not their checkbox says so.
 
 Three tracks, one per owner. **Each track edits only its own section.** An item leaves the list by the
@@ -14,15 +14,15 @@ from; when this file and a source disagree, fix the source first, then this file
 **Cut from:** `main` at 8453b65 (PR #22 merged by Wu'barrk, v0.1.0-rc1 tagged, the store zip attached
 to the release and **not uploaded**). One live visit run, on Wu'barrk's client: Ingvar landed in his
 own body, gave up walking after 20 s, called out from where he stood. Nothing watched end to end.
-Don's three branches (`a/p10a-sweep`, `a/p10b-probes`, `a/p11-shakedown`) unmerged and conflicting
+Nomad's three branches (`a/p10a-sweep`, `a/p10b-probes`, `a/p11-shakedown`) unmerged and conflicting
 with main. PR #17 open. Issue #16 done but open. Issue #23 is Wu'barrk's rc1 note.
 
-**Decided 2026-09-07 (owner):** the bake is Wu'barrk's machine's. Don's side does not install Unity;
-every bake reaches Don as a release asset (section 2, first item).
+**Decided 2026-09-07 (owner):** the bake is Wu'barrk's machine's. Nomad's side does not install Unity;
+every bake reaches Nomad as a release asset (section 2, first item).
 
 ---
 
-## 1. Don — the client, the servers, the decisions
+## 1. Nomad — the client, the servers, the decisions
 
 ### Decisions (the owner's; nobody else's to take)
 
@@ -124,7 +124,7 @@ step 4).
       **F1 merged** (#30). **F2 + F6 merged** (#38). **F4 + F3's server half + decision 9's `Spawner` half:
       PR #39, ready.** **F7 + F8 + N1: PR #41, ready, merges after #39** (it carries the resolution of a
       `FlightPlan.cs` conflict with #39; both additions kept). **F3's merchant half + F5 + F9 + F10: PR #42,
-      ready.** **F11: Don's, merged** (#37, ghost mode). Each PR was re-verified by the coordinator in a fresh
+      ready.** **F11: Nomad's, merged** (#37, ghost mode). Each PR was re-verified by the coordinator in a fresh
       worktree — build, harness at the claimed count, one mutation re-run by hand — and the three open ones
       were trial-merged together on `main`: clean, 1571 checks. Ticks when #39/#41/#42 merge.
 - [x] **Hand over the bundle, every bake.** DONE 2026-09-07: `Assets/valkyriescargo_kit` attached to
@@ -148,7 +148,7 @@ step 4).
       right, the caller fed it stale numbers. The retry in `Drop` and the `IsOnGround()` clock gate were both
       refuted by the audit and are deliberately absent. Build 0/0, harness 1701. *What closes it:* the line on a
       screen, and whether visits 4-6's second regime (§1.3, unexplained by the code) shows up again.
-- [ ] **D5 — the server strips the pilot's claim on the merchant during the carry** (found by Don on
+- [ ] **D5 — the server strips the pilot's claim on the merchant during the carry** (found by Nomad on
       StormTest visit 9, 2026-09-07, off the line PR #50 added; the one defect open at the rc2 cut).
       `ZDOMan.Update` runs `ReleaseZDOS` only `if (ZNet.instance.IsServer())` (`asm:65095`), every 2 s,
       and for each peer `ReleaseNearbyZDOS(peer.m_refPos, peer.m_uid)` (`asm:65164`) does, for a
@@ -276,28 +276,28 @@ step 4).
       director adopts a console-started event onto the nearest player instead of killing it. Left as-is on
       purpose: `event` is `onlyServer` in vanilla (`cargo visit` stays the client route), and `stopevent` ends
       the visit reporting `timer` rather than the true reason — small, separate.
-- [x] ~~Pending Don's decision: stop tracking the DLL.~~ Decided and done on Track A 2026-09-07 (section 3).
+- [x] ~~Pending Nomad's decision: stop tracking the DLL.~~ Decided and done on Track A 2026-09-07 (section 3).
       Yours after it: `docs/DECISIONS-WUBARRK.md` §7's "the bake runs on both machines" premise and §3 want a
       one-line "overridden by the owner 2026-09-07" each, and `BARRKBOT_CONTRACT.md` no longer needs to name
       Newtonsoft as a requirement (its "shape-verified against Newtonsoft" history can stay).
-- [x] ~~Pending Don's decision: replace the Newtonsoft call with a pure writer.~~ Decided and done on Track A
+- [x] ~~Pending Nomad's decision: replace the Newtonsoft call with a pure writer.~~ Decided and done on Track A
       2026-09-07 (section 3): `Core/Json.cs`. Item 23 (the files landing live) is unchanged and still yours.
 - [x] **Record the reversal of decision 3.** DONE: PR #43 merged 2026-09-07. The owner's PR #40 dropped the
       JsonDotNET dependency for a pure `Core/Json.cs` (byte-identical to Newtonsoft over 4,028 comparisons);
       `docs/DECISIONS-WUBARRK.md` §3 now records that it was overridden, when, and why the original argument
       was right about the problem and wrong about the size of the answer. §7's amendment was already in.
 
-Not his: the two-client items (cannot run on his side); Don's three branches (rebased here).
+Not his: the two-client items (cannot run on his side); Nomad's three branches (rebased here).
 
 ---
 
-## 3. Claude on Don's side — rebases, audits, docs
+## 3. Claude on Nomad's side — rebases, audits, docs
 
 - [x] **`a/p11-shakedown`.** DONE: PR #24 merged 2026-09-07 (the `VCargo_admin` caller fix, the dismiss
       gate, three bounded paths, both documents finished against main, two DESIGN §8 rows, 1302 checks).
 - [x] **`a/p10b-probes`.** DONE: PR #28 merged 2026-09-07 (the `RPC_Damage` probe gap fixed; 19 facts with
       the P5 members and the Awake ordering; `docs/ENGINE-PROBES.md`; 1423 checks). Still open from it:
-      **item 24**, the probes resolving on a real machine (Don's client or StormTest). The audit's probe
+      **item 24**, the probes resolving on a real machine (Nomad's client or StormTest). The audit's probe
       rows landed in PR #46 (below).
 - [x] **`a/p10a-sweep`.** DONE: everything on it was already on main through PR #20 (byte-identical tools
       and reports; main's two engine docs newer); the four doc corrections applied by PR #26; branch deleted.
@@ -318,7 +318,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       `default_old` server build (0.221.4 / net 35 / player 42 / world 36) the tool answered `older game version
       (0.221.4 vs 0.221.12); network version moved (35 vs 36); …; probes 18/18 ok` (ENGINE-PROBES §8 item 4). Still
       open: `cargo engine` read on a client, and a moved-version BOOT on a machine.
-- [x] **The StormTest session, 2026-09-07 10:39–11:38** (Don's Windows client, PR #46's build; record:
+- [x] **The StormTest session, 2026-09-07 10:39–11:38** (Nomad's Windows client, PR #46's build; record:
       `docs/proofs/2026-09-07-stormtest-session.md` + the log excerpt). Six visits, 20 deals over the wire, no
       exception from the mod. DONE: items 8, 12, 13, 18, 24 (both sides), 26 (all but "waits"); the log halves of
       7, 9, 10, 11, 15, 16, 17, 21, 23; plus the Fair Market Act, both drift knobs, the carry on gross coins and a
@@ -380,10 +380,10 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       (finding 8).
 - [x] **CLAUDE.md is this track's; his files are his.** DONE: PR #26 merged 2026-09-07 (the status
       paragraphs true to the one live visit, 17 engine facts with their sources, the P10a corrections, both
-      handoffs and WORKSPLIT and TLDR re-cut). Still open: **the proof lines as Don sends them.**
+      handoffs and WORKSPLIT and TLDR re-cut). Still open: **the proof lines as Nomad sends them.**
 - [x] **Housekeeping:** PR #17 merged; issue #23 answered; #16 closed by him. Still open: the release-time
       README status and CHANGELOG entry (`docs/RELEASE.md` step 4) when the proofs are in.
-- [x] **Issue #31, the bare `PatchAll()`** (raised by Thorium; Don's file). DONE: PR #35 merged 2026-09-07 —
+- [x] **Issue #31, the bare `PatchAll()`** (raised by Thorium; Nomad's file). DONE: PR #35 merged 2026-09-07 —
       every patch class applied on its own (`Patching.cs`), failures named and counted (`Core/PatchLedger.cs`,
       pure), the boot line `patches N/M applied`, `cargo status` prints the failures, ServerSync's rows refuse
       the mod; 1462 → 1470 with #34. **Not yet seen on a machine**: the new boot line (item 2) and a
@@ -395,7 +395,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       caught; `ModConfig.CatalogueVersion`; the director rebuilds the shelf as soon as no visit is running and
       drops prefabs the game has no item for, at boot and on every edit; `cargo catalogue list|add|remove|reset`,
       the admin half through `VCargo_admin`; `cargo status` says when a change waits. **SEEN 2026-09-07 on
-      StormTest** from Don's admin client: item 26 all but the add-during-a-visit answer (the session item above).
+      StormTest** from Nomad's admin client: item 26 all but the add-during-a-visit answer (the session item above).
 - [x] **The two drift knobs** (owner, 2026-09-07; PR #45 merged): `MarketRules.WareHalfLifeGameDays`
       0 / `WantHalfLifeGameDays` 3 replace `HalfLifeGameDays`; `Relax` per kind, 0 = never; `Sanitize` 0–365 for
       both; `Server.WareHalfLifeGameDays` / `Server.WantHalfLifeGameDays` replace `Server.StockHalfLifeGameDays`;
@@ -407,7 +407,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       superseded, issue #23 closed. The gate does not tell rc1 from rc2 (both 0.1.0): replace copies by hand.
       The rc2 changelog entry and the README status rewrite (`docs/RELEASE.md` step 4) went in with it.
 - [ ] **The next cut** (owner, 2026-09-08 00:40): waits on Wu'barrk's ownership-during-the-carry PR and one screen
-      visit on that build where the first approach reaches Don; not a date. rc3, or 0.1.0 proper if that visit and
+      visit on that build where the first approach reaches Nomad; not a date. rc3, or 0.1.0 proper if that visit and
       the vanish are clean; if Valheim 1.0 lands first, cut once after the probe run. Review his PR on arrival,
       merge only on the word.
 - [x] **D5 reviewed and merged** (owner, "post it and merge", 2026-09-07 ~20:43): Wu'barrk's PR #54, main 2694d3b,
@@ -417,7 +417,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
 - [ ] **PR #55 (his docs: the 1.0 head start)** — OPEN, NOT merged at the owner's word ("do not merge 55").
       Caveat not yet posted: Steam shows no branch with build 23105022 / 0.221.13 on either app from this machine
       (public, previous stable, the pre-1.0 pins, all at 21981590 or older). Builds, 1718, docs only.
-- [ ] **StormTest is down with visit 15 OPEN in the sidecar** (session row; `purse`/`purseStart` 100000 = Don's
+- [ ] **StormTest is down with visit 15 OPEN in the sidecar** (session row; `purse`/`purseStart` 100000 = Nomad's
       test value; the merchant ZDO in the 21:05:20 save near the drop). The next boot adopts it (item 15 and F4's
       rebind for free) unless the row is cleared first, as was done before the 20:18 and 20:44 boots (a backup
       beside the file each time). The proofs record is `docs/proofs/2026-09-07-stormtest-night.md`.
@@ -468,7 +468,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       pair on visit 24; the owner: "2 client worked."** The walk-off was NOT the leash (his visit-16 log; PR #66).
       The hover key: **seen, the owner 2026-09-08 ("all that looks fine")**; the hold line on his own terminal:
       seen on visits 19 and 20.
-      **Backpacks 1.3.8 is installed on StormTest and Don's client** (GUID `org.bepinex.plugins.backpacks`,
+      **Backpacks 1.3.8 is installed on StormTest and Nomad's client** (GUID `org.bepinex.plugins.backpacks`,
       confirmed off the DLL; Thunderstore, the owner's download OK) — the backpack test can run from here.
 - [ ] **The buy-anything extension** (owner, 2026-09-08, the same message): Ingvar buys ANY item a player offers,
       on the shelf or not; a sale of an uncatalogued item forces a new persistent entry, classed common or rare by
@@ -483,7 +483,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
 - [ ] **The backpack add-on** (Wu'barrk, 2026-09-08): shelf ×2–4 when a backpack mod is detected at server load,
       and a backpack on his body. **DECIDED 2026-09-08 (owner): Smoothbrain's Backpacks** (BepInEx GUID
       `org.bepinex.plugins.backpacks`, **confirmed off the 1.3.8 DLL** the same day, installed on StormTest and
-      Don's client); ×4 is the whole shipped catalogue, ×3 is 60 of 72; the body half is his bake.
+      Nomad's client); ×4 is the whole shipped catalogue, ×3 is 60 of 72; the body half is his bake.
       **The shelf half is BUILT on `a/backpack-shelf`** (the owner: "take the shelf multiplier on a branch"):
       `Server.BackpackShelfMultiplier` 2 (1–4) and `Server.BackpackModGuid`, `Server/BackpackMod.cs` reading the
       chainloader at director up (before the market is sized) and every tick, `Shelf.Scaled` pure (0 stays fixed,
@@ -529,7 +529,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       morning, all holding (`docs/engine-sweeps/2026-09-10-1.0.7-bodies-read.md`); `Splatform.dll` is the fourth
       assembly in the decompile set with four surface rows (PR #71). **rc4 cut** the same morning: `v0.1.0-rc4`,
       the 1.0.7 build, a pre-release, no store.
-      **`Server.CarryOffset` (2026-09-11, branch `a/carry-offset`, 1984 checks).** Don, on the screen: bring Ingvar
+      **`Server.CarryOffset` (2026-09-11, branch `a/carry-offset`, 1984 checks).** Nomad, on the screen: bring Ingvar
       closer to the Valkyrie's talons. The offset was never ours - the pin takes the prefab's `m_attachOffset`
       (0, 0.3, 0.4), vanilla's own, tuned to carry a full-height player. Now a synced+locked string, empty = the
       prefab's, refused values fall back with one log line, re-read every physics step so it tunes live from
@@ -540,7 +540,7 @@ Not his: the two-client items (cannot run on his side); Don's three branches (re
       (0, 0.2, 0.25) -> **(0, 0, 0), which is now the shipped default** (empty still follows the prefab).
       The admin-write-through-a-locked-synced-config path is proven on a machine with it.
       **1.0 finding:** `adminlist.txt` / `permittedlist.txt` / `bannedlist.txt` want `V_<steamid>` (Steam V, Xbox X,
-      PlayStation S, Nintendo N, Game Center A; `ZNet.ListContainsId`'s filtered match overrides the old forms). Don's
+      PlayStation S, Nintendo N, Game Center A; `ZNet.ListContainsId`'s filtered match overrides the old forms). Nomad's
       other 1.0 servers need their lists rewritten; in CLAUDE.md's engine facts and the README.
       Open beside it: BepInExPack 5.4.2350 (the manifest now names it), Backpacks / ServerDevcommands / Infinity
       Hammer / World Edit Commands have no 1.0 builds yet; ServerSync upstream has no 1.0 commit (the vendored

@@ -1,4 +1,4 @@
-# P10 and P11 — for Lord Don Juan Coyote
+# P10 and P11 — for Lord Nomad Coyote
 
 Two new packages, both yours end to end. Wu'barrk is not taking a share of either; this is the
 brief, not a split. P4 is answered and pushed (PR #8), P5 is next on his side, and these two run
@@ -239,7 +239,7 @@ The question is not "is it synced" but **"what can a client change that it shoul
 End to end, on a real client: the bundle embeds, `BodyLoader.Attach` finds it, the clips come
 through under the six take names, the body stands up, and the mod still works with the bundle
 **absent** (`CustomBody` false, a dedicated server, an old install). Both paths, both proven.
-`cargo body` is the gate Don already specified; this is the pass where its output gets pasted
+`cargo body` is the gate Nomad already specified; this is the pass where its output gets pasted
 somewhere permanent.
 
 ### 11d. The P4/P5 functional-call audit
@@ -312,4 +312,4 @@ Plus the ~62 `m_*` field names the sources mention, which are in
 ---
 
 *Brief written by Wu'barrk's Claude, 2026-09-07, at Thorium's request. Both packages are yours,
-Lord Don Juan Coyote — this is the handover, not a claim on either.*
+Lord Nomad Coyote — this is the handover, not a claim on either.*

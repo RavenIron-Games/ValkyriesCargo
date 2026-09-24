@@ -1,13 +1,13 @@
 # Sweep: the live dedicated server against the baseline dedicated server
 
 **2026-09-07.** Shadow build `server-live`, app 896660, branch `public`, fetched with steamcmd into
-`C:\Users\donfr\valheim-shadows\server-live`, against the installed dedicated server that
+`%USERPROFILE%\valheim-shadows\server-live`, against the installed dedicated server that
 `docs/ENGINE-BASELINE.md` names as half of THE baseline.
 
 ```
 node tools/diff-engine.js --surface docs/ENGINE-SURFACE.md ^
-     --from C:\Users\donfr\valheim-shadows\src\baseline-server ^
-     --to   C:\Users\donfr\valheim-shadows\src\server-live ^
+     --from %USERPROFILE%\valheim-shadows\src\baseline-server ^
+     --to   %USERPROFILE%\valheim-shadows\src\server-live ^
      --out  %TEMP%\server-live-vs-baseline.md --all-types
 ```
 

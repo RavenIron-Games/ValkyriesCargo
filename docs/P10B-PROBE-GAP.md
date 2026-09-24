@@ -1,6 +1,6 @@
 # P10b probe gap: `CharacterAi` checks `Damage`, P5 patches `RPC_Damage`
 
-Don — found this reading `origin/a/p10b-probes` alongside P5 (`origin/b/p5-merchant`) for the
+Nomad — found this reading `origin/a/p10b-probes` alongside P5 (`origin/b/p5-merchant`) for the
 engine-surface manifest. Not merged into `b/p10a-surface`, just read. One real gap, worth catching
 before it ships quiet.
 

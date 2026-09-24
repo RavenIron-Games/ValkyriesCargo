@@ -3,9 +3,9 @@
 **The bar (`docs/RELEASE.md` §4):** every item in CLAUDE.md's "What to verify in-game" done on a screen,
 with the exact line pasted, a date and the server. Not a summary: the line.
 
-**The server.** Storm10, `C:\Users\donfr\ValheimServers\Storm10`, port 2477, world Storm10, password
+**The server.** Storm10, `%USERPROFILE%\ValheimServers\Storm10`, port 2477, world Storm10, password
 `stormhold`, crossplay. Valheim **1.0.12**, our DLL and ServerDevcommands 1.112 only. Join code on the
-boot; ask for it, it changes on some boots. Don's client runs the Gale **testing** profile (our DLL,
+boot; ask for it, it changes on some boots. Nomad's client runs the Gale **testing** profile (our DLL,
 ServerDevcommands, Configuration Manager).
 
 **The build.** `main` at the `Server.CarryOffset` merge: 0 warnings, 1987 off-game checks, boot line
@@ -34,10 +34,10 @@ server's `BepInEx/config`, and nothing on this machine can stand in for it.
 
 Items **4 (the local-edit half)** and **11b (a non-admin's `cargo visit`)** both need a client that is NOT
 an admin. ServerSync exempts an admin from the config lock, and `AdminGate` lets an admin through, so
-neither refuses Don while he is on the list.
+neither refuses Nomad while he is on the list.
 
 `SyncedList` **reloads on file change, with no restart** (CLAUDE.md engine facts, seen on 1.0.7). So the
-session can make Don a non-admin for two minutes: take the four lines out of
+session can make Nomad a non-admin for two minutes: take the four lines out of
 `Storm10\saves\adminlist.txt`, prove both items, put them back. Say the word and it happens from this side
 while you stay connected. If the lock does not flip live, a reconnect settles it.
 
