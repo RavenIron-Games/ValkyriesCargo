@@ -8,7 +8,7 @@
 [![Framework](https://img.shields.io/badge/Requires-BepInEx-red.svg)]()
 [![Economy](https://img.shields.io/badge/Economy-Supply_%26_Demand-green.svg)]()
 [![Custom Character](https://img.shields.io/badge/Ingvar-Custom_Character-purple.svg)]()
-[![Version](https://img.shields.io/badge/Version-0.1.4-lightgrey.svg)]()
+[![Version](https://img.shields.io/badge/Version-0.1.5-lightgrey.svg)]()
 
 > *"You bank the fire, set down your axe, and the light goes strange. Wings beat in the upper skies —*
 > *and she comes down out of the cloud with a red-bearded dwarf hanging from her talons, and sets him*
@@ -233,7 +233,11 @@ the file, and the boot log says what it did.
 
 ---
 
-## 📖 Status — 0.1.4
+## 📖 Status — 0.1.5
+
+**0.1.5 (date TBD).** A cleanup release: no gameplay change. The DLL no longer carries the build machine's
+folder path. Update the server and every client together: a 0.1.4 client is refused by a 0.1.5 server.
+Nothing to delete when updating.
 
 **0.1.4 (2026-09-16).** The mod migrates its own config file: a value still at an old default moves to the
 new one, a value you set stays, a backup lands beside the file, and the boot log says what it did — no more

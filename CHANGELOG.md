@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.1.5
+
+### 0.1.5 — NAME TBD, date TBD; a cleanup release, prepared and not cut yet
+
+**Why a number.** The store takes one upload per version number, and the version gate moves with it: **a 0.1.4
+client is refused by a 0.1.5 server**, so the server and every player update together. No gameplay code changed
+since 0.1.4, and the config file's layout did not change either (`ConfigVersion` stays `2`), so updating a server
+from 0.1.4 needs nothing deleted and migrates nothing.
+
+- **The DLL no longer carries the build machine's folder path (PR #103).** Every DLL through 0.1.4 had the
+  absolute path of its debug-symbol file written into it, and that path included the build machine's user name.
+  The build now maps the repo's folder to a neutral `/_/` in the DLL and its PDB alike, so neither names a local
+  path. The compiled code is the same as 0.1.4's; only that recorded path changed. A build still embeds the commit
+  it was built from, so the DLL's md5 follows the commit, no longer the folder it was built in. This DLL was built
+  from commit `COMMIT TBD`.
+- **The GitHub README has a "Support Raven Iron" section (PRs #101 and #102):** the mods are free and stay free, and the
+  section links the Raven Iron website, Patreon and the Discord. The README's line on what the store carries is
+  brought up to date.
+
 ## 0.1.4
 
 ### 0.1.4 — cut 2026-09-16 (the day's second), the config migration; a pre-release on GitHub, the store upload is the owner's
