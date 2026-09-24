@@ -120,14 +120,52 @@ namespace RavenIron.ValkyriesCargo.Client
             return ok;
         }
 
-        /// <summary>A real inventory as the pure transaction sees it, by this class's own prefab rules.</summary>
+        /// <summary>
+        /// A real inventory as the pure transaction sees it, by this class's own prefab rules. Every Add keeps a
+        /// journal of exactly which stacks rose and by how much (vanilla merges into existing stacks first and
+        /// then opens a slot), so TakeBack returns those units from those stacks, newest first, and the pack
+        /// ends with the slots it started with. One instance per Apply.
+        /// </summary>
         private sealed class InventoryPack : IPack
         {
+            private sealed class Added { public string Prefab; public ItemDrop.ItemData Item; public int Units; }
+
             private readonly Inventory _inv;
+            private readonly System.Collections.Generic.List<Added> _journal = new System.Collections.Generic.List<Added>();
             public InventoryPack(Inventory inv) { _inv = inv; }
             public int Count(string prefab) => DealApplier.Count(_inv, prefab);
             public int Remove(string prefab, int count) => DealApplier.Remove(_inv, prefab, count);
-            public bool Add(string prefab, int count) => AddStacks(_inv, Prefab(prefab), count);
+
+            public bool Add(string prefab, int count)
+            {
+                var before = new System.Collections.Generic.Dictionary<ItemDrop.ItemData, int>();
+                foreach (ItemDrop.ItemData item in _inv.GetAllItems()) before[item] = item.m_stack;
+                try { return AddStacks(_inv, Prefab(prefab), count); }
+                finally
+                {
+                    foreach (ItemDrop.ItemData item in _inv.GetAllItems())
+                    {
+                        int was;
+                        int rose = before.TryGetValue(item, out was) ? item.m_stack - was : item.m_stack;
+                        if (rose > 0) _journal.Add(new Added { Prefab = prefab, Item = item, Units = rose });
+                    }
+                }
+            }
+
+            public int TakeBack(string prefab, int count)
+            {
+                int left = count;
+                for (int i = _journal.Count - 1; i >= 0 && left > 0; i--)
+                {
+                    Added a = _journal[i];
+                    if (a.Prefab != prefab || a.Units <= 0) continue;
+                    int take = Math.Min(left, Math.Min(a.Units, a.Item.m_stack));
+                    if (take <= 0 || !_inv.RemoveItem(a.Item, take)) continue;
+                    a.Units -= take;
+                    left -= take;
+                }
+                return count - left;
+            }
         }
 
         /// <summary>One line of words for the console or the HUD: "+2 Iron, -38 coins".</summary>

@@ -5909,6 +5909,9 @@ namespace ValkyriesCargo.Tests
             private readonly Dictionary<string, int> _max;
             public readonly List<KeyValuePair<string, int>> Stacks = new List<KeyValuePair<string, int>>();
             public string ThrowOnAdd;
+            // What Add put where, newest last: (stack index at the time, units). Removals only ever shrink or drop
+            // stacks, and TakeBack runs before any, so the indexes stay good for the undo.
+            private readonly List<int[]> _journal = new List<int[]>();
             public FakePack(int slots, Dictionary<string, int> max) { _slots = slots; _max = max; }
             private int Max(string p) { int m; return _max != null && _max.TryGetValue(p, out m) ? m : 1; }
             public void Put(string p, int n) { Stacks.Add(new KeyValuePair<string, int>(p, n)); }
@@ -5936,15 +5939,38 @@ namespace ValkyriesCargo.Tests
                     int room = Math.Min(left, Max(p) - Stacks[i].Value);
                     if (room <= 0) continue;
                     Stacks[i] = new KeyValuePair<string, int>(p, Stacks[i].Value + room);
+                    _journal.Add(new[] { i, room });
                     left -= room;
                 }
                 while (left > 0 && Stacks.Count < _slots)
                 {
                     int n = Math.Min(left, Max(p));
                     Stacks.Add(new KeyValuePair<string, int>(p, n));
+                    _journal.Add(new[] { Stacks.Count - 1, n });
                     left -= n;
                 }
                 return left == 0;
+            }
+            public int TakeBack(string p, int count)
+            {
+                int left = count;
+                for (int j = _journal.Count - 1; j >= 0 && left > 0; j--)
+                {
+                    int i = _journal[j][0];
+                    if (i >= Stacks.Count || Stacks[i].Key != p || _journal[j][1] <= 0) continue;
+                    int take = Math.Min(left, Math.Min(_journal[j][1], Stacks[i].Value));
+                    Stacks[i] = new KeyValuePair<string, int>(p, Stacks[i].Value - take);
+                    _journal[j][1] -= take;
+                    left -= take;
+                }
+                // Drop emptied stacks and keep the journal's indexes pointing at the same stacks.
+                for (int i = Stacks.Count - 1; i >= 0; i--)
+                {
+                    if (Stacks[i].Value > 0) continue;
+                    Stacks.RemoveAt(i);
+                    foreach (int[] e in _journal) if (e[0] > i) e[0]--; else if (e[0] == i) e[1] = 0;
+                }
+                return count - left;
             }
             public string Describe() => string.Join(", ", Stacks.Select(s => s.Key + " " + s.Value));
         }
@@ -6012,6 +6038,19 @@ namespace ValkyriesCargo.Tests
             short1.ItemsToRemove.Add(new DealLine { Prefab = "Iron", Count = 1 });
             Check(!PackTransaction.Apply(pack, short1, out undoShort, out error), "a removal the pack cannot cover fails");
             Equal(100, pack.Count("Resin"), "and the resin that came out first is back");
+            // The fix review's case: the whole coin stack paid (its slot frees), 10 Iron onto a 25/30 stack (5 merge,
+            // 5 open the freed slot), then Wood finds no slot. An undo from the OLDEST stacks shrinks the 30 and
+            // leaves the new 5, and the 100 coins have nowhere to go back to. The undo takes back from the stacks
+            // the add used.
+            pack = new FakePack(3, new Dictionary<string, int> { { "Coins", 999 }, { "Iron", 30 }, { "Wood", 50 }, { "Resin", 100 } });
+            pack.Put("Coins", 100); pack.Put("Iron", 25); pack.Put("Resin", 100);
+            var allCoins = new DealResult { Ok = true, DeliveryId = "w-1-5", CoinsDelta = -100 };
+            allCoins.ItemsToAdd.Add(new DealLine { Prefab = "Iron", Count = 10 });
+            allCoins.ItemsToAdd.Add(new DealLine { Prefab = "Wood", Count = 1 });
+            Check(!PackTransaction.Apply(pack, allCoins, out undoShort, out error), "Wood finds no slot, so the deal fails");
+            Equal(100, pack.Count("Coins"), "and all 100 coins are back: the undo freed the slot the Iron opened");
+            Equal(25, pack.Count("Iron"), "Iron is back at 25");
+            Equal(0, undoShort, "nothing left over");
             Check(!PackTransaction.Apply(null, twoWares, out undoShort, out error) && !PackTransaction.Apply(pack, null, out undoShort, out error)
                   && !PackTransaction.Apply(pack, DealResult.Refuse(1, DealReason.SoldOut), out undoShort, out error), "no pack, no result or a refusal: false, never a throw");
 
@@ -6057,6 +6096,36 @@ namespace ValkyriesCargo.Tests
                   "with the shelf fixed a Want is still never clamped (the locked row, unchanged)");
             Check(fixedShelf.Pays(want) > (int)Math.Round(want.Entry.BasePrice * fixedShelf.Rules.Spread, MidpointRounding.AwayFromZero),
                   "so a scarce Want still pays above par there (" + fixedShelf.Pays(want) + ")");
+
+            Section("Fix review 2026-09-24 N1 (PROPOSED): no pump off a flooded shelf");
+            var pm = new Market(cat, MarketRules.Default, 0, "w4790ce");
+            pm.StartVisit(1, 0, 0);
+            long nonce = 100;
+            int pumped = 0, wareRows = 0;
+            foreach (MarketItem it in pm.Items)
+            {
+                if (pm.KindOf(it) != EntryKind.Ware) continue;
+                wareRows++;
+                it.Stock = it.Entry.MaxStock;                        // flooded by earlier sellers
+                int n = it.Stock;
+                DealResult b = pm.Settle(new Deal { VisitId = 1, Nonce = ++nonce, Wanted = new DealLine { Prefab = it.Prefab, Count = n, UnitPriceSeen = pm.Charge(it) } }, int.MaxValue, 0);
+                if (!b.Ok) continue;
+                DealResult back = pm.Settle(new Deal { VisitId = 1, Nonce = ++nonce, Offered = new List<DealLine> { new DealLine { Prefab = it.Prefab, Count = n, UnitPriceSeen = pm.Pays(it) } } }, 0, 0);
+                if (back.Ok && back.CoinsDelta > -b.CoinsDelta) { pumped++; Console.WriteLine("    pump on " + it.Prefab + ": spent " + (-b.CoinsDelta) + ", got back " + back.CoinsDelta); }
+            }
+            Check(wareRows > 20, "every Ware of the shipped catalogue tried (" + wareRows + ")");
+            Equal(0, pumped, "no Ware bought whole off a flooded shelf sells straight back at a profit (Iron was 60 at 17, back at 18: +60)");
+            var fresh = new Market(cat, MarketRules.Default, 0, "w4790ce");
+            fresh.StartVisit(1, 0, 0);
+            MarketItem ironFresh = fresh.Find("Iron");
+            ironFresh.Stock = 0;
+            Equal(Market.PaysFor(25, 20, 0, EntryKind.Ware, fresh.Rules), fresh.Pays(ironFresh), "an emptied row nobody bought cheap this visit still pays par: ordinary prices do not move");
+            ironFresh.Stock = 60;
+            fresh.Settle(new Deal { VisitId = 1, Nonce = 1, Wanted = new DealLine { Prefab = "Iron", Count = 1, UnitPriceSeen = fresh.Charge(ironFresh) } }, 1000, 0);
+            ironFresh.Stock = 0;
+            Check(fresh.Pays(ironFresh) <= 17, "after he sold Iron at 17 this visit he pays at most 17 for it (" + fresh.Pays(ironFresh) + ")");
+            fresh.StartVisit(2, 0, 0);
+            Equal(Market.PaysFor(25, 20, 0, EntryKind.Ware, fresh.Rules), fresh.Pays(ironFresh), "and the next visit forgets it");
 
             Section("Review 2026-09-24 #4: ShelfSize changed mid-visit waits for the next roll");
             MarketRules r4 = MarketRules.Default; r4.ShelfSize = 20; r4.ShelfRotationGameDays = 2;

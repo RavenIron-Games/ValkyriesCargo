@@ -15,6 +15,13 @@ namespace RavenIron.ValkyriesCargo.Core
         int Remove(string prefab, int count);
         /// <summary>Put `count` in. False when not all of it went in; some of it may have.</summary>
         bool Add(string prefab, int count);
+        /// <summary>
+        /// The undo of <see cref="Add"/>: take back up to `count` of the units this pack's own Add calls put in
+        /// for that prefab, newest first, from the very stacks they went into. Answer how many came out. Not
+        /// <see cref="Remove"/>, which takes from the oldest stacks and can leave a new slot filled, so the
+        /// removals would have nowhere to go back to (the fix review of 2026-09-24).
+        /// </summary>
+        int TakeBack(string prefab, int count);
     }
 
     /// <summary>
@@ -53,7 +60,7 @@ namespace RavenIron.ValkyriesCargo.Core
             // Newest first: take back what went in, then put back what came out.
             for (int i = added.Count - 1; i >= 0; i--)
             {
-                try { undoShort += added[i].Count - pack.Remove(added[i].Prefab, added[i].Count); }
+                try { undoShort += added[i].Count - pack.TakeBack(added[i].Prefab, added[i].Count); }
                 catch (Exception) { undoShort += added[i].Count; }
             }
             for (int i = removed.Count - 1; i >= 0; i--)

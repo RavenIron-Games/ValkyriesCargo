@@ -171,6 +171,10 @@ namespace RavenIron.ValkyriesCargo.Core
         private int _deliverySeq;
         private int _purseAtVisitStart;
         private int _coinedThisVisit;
+        // PROPOSED, awaiting Wu'barrk (review 2026-09-24, N1): the lowest unit price he SOLD each prefab at this
+        // visit. Pays never goes above it, so a row bought out at its flooded price cannot be sold straight back
+        // at par. In memory only, cleared at StartVisit, like the nonce ring.
+        private readonly Dictionary<string, int> _soldAtThisVisit = new Dictionary<string, int>(StringComparer.Ordinal);
         // The rotating shelf (2026-09-08): what is on sale THIS period, the period it was rolled for, and the
         // size it was rolled at, so a live change of either re-rolls on the next idle tick.
         private readonly HashSet<string> _shelf = new HashSet<string>(StringComparer.Ordinal);
@@ -347,7 +351,17 @@ namespace RavenIron.ValkyriesCargo.Core
         }
 
         public int Charge(MarketItem it) => PriceFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, Rules);
-        public int Pays(MarketItem it) => PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, BuyBackKind(it), Rules);
+        public int Pays(MarketItem it)
+        {
+            int pays = PaysFor(it.Entry.BasePrice, it.Entry.TargetStock, it.Stock, BuyBackKind(it), Rules);
+            // PROPOSED, awaiting Wu'barrk (review 2026-09-24, N1, the flooded-shelf pump): a Ware at MaxStock is
+            // charged (Target/Max)^0.35 = 0.68 x base, under the 0.70 x base par the Fair Market Act allows, so
+            // buying a flooded row whole and selling it straight back gained ~2% a unit. He never pays more for a
+            // thing than he sold it for this visit. Binds only after a sale below par, so ordinary prices do not move.
+            int sold;
+            if (Rules.FairMarketAct && it != null && _soldAtThisVisit.TryGetValue(it.Prefab, out sold) && sold < pays) pays = sold;
+            return pays;
+        }
 
         /// <summary>
         /// The kind the Fair Market Act reads for what he PAYS. With the shelf fixed, the row's own kind. With the
@@ -378,6 +392,7 @@ namespace RavenIron.ValkyriesCargo.Core
             _purseAtVisitStart = Purse;
             _coinedThisVisit = 0;
             _nonces.Clear();
+            _soldAtThisVisit.Clear();
             _deliverySeq = 0;
         }
 
@@ -512,7 +527,12 @@ namespace RavenIron.ValkyriesCargo.Core
             if (net > 0 && playerCoins < net) return Refuse(d, DealReason.CoinsShort);
             if (net < 0 && Purse < -net) return Refuse(d, DealReason.PurseEmpty);
 
-            for (int i = 0; i < wants.Count; i++) { wants[i].Stock -= d.Wants[i].Count; wants[i].UpdatedWorldTime = worldTime; }
+            for (int i = 0; i < wants.Count; i++)
+            {
+                wants[i].Stock -= d.Wants[i].Count; wants[i].UpdatedWorldTime = worldTime;
+                int low;
+                if (!_soldAtThisVisit.TryGetValue(wants[i].Prefab, out low) || wantCharges[i] < low) _soldAtThisVisit[wants[i].Prefab] = wantCharges[i];
+            }
             for (int i = 0; i < offered.Count; i++) { offered[i].Stock += d.Offered[i].Count; offered[i].UpdatedWorldTime = worldTime; }
             Purse += (int)net;
             if (net > 0) _coinedThisVisit += (int)net;   // GROSS in; see Coined
