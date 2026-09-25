@@ -436,6 +436,12 @@ third-party side effects. Replicate the vanilla body with publicized members ins
 `m_nview.m_functions.ContainsKey(name.GetStableHashCode())`; `Initialize(); CheckLoad();`), and
 from a repair path never perform vanilla's destructive branch (`Found another terrain compiler,
 removing it` → `ZNetScene.Destroy`) - leave a duplicate inert. (`ScarecrowController.RepairTerrainComp`.)
+**Valheim 1.0.16 (2026-09-25) moved that branch** (read from the 1.0.16 decompile; not yet seen in a log):
+`Awake` no longer destroys the other compiler; both go into a duplicate set, and the next `Start` keeps the one
+with the most operations performed on it (a tie keeps the newer one) and destroys the rest, claiming ownership of
+an unowned duplicate first. The log line is now the warning `Removed duplicate terrain compiler with N operations
+performed on it.` for each one removed, plus an INFO line `There should only be one terrainCompiler found at this
+area now, is that correct? [...]`.
 
 **26. `ZNetScene.OutsideActiveArea` gates exactly three things - `WearNTear.UpdateWear`,
 `SpawnArea`, `StaticPhysics` - and NOT monster AI. So a creature your claim pass owns at an

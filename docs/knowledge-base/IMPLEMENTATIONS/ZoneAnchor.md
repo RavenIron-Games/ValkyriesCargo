@@ -630,6 +630,15 @@ on the zone's only terrain record. Three zones of one base lost every levelled f
 cultivated bed in one tick (02:34); the pieces standing on that ground collapsed when the owner logged in.
 The world saves never contained a duplicate compiler — the "other compiler" was the same ZDO.
 
+> **Valheim 1.0.16 (2026-09-25) changed that branch** (read from the 1.0.16 decompile; not yet seen in a log).
+> `TerrainComp.Awake` no longer destroys the compiler it finds: it puts both in a duplicate set, and the next
+> `Start` keeps the one with the most operations performed on it (`m_operations`; a tie keeps the newer one, the
+> one that woke last) and destroys the others, first claiming ownership of any duplicate that has no owner. Each
+> removal logs the warning `Removed duplicate terrain compiler with N operations performed on it.`, followed by an
+> INFO line `There should only be one terrainCompiler found at this area now, is that correct? [...]` with the kept
+> compiler's operation count. `Found another terrain compiler in this area, removing it` is the line of 1.0.15 and
+> earlier.
+
 **Rules, now enforced in both ports:**
 
 1. **Append only what is not already in the list, whoever put it there.** Build a `HashSet<ZDO>` from

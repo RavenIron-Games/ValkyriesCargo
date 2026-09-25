@@ -4,7 +4,7 @@
     <TargetFramework>net48</TargetFramework>
     <AssemblyName>ValkyriesCargo</AssemblyName>
     <RootNamespace>RavenIron.ValkyriesCargo</RootNamespace>
-    <Version>0.1.5</Version>
+    <Version>0.1.6</Version>
     <LangVersion>latest</LangVersion>
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>false</AllowUnsafeBlocks>

@@ -1,5 +1,43 @@
 # Changelog
 
+## 0.1.6
+
+### 0.1.6 — NAME TBD, date TBD; the Valheim 1.0.16 build, prepared and not cut yet
+
+**Why a number.** The store takes one upload per version number, and the version gate moves with it: **a 0.1.5
+client is refused by a 0.1.6 server**, so the server and every player update together. No gameplay code changed
+since 0.1.5, and the config file's layout did not change (`ConfigVersion` stays `2`), so updating a server from
+0.1.5 needs nothing deleted and migrates nothing.
+
+**Valheim 1.0.16.** Valheim's hotfix of 2026-09-25 (1.0.15 to 1.0.16) kept network version 40 and the player and
+world save versions, so 1.0.12, 1.0.15 and 1.0.16 players and servers still connect to each other. This build is
+built against 1.0.16 and checked against it: it compiles clean against the 1.0.16 game files; the 280 game members
+the mod depends on (`docs/ENGINE-SURFACE.md`) were compared between 1.0.12 and 1.0.16 on both the client and the
+dedicated server, and the three that changed had already changed in 1.0.15, none in a way the mod relies on (a log
+message's level, the hotbar keys, a new vanilla console command); and none of the game methods 1.0.16 itself
+changed is one the mod patches or calls. The mod's 19 engine probes, run offline against the 1.0.16 client and
+server game files, all pass. Apart from the engine check's numbers, the mod's code is the same as 0.1.5's, which was
+tested in game on 1.0.15 on 2026-09-24. 2591 off-game checks, 0 failed.
+
+**The boot line.** The mod's engine check now takes 1.0.16 as the build it was made for, so on 1.0.16 it reads
+`engine: same build 1.0.16 (net 40, player 46, world 41)` where 0.1.5 read `newer game version (1.0.16 vs 1.0.12)`.
+On a 1.0.15 install it reads `older game version (1.0.15 vs 1.0.16)`; like the line 0.1.5 printed, that is
+information, not an error.
+
+### Build and docs
+
+- **The engine check's baseline is Valheim 1.0.16** (`Core/EngineBaseline.cs`): game version 1.0.16, Steam builds
+  25527674 (client) and 25527701 (dedicated server), read 2026-09-25; network 40, player 46 and world 41 as before.
+  The record is `docs/ENGINE-BASELINE.md` with the two sweeps
+  `docs/engine-sweeps/2026-09-25-{client,server}-1.0.12-vs-1.0.16.md`.
+- **The knowledge base's terrain-compiler notes are brought up to 1.0.16.** The two pages that quote vanilla's
+  `Found another terrain compiler in this area, removing it` now say what 1.0.16 does instead: it keeps the
+  compiler with the most operations performed on it and logs `Removed duplicate terrain compiler with N operations
+  performed on it.` Documentation only; this mod never touches a terrain compiler.
+- **The repository's working documents use the public byline and name no user folders (PR #106).**
+  Documentation only.
+- This DLL was built from the commit tagged `v0.1.6`; the GitHub release names that commit and gives the DLL's md5.
+
 ## 0.1.5
 
 ### 0.1.5 — cut 2026-09-24, deal and market fixes; a pre-release on GitHub

@@ -6,17 +6,24 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.5`, a first playable; a pre-release on GitHub; the store upload is a separate step.** Cut
-> 2026-09-24 from `main`. **For Valheim 1.0.12 and 1.0.15** (both network version 40; built against 1.0.12,
+> **Status: `v0.1.6` is prepared and not cut yet; `v0.1.5` (cut 2026-09-24 from `main`) is the last release — a
+> first playable; a pre-release on GitHub; the store upload is a separate step.** **For Valheim 1.0.12, 1.0.15 and
+> 1.0.16** (all network version 40; 0.1.6 is built and checked against 1.0.16, 0.1.5 was built against 1.0.12 and
 > tested on 1.0.15): 1.0.12 moved the network version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12)
 > cannot connect to it at all. The store carries whichever
-> cut was last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first; 0.1.4 since 2026-09-16), and
-> **a 0.1.4 client is refused by a 0.1.5 server** by the version gate — on purpose: the store takes
+> cut was last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first; 0.1.5 since 2026-09-24), and
+> **a 0.1.5 client is refused by a 0.1.6 server** by the version gate — on purpose: the store takes
 > one upload per number, and both sides move together. **Updating a server: nothing to delete** —
-> from 0.1.4 the mod migrates its own config file, and 0.1.5 does not change its layout (Installing, below).
+> from 0.1.4 the mod migrates its own config file, and neither 0.1.5 nor 0.1.6 changes its layout (Installing,
+> below).
 > The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
 > because 0.1.x is a first playable and says so.
-> What 0.1.5 adds: a deal lands in your pack whole or not at all; a deal made more than 96 m from the visit is
+> What 0.1.6 adds: the Valheim 1.0.16 build, with no gameplay change. The engine check's compiled-in baseline moves
+> from 1.0.12 to 1.0.16 (`docs/ENGINE-BASELINE.md`), so the boot line on 1.0.16 reads `same build 1.0.16`. The
+> engine sweep found three changed bodies among the members the mod depends on, all three already changed in
+> 1.0.15 and none in a way it relies on; the probes, run offline against the 1.0.16 client and server, pass
+> 19/19. 2591 off-game checks.
+> What 0.1.5 added: a deal lands in your pack whole or not at all; a deal made more than 96 m from the visit is
 > refused; the Fair Market Act covers every row while the shelf rotates, and within a visit he never pays more for
 > an item than the lowest price he sold it at (two rule changes, set out in `docs/DECISIONS-WUBARRK.md` §2, where
 > they are still marked PROPOSED for Wu'barrk's confirmation); a `ShelfSize`
@@ -81,6 +88,15 @@ from our own interact handler. Nothing happens on command except an admin's `car
 ---
 
 ## Status
+
+**0.1.6, prepared 2026-09-25 on `release/0.1.6-prep`, not cut yet: the Valheim 1.0.16 build.** Valheim's 1.0.16
+hotfix kept network version 40 and both save versions (player 46, world 41). No gameplay code changed: the engine
+check's compiled-in baseline (`Core/EngineBaseline.cs`) moves from 1.0.12 to 1.0.16 (Steam builds 25527674 client /
+25527701 server, read 2026-09-25). The sweeps `docs/engine-sweeps/2026-09-25-{client,server}-1.0.12-vs-1.0.16.md`
+found 277 of the 280 surface members unchanged and 3 bodies changed, all three already in 1.0.15 and none load
+bearing here (`docs/ENGINE-BASELINE.md`). The probes, run offline against the real 1.0.16 client and server
+assemblies (not a boot), answered `engine: same build 1.0.16 (net 40, player 46, world 41); probes 19/19 ok, 8 not
+probeable`. 2591 checks, 0 failed, 0 warnings.
 
 **Truth pass against `main` at the `v0.1.5` cut, 2026-09-24.** This mod runs on **Valheim 1.0.12 and 1.0.15**
 (network version 40; tested on 1.0.15 at this cut) and on nothing older: 1.0.12 moved the network version to 40,
@@ -305,7 +321,7 @@ Requires [BepInExPack Valheim](https://thunderstore.io/c/valheim/p/denikson/BepI
 and nothing else: no Jotunn, no JSON library (the BarrkBOT export writes its files through the mod's
 own `Core/Json.cs`). `manifest.json`'s dependency list is that one entry.
 
-Built against the assemblies of Valheim **1.0.12** (the install of 2026-09-11); that install's
+Built against the assemblies of Valheim **1.0.16** (the install of 2026-09-25); that install's
 `UnityPlayer.dll` reports **Unity 6000.0.75**, which is the Editor version any asset bundle for
 this mod must be built with. 0.221.12 is no longer a build target (Steam's `default_pre1_0` branch
 keeps it; `v0.1.0-rc3` was the last build for it).

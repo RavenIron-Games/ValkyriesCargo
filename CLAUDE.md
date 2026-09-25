@@ -24,6 +24,23 @@ row it changed in the locked table: `docs/DECISIONS-WUBARRK.md`.
 
 ## Status
 
+**PREPARED 2026-09-25, NOT CUT: `v0.1.6` — the Valheim 1.0.16 build** (branch `release/0.1.6-prep`, off `main` at
+`30b6fc6`; the cut, the tag and the upload are RavenIron's). Valheim hot-fixed 1.0.15 to 1.0.16 on 2026-09-25
+(Steam build 25527674 client / 25527701 dedicated server); network 40, player 46 and world 41 did not move, so
+1.0.12, 1.0.15 and 1.0.16 connect to each other. No gameplay code changed: `Core/EngineBaseline.cs` moves from
+1.0.12 to 1.0.16 (the two build ids, bodies read 2026-09-25) with its tests (2591 checks, 0 failed, 0 warnings), and
+the version to 0.1.6, so a 0.1.5 client is refused by a 0.1.6 server. The re-baseline followed
+`docs/ENGINE-BASELINE.md`: both installs decompiled beside the preserved 1.0.12 trees and swept,
+`docs/engine-sweeps/2026-09-25-{client,server}-1.0.12-vs-1.0.16.md`, 277 of 280 unchanged, 3 body changed
+(`Inventory.AddItem`'s log level, `Player.Update`'s hotbar loop, `Terminal.InitTerminal`'s new command; all three
+already in 1.0.15, none load bearing), 0 signature, 0 gone; the offline probe tool (`docs/ENGINE-PROBES.md` §8
+item 3) on the real 1.0.16 client and server assemblies:
+`engine: same build 1.0.16 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable`, and on the kept 1.0.15
+client assembly `engine: older game version (1.0.15 vs 1.0.16); probes 19/19 ok, 8 not probeable`. **No 1.0.16
+boot line from a game yet** (Mono, ServerSync's gate beside it): paste it here when seen (`docs/RELEASE.md` §4).
+Also on the branch: PR #106's byline scrub (docs only) and the knowledge base's two terrain-compiler notes brought
+up to 1.0.16 (docs only; this mod never touches a terrain compiler).
+
 **CUT 2026-09-24: `v0.1.5` — deal and market fixes** (the owner: "valkyries cargo is good to go", "merge 104",
 "cut vc 0.1.5"). A GitHub pre-release with the store zip and the kit attached; the upload is the owner's. The code
 change since 0.1.4 is PR #104, from a code review of 0.1.4: all-or-nothing deal apply (`Core/PackTransaction.cs`,

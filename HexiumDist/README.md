@@ -4,11 +4,11 @@
 
 ![Valheim Mod](https://img.shields.io/badge/Valheim-Merchant_Encounter-orange.svg)
 [![Multiplayer Compatible](https://img.shields.io/badge/Multiplayer-Server--Synced-blue.svg)]()
-[![Valheim](https://img.shields.io/badge/Valheim-1.0.12_%7C_1.0.15-critical.svg)]()
+[![Valheim](https://img.shields.io/badge/Valheim-1.0.12_%7C_1.0.15_%7C_1.0.16-critical.svg)]()
 [![Framework](https://img.shields.io/badge/Requires-BepInEx-red.svg)]()
 [![Economy](https://img.shields.io/badge/Economy-Supply_%26_Demand-green.svg)]()
 [![Custom Character](https://img.shields.io/badge/Ingvar-Custom_Character-purple.svg)]()
-[![Version](https://img.shields.io/badge/Version-0.1.5-lightgrey.svg)]()
+[![Version](https://img.shields.io/badge/Version-0.1.6-lightgrey.svg)]()
 
 > *"You bank the fire, set down your axe, and the light goes strange. Wings beat in the upper skies —*
 > *and she comes down out of the cloud with a red-bearded dwarf hanging from her talons, and sets him*
@@ -16,9 +16,9 @@
 
 *A Valkyrie air-drops a merchant at your door. You have five minutes.*
 
-**Requires Valheim 1.0.12 or 1.0.15**, on the server **and on every client**. Valheim 1.0.12 moved the network
-version, so a build made for 1.0.7 or 0.221.12 cannot connect at all — that wall is the game's, not ours. 1.0.15
-kept the same network version, so 1.0.12 and 1.0.15 play together.
+**Requires Valheim 1.0.12, 1.0.15 or 1.0.16**, on the server **and on every client**. Valheim 1.0.12 moved the
+network version, so a build made for 1.0.7 or 0.221.12 cannot connect at all — that wall is the game's, not ours.
+1.0.15 and 1.0.16 kept the same network version, so 1.0.12, 1.0.15 and 1.0.16 play together.
 
 </div>
 
@@ -44,7 +44,7 @@ Then he vanishes into the mist the way Odin does.
 - [🛠️ Compatibility](#️-compatibility)
 - [📦 Dependencies](#-dependencies)
 - [📥 Installation](#-installation)
-- [📖 Status — 0.1.5](#-status--015)
+- [📖 Status — 0.1.6](#-status--016)
 - [🐦‍⬛ Credits](#-credits)
 
 </details>
@@ -186,12 +186,13 @@ server-synced and admin-controlled**; only cosmetics are local.
 
 ## 🛠️ Compatibility
 
-Built against **Valheim 1.0.12** and tested on **1.0.15**. At boot the mod checks the game it is actually running on,
+Built against **Valheim 1.0.16** and checked against it; 0.1.5, the same gameplay code, was tested in game on
+**1.0.15**. At boot the mod checks the game it is actually running on,
 prints what it found, and any feature depending on something that has **moved** switches *itself*
 off and says so — rather than taking your session down with it. `cargo engine` shows you that check.
 
 - ✅ Dedicated servers, listen hosts and single-player
-- ⚠️ **Valheim 1.0.12 or 1.0.15 only** (network version 40). The game refuses a peer on another network version before this mod is
+- ⚠️ **Valheim 1.0.12, 1.0.15 or 1.0.16 only** (network version 40). The game refuses a peer on another network version before this mod is
   consulted, so every copy has to be replaced by hand when the engine moves
 - ✅ Run alongside a **117-plugin** modpack — on 0.221.12, where that pack existed. On 1.0 it has not
   yet been run with a pack that size
@@ -232,7 +233,11 @@ the file, and the boot log says what it did.
 
 ---
 
-## 📖 Status — 0.1.5
+## 📖 Status — 0.1.6
+
+**0.1.6 (date TBD).** The Valheim 1.0.16 build: built and checked against the 1.0.16 hotfix, no gameplay change.
+The boot line now names 1.0.16 as the game it was built for. Update the server and every client together: a
+0.1.5 client is refused by a 0.1.6 server. Nothing to delete when updating.
 
 **0.1.5 (2026-09-24).** Deal and market fixes: a deal lands in your pack whole or not at all, a deal must be made
 within 96 m of the visit, and the Fair Market Act covers every row while the shelf rotates; within a visit he
@@ -270,8 +275,9 @@ watched on a screen. Some corners are proven only in the log, and a few only off
 **The one we will name outright:** redelivery after a lost connection is built, and tested off-game,
 and has **never** been caught happening in a live session — the window between a deal being answered
 and acknowledged is too small to stand in front of. Two-player trading at one merchant is also thinly
-tested, and two 0.1.5 points rest on the code rather than a screen: the 96 m rule on a listen host, and a
-0.1.4 client being refused by a 0.1.5 server. Everything else on this page has been watched.
+tested, and some points rest on the code and on checks made outside the game rather than a screen: the 96 m
+rule on a listen host, an older client being refused by a newer server (0.1.4 at 0.1.5, 0.1.5 at 0.1.6), and
+Valheim 1.0.16 itself, which 0.1.6 was built and checked against. Everything else on this page has been watched.
 
 If something reads wrong, `cargo status` and your `BepInEx/LogOutput.log` will usually say why —
 and we would genuinely like to hear about it.
