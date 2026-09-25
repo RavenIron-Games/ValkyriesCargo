@@ -235,9 +235,8 @@ the file, and the boot log says what it did.
 
 ## 📖 Status — 0.1.6
 
-**0.1.6 (date TBD).** The Valheim 1.0.16 build: built and checked against the 1.0.16 hotfix, no gameplay change.
-The boot line now names 1.0.16 as the game it was built for. Update the server and every client together: a
-0.1.5 client is refused by a 0.1.6 server. Nothing to delete when updating.
+**0.1.6 (2026-09-25).** Updated due to 1.0.16 Patch. Update the server and every client together: a 0.1.5
+client is refused by a 0.1.6 server. Nothing to delete when updating.
 
 **0.1.5 (2026-09-24).** Deal and market fixes: a deal lands in your pack whole or not at all, a deal must be made
 within 96 m of the visit, and the Fair Market Act covers every row while the shelf rotates; within a visit he
