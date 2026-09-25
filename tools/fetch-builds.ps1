@@ -35,7 +35,7 @@ param(
 
     [string] $Account = "",
 
-    [string] $ShadowRoot = "C:\Users\donfr\valheim-shadows",
+    [string] $ShadowRoot = "$env:USERPROFILE\valheim-shadows",
 
     [switch] $WhatIf
 )

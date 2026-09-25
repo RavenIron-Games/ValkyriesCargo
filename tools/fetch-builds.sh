@@ -38,7 +38,7 @@
 #     creates ~/.steam/steam as a stable symlink to the real root, and that plus this repo plus
 #     every libraryfolders.vdf entry is the whole forbidden list.
 #   - The default shadow root is $HOME/valheim-shadows, never a hardcoded username (the Windows
-#     twin's default bakes in C:\Users\donfr\...; this box's user is not Don).
+#     twin's default is $env:USERPROFILE\valheim-shadows, for the same reason).
 #   - ASCII-ONLY was the Windows twin's rule because PowerShell 5.1 misreads a BOM-less UTF-8 file
 #     as ANSI and an em-dash decodes into a curly quote that stops the parser. Bash has no such
 #     landmine; this file uses "--" instead of an em-dash anyway, to keep a straight diff against

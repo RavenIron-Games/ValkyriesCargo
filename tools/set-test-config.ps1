@@ -50,8 +50,8 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $ServerRoots = @{
-    'StormTest' = 'C:\Users\donfr\ValheimServers\StormTest'
-    'CairnTest' = 'C:\Users\donfr\ValheimServers\CairnTest'
+    'StormTest' = "$env:USERPROFILE\ValheimServers\StormTest"
+    'CairnTest' = "$env:USERPROFILE\ValheimServers\CairnTest"
 }
 $CfgName = 'com.raveniron.valkyriescargo.cfg'
 

@@ -434,14 +434,21 @@ HearthBelow). A Harmony-wrapped method is not a function you can re-enter; it is
 third-party side effects. Replicate the vanilla body with publicized members instead (here:
 `m_hmap = hmap; s_instances.Add; Register("ApplyOperation") guarded by
 `m_nview.m_functions.ContainsKey(name.GetStableHashCode())`; `Initialize(); CheckLoad();`), and
-from a repair path never perform vanilla's destructive branch (`Found another terrain compiler,
-removing it` → `ZNetScene.Destroy`) - leave a duplicate inert. (`ScarecrowController.RepairTerrainComp`.)
+from a repair path never perform vanilla's destructive branch (`Found another terrain compiler in
+this area, removing it` → `ZNetScene.Destroy`) - leave a duplicate inert. (`ScarecrowController.RepairTerrainComp`.)
 **Valheim 1.0.16 (2026-09-25) moved that branch** (read from the 1.0.16 decompile; not yet seen in a log):
-`Awake` no longer destroys the other compiler; both go into a duplicate set, and the next `Start` keeps the one
-with the most operations performed on it (a tie keeps the newer one) and destroys the rest, claiming ownership of
-an unowned duplicate first. The log line is now the warning `Removed duplicate terrain compiler with N operations
-performed on it.` for each one removed, plus an INFO line `There should only be one terrainCompiler found at this
-area now, is that correct? [...]`.
+`Awake` no longer destroys the other compiler. It adds both to `TerrainComp.s_duplicateInstances`, which is ONE
+static `HashSet` for every area, not one per area, and `Start` → `TryCleanInvalidTCs` does the rest: if `this` is in
+the set (the only check it makes), it sorts the whole set by `m_operations`, keeps the last entry (the most
+operations; a tie keeps the one added last, the newer copy of a pair) and destroys every other entry, whatever area
+it is in, first claiming ownership of any whose ZDO has no owner, so `ZNetScene.Destroy` deletes that ZDO. The log
+is one WARN `Removed duplicate terrain compiler with N operations performed on it.` per compiler removed, then ONE
+INFO line after the loop, `There should only be one terrainCompiler found at this area now, is that correct?
+[True]. Amount of operations the terrain compiler that was kept: [N]`. For a repair path the rule stands, and the
+replicated body above must also leave `s_duplicateInstances` alone: an entry added outside a fresh `Awake` → `Start`
+(a compiler that has started never runs `Start` again) waits in the set until some unrelated duplicate starts,
+anywhere, and is sorted and destroyed with it. What this means for the zone-anchor rules:
+`IMPLEMENTATIONS/ZoneAnchor.md`, the 2026-09-04 addendum.
 
 **26. `ZNetScene.OutsideActiveArea` gates exactly three things - `WearNTear.UpdateWear`,
 `SpawnArea`, `StaticPhysics` - and NOT monster AI. So a creature your claim pass owns at an

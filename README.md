@@ -8,8 +8,8 @@ five minutes at prices that move with what the world sells him, then vanishes li
 
 > **Status: `v0.1.6` is prepared and not cut yet; `v0.1.5` (cut 2026-09-24 from `main`) is the last release — a
 > first playable; a pre-release on GitHub; the store upload is a separate step.** **For Valheim 1.0.12, 1.0.15 and
-> 1.0.16** (all network version 40; 0.1.6 is built and checked against 1.0.16, 0.1.5 was built against 1.0.12 and
-> tested on 1.0.15): 1.0.12 moved the network version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12)
+> 1.0.16** (all network version 40; 0.1.6 is built and checked against 1.0.16, 0.1.5's engine baseline was 1.0.12 and
+> it was tested on 1.0.15): 1.0.12 moved the network version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12)
 > cannot connect to it at all. The store carries whichever
 > cut was last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first; 0.1.5 since 2026-09-24), and
 > **a 0.1.5 client is refused by a 0.1.6 server** by the version gate — on purpose: the store takes

@@ -34,8 +34,9 @@ information, not an error.
   `Found another terrain compiler in this area, removing it` now say what 1.0.16 does instead: it keeps the
   compiler with the most operations performed on it and logs `Removed duplicate terrain compiler with N operations
   performed on it.` Documentation only; this mod never touches a terrain compiler.
-- **The repository's working documents use the public byline and name no user folders (PR #106).**
-  Documentation only.
+- **The repository's working documents use the public byline and name no user folders (PR #106), and so do
+  its tool scripts, its test harness and one code comment.** The tool scripts' default folders now start from
+  `%USERPROFILE%`. Nothing the mod does changed.
 - This DLL was built from the commit tagged `v0.1.6`; the GitHub release names that commit and gives the DLL's md5.
 
 ## 0.1.5

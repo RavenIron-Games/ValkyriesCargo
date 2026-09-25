@@ -630,14 +630,36 @@ on the zone's only terrain record. Three zones of one base lost every levelled f
 cultivated bed in one tick (02:34); the pieces standing on that ground collapsed when the owner logged in.
 The world saves never contained a duplicate compiler — the "other compiler" was the same ZDO.
 
-> **Valheim 1.0.16 (2026-09-25) changed that branch** (read from the 1.0.16 decompile; not yet seen in a log).
-> `TerrainComp.Awake` no longer destroys the compiler it finds: it puts both in a duplicate set, and the next
-> `Start` keeps the one with the most operations performed on it (`m_operations`; a tie keeps the newer one, the
-> one that woke last) and destroys the others, first claiming ownership of any duplicate that has no owner. Each
-> removal logs the warning `Removed duplicate terrain compiler with N operations performed on it.`, followed by an
-> INFO line `There should only be one terrainCompiler found at this area now, is that correct? [...]` with the kept
-> compiler's operation count. `Found another terrain compiler in this area, removing it` is the line of 1.0.15 and
-> earlier.
+> **Valheim 1.0.16 (2026-09-25) changed that branch** (read from the 1.0.16 decompile, client and server alike;
+> not yet seen in a log). `TerrainComp.Awake` no longer destroys the compiler it finds: it adds that one and itself
+> to `TerrainComp.s_duplicateInstances` and carries on waking. That set is **one static `HashSet` for every area,
+> not one per area.** The destroying moved to `Start` → `TryCleanInvalidTCs`, and the only thing it checks is that
+> `this` is in the set; nothing compares the other entries' areas. It then sorts the WHOLE set by `m_operations`,
+> keeps only the last entry (the most operations performed on it; on a tie the one added last, because the sort is
+> stable and the set, only ever cleared, enumerates in insertion order, so the newer copy of a pair) and, for every
+> other entry, claims ownership if its `ZNetView` is valid and has no owner, calls `ZNetScene.Destroy` (which
+> deletes the ZDO whenever this machine owns it) and logs one WARN,
+> `Removed duplicate terrain compiler with N operations performed on it.` After the loop it clears the set and logs
+> ONE INFO line, `There should only be one terrainCompiler found at this area now, is that correct? [True]. Amount
+> of operations the terrain compiler that was kept: [N]` (`[False]` when more than one compiler still covers the
+> kept one's position; it looks at no other area).
+> `Found another terrain compiler in this area, removing it` is the line of 1.0.15 and earlier.
+>
+> **What that means for the rules below on 1.0.16** (a reading of the decompile, not tested):
+> - **The same-ZDO duplicate of this incident still loses the terrain without rule 4.** Both copies load the same
+>   `TCData`, so they tie and the older copy is destroyed; and 1.0.16 now claims the ZDO itself before the destroy
+>   when it has no owner (the state `ZDOMan.ReleaseNearbyZDOS` leaves when a player walks out of range), so
+>   `ZNetScene.Destroy` → `ZDOMan.DestroyZDO` deletes the zone's only terrain record. **Rule 3 is still needed
+>   but no longer enough on its own**: the claim that turns the swap into data loss can now be vanilla's.
+> - **Rule 4 still holds for one zone.** The detached older copy never has more operations than the new one (both
+>   read the same ZDO, the new one last), so it sorts first and is the one destroyed; `IsValid()` is false, so it
+>   is not claimed, and `ZNetScene.Destroy` finds no ZDO and removes only its GameObject.
+> - **It does not hold across zones.** Every `Awake` in one `CreateObjectsSorted` pass runs before the first
+>   `Start`, so zones duplicated in the same pass (three were, at 02:34) share the one set, and the first `Start`
+>   keeps ONE compiler out of all of them: every other zone's live copy, the one rule 4 meant to keep, is
+>   destroyed too, claimed first if unowned, and its ZDO deleted. On 1.0.16 **rules 1 and 2 are the defence that
+>   matters** (a ZDO never instantiated twice never enters the set); rule 4 is a one-zone backstop, and a 1.0.16
+>   port of it would also have to keep a same-ZDO pair out of `s_duplicateInstances`. Rule 5 is unchanged.
 
 **Rules, now enforced in both ports:**
 

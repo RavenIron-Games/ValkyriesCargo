@@ -2256,7 +2256,7 @@ namespace ValkyriesCargo.Tests
             Decision fAgain = f0.Force(100, one, false, true, 1);
             Check(fAgain.Visit, "a forced visit ignores the cooldown it just stamped: the admin asked, and milestone testing needs it");
             Scheduler fCount = new Scheduler(SchedulerRules.Default);
-            var crowd = new List<Candidate> { Player(1, "Don", 0f, 0f), Player(2, "Far", 1000f, 0f), Player(3, "Wide", 2000f, 0f) };
+            var crowd = new List<Candidate> { Player(1, "Nomad", 0f, 0f), Player(2, "Far", 1000f, 0f), Player(3, "Wide", 2000f, 0f) };
             Decision fc = fCount.Force(0, crowd, false, true, 2);
             Check(fc.Visit && fc.Pilot.Uid == 2, "the named player is the one forced");
             Equal(3, fc.Eligible, "and the counters still count everyone online, so cargo status tells the truth");
@@ -2762,7 +2762,7 @@ namespace ValkyriesCargo.Tests
             Equal("", s.LastEndReason, "and records no reason, because nothing ended");
 
             // Begin publishes a Flying visit with the pilot, the drop point, the clock and the seed.
-            string state = s.Begin(7, 4242L, "Don", 10f, 30f, -20f, 1000.0, 300f, 800, 99);
+            string state = s.Begin(7, 4242L, "Nomad", 10f, 30f, -20f, 1000.0, 300f, 800, 99);
             Check(s.Active && s.Phase == VisitPhase.Flying, "Begin makes the session active, in the Flying phase");
             var problems = new List<string>();
             VisitSnapshot v = VisitSnapshot.Parse(state, problems);
@@ -2774,7 +2774,7 @@ namespace ValkyriesCargo.Tests
             Equal(1300.0, v.EndWorldTime, "the deadline one lifespan after the start");
             Equal(800, v.Purse, "the purse he arrives with");
             Equal(99, v.Seed, "and the seed every client derives his lines from");
-            Equal("Don", s.PilotName, "the pilot's name is kept for the log, not sent");
+            Equal("Nomad", s.PilotName, "the pilot's name is kept for the log, not sent");
             Equal(1300.0, s.PublishedEnd, "the published deadline is the clock's");
             Equal(7, s.LastVisitId, "LastVisitId follows Begin");
 
@@ -2858,7 +2858,7 @@ namespace ValkyriesCargo.Tests
             Scheduler sch = new Scheduler(SchedulerRules.Default);
             sch.StampCooldown(42, 5f, 6f, 100);
             VisitSession vs = new VisitSession();
-            vs.Begin(3, 42L, "Don", 5f, 30f, 6f, 1000.0, 300f, m.Purse, 77);
+            vs.Begin(3, 42L, "Nomad", 5f, 30f, 6f, 1000.0, 300f, m.Purse, 77);
             OwedLedger led = new OwedLedger();
             led.Add("steam1", new DealResult { Ok = true, DeliveryId = "v-3-1", Nonce = 1, CoinsDelta = -50, ItemsToAdd = new List<DealLine> { new DealLine { Prefab = "Iron", Count = 2, UnitPriceSeen = 25 } } });
 
@@ -2866,7 +2866,7 @@ namespace ValkyriesCargo.Tests
             Check(text.StartsWith("format\t1\n"), "the file opens with the format line");
             Check(text.EndsWith("\n"), "and ends with a newline");
             Check(text.Contains("\nstock\tIron\t18\t") && text.Contains("\npurse\t") && text.Contains("\ncool\t42\t") && text.Contains("\ncoolbase\t5\t6\t") &&
-                  text.Contains("\nsession\t3\t42\tDon\t") && text.Contains("\nowed\tsteam1\tv-3-1\t"), "every owner's rows are in it");
+                  text.Contains("\nsession\t3\t42\tNomad\t") && text.Contains("\nowed\tsteam1\tv-3-1\t"), "every owner's rows are in it");
 
             var problems = new List<string>();
             Sidecar sc = Sidecar.Split(text, problems);
@@ -4001,9 +4001,9 @@ namespace ValkyriesCargo.Tests
 
             VisitSession a = new VisitSession();
             Equal("", a.EncodeSessionRow(), "no visit, no row");
-            a.Begin(5, 4242L, "Don\tTab", 1f, 2f, 3f, 1000.0, 300f, 900, 7);
+            a.Begin(5, 4242L, "Nomad\tTab", 1f, 2f, 3f, 1000.0, 300f, 900, 7);
             string row = a.EncodeSessionRow();
-            Check(row.StartsWith("session\t5\t4242\tDon Tab\t1\t2\t3\t1000\t1300\t900\t7\tFlying"), "the row carries id, pilot, a tab-cleaned name, drop, clock, purse, seed, phase: " + row);
+            Check(row.StartsWith("session\t5\t4242\tNomad Tab\t1\t2\t3\t1000\t1300\t900\t7\tFlying"), "the row carries id, pilot, a tab-cleaned name, drop, clock, purse, seed, phase: " + row);
             a.SetPhase(VisitPhase.Trading);
             Check(a.EncodeSessionRow().EndsWith("\tTrading"), "and follows the phase");
 
@@ -4014,7 +4014,7 @@ namespace ValkyriesCargo.Tests
             Check(b.Active && b.Resumed, "the session is active and marked resumed");
             Equal(5, b.VisitId, "same visit");
             Equal(4242L, b.PilotUid, "same pilot");
-            Equal("Don Tab", b.PilotName, "same name");
+            Equal("Nomad Tab", b.PilotName, "same name");
             Equal(VisitPhase.Trading, b.Phase, "same phase");
             Equal(900, b.Purse, "same purse");
             Equal(7, b.Seed, "same seed, so the lines match");
@@ -5350,47 +5350,47 @@ namespace ValkyriesCargo.Tests
 
             l.Record("", "Nobody", AcceptedDeal(-10, new[] { ("Iron", 2) }, null));
             l.Record(null, "Nobody", AcceptedDeal(-10, new[] { ("Iron", 2) }, null));
-            l.Record("steam1", "Don", null);
-            l.Record("steam1", "Don", DealResult.Refuse(1, DealReason.SoldOut));
+            l.Record("steam1", "Nomad", null);
+            l.Record("steam1", "Nomad", DealResult.Refuse(1, DealReason.SoldOut));
             Equal(0, l.Count, "an empty key, a null result and a refusal all record nothing");
 
             // A buy: coins negative (spent), items added (bought).
-            l.Record("steam1", "Don", AcceptedDeal(-50, new[] { ("Iron", 2), ("Wood", 3) }, null));
+            l.Record("steam1", "Nomad", AcceptedDeal(-50, new[] { ("Iron", 2), ("Wood", 3) }, null));
             Equal(1, l.Count, "the first accepted deal creates the row");
-            TraderRow don = l.Rows["steam1"];
-            Equal("Don", don.Name, "the display name is stored");
-            Equal(1, don.DealsSettled, "one deal settled");
-            Equal(50L, don.CoinsSpent, "CoinsDelta -50 is 50 coins spent");
-            Equal(0L, don.CoinsEarned, "and nothing earned");
-            Equal(5L, don.ItemsBought, "2 Iron + 3 Wood added = 5 items bought");
-            Equal(0L, don.ItemsSold, "nothing sold yet");
+            TraderRow nomad = l.Rows["steam1"];
+            Equal("Nomad", nomad.Name, "the display name is stored");
+            Equal(1, nomad.DealsSettled, "one deal settled");
+            Equal(50L, nomad.CoinsSpent, "CoinsDelta -50 is 50 coins spent");
+            Equal(0L, nomad.CoinsEarned, "and nothing earned");
+            Equal(5L, nomad.ItemsBought, "2 Iron + 3 Wood added = 5 items bought");
+            Equal(0L, nomad.ItemsSold, "nothing sold yet");
 
             // A sell: coins positive (earned), items removed (sold).
-            l.Record("steam1", "Don", AcceptedDeal(20, null, new[] { ("DeerHide", 4) }));
-            Equal(2, don.DealsSettled, "a second deal settled");
-            Equal(50L, don.CoinsSpent, "spent is unchanged by a sale");
-            Equal(20L, don.CoinsEarned, "CoinsDelta +20 is 20 coins earned");
-            Equal(4L, don.ItemsSold, "4 DeerHide removed = 4 items sold");
+            l.Record("steam1", "Nomad", AcceptedDeal(20, null, new[] { ("DeerHide", 4) }));
+            Equal(2, nomad.DealsSettled, "a second deal settled");
+            Equal(50L, nomad.CoinsSpent, "spent is unchanged by a sale");
+            Equal(20L, nomad.CoinsEarned, "CoinsDelta +20 is 20 coins earned");
+            Equal(4L, nomad.ItemsSold, "4 DeerHide removed = 4 items sold");
 
             // A barter that nets exactly zero: neither coins field moves, but the deal still counts.
-            l.Record("steam1", "Don", AcceptedDeal(0, new[] { ("Iron", 1) }, new[] { ("Wood", 25) }));
-            Equal(3, don.DealsSettled, "a zero-net barter still counts as a settled deal");
-            Equal(50L, don.CoinsSpent, "CoinsDelta 0 moves neither coins field");
-            Equal(20L, don.CoinsEarned, "same");
-            Equal(6L, don.ItemsBought, "but items still move: +1 bought");
-            Equal(29L, don.ItemsSold, "and +25 sold");
+            l.Record("steam1", "Nomad", AcceptedDeal(0, new[] { ("Iron", 1) }, new[] { ("Wood", 25) }));
+            Equal(3, nomad.DealsSettled, "a zero-net barter still counts as a settled deal");
+            Equal(50L, nomad.CoinsSpent, "CoinsDelta 0 moves neither coins field");
+            Equal(20L, nomad.CoinsEarned, "same");
+            Equal(6L, nomad.ItemsBought, "but items still move: +1 bought");
+            Equal(29L, nomad.ItemsSold, "and +25 sold");
 
             // A negative Count on a line is defensive-clamped, never subtracted.
             var forged = new DealResult { Ok = true, DeliveryId = "w-1-2", Nonce = 2, CoinsDelta = -1 };
             forged.ItemsToAdd.Add(new DealLine { Prefab = "Iron", Count = -99, UnitPriceSeen = 1 });
-            l.Record("steam1", "Don", forged);
-            Equal(6L, don.ItemsBought, "a negative line count contributes 0, never a negative amount");
+            l.Record("steam1", "Nomad", forged);
+            Equal(6L, nomad.ItemsBought, "a negative line count contributes 0, never a negative amount");
 
             // A second player gets a separate row; an empty new name does not overwrite the stored one.
             l.Record("steam2", "Kyr", AcceptedDeal(-5, new[] { ("Wood", 1) }, null));
             Equal(2, l.Count, "a second distinct player key is a second row");
             l.Record("steam1", "", AcceptedDeal(-1, new[] { ("Wood", 1) }, null));
-            Equal("Don", l.Rows["steam1"].Name, "an empty display name never overwrites a real one");
+            Equal("Nomad", l.Rows["steam1"].Name, "an empty display name never overwrites a real one");
             l.Record("steam1", "Donatello", AcceptedDeal(-1, new[] { ("Wood", 1) }, null));
             Equal("Donatello", l.Rows["steam1"].Name, "a real rename does");
 
@@ -5410,11 +5410,11 @@ namespace ValkyriesCargo.Tests
             h.Record(-1, "Nobody", t0, t0, 10, 5, "timer");
             Equal(0, h.Count, "visit id 0 or negative is never a real visit and records nothing");
 
-            h.Record(1, "Don", t0, t0.AddSeconds(300), 300, 0, "timer");
+            h.Record(1, "Nomad", t0, t0.AddSeconds(300), 300, 0, "timer");
             Equal(1, h.Count, "a real visit records");
             VisitRecord v1 = h.Rows[0];
             Equal(1, v1.VisitId, "id");
-            Equal("Don", v1.PilotName, "pilot");
+            Equal("Nomad", v1.PilotName, "pilot");
             Equal(300.0, v1.DurationSeconds, "duration");
             Equal(0, v1.Takings, "takings");
             Equal("timer", v1.EndedReason, "reason");
@@ -5569,18 +5569,18 @@ namespace ValkyriesCargo.Tests
             Check(!wood.Purchasable, "so purchasable is false, even though it still carries a buy_price for the trend arrow");
 
             TraderLedger tl = new TraderLedger();
-            tl.Record("steam1", "Don", AcceptedDeal(-30, new[] { ("Iron", 1) }, null));
+            tl.Record("steam1", "Nomad", AcceptedDeal(-30, new[] { ("Iron", 1) }, null));
             tl.Record("steam2", "Kyr", AcceptedDeal(15, null, new[] { ("Wood", 5) }));
             List<TraderExportRow> traderRows = BarrkExport.TraderRows(tl);
             Equal(2, traderRows.Count, "one row per trading player");
-            TraderExportRow donRow = traderRows.Find(r => r.PlayerKey == "steam1");
-            Equal("Don", donRow.Name, "the key and the display name both carry through");
-            Equal(30L, donRow.CoinsSpent, "and the totals");
-            Equal(1L, donRow.DealsSettled, "");
+            TraderExportRow nomadRow = traderRows.Find(r => r.PlayerKey == "steam1");
+            Equal("Nomad", nomadRow.Name, "the key and the display name both carry through");
+            Equal(30L, nomadRow.CoinsSpent, "and the totals");
+            Equal(1L, nomadRow.DealsSettled, "");
 
             DateTime t0 = new DateTime(2026, 9, 7, 12, 0, 0, DateTimeKind.Utc);
             VisitHistory vh = new VisitHistory();
-            vh.Record(1, "Don", t0, t0.AddSeconds(300), 300, 10, "timer");
+            vh.Record(1, "Nomad", t0, t0.AddSeconds(300), 300, 10, "timer");
             vh.Record(2, "Kyr", t0.AddSeconds(1000), t0.AddSeconds(1100), 100, 999, "dismissed by Kyr");
             List<VisitExportRow> visitRows = BarrkExport.VisitRows(vh);
             Equal(2, visitRows.Count, "one row per ended visit");
@@ -5594,12 +5594,12 @@ namespace ValkyriesCargo.Tests
                 Check(byBuyPrice[i - 1].Value >= byBuyPrice[i].Value, "MarketLeaders is sorted highest first");
 
             List<LeaderEntry> byCoinsSpent = BarrkExport.TraderLeaders(traderRows, r => r.CoinsSpent);
-            Check(byCoinsSpent.Count == 1 && byCoinsSpent[0].Credit == "Don" && byCoinsSpent[0].Value == 30.0,
-                  "TraderLeaders credits by name (Kyr spent 0, so only Don -- who has coins_spent > 0 -- ranks)");
+            Check(byCoinsSpent.Count == 1 && byCoinsSpent[0].Credit == "Nomad" && byCoinsSpent[0].Value == 30.0,
+                  "TraderLeaders credits by name (Kyr spent 0, so only Nomad -- who has coins_spent > 0 -- ranks)");
 
             List<LeaderEntry> byTakings = BarrkExport.VisitLeaders(visitRows, r => r.Takings);
-            Check(byTakings.Count == 2 && byTakings[0].Credit == "Kyr" && byTakings[1].Credit == "Don",
-                  "VisitLeaders credits by pilot, highest takings first (Kyr 999, Don 10)");
+            Check(byTakings.Count == 2 && byTakings[0].Credit == "Kyr" && byTakings[1].Credit == "Nomad",
+                  "VisitLeaders credits by pilot, highest takings first (Kyr 999, Nomad 10)");
         }
 
         private static void SidecarThenMirrorTests()
