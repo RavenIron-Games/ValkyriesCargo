@@ -45,8 +45,8 @@ $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 
 $ServerRoots = @{
-    'StormTest' = 'C:\Users\donfr\ValheimServers\StormTest'
-    'CairnTest' = 'C:\Users\donfr\ValheimServers\CairnTest'
+    'StormTest' = "$env:USERPROFILE\ValheimServers\StormTest"
+    'CairnTest' = "$env:USERPROFILE\ValheimServers\CairnTest"
 }
 $SteamClient = 'C:\Program Files (x86)\Steam\steamapps\common\Valheim'
 $GaleRoot = Join-Path $env:APPDATA 'com.kesomannen.gale\valheim\profiles'

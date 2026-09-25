@@ -350,8 +350,8 @@ EffectList.EffectData.m_enabled | assembly_valheim | call | Patch_Terminal.DumpE
 SaveSystem.GetWorldsSaveRootPath | assembly_valheim | call | WorldSavePath.FindCandidate (1.0; World.GetWorldSavePath on 0.221.12); explicitly Local, because Auto/Cloud return "" under Steam Cloud
 FejdStartup.ShowConnectError | assembly_valheim | patch-vendored | ServerSync's version-mismatch message
 ZPlayFabSocket.m_remotePlayerId | assembly_valheim | reflect-vendored | ServerSync copies it onto the buffering socket
-Version.CurrentVersion | assembly_valheim | fact | 1.0.7; the identity of the build, and P10b's boot check
-Version.c_networkVersion | assembly_valheim | fact | 39 (m_networkVersion until 1.0)
+Version.CurrentVersion | assembly_valheim | fact | 1.0.16 since 2026-09-25 (1.0.12 before, 1.0.7 before that); the identity of the build, and P10b's boot check
+Version.c_networkVersion | assembly_valheim | fact | 40 since 1.0.12, unchanged on 1.0.15 and 1.0.16 (39 on 1.0.7; m_networkVersion until 1.0)
 Version.c_PlayerVersion | assembly_valheim | fact | Version.Player.DeepNorth = 46 (m_playerVersion until 1.0)
 Version.c_WorldVersion | assembly_valheim | fact | Version.World.DeepNorth = 41 (m_worldVersion until 1.0)
 FileHelpers.FileSource | assembly_utils | type | the Local member, by name: its value moved on 1.0 (bit flags)

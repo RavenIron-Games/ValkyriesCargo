@@ -34,8 +34,15 @@ next login, never twice.
 on a Dverger clone whose renderers are switched off (`Server.CustomBody` puts the stand-in back). **Later:** the horn,
 a barter basket, rare rotating stock, localisation.
 
-**Where it is, 2026-09-24.** `main` builds clean at 2589 off-game checks and **`v0.1.5` is tagged** — a GitHub
-pre-release; the store upload is a separate step. It is built against **Valheim 1.0.12** and was tested on **1.0.15**
+**Where it is, 2026-09-25.** **`v0.1.6` is tagged** (a GitHub pre-release; the store upload is a separate step;
+2591 off-game checks):
+the Valheim 1.0.16 build, no gameplay change. Valheim's 1.0.16 hotfix kept network version 40 and both save
+versions, so 1.0.12, 1.0.15 and 1.0.16 play together; 0.1.6 moves the engine check's baseline from 1.0.12 to 1.0.16
+and was checked against 1.0.16 by the engine sweep and an offline probe run (`ENGINE-BASELINE.md`), then booted in
+game on a 1.0.16 dedicated server and client on 2026-09-25 (`cargo status` clean; no visit on 1.0.16 yet).
+
+**Where it was, 2026-09-24.** `main` builds clean at 2589 off-game checks and **`v0.1.5` is tagged** — a GitHub
+pre-release; the store upload is a separate step. Its engine baseline is **Valheim 1.0.12** and it was tested on **1.0.15**
 (both network version 40). 0.1.5 fixes deals and the market: a deal lands whole or not at all, a deal must be made
 within 96 m of the visit, the Fair Market Act covers every row while the shelf rotates and caps the in-visit
 buy-back, a `ShelfSize` change waits for the visit to end, a visit resumed during the flight moves on to the ground,

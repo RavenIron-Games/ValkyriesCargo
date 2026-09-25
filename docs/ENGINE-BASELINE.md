@@ -4,6 +4,64 @@
 tell whether the build under your hands is still that one.** P10a; the brief is
 `docs/P10-P11-FOR-DON.md`.
 
+**THE BASELINE MOVED AGAIN ON 2026-09-25: Valheim 1.0.16**, a hotfix after 1.0.15. Steam updated the installed
+client (build **25527674**) and the dedicated server (build **25527701**) at 06:06 local, and both were read the
+same day. **None of the three numbers the wire and the saves turn on moved:** `c_networkVersion` **40**,
+`c_PlayerVersion` `Version.Player.DeepNorth` = **46**, `c_WorldVersion` `Version.World.DeepNorth` = **41**, read with
+`ilspycmd -t Version` off both installed `assembly_valheim.dll` and off `libs/`. Only `CurrentVersion` moved, 1.0.12
+-> **1.0.16** (1.0.15, in between, was never a baseline here). So 1.0.12, 1.0.15 and 1.0.16 still connect to each
+other, and no world or character migrates. Unity is still **6000.0.75** (`UnityPlayer.dll` 6000.0.75.2503836 on
+both apps).
+
+Both axes were swept with the P10a tools against the preserved 1.0.12 trees (`src/baseline-{client,server}`,
+decompiled 2026-09-11; the 1.0.16 installs decompiled through new junctions `{client,server}-1.0.16` with
+`tools/decompile-builds.sh`, because `decompile-builds.ps1` stops on ilspycmd's "not the latest version" line under
+Windows PowerShell 5.1) — `docs/engine-sweeps/2026-09-25-{client,server}-1.0.12-vs-1.0.16.md` — and they agree
+exactly: **280 surface members, 277 unchanged, 3 body changed, 0 signature changed, 0 gone.** All three were
+already in 1.0.15 (each change is in the 1.0.15 reference assembly kept from before the hotfix), and none falsifies
+a recorded fact or reaches one of the eight not-probeable bodies:
+
+- `Inventory.AddItem` — the "Trying to add item to occupied slot" line is a warning now, not an error. Log level
+  only; the one-stack-per-call cap `DealApplier.AddStacks` relies on is unchanged.
+- `Player.Update` — the eight hotbar keys became a loop that also reads `Hotbar<N>Alt`, and one gamepad
+  `JoyAltKeys` condition flipped. It still reads `TakeInput()` before any OnGUI runs, which is the row's fact.
+- `Terminal.InitTerminal` — vanilla gained an `unlockcinematics` cheat command and one existing command became
+  admin-only. Our postfix registers `cargo` beside them; no name is shared.
+
+In all, 46 type files differ on the server and 47 on the client; the client's extra one is `Splatform`'s
+compiler-generated `UnitySourceGeneratedAssemblyMonoScriptTypes_v1` (the client's `Splatform.dll` was rebuilt, 53,248
+-> 54,784 bytes; the server's is still the 2026-09-09 file). The tool does not report `Version.CurrentVersion`
+itself moving (it did not report 1.0.7 -> 1.0.12 either), which is why the four numbers above were read directly.
+Outside the surface, 1.0.16 changed how `TerrainComp` removes a duplicate terrain compiler; this mod never touches
+one, and the two knowledge-base pages that quote the old log line say what 1.0.16 does instead.
+
+**The offline probe run** (`docs/ENGINE-PROBES.md` §8 item 3; the scratchpad tool, rebuilt): the 0.1.6 Release DLL,
+loaded under .NET (not Mono) with the REAL installed assemblies, answered
+`engine: same build 1.0.16 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` against the client's
+and the dedicated server's `assembly_valheim.dll` alike, and
+`engine: older game version (1.0.15 vs 1.0.16); probes 19/19 ok, 8 not probeable` against the kept 1.0.15 client
+assembly; no `FAILED`, no `registry:` line. **That is not a boot.** The boot came after, on 2026-09-25: Storm10
+(dedicated) and one client, both Valheim 1.0.16 (network version 40) on the 0.1.6 ship DLL, printed
+`engine: same build 1.0.16 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` and
+`patches 19/19 applied` on both sides.
+
+| build | assembly | bytes | modified | SHA-256 (first 16) |
+|---|---|---|---|---|
+| installed client 1.0.16 | `assembly_valheim.dll` | 2,572,288 | 2026-09-25 06:06 | `96CFC004F7F4A6F3` |
+| installed client 1.0.16 | `assembly_utils.dll` | 242,688 | 2026-09-25 06:06 | `95810CE36BC0563B` |
+| installed client 1.0.16 | `assembly_guiutils.dll` | 37,888 | 2026-09-25 06:06 | `07453CE91AB44ED1` |
+| installed client 1.0.16 | `Splatform.dll` | 54,784 | 2026-09-25 06:06 | `20277CF97764CAF0` |
+| installed server 1.0.16 | `assembly_valheim.dll` | 2,564,096 | 2026-09-25 06:06 | `7CAB9B49D31EC064` |
+| installed server 1.0.16 | `assembly_utils.dll` | 242,176 | 2026-09-25 06:06 | `63E114E7CFDCC38E` |
+| installed server 1.0.16 | `assembly_guiutils.dll` | 37,888 | 2026-09-25 06:06 | `0EECBBDF8D07EB68` |
+| installed server 1.0.16 | `Splatform.dll` | 53,248 | 2026-09-09 05:57 | `8953C24A2F2AF7AE` |
+
+    client assembly_valheim.dll  96CFC004F7F4A6F30D070BEF39EAFD79C466A137121C4665A2F19FB9C15C6127
+    server assembly_valheim.dll  7CAB9B49D31EC064591CA80402DD35C566E03B7297CFB7BF4696C38DA4E24D8B
+
+Decompiled type counts: client 691 + 97 + 26 + 104, server 693 + 97 + 26 + 104 (valheim, utils, guiutils,
+Splatform). The 1.0.12 record it replaces follows, unchanged.
+
 **THE BASELINE MOVED AGAIN ON 2026-09-11: Valheim 1.0.12**, two days after 1.0.7. Steam updated the
 installed client (build **25253764**, 06:16 local) and the dedicated server (build **25253791**, 06:13),
 and both were read the same day. **Exactly one of the four numbers moved: `c_networkVersion` 39 -> 40.**
@@ -248,9 +306,10 @@ today, checked twice, on two different operating systems.
 ## The same numbers, compiled into the DLL (P10b)
 
 `ValkyriesCargo/Core/EngineBaseline.cs` carries the baseline's identity as constants — since
-2026-09-10 `1.0.7`, network `39`, player `46`, world `41`, client build `25185596`, server build
-`25185644`, bodies read `2026-09-09` (before that `0.221.12` / `36` / `43` / `37` / `21981559` /
-`21981590` / `2026-09-06`) — and `EngineCheck` compares them against the four
+2026-09-25 `1.0.16`, network `40`, player `46`, world `41`, client build `25527674`, server build
+`25527701`, bodies read `2026-09-25` (from 2026-09-11 `1.0.12` / `40` / `46` / `41` / `25253764` /
+`25253791` / `2026-09-11`; from 2026-09-10 `1.0.7` / `39` / `46` / `41` / `25185596` / `25185644` /
+`2026-09-09`; before that `0.221.12` / `36` / `43` / `37` / `21981559` / `21981590` / `2026-09-06`) — and `EngineCheck` compares them against the four
 numbers of whatever Valheim is actually under the mod at boot. `cargo engine` prints both sides. If a
 future sweep moves any row above, that file's constants move with it: they are the same fact written
 twice, once for a human and once for the running mod. **The date matters as much as the numbers**,
@@ -273,3 +332,8 @@ probeable* and pointed back here. The probes themselves are `docs/ENGINE-PROBES.
   build, server axis: the two stop-ships that did NOT ship.
 - `docs/engine-sweeps/2026-09-09-server-0.221.12-vs-1.0.7.md` and `-client-` — **the release**, both
   axes, the sweeps that moved the baseline: 208 / 206 unchanged, 33 / 35 body, 9 signature, 7 gone.
+- `docs/engine-sweeps/2026-09-11-server-1.0.7-vs-1.0.12.md` and `-client-` — 1.0.12: 273 of 278 unchanged,
+  4 body, 1 signature (the network version, 39 -> 40), 0 gone.
+- `docs/engine-sweeps/2026-09-25-server-1.0.12-vs-1.0.16.md` and `-client-` — the 1.0.16 hotfix, with 1.0.15's
+  changes inside it: 277 of 280 unchanged, 3 body, 0 signature, 0 gone (`--all-types`, so every differing type
+  file is listed too).

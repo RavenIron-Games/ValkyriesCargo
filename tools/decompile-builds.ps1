@@ -27,7 +27,7 @@ param(
     [string] $Build = "",
     [switch] $All,
     [switch] $Baseline,
-    [string] $ShadowRoot = "C:\Users\donfr\valheim-shadows",
+    [string] $ShadowRoot = "$env:USERPROFILE\valheim-shadows",
     [switch] $Force
 )
 

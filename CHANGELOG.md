@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6 — 2026-09-25
+
+Updated due to 1.0.16 Patch.
+
 ## 0.1.5
 
 ### 0.1.5 — cut 2026-09-24, deal and market fixes; a pre-release on GitHub

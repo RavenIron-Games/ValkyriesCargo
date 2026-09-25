@@ -2256,7 +2256,7 @@ namespace ValkyriesCargo.Tests
             Decision fAgain = f0.Force(100, one, false, true, 1);
             Check(fAgain.Visit, "a forced visit ignores the cooldown it just stamped: the admin asked, and milestone testing needs it");
             Scheduler fCount = new Scheduler(SchedulerRules.Default);
-            var crowd = new List<Candidate> { Player(1, "Don", 0f, 0f), Player(2, "Far", 1000f, 0f), Player(3, "Wide", 2000f, 0f) };
+            var crowd = new List<Candidate> { Player(1, "Nomad", 0f, 0f), Player(2, "Far", 1000f, 0f), Player(3, "Wide", 2000f, 0f) };
             Decision fc = fCount.Force(0, crowd, false, true, 2);
             Check(fc.Visit && fc.Pilot.Uid == 2, "the named player is the one forced");
             Equal(3, fc.Eligible, "and the counters still count everyone online, so cargo status tells the truth");
@@ -2762,7 +2762,7 @@ namespace ValkyriesCargo.Tests
             Equal("", s.LastEndReason, "and records no reason, because nothing ended");
 
             // Begin publishes a Flying visit with the pilot, the drop point, the clock and the seed.
-            string state = s.Begin(7, 4242L, "Don", 10f, 30f, -20f, 1000.0, 300f, 800, 99);
+            string state = s.Begin(7, 4242L, "Nomad", 10f, 30f, -20f, 1000.0, 300f, 800, 99);
             Check(s.Active && s.Phase == VisitPhase.Flying, "Begin makes the session active, in the Flying phase");
             var problems = new List<string>();
             VisitSnapshot v = VisitSnapshot.Parse(state, problems);
@@ -2774,7 +2774,7 @@ namespace ValkyriesCargo.Tests
             Equal(1300.0, v.EndWorldTime, "the deadline one lifespan after the start");
             Equal(800, v.Purse, "the purse he arrives with");
             Equal(99, v.Seed, "and the seed every client derives his lines from");
-            Equal("Don", s.PilotName, "the pilot's name is kept for the log, not sent");
+            Equal("Nomad", s.PilotName, "the pilot's name is kept for the log, not sent");
             Equal(1300.0, s.PublishedEnd, "the published deadline is the clock's");
             Equal(7, s.LastVisitId, "LastVisitId follows Begin");
 
@@ -2858,7 +2858,7 @@ namespace ValkyriesCargo.Tests
             Scheduler sch = new Scheduler(SchedulerRules.Default);
             sch.StampCooldown(42, 5f, 6f, 100);
             VisitSession vs = new VisitSession();
-            vs.Begin(3, 42L, "Don", 5f, 30f, 6f, 1000.0, 300f, m.Purse, 77);
+            vs.Begin(3, 42L, "Nomad", 5f, 30f, 6f, 1000.0, 300f, m.Purse, 77);
             OwedLedger led = new OwedLedger();
             led.Add("steam1", new DealResult { Ok = true, DeliveryId = "v-3-1", Nonce = 1, CoinsDelta = -50, ItemsToAdd = new List<DealLine> { new DealLine { Prefab = "Iron", Count = 2, UnitPriceSeen = 25 } } });
 
@@ -2866,7 +2866,7 @@ namespace ValkyriesCargo.Tests
             Check(text.StartsWith("format\t1\n"), "the file opens with the format line");
             Check(text.EndsWith("\n"), "and ends with a newline");
             Check(text.Contains("\nstock\tIron\t18\t") && text.Contains("\npurse\t") && text.Contains("\ncool\t42\t") && text.Contains("\ncoolbase\t5\t6\t") &&
-                  text.Contains("\nsession\t3\t42\tDon\t") && text.Contains("\nowed\tsteam1\tv-3-1\t"), "every owner's rows are in it");
+                  text.Contains("\nsession\t3\t42\tNomad\t") && text.Contains("\nowed\tsteam1\tv-3-1\t"), "every owner's rows are in it");
 
             var problems = new List<string>();
             Sidecar sc = Sidecar.Split(text, problems);
@@ -4001,9 +4001,9 @@ namespace ValkyriesCargo.Tests
 
             VisitSession a = new VisitSession();
             Equal("", a.EncodeSessionRow(), "no visit, no row");
-            a.Begin(5, 4242L, "Don\tTab", 1f, 2f, 3f, 1000.0, 300f, 900, 7);
+            a.Begin(5, 4242L, "Nomad\tTab", 1f, 2f, 3f, 1000.0, 300f, 900, 7);
             string row = a.EncodeSessionRow();
-            Check(row.StartsWith("session\t5\t4242\tDon Tab\t1\t2\t3\t1000\t1300\t900\t7\tFlying"), "the row carries id, pilot, a tab-cleaned name, drop, clock, purse, seed, phase: " + row);
+            Check(row.StartsWith("session\t5\t4242\tNomad Tab\t1\t2\t3\t1000\t1300\t900\t7\tFlying"), "the row carries id, pilot, a tab-cleaned name, drop, clock, purse, seed, phase: " + row);
             a.SetPhase(VisitPhase.Trading);
             Check(a.EncodeSessionRow().EndsWith("\tTrading"), "and follows the phase");
 
@@ -4014,7 +4014,7 @@ namespace ValkyriesCargo.Tests
             Check(b.Active && b.Resumed, "the session is active and marked resumed");
             Equal(5, b.VisitId, "same visit");
             Equal(4242L, b.PilotUid, "same pilot");
-            Equal("Don Tab", b.PilotName, "same name");
+            Equal("Nomad Tab", b.PilotName, "same name");
             Equal(VisitPhase.Trading, b.Phase, "same phase");
             Equal(900, b.Purse, "same purse");
             Equal(7, b.Seed, "same seed, so the lines match");
@@ -5350,47 +5350,47 @@ namespace ValkyriesCargo.Tests
 
             l.Record("", "Nobody", AcceptedDeal(-10, new[] { ("Iron", 2) }, null));
             l.Record(null, "Nobody", AcceptedDeal(-10, new[] { ("Iron", 2) }, null));
-            l.Record("steam1", "Don", null);
-            l.Record("steam1", "Don", DealResult.Refuse(1, DealReason.SoldOut));
+            l.Record("steam1", "Nomad", null);
+            l.Record("steam1", "Nomad", DealResult.Refuse(1, DealReason.SoldOut));
             Equal(0, l.Count, "an empty key, a null result and a refusal all record nothing");
 
             // A buy: coins negative (spent), items added (bought).
-            l.Record("steam1", "Don", AcceptedDeal(-50, new[] { ("Iron", 2), ("Wood", 3) }, null));
+            l.Record("steam1", "Nomad", AcceptedDeal(-50, new[] { ("Iron", 2), ("Wood", 3) }, null));
             Equal(1, l.Count, "the first accepted deal creates the row");
-            TraderRow don = l.Rows["steam1"];
-            Equal("Don", don.Name, "the display name is stored");
-            Equal(1, don.DealsSettled, "one deal settled");
-            Equal(50L, don.CoinsSpent, "CoinsDelta -50 is 50 coins spent");
-            Equal(0L, don.CoinsEarned, "and nothing earned");
-            Equal(5L, don.ItemsBought, "2 Iron + 3 Wood added = 5 items bought");
-            Equal(0L, don.ItemsSold, "nothing sold yet");
+            TraderRow nomad = l.Rows["steam1"];
+            Equal("Nomad", nomad.Name, "the display name is stored");
+            Equal(1, nomad.DealsSettled, "one deal settled");
+            Equal(50L, nomad.CoinsSpent, "CoinsDelta -50 is 50 coins spent");
+            Equal(0L, nomad.CoinsEarned, "and nothing earned");
+            Equal(5L, nomad.ItemsBought, "2 Iron + 3 Wood added = 5 items bought");
+            Equal(0L, nomad.ItemsSold, "nothing sold yet");
 
             // A sell: coins positive (earned), items removed (sold).
-            l.Record("steam1", "Don", AcceptedDeal(20, null, new[] { ("DeerHide", 4) }));
-            Equal(2, don.DealsSettled, "a second deal settled");
-            Equal(50L, don.CoinsSpent, "spent is unchanged by a sale");
-            Equal(20L, don.CoinsEarned, "CoinsDelta +20 is 20 coins earned");
-            Equal(4L, don.ItemsSold, "4 DeerHide removed = 4 items sold");
+            l.Record("steam1", "Nomad", AcceptedDeal(20, null, new[] { ("DeerHide", 4) }));
+            Equal(2, nomad.DealsSettled, "a second deal settled");
+            Equal(50L, nomad.CoinsSpent, "spent is unchanged by a sale");
+            Equal(20L, nomad.CoinsEarned, "CoinsDelta +20 is 20 coins earned");
+            Equal(4L, nomad.ItemsSold, "4 DeerHide removed = 4 items sold");
 
             // A barter that nets exactly zero: neither coins field moves, but the deal still counts.
-            l.Record("steam1", "Don", AcceptedDeal(0, new[] { ("Iron", 1) }, new[] { ("Wood", 25) }));
-            Equal(3, don.DealsSettled, "a zero-net barter still counts as a settled deal");
-            Equal(50L, don.CoinsSpent, "CoinsDelta 0 moves neither coins field");
-            Equal(20L, don.CoinsEarned, "same");
-            Equal(6L, don.ItemsBought, "but items still move: +1 bought");
-            Equal(29L, don.ItemsSold, "and +25 sold");
+            l.Record("steam1", "Nomad", AcceptedDeal(0, new[] { ("Iron", 1) }, new[] { ("Wood", 25) }));
+            Equal(3, nomad.DealsSettled, "a zero-net barter still counts as a settled deal");
+            Equal(50L, nomad.CoinsSpent, "CoinsDelta 0 moves neither coins field");
+            Equal(20L, nomad.CoinsEarned, "same");
+            Equal(6L, nomad.ItemsBought, "but items still move: +1 bought");
+            Equal(29L, nomad.ItemsSold, "and +25 sold");
 
             // A negative Count on a line is defensive-clamped, never subtracted.
             var forged = new DealResult { Ok = true, DeliveryId = "w-1-2", Nonce = 2, CoinsDelta = -1 };
             forged.ItemsToAdd.Add(new DealLine { Prefab = "Iron", Count = -99, UnitPriceSeen = 1 });
-            l.Record("steam1", "Don", forged);
-            Equal(6L, don.ItemsBought, "a negative line count contributes 0, never a negative amount");
+            l.Record("steam1", "Nomad", forged);
+            Equal(6L, nomad.ItemsBought, "a negative line count contributes 0, never a negative amount");
 
             // A second player gets a separate row; an empty new name does not overwrite the stored one.
             l.Record("steam2", "Kyr", AcceptedDeal(-5, new[] { ("Wood", 1) }, null));
             Equal(2, l.Count, "a second distinct player key is a second row");
             l.Record("steam1", "", AcceptedDeal(-1, new[] { ("Wood", 1) }, null));
-            Equal("Don", l.Rows["steam1"].Name, "an empty display name never overwrites a real one");
+            Equal("Nomad", l.Rows["steam1"].Name, "an empty display name never overwrites a real one");
             l.Record("steam1", "Donatello", AcceptedDeal(-1, new[] { ("Wood", 1) }, null));
             Equal("Donatello", l.Rows["steam1"].Name, "a real rename does");
 
@@ -5410,11 +5410,11 @@ namespace ValkyriesCargo.Tests
             h.Record(-1, "Nobody", t0, t0, 10, 5, "timer");
             Equal(0, h.Count, "visit id 0 or negative is never a real visit and records nothing");
 
-            h.Record(1, "Don", t0, t0.AddSeconds(300), 300, 0, "timer");
+            h.Record(1, "Nomad", t0, t0.AddSeconds(300), 300, 0, "timer");
             Equal(1, h.Count, "a real visit records");
             VisitRecord v1 = h.Rows[0];
             Equal(1, v1.VisitId, "id");
-            Equal("Don", v1.PilotName, "pilot");
+            Equal("Nomad", v1.PilotName, "pilot");
             Equal(300.0, v1.DurationSeconds, "duration");
             Equal(0, v1.Takings, "takings");
             Equal("timer", v1.EndedReason, "reason");
@@ -5569,18 +5569,18 @@ namespace ValkyriesCargo.Tests
             Check(!wood.Purchasable, "so purchasable is false, even though it still carries a buy_price for the trend arrow");
 
             TraderLedger tl = new TraderLedger();
-            tl.Record("steam1", "Don", AcceptedDeal(-30, new[] { ("Iron", 1) }, null));
+            tl.Record("steam1", "Nomad", AcceptedDeal(-30, new[] { ("Iron", 1) }, null));
             tl.Record("steam2", "Kyr", AcceptedDeal(15, null, new[] { ("Wood", 5) }));
             List<TraderExportRow> traderRows = BarrkExport.TraderRows(tl);
             Equal(2, traderRows.Count, "one row per trading player");
-            TraderExportRow donRow = traderRows.Find(r => r.PlayerKey == "steam1");
-            Equal("Don", donRow.Name, "the key and the display name both carry through");
-            Equal(30L, donRow.CoinsSpent, "and the totals");
-            Equal(1L, donRow.DealsSettled, "");
+            TraderExportRow nomadRow = traderRows.Find(r => r.PlayerKey == "steam1");
+            Equal("Nomad", nomadRow.Name, "the key and the display name both carry through");
+            Equal(30L, nomadRow.CoinsSpent, "and the totals");
+            Equal(1L, nomadRow.DealsSettled, "");
 
             DateTime t0 = new DateTime(2026, 9, 7, 12, 0, 0, DateTimeKind.Utc);
             VisitHistory vh = new VisitHistory();
-            vh.Record(1, "Don", t0, t0.AddSeconds(300), 300, 10, "timer");
+            vh.Record(1, "Nomad", t0, t0.AddSeconds(300), 300, 10, "timer");
             vh.Record(2, "Kyr", t0.AddSeconds(1000), t0.AddSeconds(1100), 100, 999, "dismissed by Kyr");
             List<VisitExportRow> visitRows = BarrkExport.VisitRows(vh);
             Equal(2, visitRows.Count, "one row per ended visit");
@@ -5594,12 +5594,12 @@ namespace ValkyriesCargo.Tests
                 Check(byBuyPrice[i - 1].Value >= byBuyPrice[i].Value, "MarketLeaders is sorted highest first");
 
             List<LeaderEntry> byCoinsSpent = BarrkExport.TraderLeaders(traderRows, r => r.CoinsSpent);
-            Check(byCoinsSpent.Count == 1 && byCoinsSpent[0].Credit == "Don" && byCoinsSpent[0].Value == 30.0,
-                  "TraderLeaders credits by name (Kyr spent 0, so only Don -- who has coins_spent > 0 -- ranks)");
+            Check(byCoinsSpent.Count == 1 && byCoinsSpent[0].Credit == "Nomad" && byCoinsSpent[0].Value == 30.0,
+                  "TraderLeaders credits by name (Kyr spent 0, so only Nomad -- who has coins_spent > 0 -- ranks)");
 
             List<LeaderEntry> byTakings = BarrkExport.VisitLeaders(visitRows, r => r.Takings);
-            Check(byTakings.Count == 2 && byTakings[0].Credit == "Kyr" && byTakings[1].Credit == "Don",
-                  "VisitLeaders credits by pilot, highest takings first (Kyr 999, Don 10)");
+            Check(byTakings.Count == 2 && byTakings[0].Credit == "Kyr" && byTakings[1].Credit == "Nomad",
+                  "VisitLeaders credits by pilot, highest takings first (Kyr 999, Nomad 10)");
         }
 
         private static void SidecarThenMirrorTests()
@@ -5644,20 +5644,19 @@ namespace ValkyriesCargo.Tests
             Section("EngineBaseline: the build this DLL was written on (P10b)");
 
             // The four numbers are the identity of a build. Read off assembly_valheim.dll's
-            // `Version` type on 2026-09-11: 1.0.12, two days after 1.0.7.
+            // `Version` type on 2026-09-25: 1.0.16, the hotfix after 1.0.15.
             //
-            // Only ONE of the four moved: the network version, 39 -> 40. That one is a hard
-            // multiplayer break in the game itself - RPC_PeerInfo refuses any peer whose number
-            // differs - so a 1.0.12 client and a 1.0.7 server cannot see each other at all.
-            // The two SAVE formats did NOT move, which is why nothing had to be migrated:
-            // Player stayed 46 and World stayed 41.
-            Equal("1.0.12", EngineBaseline.GameVersion, "the baseline game version");
-            Equal(40, EngineBaseline.NetworkVersion, "the baseline network version (39 -> 40 in 1.0.12)");
+            // Only the game version moved. The network version has been 40 since 1.0.12 - the
+            // hard multiplayer break then was 39 -> 40, RPC_PeerInfo refusing any peer whose
+            // number differs - so 1.0.12, 1.0.15 and 1.0.16 all play together. The two SAVE
+            // formats did NOT move either: Player stays 46 and World stays 41.
+            Equal("1.0.16", EngineBaseline.GameVersion, "the baseline game version");
+            Equal(40, EngineBaseline.NetworkVersion, "the baseline network version (39 -> 40 in 1.0.12, unmoved since)");
             Equal(46, EngineBaseline.PlayerVersion, "the baseline player version (Version.Player.DeepNorth), unmoved");
             Equal(41, EngineBaseline.WorldVersion, "the baseline world version (Version.World.DeepNorth), unmoved");
-            Equal(25253764, EngineBaseline.ClientBuildId, "the Steam build id of the client");
-            Equal(25253791, EngineBaseline.ServerBuildId, "and of the dedicated server");
-            Check(EngineBaseline.Describe().Contains("1.0.12") && EngineBaseline.Describe().Contains("25253791") &&
+            Equal(25527674, EngineBaseline.ClientBuildId, "the Steam build id of the client");
+            Equal(25527701, EngineBaseline.ServerBuildId, "and of the dedicated server");
+            Check(EngineBaseline.Describe().Contains("1.0.16") && EngineBaseline.Describe().Contains("25527701") &&
                   EngineBaseline.Describe().Contains(EngineBaseline.ReadOn),
                   "Describe names the version, both build ids and the date the bodies were read");
 
@@ -5676,50 +5675,55 @@ namespace ValkyriesCargo.Tests
             Check(!EngineBaseline.TryParse("0.221.rc0", out ma, out mi, out pa), "and so is rc0, which is not a candidate for anything");
 
             // ---- ordering ----
-            Equal(0, EngineBaseline.Order(1, 0, 12), "the baseline orders equal to itself");
+            Equal(0, EngineBaseline.Order(1, 0, 16), "the baseline orders equal to itself");
             Equal(1, EngineBaseline.Order(2, 0, 0), "a bigger major is newer");
             Equal(-1, EngineBaseline.Order(0, 221, 12), "the last pre-1.0 stable is older however big its minor");
             Equal(1, EngineBaseline.Order(1, 1, 0), "a bigger minor is newer however small the patch");
-            Equal(1, EngineBaseline.Order(1, 0, 13), "a bigger patch is newer");
-            Equal(-1, EngineBaseline.Order(1, 0, 7), "a smaller patch is older - 1.0.7 is now behind us");
+            Equal(1, EngineBaseline.Order(1, 0, 17), "a bigger patch is newer");
+            Equal(-1, EngineBaseline.Order(1, 0, 15), "a smaller patch is older - 1.0.15 is now behind us");
             Equal(-1, EngineBaseline.Order(1, 0, -1), "and a release candidate sorts BELOW its own release");
 
             // ---- the verdicts, one per direction of movement ----
-            EngineComparison same = EngineBaseline.Compare("1.0.12", 40, 46, 41);
+            EngineComparison same = EngineBaseline.Compare("1.0.16", 40, 46, 41);
             Check(same.Same, "the exact build is the same build");
-            Equal("same build 1.0.12 (net 40, player 46, world 41)", same.Verdict, "and says so in one line");
+            Equal("same build 1.0.16 (net 40, player 46, world 41)", same.Verdict, "and says so in one line");
             Check(!same.WireAtRisk && !same.SavesAtRisk, "with nothing at risk");
 
             EngineComparison newer = EngineBaseline.Compare("1.1.0", 40, 46, 41);
             Equal(VersionDrift.Newer, newer.Game, "a later game version reads as newer");
-            Equal("newer game version (1.1.0 vs 1.0.12)", newer.Verdict, "and names both");
+            Equal("newer game version (1.1.0 vs 1.0.16)", newer.Verdict, "and names both");
             Check(!newer.Same, "and is not the same build");
 
             EngineComparison older = EngineBaseline.Compare("0.221.12", 40, 46, 41);
             Equal(VersionDrift.Older, older.Game, "the last pre-1.0 stable reads as older");
-            Equal("older game version (0.221.12 vs 1.0.12)", older.Verdict, "and names both");
+            Equal("older game version (0.221.12 vs 1.0.16)", older.Verdict, "and names both");
+
+            // A 1.0.15 install under a 1.0.16 build: an older game on the same wire and the same saves.
+            EngineComparison hotfix = EngineBaseline.Compare("1.0.15", 40, 46, 41);
+            Equal("older game version (1.0.15 vs 1.0.16)", hotfix.Verdict, "a 1.0.15 install reads as the older game");
+            Check(!hotfix.WireAtRisk && !hotfix.SavesAtRisk, "with neither the wire nor the saves at risk");
 
             EngineComparison unreadable = EngineBaseline.Compare("", 40, 46, 41);
             Equal(VersionDrift.Unreadable, unreadable.Game, "an unreadable version is its own verdict");
-            Equal("game version unreadable ('' vs 1.0.12)", unreadable.Verdict, "which never reads as a match");
+            Equal("game version unreadable ('' vs 1.0.16)", unreadable.Verdict, "which never reads as a match");
             Check(!unreadable.Same, "and never counts as the same build");
 
             // The dangerous one: the network version is the handshake and the packet layout.
-            EngineComparison net = EngineBaseline.Compare("1.0.12", 41, 46, 41);
+            EngineComparison net = EngineBaseline.Compare("1.0.16", 41, 46, 41);
             Equal("network version moved (41 vs 40)", net.Verdict, "a moved network version is called out on its own");
             Check(net.WireAtRisk, "and flags the wire");
             Check(!net.SavesAtRisk, "without implicating the saves");
 
-            EngineComparison player = EngineBaseline.Compare("1.0.12", 40, 47, 41);
+            EngineComparison player = EngineBaseline.Compare("1.0.16", 40, 47, 41);
             Equal("player version moved (47 vs 46)", player.Verdict, "a moved player version is its own line");
             Check(player.SavesAtRisk && !player.WireAtRisk, "and flags the saves, not the wire");
 
-            EngineComparison world = EngineBaseline.Compare("1.0.12", 40, 46, 42);
+            EngineComparison world = EngineBaseline.Compare("1.0.16", 40, 46, 42);
             Equal("world version moved (42 vs 41)", world.Verdict, "a moved world version is its own line");
             Check(world.SavesAtRisk, "and flags the saves");
 
             EngineComparison all = EngineBaseline.Compare("1.1.0", 41, 47, 42);
-            Equal("newer game version (1.1.0 vs 1.0.12); network version moved (41 vs 40); player version moved (47 vs 46); world version moved (42 vs 41)",
+            Equal("newer game version (1.1.0 vs 1.0.16); network version moved (41 vs 40); player version moved (47 vs 46); world version moved (42 vs 41)",
                   all.Verdict, "everything moving reads game, network, player, world, in that order, every time");
             Check(all.WireAtRisk && all.SavesAtRisk, "with both risks raised");
 
