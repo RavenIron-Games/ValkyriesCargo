@@ -40,8 +40,10 @@ loaded under .NET (not Mono) with the REAL installed assemblies, answered
 `engine: same build 1.0.16 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` against the client's
 and the dedicated server's `assembly_valheim.dll` alike, and
 `engine: older game version (1.0.15 vs 1.0.16); probes 19/19 ok, 8 not probeable` against the kept 1.0.15 client
-assembly; no `FAILED`, no `registry:` line. **That is not a boot.** No 1.0.16 boot line from a game has been seen
-yet: nobody has run this mod in game on 1.0.16.
+assembly; no `FAILED`, no `registry:` line. **That is not a boot.** The boot came after, on 2026-09-25: Storm10
+(dedicated) and one client, both Valheim 1.0.16 (network version 40) on the 0.1.6 ship DLL, printed
+`engine: same build 1.0.16 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable` and
+`patches 19/19 applied` on both sides.
 
 | build | assembly | bytes | modified | SHA-256 (first 16) |
 |---|---|---|---|---|

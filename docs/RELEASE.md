@@ -100,6 +100,10 @@ wrong.
 > are his, and no agent logs into the store, creates an account, uploads, or accepts terms. The next
 > upload is his too.
 >
+> **`v0.1.6` cut 2026-09-25** (the Valheim 1.0.16 build, no gameplay change: the engine check's baseline moves from
+> 1.0.12 to 1.0.16; a 0.1.5 client is refused; nothing to delete when updating). Tagged, with the zip and the kit
+> attached on GitHub; **not uploaded at the time of the cut** — RavenIron's step.
+>
 > **`v0.1.5` cut 2026-09-24** (deal and market fixes: a deal lands whole or not at all, deals within 96 m of the
 > visit, the Fair Market Act across the shelf roll and within a visit, `ShelfSize` waits for the visit, a resumed
 > flight moves on to the ground; the DLL no longer carries the build machine's folder path; a 0.1.4 client is
