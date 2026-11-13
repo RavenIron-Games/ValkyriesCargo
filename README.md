@@ -6,7 +6,7 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.7` is prepared and not cut yet; `v0.1.6` (cut 2026-09-25 from `main`) is the last release — a
+> **Status: `v0.1.7` (the Valheim 1.0.21 build, on Hexium since 2026-11-02) is the latest release — a
 > first playable; a pre-release on GitHub; the store upload is a separate step.** **For Valheim 1.0** (network
 > version 41 on the current build; 40 on older 1.0 builds, which cannot connect to it). 0.1.7 is the Valheim 1.0.21
 > build, with no gameplay change: **a 0.1.6 client is refused by a 0.1.7 server** by the version gate — on purpose: the
