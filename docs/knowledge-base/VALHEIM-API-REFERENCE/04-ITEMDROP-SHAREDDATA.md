@@ -1,4 +1,4 @@
-All citations from `C:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`.
+All citations from `C:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`.
 
 ## 0. Reference-type verdict (decides deep-copy strategy)
 

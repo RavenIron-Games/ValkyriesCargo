@@ -6,23 +6,15 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.6` is prepared and not cut yet; `v0.1.5` (cut 2026-09-24 from `main`) is the last release — a
-> first playable; a pre-release on GitHub; the store upload is a separate step.** **For Valheim 1.0.12, 1.0.15 and
-> 1.0.16** (all network version 40; 0.1.6 is built and checked against 1.0.16, 0.1.5's engine baseline was 1.0.12 and
-> it was tested on 1.0.15): 1.0.12 moved the network version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12)
-> cannot connect to it at all. The store carries whichever
-> cut was last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first; 0.1.5 since 2026-09-24), and
-> **a 0.1.5 client is refused by a 0.1.6 server** by the version gate — on purpose: the store takes
-> one upload per number, and both sides move together. **Updating a server: nothing to delete** —
-> from 0.1.4 the mod migrates its own config file, and neither 0.1.5 nor 0.1.6 changes its layout (Installing,
-> below).
+> **Status: `v0.1.7` is prepared and not cut yet; `v0.1.6` (cut 2026-09-25 from `main`) is the last release — a
+> first playable; a pre-release on GitHub; the store upload is a separate step.** **For Valheim 1.0** (network
+> version 41 on the current build; 40 on older 1.0 builds, which cannot connect to it). 0.1.7 is the Valheim 1.0.21
+> build, with no gameplay change: **a 0.1.6 client is refused by a 0.1.7 server** by the version gate — on purpose: the
+> store takes one upload per number, and both sides move together. **Updating a server: nothing to delete** — the
+> config layout is unchanged (Installing, below). The engine check's compiled-in baseline moves to network 41 /
+> player 47 / world 42 (`docs/ENGINE-BASELINE.md`), so the boot line on the current game reads `same build`.
 > The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
 > because 0.1.x is a first playable and says so.
-> What 0.1.6 adds: the Valheim 1.0.16 build, with no gameplay change. The engine check's compiled-in baseline moves
-> from 1.0.12 to 1.0.16 (`docs/ENGINE-BASELINE.md`), so the boot line on 1.0.16 reads `same build 1.0.16`. The
-> engine sweep found three changed bodies among the members the mod depends on, all three already changed in
-> 1.0.15 and none in a way it relies on; the probes, run offline against the 1.0.16 client and server, pass
-> 19/19. 2591 off-game checks.
 > What 0.1.5 added: a deal lands in your pack whole or not at all; a deal made more than 96 m from the visit is
 > refused; the Fair Market Act covers every row while the shelf rotates, and within a visit he never pays more for
 > an item than the lowest price he sold it at (two rule changes, set out in `docs/DECISIONS-WUBARRK.md` §2, where
@@ -477,7 +469,7 @@ back for patrons, and nothing ever will be.
 
 If you'd like to help cover server hosting and test hardware:
 
-- **Website** — <https://ravenirongames.com>
+- **Website** — <https://ravenirongames.com/>
 - **Patreon** — <https://www.patreon.com/cw/RavenIronGames>
 - **Discord** — <https://discord.gg/AGKDEurAVa> — a channel per mod, and where the
   testing happens

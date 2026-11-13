@@ -1,5 +1,5 @@
-All citations: `C:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` (referred to below as `AV.cs`).
-Values: `C:\WubarrkCODING\libs-Tools\WubarrksEye_Dumps\2026-07-31_21-06-43\Values_Dump.json` (referred to as `VD.json`).
+All citations: `C:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` (referred to below as `AV.cs`).
+Values: `C:\WubarrkCODING\ValheimMods\libs-Tools\WubarrksEye_Dumps\2026-07-31_21-06-43\Values_Dump.json` (referred to as `VD.json`).
 
 ---
 

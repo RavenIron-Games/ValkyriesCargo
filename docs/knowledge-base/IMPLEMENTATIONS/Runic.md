@@ -1,6 +1,6 @@
 # Runic — Jotunn-free custom item creation (weapons, staves, armor, ore chain)
 
-**Project:** `C:\WubarrkCODING\Runic` · **Status: PAUSED 2026-08-01, mid-implementation.**
+**Project:** `C:\WubarrkCODING\ValheimMods\Runic` · **Status: PAUSED 2026-08-01, mid-implementation.**
 See `Runic\STATUS-PAUSED.md` for the exact file-by-file state. The user is deciding whether to
 redirect it into a full magic mod.
 

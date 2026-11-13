@@ -12,7 +12,7 @@ namespace RavenIron.ValkyriesCargo.Patches
     /// asked.
     ///
     /// Confirmed against the real decompile
-    /// (`~/WubarrkCODING/libs-Tools/DECOMPILED ASSEMBLY VALHEIM/assembly_valheim.decompiled.cs`, the
+    /// (`~/WubarrkCODING/ValheimMods/libs-Tools/DECOMPILED ASSEMBLY VALHEIM/assembly_valheim.decompiled.cs`, the
     /// 0.221.12 build this DLL is compiled against):
     ///
     /// - `:6817` -- `public class Character : MonoBehaviour, IDestructible, Hoverable, IWaterInteractable, IMonoUpdater`.

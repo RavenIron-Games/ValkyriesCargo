@@ -1,7 +1,7 @@
 # BarrkUI — Valheim UI overhaul mod
 
 **Started 2026-08-04.** BepInEx/Harmony, `net48`, ServerSync. GUID `wubarrk.BarrkUI`.
-Source: `c:\WubarrkCODING\BarrkUI`.
+Source: `c:\WubarrkCODING\ValheimMods\BarrkUI`.
 
 Two things make this project worth reading beyond its own feature set:
 

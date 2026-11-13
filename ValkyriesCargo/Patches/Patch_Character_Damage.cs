@@ -58,7 +58,7 @@ namespace RavenIron.ValkyriesCargo.Patches
     /// effects call `Character.ApplyDamage` DIRECTLY and never go near `Damage`/`RPC_Damage` at all.
     ///
     /// Confirmed against the real decompile
-    /// (`~/WubarrkCODING/libs-Tools/DECOMPILED ASSEMBLY VALHEIM/assembly_valheim.decompiled.cs`, 0.221.12):
+    /// (`~/WubarrkCODING/ValheimMods/libs-Tools/DECOMPILED ASSEMBLY VALHEIM/assembly_valheim.decompiled.cs`, 0.221.12):
     ///
     /// - `:8821` -- `public void ApplyDamage(HitData hit, bool showDamageText, bool triggerEffects,
     ///   HitData.DamageModifier mod = HitData.DamageModifier.Normal)`. This is the ONLY `ApplyDamage`

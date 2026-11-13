@@ -10,8 +10,8 @@ reading deformation. Writes PNGs to models/preview/.
 
 import bpy, os, math
 
-GLB = "/home/rohan/WubarrkCODING/ValkyriesCargo/models/ingvar.glb"
-OUT = "/home/rohan/WubarrkCODING/ValkyriesCargo/models/preview"
+GLB = "/home/rohan/WubarrkCODING/ValheimMods/ValkyriesCargo/models/ingvar.glb"
+OUT = "/home/rohan/WubarrkCODING/ValheimMods/ValkyriesCargo/models/preview"
 SHOTS = {"Nod": 6, "Walk": 6, "Hello": 6, "Idle": 4, "Shrug": 4, "Talk": 4}
 RES = 300
 

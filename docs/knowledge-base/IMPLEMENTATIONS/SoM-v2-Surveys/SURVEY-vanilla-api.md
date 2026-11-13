@@ -14,8 +14,8 @@ The brief says "given the publicized assembly". I verified this empirically with
 
 | File | Publicized? | Evidence |
 |---|---|---|
-| `c:\WubarrkCODING\libs-Tools\assembly_valheim.dll` | **NO** | `csc` probe → `CS0122: 'BaseAI.SetAlerted(bool)' is inaccessible`, `CS0122: BaseAI.MoveTo`, `CS0122: BaseAI.SetTargetInfo`, `CS0122: BaseAI.m_nview`, `CS1061: BaseAI does not contain 'm_alerted'`, `CS1061: MonsterAI ... 'm_targetCreature'`. Identical error set to the stock game DLL. |
-| `c:\WubarrkCODING\libs-Tools\assembly_publicizer.dll` | **YES** | Same probe → `EXITCODE=0`. Its **fusion name is `assembly_valheim, Version=0.0.0.0`** — it is a publicized *copy* of assembly_valheim under a misleading filename. |
+| `c:\WubarrkCODING\ValheimMods\libs-Tools\assembly_valheim.dll` | **NO** | `csc` probe → `CS0122: 'BaseAI.SetAlerted(bool)' is inaccessible`, `CS0122: BaseAI.MoveTo`, `CS0122: BaseAI.SetTargetInfo`, `CS0122: BaseAI.m_nview`, `CS1061: BaseAI does not contain 'm_alerted'`, `CS1061: MonsterAI ... 'm_targetCreature'`. Identical error set to the stock game DLL. |
+| `c:\WubarrkCODING\ValheimMods\libs-Tools\assembly_publicizer.dll` | **YES** | Same probe → `EXITCODE=0`. Its **fusion name is `assembly_valheim, Version=0.0.0.0`** — it is a publicized *copy* of assembly_valheim under a misleading filename. |
 | `...\Valheim\valheim_Data\Managed\assembly_valheim.dll` | NO (stock) | Same CS0122/CS1061 set. |
 
 The csproj (`c:/WubarrkCODING/ShadowsOfMidgard/ShadowsOfMidgard.csproj` L≈110-125) references **both**, and they share one assembly identity. Direct `csc` with both errors out:
@@ -29,7 +29,7 @@ MSBuild's RAR silently de-duplicates by fusion name and the **publicized one win
 
 ```
 ReferencePath=
-    c:\WubarrkCODING\libs-Tools\assembly_publicizer.dll
+    c:\WubarrkCODING\ValheimMods\libs-Tools\assembly_publicizer.dll
             FusionName=assembly_valheim, Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
             OriginalItemSpec=assembly_publicizer
 ```

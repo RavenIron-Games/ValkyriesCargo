@@ -17,7 +17,7 @@ NOT a bundle builder. It ends at a .glb; Unity's builder takes it from there.
 
 import bpy, os, sys, math
 
-MODELS = "/home/rohan/WubarrkCODING/ValkyriesCargo/models"
+MODELS = "/home/rohan/WubarrkCODING/ValheimMods/ValkyriesCargo/models"
 OUT    = os.path.join(MODELS, "ingvar.glb")
 OUT_FBX = os.path.join(MODELS, "ingvar.fbx")
 

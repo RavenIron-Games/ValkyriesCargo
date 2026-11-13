@@ -553,7 +553,7 @@ broke in production. **This mod did not consult it until 2026-09-07 and paid for
 shape another mod has already found the hard way.
 
 > **It is in this repository at `docs/knowledge-base/`** (decided by the owner 2026-09-07): a snapshot of
-> Wu'barrk's `~/WubarrkCODING/libs-Tools/` as of that day, **67 Markdown files, no binaries; the snapshot is
+> Wu'barrk's `~/WubarrkCODING/ValheimMods/libs-Tools/` as of that day, **67 Markdown files, no binaries; the snapshot is
 > complete** — the `VALHEIM-API-REFERENCE\` folder, the last piece missing, landed with PR #17 on 2026-09-07.
 > His copy is the source and updates
 > arrive as PRs. Anything this mod actually depends on is still copied into CLAUDE.md or DESIGN as a quoted
