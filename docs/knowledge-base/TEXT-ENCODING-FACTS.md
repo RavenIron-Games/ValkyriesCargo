@@ -89,7 +89,7 @@ symbol (`✦`, `→`) as corrupt. This false positive is easy to fall for.
 
 ```powershell
 # ASCII-ONLY BY NECESSITY - see rule 2.
-# Usage: .\scan.ps1 -Root 'c:\WubarrkCODING\libs-Tools'
+# Usage: .\scan.ps1 -Root 'c:\WubarrkCODING\ValheimMods\libs-Tools'
 param([Parameter(Mandatory=$true)][string]$Root,
       [string[]]$Include = @('*.md','*.cs','*.ps1','*.json','*.csproj','*.txt'),
       [int]$MaxSizeMB = 8)

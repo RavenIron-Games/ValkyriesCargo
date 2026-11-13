@@ -14,9 +14,9 @@ Everything below was read, not inferred. Line numbers are exact as of the files 
 
 **Declaration sites (three independent copies of the literal — no shared header):**
 
-- SoM: `c:\WubarrkCODING\ShadowsOfMidgard\Systems\StealthExemption.cs:5` — `public const string ZDOKey = "SoMStealthExempt";`
-- MoA: `c:\WubarrkCODING\MistsofAvalor\Mobs\AvalorMobDirector.cs:282` — `public const string SoMStealthExemptKey = "SoMStealthExempt";`
-- DvergrAllies: `c:\WubarrkCODING\DvergrAllies\DvergrGenetics.cs:17` — `public const string StealthExemptKey = "SoMStealthExempt";`
+- SoM: `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\StealthExemption.cs:5` — `public const string ZDOKey = "SoMStealthExempt";`
+- MoA: `c:\WubarrkCODING\ValheimMods\MistsofAvalor\Mobs\AvalorMobDirector.cs:282` — `public const string SoMStealthExemptKey = "SoMStealthExempt";`
+- DvergrAllies: `c:\WubarrkCODING\ValheimMods\DvergrAllies\DvergrGenetics.cs:17` — `public const string StealthExemptKey = "SoMStealthExempt";`
 
 **Write sites:**
 
@@ -47,7 +47,7 @@ Two SoM patches **do not** check exemption and write `AwarenessData` for exempt 
 
 ## PART 2 — SoM'S REFLECTION SURFACE AS CONSUMED BY MoA
 
-All of it lives in `c:\WubarrkCODING\MistsofAvalor\Compat\AvalorStealthCompat.cs`. Nothing else in MoA reflects into SoM. DvergrAllies reflects **nothing** — it writes one ZDO int and is otherwise completely decoupled.
+All of it lives in `c:\WubarrkCODING\ValheimMods\MistsofAvalor\Compat\AvalorStealthCompat.cs`. Nothing else in MoA reflects into SoM. DvergrAllies reflects **nothing** — it writes one ZDO int and is otherwise completely decoupled.
 
 ### 2.1 Types probed by name (`AccessTools.TypeByName`)
 
@@ -394,14 +394,14 @@ Nothing. `DvergrGenetics.cs` is already correct under this contract and remains 
 
 ## KEY FILE PATHS
 
-- `c:\WubarrkCODING\MistsofAvalor\Compat\AvalorStealthCompat.cs` (590 lines — the entire reflection surface)
-- `c:\WubarrkCODING\MistsofAvalor\Compat\AvalorStealthGuards.cs` (153 lines — the entire Harmony-fighting layer)
-- `c:\WubarrkCODING\MistsofAvalor\Core\MistsofAvalorPlugin.cs` (`:160,163` component wiring; `:190-211` guard registration; `:254-386` the `Character.Awake` postfix that stamps and claims)
-- `c:\WubarrkCODING\MistsofAvalor\Mobs\AvalorMobDirector.cs` (`:282` key const, `:287-294` `MarkAsAvalorMob`, `:376` Warden key, `:745-828` `MakeItHunt`)
-- `c:\WubarrkCODING\MistsofAvalor\Mobs\AvalorHuntEnforcer.cs` (108 lines — the vanilla-only layer that must survive)
-- `c:\WubarrkCODING\DvergrAllies\DvergrGenetics.cs` (`:17` key const, `:21-41` `RefreshStealthExemption`, `:118-134` `SetTamed` postfix)
-- `c:\WubarrkCODING\ShadowsOfMidgard\Systems\StealthExemption.cs` (21 lines — the frozen API)
-- `c:\WubarrkCODING\ShadowsOfMidgard\Systems\UnifiedStealthTypes.cs` (`:59-106` `AwarenessData` — the reflection target)
-- `c:\WubarrkCODING\ShadowsOfMidgard\Systems\AwarenessSystem.cs` (`:11-20` `GetData` — the reflection entry point)
-- `c:\WubarrkCODING\libs-Tools\IMPLEMENTATIONS\MistsofAvalor.md:238-276` (section 11 + the three v0.0.9 lessons)
-- `c:\WubarrkCODING\libs-Tools\IMPLEMENTATIONS\DvergrAllies.md:160-190` (genetics / cross-mod signal)
+- `c:\WubarrkCODING\ValheimMods\MistsofAvalor\Compat\AvalorStealthCompat.cs` (590 lines — the entire reflection surface)
+- `c:\WubarrkCODING\ValheimMods\MistsofAvalor\Compat\AvalorStealthGuards.cs` (153 lines — the entire Harmony-fighting layer)
+- `c:\WubarrkCODING\ValheimMods\MistsofAvalor\Core\MistsofAvalorPlugin.cs` (`:160,163` component wiring; `:190-211` guard registration; `:254-386` the `Character.Awake` postfix that stamps and claims)
+- `c:\WubarrkCODING\ValheimMods\MistsofAvalor\Mobs\AvalorMobDirector.cs` (`:282` key const, `:287-294` `MarkAsAvalorMob`, `:376` Warden key, `:745-828` `MakeItHunt`)
+- `c:\WubarrkCODING\ValheimMods\MistsofAvalor\Mobs\AvalorHuntEnforcer.cs` (108 lines — the vanilla-only layer that must survive)
+- `c:\WubarrkCODING\ValheimMods\DvergrAllies\DvergrGenetics.cs` (`:17` key const, `:21-41` `RefreshStealthExemption`, `:118-134` `SetTamed` postfix)
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\StealthExemption.cs` (21 lines — the frozen API)
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\UnifiedStealthTypes.cs` (`:59-106` `AwarenessData` — the reflection target)
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\AwarenessSystem.cs` (`:11-20` `GetData` — the reflection entry point)
+- `c:\WubarrkCODING\ValheimMods\libs-Tools\IMPLEMENTATIONS\MistsofAvalor.md:238-276` (section 11 + the three v0.0.9 lessons)
+- `c:\WubarrkCODING\ValheimMods\libs-Tools\IMPLEMENTATIONS\DvergrAllies.md:160-190` (genetics / cross-mod signal)

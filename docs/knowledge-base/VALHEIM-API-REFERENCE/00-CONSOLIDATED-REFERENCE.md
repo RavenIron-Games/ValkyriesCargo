@@ -6,8 +6,8 @@
 
 Consolidated from 9 independent decompile passes. Unless stated otherwise every `:NNNNN` /
 `LNNNNN` / `AV:NNNNN` citation refers to
-`C:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`.
-Values dumps refer to `C:\WubarrkCODING\libs-Tools\WubarrksEye_Dumps\2026-07-31_21-06-43\Values_Dump.json`.
+`C:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`.
+Values dumps refer to `C:\WubarrkCODING\ValheimMods\libs-Tools\WubarrksEye_Dumps\2026-07-31_21-06-43\Values_Dump.json`.
 
 Assumptions baked into every code sample below: **the assembly is publicized** (many required members
 are `private`/`protected`), and **`assembly_utils.dll` is referenced** (`GetStableHashCode` lives there).

@@ -1,8 +1,8 @@
 ## Source
 
 All `L####` cites are lines in
-`C:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` (called **DECOMP** below).
-Value cites are `C:\WubarrkCODING\libs-Tools\WubarrksEye_Dumps\2026-07-31_21-06-43\Values_Dump.json`.
+`C:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` (called **DECOMP** below).
+Value cites are `C:\WubarrkCODING\ValheimMods\libs-Tools\WubarrksEye_Dumps\2026-07-31_21-06-43\Values_Dump.json`.
 
 ---
 
@@ -411,7 +411,7 @@ player.GetInventory().AddItem(m_craftRecipe.m_item.gameObject.name, num3, num, v
 ## NOT FOUND
 - ZNetScene.AddPrefab / RegisterPrefab — no such member. Full ZNetScene body read at DECOMP L69576-70035; the only mutation points are the public List<GameObject> m_prefabs (L69584, consumed only in Awake) and the private readonly Dictionary m_namedPrefabs (L69588).
 - ObjectDB.AddItem / RegisterItem / AddItemPrefab / AddRecipe — grep for 'AddPrefab|RegisterItem|AddItemPrefab' over the whole decompile returns zero hits. Full ObjectDB body L90498-90623 has no add API; you mutate m_items/m_recipes directly.
-- Utils.GetPrefabName(GameObject) and Utils.GetPrefabName(string) — used at ZNetView.Awake L70416 and 8 other sites, but DECLARED IN assembly_utils.dll, which is not present in this workspace as source (only the binary at C:\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\assembly_utils.dll; C:\WubarrkCODING\libs-Tools\decompiled_core contains only UnityEngine.CoreModule). Its exact truncation rule is UNVERIFIED. The only truncator visible in assembly_valheim is ItemDrop's private GetPrefabName(string) at L59236-59245, which cuts at the first '(' or ' '. Treat any space or parenthesis in a prefab name as unsafe.
+- Utils.GetPrefabName(GameObject) and Utils.GetPrefabName(string) — used at ZNetView.Awake L70416 and 8 other sites, but DECLARED IN assembly_utils.dll, which is not present in this workspace as source (only the binary at C:\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\assembly_utils.dll; C:\WubarrkCODING\ValheimMods\libs-Tools\decompiled_core contains only UnityEngine.CoreModule). Its exact truncation rule is UNVERIFIED. The only truncator visible in assembly_valheim is ItemDrop's private GetPrefabName(string) at L59236-59245, which cuts at the first '(' or ' '. Treat any space or parenthesis in a prefab name as unsafe.
 - string.GetStableHashCode() — the extension method used at L69609, L69718, L69723, L70281, L70285, L90534, L90557, L90595. Also lives in assembly_utils.dll; NOT declared anywhere in assembly_valheim.decompiled.cs. Reference it from assembly_utils, do not reimplement (a mismatched implementation silently desynchronizes every hash).
 - Any vanilla helper for building an inert runtime prefab template — no 'prefab container', 'DontDestroyOnLoad holder', or disabled-parent pattern exists in assembly_valheim. Vanilla prefab references are project assets whose Awake never runs, so the engine never needed one. The inactive-parent pattern in section 6 is original work.
 - Any ZNetScene/ObjectDB consistency or hash-collision validator beyond the raw Dictionary.Add throws at L69609 and L90534. Searched 'Missing prefab', 'missing prefab', 'Invalid prefab', 'unknown prefab', 'invalid predab', 'Failed to find', 'prefab hash'. The only prefab-integrity code is ZDOMan.FilterZDO L64927 / WarnAndRemoveBrokenZDOs L64941, which WARNS and loads anyway ('Found N ZDOs with unknown prefabs. Will load anyway.' L64948) and only deletes hashes in the hard-coded s_brokenPrefabsToFilterOut blacklist (L64929).

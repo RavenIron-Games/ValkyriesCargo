@@ -1,6 +1,6 @@
 # Paused Projects — Notable/Unique Implementations
 
-These projects are on hold. **Roster corrected 2026-09-03:** `PAUSED/` now holds DvergrWarbandST, IronCohort22, Norns Tale, PortalLock, SkyNet Redux v1, Skynet v2, **DeathBeforeDishonor** (writeup in `DeathBeforeDishonor_TheEye.md`), **TheRavensCall** (1.2.1) and **WhereTheCrowFlies** (1.1.0) — the last two have no writeup. **RuneboundRest is no longer under `PAUSED/`**: it is top-level at `WubarrkCODING/RuneboundRest/` with a released 1.1.0; its section is kept below for the transpiler technique. These but contain real, sometimes genuinely novel implementations worth preserving as reference. This is a lighter-weight survey than the active-project reports.
+These projects are on hold. **Roster corrected 2026-09-03:** `PAUSED/` now holds DvergrWarbandST, IronCohort22, Norns Tale, PortalLock, SkyNet Redux v1, Skynet v2, **DeathBeforeDishonor** (writeup in `DeathBeforeDishonor_TheEye.md`), **TheRavensCall** (1.2.1) and **WhereTheCrowFlies** (1.1.0) — the last two have no writeup. **RuneboundRest is no longer under `PAUSED/`**: it is top-level at `WubarrkCODING/ValheimMods/RuneboundRest/` with a released 1.1.0; its section is kept below for the transpiler technique. These but contain real, sometimes genuinely novel implementations worth preserving as reference. This is a lighter-weight survey than the active-project reports.
 
 ---
 
@@ -85,7 +85,7 @@ These projects are on hold. **Roster corrected 2026-09-03:** `PAUSED/` now holds
 ---
 
 ## RuneboundRest
-*Not paused as of 2026-09-03 — lives at `WubarrkCODING/RuneboundRest/`, released 1.1.0 (`wubarrk.runeboundrest`). Kept here for the technique.*
+*Not paused as of 2026-09-03 — lives at `WubarrkCODING/ValheimMods/RuneboundRest/`, released 1.1.0 (`wubarrk.runeboundrest`). Kept here for the technique.*
 
 **Overview:** A comfort/resting-mechanics overhaul mod: configurable rested-buff duration, comfort search radius/update interval, sitting/sleeping comfort bonuses, and conditions required to start resting (fire/shelter/wet/danger). Fully ServerSync-config-synced. The most IL-transpiler-heavy of the seven projects.
 

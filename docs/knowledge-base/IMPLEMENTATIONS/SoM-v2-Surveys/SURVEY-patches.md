@@ -1,21 +1,21 @@
 # SoM `Patches/` + `ShadowsOfMidgard.cs` — Exhaustive Surveyor Report
 
 Files surveyed (absolute paths):
-- `c:\WubarrkCODING\ShadowsOfMidgard\ShadowsOfMidgard.cs`
-- `c:\WubarrkCODING\ShadowsOfMidgard\Patches\BaseAI_CanHearTarget_Patch.cs`
-- `c:\WubarrkCODING\ShadowsOfMidgard\Patches\BaseAI_CanSeeTarget_Patch.cs`
-- `c:\WubarrkCODING\ShadowsOfMidgard\Patches\BaseAI_SetMoveDir_Patch.cs`
-- `c:\WubarrkCODING\ShadowsOfMidgard\Patches\BaseAI_StealthBrain_IsAlerted_Patch.cs`
-- `c:\WubarrkCODING\ShadowsOfMidgard\Patches\BaseAI_StealthBrain_Patch.cs`
-- `c:\WubarrkCODING\ShadowsOfMidgard\Patches\Character_Damage_Patch.cs`
-- `c:\WubarrkCODING\ShadowsOfMidgard\Patches\Character_OnDamaged_Patch.cs`
-- `c:\WubarrkCODING\ShadowsOfMidgard\Patches\Character_OnDestroy_Patch.cs`
-- `c:\WubarrkCODING\ShadowsOfMidgard\Patches\Humanoid_Attack_Patch.cs`
-- `c:\WubarrkCODING\ShadowsOfMidgard\Patches\MonsterAI_StealthBrain_UpdateAI_Patch.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\ShadowsOfMidgard.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Patches\BaseAI_CanHearTarget_Patch.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Patches\BaseAI_CanSeeTarget_Patch.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Patches\BaseAI_SetMoveDir_Patch.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Patches\BaseAI_StealthBrain_IsAlerted_Patch.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Patches\BaseAI_StealthBrain_Patch.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Patches\Character_Damage_Patch.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Patches\Character_OnDamaged_Patch.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Patches\Character_OnDestroy_Patch.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Patches\Humanoid_Attack_Patch.cs`
+- `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Patches\MonsterAI_StealthBrain_UpdateAI_Patch.cs`
 
 Supporting reads (needed to judge patch correctness): `Systems\AIAuthority.cs`, `Systems\StealthExemption.cs`, `Systems\AwarenessSystem.cs`, `Systems\UnifiedStealthTypes.cs`, `Systems\StealthBrain.cs`, `Systems\StealthOvermind.cs`, `Systems\BehaviorSystem.cs`, `Systems\StealthBrain\{Sensing,State,Movement,Combat}Evaluator.cs`, `Config\SOMConfig.cs`, `MistsofAvalor\Compat\AvalorStealthGuards.cs`.
 
-Vanilla ground truth quoted from `c:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` (class starts: `AnimalAI` 3714, `BaseAI` 3809, `MonsterAI` 5620, `NpcTalk` 6549, `Character` 6814, `Humanoid` 12806, `Player` 15320).
+Vanilla ground truth quoted from `c:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` (class starts: `AnimalAI` 3714, `BaseAI` 3809, `MonsterAI` 5620, `NpcTalk` 6549, `Character` 6814, `Humanoid` 12806, `Player` 15320).
 
 ---
 

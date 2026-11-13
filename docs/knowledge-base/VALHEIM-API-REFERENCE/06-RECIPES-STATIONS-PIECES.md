@@ -1,6 +1,6 @@
 All citations are `assembly_valheim.decompiled.cs:LINE` from
-`C:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`.
-Values from `C:\WubarrkCODING\libs-Tools\WubarrksEye_Dumps\2026-07-31_21-06-43\Values_Dump.json`.
+`C:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`.
+Values from `C:\WubarrkCODING\ValheimMods\libs-Tools\WubarrksEye_Dumps\2026-07-31_21-06-43\Values_Dump.json`.
 
 ## 1. `class Recipe : ScriptableObject` — :60499
 

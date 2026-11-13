@@ -1,6 +1,6 @@
 ## Source
 
-All citations: `C:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`
+All citations: `C:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`
 Verified identical in `assembly_valheim_SERVER.decompiled.cs` (ZNetScene at :69095–69523, same logic).
 
 ---

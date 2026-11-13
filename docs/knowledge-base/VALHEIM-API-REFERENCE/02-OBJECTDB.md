@@ -1,6 +1,6 @@
 ## ObjectDB — full class map
 
-Decompile: `C:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`
+Decompile: `C:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`
 **The entire class is lines 90498–90623.** There are no other members. Server build (`assembly_valheim_SERVER.decompiled.cs:88911–89036`) is byte-identical in shape — no client/server divergence.
 
 ### Declaration + singleton

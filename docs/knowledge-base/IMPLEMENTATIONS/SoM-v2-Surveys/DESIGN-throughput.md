@@ -5,7 +5,7 @@ This one optimises brief goal #4 — *far more monsters simultaneously in multip
 says explicitly, in §13, where that costs more than it is worth.
 
 All vanilla claims are cited as `AV:LINE` against
-`c:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`.
+`c:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`.
 Runtime-capability claims are cited to a binary/reflection probe of
 `C:\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed\`.
 
@@ -1785,7 +1785,7 @@ pipeline never starts.
 
 ### 9.1 Design for the class, not for the sibling
 
-**Correction to the record, verified in `c:\WubarrkCODING\MistsofAvalor` at the time of writing.** MoA is now
+**Correction to the record, verified in `c:\WubarrkCODING\ValheimMods\MistsofAvalor` at the time of writing.** MoA is now
 0.1.2. `Compat\AvalorStealthGuards.cs` no longer exists; there is no `HarmonyBefore`/`HarmonyAfter` anywhere in
 the tree; there is no Harmony patch on `BaseAI.IsAlerted`, `BaseAI.CanSenseTarget`, `Humanoid.StartAttack` or
 `MonsterAI.UpdateTarget`; and `AwarenessData` appears exactly once, in a past-tense comment describing the

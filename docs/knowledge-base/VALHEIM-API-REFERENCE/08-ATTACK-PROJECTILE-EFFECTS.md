@@ -1,4 +1,4 @@
-All citations are `assembly_valheim.decompiled.cs` at `C:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`. Line numbers are from that file.
+All citations are `assembly_valheim.decompiled.cs` at `C:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs`. Line numbers are from that file.
 
 ---
 

@@ -6,26 +6,15 @@ A Valheim mod by [Raven Iron](https://github.com/RavenIron).
 **A Valkyrie drops a wandering merchant beside your base when you are rested. He buys and sells for
 five minutes at prices that move with what the world sells him, then vanishes like Odin.**
 
-> **Status: `v0.1.6` (cut 2026-09-25, tag `v0.1.6` on `5b009ce`, the Valheim 1.0.16 build) is the latest release — a
-> first playable; a pre-release on GitHub; the store upload is a separate step.** **For Valheim 1.0.12, 1.0.15 and
-> 1.0.16** (all network version 40; 0.1.6 is built against 1.0.16 and was loaded in game on a 1.0.16 dedicated server
-> and client on 2026-09-25: boot line `same build 1.0.16`, `cargo status` clean, ServerSync 0.1.6/0.1.6, no visit or
-> trade on 1.0.16 yet; 0.1.5's engine baseline was 1.0.12 and
-> it was tested on 1.0.15): 1.0.12 moved the network version to 40, so `v0.1.0-rc4` (1.0.7) and `v0.1.0-rc3` (0.221.12)
-> cannot connect to it at all. The store carries whichever
-> cut was last uploaded (`v0.1.0-rc5`, 2026-09-11, was the first; 0.1.5 since 2026-09-24; the 0.1.6 upload is
-> pending as of 2026-09-25), and
-> **a 0.1.5 client is refused by a 0.1.6 server** by the version gate — on purpose: the store takes
-> one upload per number, and both sides move together. **Updating a server: nothing to delete** —
-> from 0.1.4 the mod migrates its own config file, and neither 0.1.5 nor 0.1.6 changes its layout (Installing,
-> below).
+> **Status: `v0.1.7` (the Valheim 1.0.21 build, on Hexium since 2026-11-02) is the latest release — a
+> first playable; a pre-release on GitHub; the store upload is a separate step.** **For Valheim 1.0** (network
+> version 41 on the current build; 40 on older 1.0 builds, which cannot connect to it). 0.1.7 is the Valheim 1.0.21
+> build, with no gameplay change: **a 0.1.6 client is refused by a 0.1.7 server** by the version gate — on purpose: the
+> store takes one upload per number, and both sides move together. **Updating a server: nothing to delete** — the
+> config layout is unchanged (Installing, below). The engine check's compiled-in baseline moves to network 41 /
+> player 47 / world 42 (`docs/ENGINE-BASELINE.md`), so the boot line on the current game reads `same build`.
 > The store zip and the body bundle are attached to the GitHub release, which stays flagged a pre-release
 > because 0.1.x is a first playable and says so.
-> What 0.1.6 adds: the Valheim 1.0.16 build, with no gameplay change. The engine check's compiled-in baseline moves
-> from 1.0.12 to 1.0.16 (`docs/ENGINE-BASELINE.md`), so the boot line on 1.0.16 reads `same build 1.0.16`. The
-> engine sweep found three changed bodies among the members the mod depends on, all three already changed in
-> 1.0.15 and none in a way it relies on; the probes, run offline against the 1.0.16 client and server, pass
-> 19/19. 2591 off-game checks.
 > What 0.1.5 added: a deal lands in your pack whole or not at all; a deal made more than 96 m from the visit is
 > refused; the Fair Market Act covers every row while the shelf rotates, and within a visit he never pays more for
 > an item than the lowest price he sold it at (two rule changes, set out in `docs/DECISIONS-WUBARRK.md` §2, where
@@ -92,21 +81,14 @@ from our own interact handler. Nothing happens on command except an admin's `car
 
 ## Status
 
-**0.1.6, cut 2026-09-25 (tag `v0.1.6` on `5b009ce`, DLL md5 `3f4cdd30b00f15c42e98734ad35f5943`): the Valheim 1.0.16
-build.** Valheim's 1.0.16 hotfix kept network version 40 and both save versions (player 46, world 41). No gameplay
-code changed: the engine
+**0.1.6, prepared 2026-09-25 on `release/0.1.6-prep`, not cut yet: the Valheim 1.0.16 build.** Valheim's 1.0.16
+hotfix kept network version 40 and both save versions (player 46, world 41). No gameplay code changed: the engine
 check's compiled-in baseline (`Core/EngineBaseline.cs`) moves from 1.0.12 to 1.0.16 (Steam builds 25527674 client /
 25527701 server, read 2026-09-25). The sweeps `docs/engine-sweeps/2026-09-25-{client,server}-1.0.12-vs-1.0.16.md`
 found 277 of the 280 surface members unchanged and 3 bodies changed, all three already in 1.0.15 and none load
 bearing here (`docs/ENGINE-BASELINE.md`). The probes, run offline against the real 1.0.16 client and server
 assemblies (not a boot), answered `engine: same build 1.0.16 (net 40, player 46, world 41); probes 19/19 ok, 8 not
-probeable`. 2591 checks, 0 failed, 0 warnings. **Booted in game 2026-09-25**, this exact build on Storm10 (Valheim
-1.0.16, dedicated, 08:02) with one 1.0.16 client: both boot lines read `patches 19/19 applied` and `engine: same
-build 1.0.16 (net 40, player 46, world 41); probes 19/19 ok, 8 not probeable`, the ServerSync handshake was
-0.1.6/0.1.6, and `cargo status` on the client showed 0 catalogue problems and the admin wire up. No visit: the
-player was not rested (comfort 1) and had no built pieces within 20 m, so the roll found no eligible player
-(`1 not rested`), as it should. Not yet run on 1.0.16: a visit, a trade, a second player, and a 1.0.15 game with a
-1.0.16 one.
+probeable`. 2591 checks, 0 failed, 0 warnings.
 
 **Truth pass against `main` at the `v0.1.5` cut, 2026-09-24.** This mod runs on **Valheim 1.0.12 and 1.0.15**
 (network version 40; tested on 1.0.15 at this cut) and on nothing older: 1.0.12 moved the network version to 40,
@@ -276,7 +258,7 @@ screen against a dedicated server across twenty-seven visits behind rc5 and more
 (#23 to #30) on 2026-09-24. The first approach reaching the player,
 the vanish and the carry holding its owner were all open questions at the rc2 cut and have since been
 watched and fixed. What has still never been seen is **redelivery after a lost connection**, and no
-two-client item has run. The tag is `v0.1.6`; the store carries whichever cut was last uploaded;
+two-client item has run. The tag is `v0.1.5`; the store carries whichever cut was last uploaded;
 `docs/RELEASE.md` §4 records the three-item bar that was met and the one item skipped, with the reason.
 ---
 
@@ -487,7 +469,7 @@ back for patrons, and nothing ever will be.
 
 If you'd like to help cover server hosting and test hardware:
 
-- **Website** — <https://ravenirongames.com>
+- **Website** — <https://ravenirongames.com/>
 - **Patreon** — <https://www.patreon.com/cw/RavenIronGames>
 - **Discord** — <https://discord.gg/AGKDEurAVa> — a channel per mod, and where the
   testing happens

@@ -72,7 +72,7 @@ specifies. **Unresolved at time of writing.**
 
 ### 2.4 The MistsofAvalor premise in `DESIGN-pragmatic.md` is obsolete
 
-Verified in `c:\WubarrkCODING\MistsofAvalor` (v0.1.2, `PluginVersion` at `Core\MistsofAvalorPlugin.cs:74`):
+Verified in `c:\WubarrkCODING\ValheimMods\MistsofAvalor` (v0.1.2, `PluginVersion` at `Core\MistsofAvalorPlugin.cs:74`):
 
 - `Compat\AvalorStealthGuards.cs` **does not exist**.
 - `AwarenessData` / `AwarenessSystem` appear only in **past-tense comments** at `Compat\AvalorStealthCompat.cs:21-22`

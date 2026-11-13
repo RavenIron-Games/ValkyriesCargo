@@ -10,7 +10,7 @@ method as the anchor doc: `BepInEx.AssemblyPublicizer.MSBuild` over `assembly_va
 "private" member below called or read directly. Re-verify against a current decompile before
 trusting a new game patch.
 
-**Shipped as of 2026-08-10, networked/menu pass added 2026-08-11** — `C:\WubarrkCODING\AwayFromHome\`
+**Shipped as of 2026-08-10, networked/menu pass added 2026-08-11** — `C:\WubarrkCODING\ValheimMods\AwayFromHome\`
 (BepInEx/Harmony + the shared ServerSync library, no other dependency). Implements the client-side keeper
 described below in full: the rotation, the settle-before-claim rule, claim-only-unowned arbitration, the
 sector subscription for a client of a dedicated server, and a cycle-safety warning when a rotation would

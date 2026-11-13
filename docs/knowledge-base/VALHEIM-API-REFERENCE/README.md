@@ -74,4 +74,4 @@ behaviour is **unverified**: `Utils.GetPrefabName` and the `string.GetStableHash
 Reference them from the assembly — do not reimplement `GetStableHashCode`, since a mismatched
 implementation silently desynchronises every hash in the game.
 
-First consumer: the `Runic` mod (`C:\WubarrkCODING\Runic`).
+First consumer: the `Runic` mod (`C:\WubarrkCODING\ValheimMods\Runic`).

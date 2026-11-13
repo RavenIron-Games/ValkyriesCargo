@@ -4,14 +4,14 @@
 
 | Path | Lines | Role |
 |---|---|---|
-| `c:\WubarrkCODING\ShadowsOfMidgard\Systems\SteathUI\StealthUIRoot.cs` | 57 | Canvas + **EventSystem creation** |
-| `c:\WubarrkCODING\ShadowsOfMidgard\Systems\SteathUI\StealthUIController.cs` | 93 | Per-frame driver, `GetHighestAlertness` |
-| `c:\WubarrkCODING\ShadowsOfMidgard\Systems\SteathUI\StealthGem.cs` | 129 | Eye icon, drag handlers |
-| `c:\WubarrkCODING\ShadowsOfMidgard\Systems\SteathUI\NoiseMeter.cs` | 106 | Fill bar, drag handlers |
-| `c:\WubarrkCODING\ShadowsOfMidgard\Systems\SteathUI\SpriteLoader.cs` | 195 | PNG → Sprite, embedded + disk |
-| `c:\WubarrkCODING\ShadowsOfMidgard\Config\SOMConfig.cs` | 224 | 43 binds, 34 ServerSync entries |
-| `c:\WubarrkCODING\ShadowsOfMidgard\Config\StealthConfigModel.cs` | 146 | POCO snapshot, 34 fields |
-| `c:\WubarrkCODING\libs-Tools\ServerSync.cs` | 1415 | vendored; byte-identical to `ShadowsOfMidgard\libs\ServerSync.cs` (which is **excluded** from compile — see csproj `Exclude="…libs\**\*.cs…"`; the compiled copy is `$(SoMLibs)\ServerSync.cs`) |
+| `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\SteathUI\StealthUIRoot.cs` | 57 | Canvas + **EventSystem creation** |
+| `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\SteathUI\StealthUIController.cs` | 93 | Per-frame driver, `GetHighestAlertness` |
+| `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\SteathUI\StealthGem.cs` | 129 | Eye icon, drag handlers |
+| `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\SteathUI\NoiseMeter.cs` | 106 | Fill bar, drag handlers |
+| `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\SteathUI\SpriteLoader.cs` | 195 | PNG → Sprite, embedded + disk |
+| `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Config\SOMConfig.cs` | 224 | 43 binds, 34 ServerSync entries |
+| `c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Config\StealthConfigModel.cs` | 146 | POCO snapshot, 34 fields |
+| `c:\WubarrkCODING\ValheimMods\libs-Tools\ServerSync.cs` | 1415 | vendored; byte-identical to `ShadowsOfMidgard\libs\ServerSync.cs` (which is **excluded** from compile — see csproj `Exclude="…libs\**\*.cs…"`; the compiled copy is `$(SoMLibs)\ServerSync.cs`) |
 
 **No external mod touches `SOMConfig`, `StealthConfigModel`, or any UI type.** Verified by grep across `MistsofAvalor` and `DvergrAllies` for `SOMConfig|StealthUI|StealthConfigModel|EnableStealthUI` — zero hits. The entire config/UI layer is free to be reshaped; only `StealthExemption` is load-bearing API.
 

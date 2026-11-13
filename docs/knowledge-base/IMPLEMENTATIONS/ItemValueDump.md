@@ -14,7 +14,7 @@
 > parity, all spot-checks match, 0 budget-exceeded markers, 0 contamination hits.**
 >
 > This document is retained for the rationale, gotchas and output-format discussion, which carry
-> over verbatim. The v1 baseline it describes remains at `libs-Tools\ITEM-DUMPS-v1-archive\`.
+> over verbatim. The v1 baseline it describes remains at `libs-Tools\OLD\ITEM-DUMPS-v1-archive\`.
 
 ## Overview
 
@@ -125,7 +125,7 @@ seven sections out of eight. Failures log as `Feature Lost - <hook>` and the res
 
 ## Output
 
-Written to `OutputDirectory` (config, default `C:\WubarrkCODING\libs-Tools\ITEM-DUMPS`):
+Written to `OutputDirectory` (config, default `C:\WubarrkCODING\ValheimMods\libs-Tools\ITEM-DUMPS`):
 
 ```
 ItemValues_Awake.tsv        ItemValues_Awake.json
@@ -171,7 +171,7 @@ grep -P '\tm_damages\.m_fire\t(?!0$)' ItemValues_CopyOtherDB.tsv   # every item 
 
 | Key | Default | Purpose |
 |---|---|---|
-| `OutputDirectory` | `C:\WubarrkCODING\libs-Tools\ITEM-DUMPS` | Created if missing. |
+| `OutputDirectory` | `C:\WubarrkCODING\ValheimMods\libs-Tools\ITEM-DUMPS` | Created if missing. |
 | `DumpOnMenuDb` | `true` | Dump at `ObjectDB.Awake` too. Turn off if only in-game values matter. |
 | `DumpRecipes` | `true` | `ObjectDB.m_recipes` — costs, station, min station level. |
 | `DumpStatusEffects` | `true` | `ObjectDB.m_StatusEffects` — `SE_Stats` modifier values. |

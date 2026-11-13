@@ -474,29 +474,29 @@ All of it lives in **`Systems/StealthBrain/SensingEvaluator.cs`**:
 
 ## 13. FILES SURVEYED (absolute paths)
 ```
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\VisibilitySystem.cs        (122 lines)
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\NoiseSystem.cs             ( 60)
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\HidingSystem.cs            ( 70)
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\CamoSystem.cs              (119)
-c:\WubarrkCODING\ShadowsOfMidgard\Armor\ArmorProfile.cs              ( 33)
-c:\WubarrkCODING\ShadowsOfMidgard\Armor\ArmorProfileSystem.cs        ( 70)
-c:\WubarrkCODING\ShadowsOfMidgard\Armor\ArmorUtils.cs                ( 82)
-c:\WubarrkCODING\ShadowsOfMidgard\Utils\EnvironmentUtils.cs          ( 35)
-c:\WubarrkCODING\ShadowsOfMidgard\Utils\RaycastUtils.cs              ( 88)
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\VisibilitySystem.cs        (122 lines)
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\NoiseSystem.cs             ( 60)
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\HidingSystem.cs            ( 70)
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\CamoSystem.cs              (119)
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Armor\ArmorProfile.cs              ( 33)
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Armor\ArmorProfileSystem.cs        ( 70)
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Armor\ArmorUtils.cs                ( 82)
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Utils\EnvironmentUtils.cs          ( 35)
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Utils\RaycastUtils.cs              ( 88)
 ```
 Read for context (owned by other surveyors, cited only where load-bearing):
 ```
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\StealthBrain\SensingEvaluator.cs
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\StealthBrain.cs
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\AwarenessSystem.cs
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\CoroutineManager.cs
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\StealthDebugger.cs
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\StealthOvermind.cs
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\StealthExemption.cs
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\AIAuthority.cs
-c:\WubarrkCODING\ShadowsOfMidgard\Systems\SteathUI\StealthUIController.cs
-c:\WubarrkCODING\ShadowsOfMidgard\Config\SOMConfig.cs
-c:\WubarrkCODING\ShadowsOfMidgard\Config\StealthConfigModel.cs
-c:\WubarrkCODING\ShadowsOfMidgard\ShadowsOfMidgard.csproj   (net472, LangVersion latest)
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\StealthBrain\SensingEvaluator.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\StealthBrain.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\AwarenessSystem.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\CoroutineManager.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\StealthDebugger.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\StealthOvermind.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\StealthExemption.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\AIAuthority.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Systems\SteathUI\StealthUIController.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Config\SOMConfig.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\Config\StealthConfigModel.cs
+c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\ShadowsOfMidgard.csproj   (net472, LangVersion latest)
 ```
-Grep confirmed: **no file in `c:\WubarrkCODING\MistsofAvalor` or `c:\WubarrkCODING\DvergrAllies` references `VisibilitySystem`, `NoiseSystem`, `HidingSystem`, `CamoSystem`, `ArmorUtils`, `ArmorProfile*`, `RaycastUtils`, or `EnvironmentUtils`.** These nine files carry **no external API contract** and may be freely reshaped.
+Grep confirmed: **no file in `c:\WubarrkCODING\ValheimMods\MistsofAvalor` or `c:\WubarrkCODING\ValheimMods\DvergrAllies` references `VisibilitySystem`, `NoiseSystem`, `HidingSystem`, `CamoSystem`, `ArmorUtils`, `ArmorProfile*`, `RaycastUtils`, or `EnvironmentUtils`.** These nine files carry **no external API contract** and may be freely reshaped.

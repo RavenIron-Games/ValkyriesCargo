@@ -4,6 +4,18 @@
 tell whether the build under your hands is still that one.** P10a; the brief is
 `docs/P10-P11-FOR-DON.md`.
 
+**THE BASELINE MOVED AGAIN ON 2026-11-01: Valheim 1.0.21** (client build **26249040**, dedicated server build
+**26266951**). Three of the four numbers moved: `c_networkVersion` **41** (from 40; 1.0.20 was already 41),
+`c_PlayerVersion` `Version.Player.CheatCleanSlate` = **47** (from 46) and `c_WorldVersion`
+`Version.World.CheatCleanSlate` = **42** (from 41). `CurrentVersion` is **1.0.21**. The numbers were read off the
+1.0.21 `Version` type in the workspace's decompile (`libs-Tools/Decompiled_1.0.21`). The sweep for the members this mod
+depends on was a read of the 1.0.17 -> 1.0.21 decompile diff: `Character.ApplyDamage` (only the cheat-flag write
+changed), `Terminal.InitTerminal` (compiler renames and one spawn lambda), `ZNet.RPC_PeerInfo` (the network number),
+`Inventory.Save`/`Load` (the item data version 109 -> 110, written and read symmetrically) and the world save path
+(`SaveSystem.GetWorldsSaveRootPath`, unchanged, resolved by name) all still hold. A boot on a 1.0.21 dedicated server
+passes: `BOOTED`, `patches 19/19 applied`, and the boot line reads `engine: same build 1.0.21 (net 41, player 47, world 42)`.
+No in-game session was run on 1.0.21, and the offline probe tool was not re-run.
+
 **THE BASELINE MOVED AGAIN ON 2026-09-25: Valheim 1.0.16**, a hotfix after 1.0.15. Steam updated the installed
 client (build **25527674**) and the dedicated server (build **25527701**) at 06:06 local, and both were read the
 same day. **None of the three numbers the wire and the saves turn on moved:** `c_networkVersion` **40**,

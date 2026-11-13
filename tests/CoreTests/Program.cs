@@ -5644,19 +5644,18 @@ namespace ValkyriesCargo.Tests
             Section("EngineBaseline: the build this DLL was written on (P10b)");
 
             // The four numbers are the identity of a build. Read off assembly_valheim.dll's
-            // `Version` type on 2026-09-25: 1.0.16, the hotfix after 1.0.15.
+            // `Version` type on 2026-11-01: 1.0.21.
             //
-            // Only the game version moved. The network version has been 40 since 1.0.12 - the
-            // hard multiplayer break then was 39 -> 40, RPC_PeerInfo refusing any peer whose
-            // number differs - so 1.0.12, 1.0.15 and 1.0.16 all play together. The two SAVE
-            // formats did NOT move either: Player stays 46 and World stays 41.
-            Equal("1.0.16", EngineBaseline.GameVersion, "the baseline game version");
-            Equal(40, EngineBaseline.NetworkVersion, "the baseline network version (39 -> 40 in 1.0.12, unmoved since)");
-            Equal(46, EngineBaseline.PlayerVersion, "the baseline player version (Version.Player.DeepNorth), unmoved");
-            Equal(41, EngineBaseline.WorldVersion, "the baseline world version (Version.World.DeepNorth), unmoved");
-            Equal(25527674, EngineBaseline.ClientBuildId, "the Steam build id of the client");
-            Equal(25527701, EngineBaseline.ServerBuildId, "and of the dedicated server");
-            Check(EngineBaseline.Describe().Contains("1.0.16") && EngineBaseline.Describe().Contains("25527701") &&
+            // Network 40 -> 41, Player 46 -> 47 and World 41 -> 42 (the last two are `CheatCleanSlate`).
+            // The network step is the hard multiplayer break: RPC_PeerInfo refuses any peer whose
+            // number differs, so a 1.0.21 client cannot join a 1.0.17 server.
+            Equal("1.0.21", EngineBaseline.GameVersion, "the baseline game version");
+            Equal(41, EngineBaseline.NetworkVersion, "the baseline network version (40 -> 41 in 1.0.21)");
+            Equal(47, EngineBaseline.PlayerVersion, "the baseline player version (Version.Player.CheatCleanSlate)");
+            Equal(42, EngineBaseline.WorldVersion, "the baseline world version (Version.World.CheatCleanSlate)");
+            Equal(26249040, EngineBaseline.ClientBuildId, "the Steam build id of the client");
+            Equal(26266951, EngineBaseline.ServerBuildId, "and of the dedicated server");
+            Check(EngineBaseline.Describe().Contains("1.0.21") && EngineBaseline.Describe().Contains("26266951") &&
                   EngineBaseline.Describe().Contains(EngineBaseline.ReadOn),
                   "Describe names the version, both build ids and the date the bodies were read");
 
@@ -5675,59 +5674,59 @@ namespace ValkyriesCargo.Tests
             Check(!EngineBaseline.TryParse("0.221.rc0", out ma, out mi, out pa), "and so is rc0, which is not a candidate for anything");
 
             // ---- ordering ----
-            Equal(0, EngineBaseline.Order(1, 0, 16), "the baseline orders equal to itself");
+            Equal(0, EngineBaseline.Order(1, 0, 21), "the baseline orders equal to itself");
             Equal(1, EngineBaseline.Order(2, 0, 0), "a bigger major is newer");
             Equal(-1, EngineBaseline.Order(0, 221, 12), "the last pre-1.0 stable is older however big its minor");
             Equal(1, EngineBaseline.Order(1, 1, 0), "a bigger minor is newer however small the patch");
-            Equal(1, EngineBaseline.Order(1, 0, 17), "a bigger patch is newer");
-            Equal(-1, EngineBaseline.Order(1, 0, 15), "a smaller patch is older - 1.0.15 is now behind us");
+            Equal(1, EngineBaseline.Order(1, 0, 22), "a bigger patch is newer");
+            Equal(-1, EngineBaseline.Order(1, 0, 20), "a smaller patch is older - 1.0.20 is now behind us");
             Equal(-1, EngineBaseline.Order(1, 0, -1), "and a release candidate sorts BELOW its own release");
 
             // ---- the verdicts, one per direction of movement ----
-            EngineComparison same = EngineBaseline.Compare("1.0.16", 40, 46, 41);
+            EngineComparison same = EngineBaseline.Compare("1.0.21", 41, 47, 42);
             Check(same.Same, "the exact build is the same build");
-            Equal("same build 1.0.16 (net 40, player 46, world 41)", same.Verdict, "and says so in one line");
+            Equal("same build 1.0.21 (net 41, player 47, world 42)", same.Verdict, "and says so in one line");
             Check(!same.WireAtRisk && !same.SavesAtRisk, "with nothing at risk");
 
-            EngineComparison newer = EngineBaseline.Compare("1.1.0", 40, 46, 41);
+            EngineComparison newer = EngineBaseline.Compare("1.1.0", 41, 47, 42);
             Equal(VersionDrift.Newer, newer.Game, "a later game version reads as newer");
-            Equal("newer game version (1.1.0 vs 1.0.16)", newer.Verdict, "and names both");
+            Equal("newer game version (1.1.0 vs 1.0.21)", newer.Verdict, "and names both");
             Check(!newer.Same, "and is not the same build");
 
-            EngineComparison older = EngineBaseline.Compare("0.221.12", 40, 46, 41);
+            EngineComparison older = EngineBaseline.Compare("0.221.12", 41, 47, 42);
             Equal(VersionDrift.Older, older.Game, "the last pre-1.0 stable reads as older");
-            Equal("older game version (0.221.12 vs 1.0.16)", older.Verdict, "and names both");
+            Equal("older game version (0.221.12 vs 1.0.21)", older.Verdict, "and names both");
 
-            // A 1.0.15 install under a 1.0.16 build: an older game on the same wire and the same saves.
-            EngineComparison hotfix = EngineBaseline.Compare("1.0.15", 40, 46, 41);
-            Equal("older game version (1.0.15 vs 1.0.16)", hotfix.Verdict, "a 1.0.15 install reads as the older game");
+            // A 1.0.20 install under a 1.0.21 build: an older game on the same wire and the same saves.
+            EngineComparison hotfix = EngineBaseline.Compare("1.0.20", 41, 47, 42);
+            Equal("older game version (1.0.20 vs 1.0.21)", hotfix.Verdict, "a 1.0.20 install reads as the older game");
             Check(!hotfix.WireAtRisk && !hotfix.SavesAtRisk, "with neither the wire nor the saves at risk");
 
-            EngineComparison unreadable = EngineBaseline.Compare("", 40, 46, 41);
+            EngineComparison unreadable = EngineBaseline.Compare("", 41, 47, 42);
             Equal(VersionDrift.Unreadable, unreadable.Game, "an unreadable version is its own verdict");
-            Equal("game version unreadable ('' vs 1.0.16)", unreadable.Verdict, "which never reads as a match");
+            Equal("game version unreadable ('' vs 1.0.21)", unreadable.Verdict, "which never reads as a match");
             Check(!unreadable.Same, "and never counts as the same build");
 
             // The dangerous one: the network version is the handshake and the packet layout.
-            EngineComparison net = EngineBaseline.Compare("1.0.16", 41, 46, 41);
-            Equal("network version moved (41 vs 40)", net.Verdict, "a moved network version is called out on its own");
+            EngineComparison net = EngineBaseline.Compare("1.0.21", 42, 47, 42);
+            Equal("network version moved (42 vs 41)", net.Verdict, "a moved network version is called out on its own");
             Check(net.WireAtRisk, "and flags the wire");
             Check(!net.SavesAtRisk, "without implicating the saves");
 
-            EngineComparison player = EngineBaseline.Compare("1.0.16", 40, 47, 41);
-            Equal("player version moved (47 vs 46)", player.Verdict, "a moved player version is its own line");
+            EngineComparison player = EngineBaseline.Compare("1.0.21", 41, 48, 42);
+            Equal("player version moved (48 vs 47)", player.Verdict, "a moved player version is its own line");
             Check(player.SavesAtRisk && !player.WireAtRisk, "and flags the saves, not the wire");
 
-            EngineComparison world = EngineBaseline.Compare("1.0.16", 40, 46, 42);
-            Equal("world version moved (42 vs 41)", world.Verdict, "a moved world version is its own line");
+            EngineComparison world = EngineBaseline.Compare("1.0.21", 41, 47, 43);
+            Equal("world version moved (43 vs 42)", world.Verdict, "a moved world version is its own line");
             Check(world.SavesAtRisk, "and flags the saves");
 
-            EngineComparison all = EngineBaseline.Compare("1.1.0", 41, 47, 42);
-            Equal("newer game version (1.1.0 vs 1.0.16); network version moved (41 vs 40); player version moved (47 vs 46); world version moved (42 vs 41)",
+            EngineComparison all = EngineBaseline.Compare("1.1.0", 42, 48, 43);
+            Equal("newer game version (1.1.0 vs 1.0.21); network version moved (42 vs 41); player version moved (48 vs 47); world version moved (43 vs 42)",
                   all.Verdict, "everything moving reads game, network, player, world, in that order, every time");
             Check(all.WireAtRisk && all.SavesAtRisk, "with both risks raised");
 
-            EngineComparison nulled = EngineBaseline.Compare(null, 40, 46, 41);
+            EngineComparison nulled = EngineBaseline.Compare(null, 41, 47, 42);
             Equal(VersionDrift.Unreadable, nulled.Game, "a null version does not throw");
             Equal("", nulled.ActualGame, "and is kept as an empty string");
             Equal(all.Verdict, all.ToString(), "ToString is the verdict, so a comparison drops straight into a log line");

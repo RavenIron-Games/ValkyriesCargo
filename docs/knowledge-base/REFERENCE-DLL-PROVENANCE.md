@@ -24,7 +24,7 @@ surfaced it: the build succeeded, and a signature drift would only have shown up
 
 ```powershell
 $live = "C:\Program Files (x86)\Steam\steamapps\common\Valheim\valheim_Data\Managed"
-$refs = "C:\WubarrkCODING\libs-Tools"
+$refs = "C:\WubarrkCODING\ValheimMods\libs-Tools"
 Get-ChildItem $refs -Filter *.dll | ForEach-Object {
   $lp = Join-Path $live $_.Name
   if ((Test-Path $lp) -and (Get-FileHash $_.FullName -Algorithm MD5).Hash -ne (Get-FileHash $lp -Algorithm MD5).Hash) {

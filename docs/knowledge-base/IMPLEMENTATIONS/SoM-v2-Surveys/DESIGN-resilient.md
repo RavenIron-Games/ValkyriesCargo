@@ -1,7 +1,7 @@
 # Shadows of Midgard v2 — Architecture (resilience / multiplayer-correctness / contract lens)
 
 **Companion to, and deliberate alternative to, `DESIGN-pragmatic.md`.** Where the two agree I say so briefly and move on; where they differ I argue the difference explicitly. Every vanilla claim is cited into
-`c:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` as `L####`.
+`c:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` as `L####`.
 
 This design optimises for brief goals **#1 (Valheim v1.0 forward-compat)** and **#2 (100 % multiplayer correctness)**, and treats the **tiered cross-mod contract** as a first-class subsystem rather than an appendix. Goal #4 (lower overhead) is met — the cost model in §5 lands at ≈2.3 % of one core at 200 creatures × 10 players — but it is met *second*, and §13 says exactly where I paid for it.
 
@@ -13,7 +13,7 @@ Three things in the survey set are stale or wrong. All three were re-verified ag
 
 ### 0.1 MistsofAvalor is 0.1.2, not 0.0.9. The reflection consumer no longer exists.
 
-`RESUME.md`'s "MoA no longer stands down… reflection-writes into `AwarenessData`… `HarmonyBefore("wubarrk.shadowsofmidgard")`" described MoA **0.0.9**. Verified against `c:\WubarrkCODING\MistsofAvalor` as it stands:
+`RESUME.md`'s "MoA no longer stands down… reflection-writes into `AwarenessData`… `HarmonyBefore("wubarrk.shadowsofmidgard")`" described MoA **0.0.9**. Verified against `c:\WubarrkCODING\ValheimMods\MistsofAvalor` as it stands:
 
 - `Compat\AvalorStealthGuards.cs` **does not exist**. `grep -rn "HarmonyBefore\|HarmonyAfter"` over the tree returns **zero hits**.
 - `Compat\AvalorStealthCompat.cs` is 244 lines (was 590). The single occurrence of `AwarenessData` / `AwarenessSystem` in the whole mod is a past-tense comment at `AvalorStealthCompat.cs:21` describing the removed mechanism.
@@ -21,7 +21,7 @@ Three things in the survey set are stale or wrong. All three were re-verified ag
 - What MoA does now (`AvalorStealthCompat.TendAll`, `:125-159`): every 0.2 s, for every tracked creature it **owns**, re-stamp `SoMStealthExempt = 1` if absent, then `ReassertHunt` — `ai.Alert()` for the Warden, `AvalorMobDirector.MakeItHunt` otherwise. Pure vanilla API. That is the entire integration.
 - MoA's presence detector is now `Chainloader.PluginInfos.ContainsKey("wubarrk.shadowsofmidgard")` **and** `AccessTools.TypeByName("ShadowsOfMidgard.StealthExemption")` (`:83-84`), deferred to the first `Update` (`AvalorHuntPinner.Update`, `:231-242`) precisely because BepInEx had not yet *loaded* SoM's assembly during MoA's `Awake`. It gates **nothing** — all three branches produce the same behaviour and differ only in the log line.
 
-`c:\WubarrkCODING\ShadowsOfMidgard\AVALOR_COMPAT_HANDOFF.md` §10 states this from MoA's own side, and adds the sentence this whole design has to answer for:
+`c:\WubarrkCODING\ValheimMods\ShadowsOfMidgard\AVALOR_COMPAT_HANDOFF.md` §10 states this from MoA's own side, and adds the sentence this whole design has to answer for:
 
 > "The guards listed in §4b are the **only** thing standing between an Avalor mob and your stealth brain."
 

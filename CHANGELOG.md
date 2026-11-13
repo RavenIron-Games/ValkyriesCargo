@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.1.7 — 2026-11-01
+
+Rebuilt and checked against Valheim 1.0.21 (network version 41). No gameplay change.
+
+- **The version gate moves with the number:** a 0.1.6 client is refused by a 0.1.7 server (update the server and every
+  client together). Nothing to delete when updating; the config layout is unchanged.
+- **Valheim 1.0.21 changed its network version (40 to 41),** so a 1.0.21 client cannot join an older server and the
+  reverse; that is the game, not this mod. The mod's engine check reads the live numbers and its compiled-in baseline
+  now reads network 41, player 47, world 42.
+- Every game call and Harmony patch the mod relies on was re-read against 1.0.21 and still binds and behaves the same:
+  the terminal command, both damage choke points, the inventory save/load used by the all-or-nothing deal apply, and the
+  world save path.
+- Website link is <https://ravenirongames.com/>; the BepInEx dependency is BepInExPack_Valheim 5.4.2360.
+
 ## 0.1.6 — 2026-09-25
 
 Updated due to 1.0.16 Patch.

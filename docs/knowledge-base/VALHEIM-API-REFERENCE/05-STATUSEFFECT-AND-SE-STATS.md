@@ -1,4 +1,4 @@
-All citations: `C:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` (abbrev. `AV`).
+All citations: `C:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` (abbrev. `AV`).
 Class spans: `StatusEffect` AV:26393–26739 · `SE_Stats` AV:25585–26352 · `SEMan` AV:24219–24752 · `SE_Rested` AV:25351–25446 · `SE_Shield` AV:25447–25584 · `ObjectDB` AV:90498+ · `Humanoid` AV:12806+
 
 ---
@@ -411,7 +411,7 @@ public float m_homeItemsStaminaModifier;   // AV:58063  (item field, NOT SE_Stat
 
 ## 6. `SE_Rested.cs` — the exact shape a custom subclass must follow
 
-File `C:\WubarrkCODING\libs-Tools\SE_Rested.cs` is UTF-16LE and matches AV:25351–25446 verbatim. Canonical shape:
+File `C:\WubarrkCODING\ValheimMods\libs-Tools\SE_Rested.cs` is UTF-16LE and matches AV:25351–25446 verbatim. Canonical shape:
 
 ```csharp
 using System.Collections.Generic;

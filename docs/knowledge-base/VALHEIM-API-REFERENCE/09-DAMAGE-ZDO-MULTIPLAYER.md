@@ -1,4 +1,4 @@
-All citations: `C:\WubarrkCODING\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` unless stated.
+All citations: `C:\WubarrkCODING\ValheimMods\libs-Tools\DECOMPILED ASSEMBLY VALHEIM\assembly_valheim.decompiled.cs` unless stated.
 Class anchors: `BaseAI`:3809, `Character`:6814, `Humanoid`:12806, `Player`:15320, `SEMan`:24219, `StatusEffect`:26393, `ZDO`:62124, `ZDOVars`:66396, `ZNetView`:70199, `HitData`:112132.
 
 ---
